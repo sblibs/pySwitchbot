@@ -35,6 +35,47 @@ def process_wohub2(data: bytes | None, mfr_data: bytes | None) -> dict[str, Any]
         "fahrenheit": bool(temp_data[2] & 0b10000000),
         "humidity": humidity,
         "lightLevel": light_level,
+        "illuminance": calculate_light_intensity(light_level),
     }
 
     return _wohub2_data
+
+
+def calculate_light_intensity(light_level: int) -> int:
+    """
+    Convert Hub 2 light level (1-21) to actual light intensity value
+    Args:
+        light_level: Integer from 1-21
+    Returns:
+        Corresponding light intensity value or 0 if invalid input
+    """
+    light_map = {
+        1: 0,
+        2: 10,
+        3: 20,
+        4: 30,
+        5: 40,
+        6: 50,
+        7: 60,
+        8: 70,
+        9: 80,
+        10: 90,
+        11: 105,
+        12: 205,
+        13: 317,
+        14: 416,
+        15: 510,
+        16: 610,
+        17: 707,
+        18: 801,
+        19: 897,
+        20: 1023,
+        21: 1091,
+    }
+
+    try:
+        if not isinstance(light_level, int) or light_level < 1 or light_level > 21:
+            return 0
+        return light_map[light_level]
+    except Exception:
+        return 0
