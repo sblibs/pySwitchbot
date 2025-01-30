@@ -1924,7 +1924,7 @@ def test_remote_active() -> None:
     adv_data = generate_advertisement_data(
         manufacturer_data={89: b"\xaa\xbb\xcc\xdd\xee\xff"},
         service_data={"00000d00-0000-1000-8000-00805f9b34fb": b"b V\x00"},
-        service_uuids=['cba20d00-224d-11e6-9fb8-0002a5d5c51b'],
+        service_uuids=["cba20d00-224d-11e6-9fb8-0002a5d5c51b"],
         rssi=-95,
     )
     result = parse_advertisement_data(ble_device, adv_data)
