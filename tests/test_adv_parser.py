@@ -1917,3 +1917,55 @@ def test_leak_real_data_from_ha():
         rssi=-73,
         active=True,
     )
+
+
+def test_remote_active() -> None:
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={89: b"\xaa\xbb\xcc\xdd\xee\xff"},
+        service_data={"00000d00-0000-1000-8000-00805f9b34fb": b"b V\x00"},
+        service_uuids=['cba20d00-224d-11e6-9fb8-0002a5d5c51b'],
+        rssi=-95,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "data": {
+                "battery": 86,
+            },
+            "isEncrypted": False,
+            "model": "b",
+            "modelFriendlyName": "Remote",
+            "modelName": SwitchbotModel.REMOTE,
+            "rawAdvData": b"b V\x00",
+        },
+        device=ble_device,
+        rssi=-95,
+        active=True,
+    )
+
+
+def test_remote_passive() -> None:
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={89: b"\xaa\xbb\xcc\xdd\xee\xff"},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.REMOTE)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "data": {
+                "battery": None,
+            },
+            "isEncrypted": False,
+            "model": "b",
+            "modelFriendlyName": "Remote",
+            "modelName": SwitchbotModel.REMOTE,
+            "rawAdvData": None,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=False,
+    )
