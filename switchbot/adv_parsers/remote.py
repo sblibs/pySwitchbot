@@ -8,8 +8,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def process_woremote(
-    data: bytes | None,
-    mfr_data: bytes | None
+    data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, int | None]:
     """Process WoRemote adv data."""
 
