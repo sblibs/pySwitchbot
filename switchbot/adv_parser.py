@@ -29,6 +29,7 @@ from .adv_parsers.relay_switch import (
     process_worelay_switch_1,
     process_worelay_switch_1pm,
 )
+from .adv_parsers.remote import process_woremote
 from .const import SwitchbotModel
 from .models import SwitchBotAdvertisement
 
@@ -202,6 +203,12 @@ SUPPORTED_TYPES: dict[str, SwitchbotSupportedType] = {
         "modelFriendlyName": "Relay Switch 1",
         "func": process_worelay_switch_1,
         "manufacturer_id": 2409,
+    },
+    "b": {
+        "modelName": SwitchbotModel.REMOTE,
+        "modelFriendlyName": "Remote",
+        "func": process_woremote,
+        "manufacturer_id": 89,
     },
 }
 
