@@ -948,6 +948,8 @@ def test_wohub2_passive_and_active():
                 "lightLevel": 2,
                 "temp": {"c": 26.7, "f": 80.06},
                 "temperature": 26.7,
+                "illuminance": 10,
+                "sensor_temperature": 26.7,
             },
             "isEncrypted": False,
             "model": "v",
