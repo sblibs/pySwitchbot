@@ -25,6 +25,7 @@ from .devices.ceiling_light import SwitchbotCeilingLight
 from .devices.curtain import SwitchbotCurtain
 from .devices.device import ColorMode, SwitchbotDevice
 from .devices.humidifier import SwitchbotHumidifier
+from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
 from .devices.light_strip import SwitchbotLightStrip
 from .devices.lock import SwitchbotLock
 from .devices.plug import SwitchbotPlugMini
@@ -52,6 +53,7 @@ __all__ = [
     "SwitchbotCurtain",
     "SwitchbotLightStrip",
     "SwitchbotHumidifier",
+    "SwitchbotEvaporativeHumidifier",
     "Switchbot",
     "SwitchbotPlugMini",
     "SwitchbotSupportedType",
