@@ -113,7 +113,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
         if mode == HumidifierMode.TARGET_HUMIDITY:
             if target_humidity is None:
                 raise TypeError("target_humidity is required")
-            command += "{:02x}".format(target_humidity)
+            command += f"{target_humidity:02x}"
         result = await self._send_command(command)
         ok = self._check_command_result(result, 0, {1})
         if ok:
