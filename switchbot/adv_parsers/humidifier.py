@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 
 from ..const import HumidifierMode, HumidifierWaterLevel
 
@@ -58,7 +59,7 @@ def process_evaporative_humidifier(
 
     is_on = bool(mfr_data[7] & 0b10000000)
     mode = HumidifierMode(mfr_data[7] & 0b00001111)
-    filter_run_time = int.from_bytes(mfr_data[12:13], byteorder="big")
+    filter_run_time = timedelta(hours=int.from_bytes(mfr_data[12:14], byteorder="big"))
     has_humidity = bool(mfr_data[9] & 0b10000000)
     has_temperature = bool(mfr_data[10] & 0b10000000)
     is_tank_removed = bool(mfr_data[8] & 0b00000100)
@@ -78,7 +79,7 @@ def process_evaporative_humidifier(
         if has_temperature
         else None,
         "filter_run_time": filter_run_time,
-        "filter_alert": filter_run_time >= 240,
+        "filter_alert": filter_run_time.days >= 10,
         "water_level": HumidifierWaterLevel(mfr_data[11] & 0b00000011)
         if not is_tank_removed
         else None,
