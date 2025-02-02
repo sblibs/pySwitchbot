@@ -5,7 +5,7 @@ from typing import Any
 from bleak.backends.device import BLEDevice
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-from ..const import SwitchbotModel, HumidifierMode
+from ..const import SwitchbotModel, HumidifierMode, HumidifierWaterLevel
 from ..models import SwitchBotAdvertisement
 from .device import SwitchbotEncryptedDevice
 
@@ -77,12 +77,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
             self._fire_callbacks()
 
     async def get_basic_info(self) -> dict[str, Any] | None:
-        """Get the current state of the switch."""
-        result = await self._send_command(COMMAND_GET_SWITCH_STATE)
-        if self._check_command_result(result, 0, {1}):
-            return {
-                "is_on": result[1] & 0x01 != 0,
-            }
+        """Currently unknown command"""
         return None
 
     async def turn_on(self) -> bool:
@@ -154,6 +149,54 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
     def is_on(self) -> bool | None:
         """Return state from cache."""
         return self._get_adv_value("isOn")
+
+    def get_mode(self) -> HumidifierMode | None:
+        """Return state from cache."""
+        return self._get_adv_value("mode")
+
+    def is_child_lock_enabled(self) -> bool | None:
+        """Return state from cache."""
+        return self._get_adv_value("child_lock")
+
+    def is_over_humidify_protection_enabled(self) -> bool | None:
+        """Return state from cache."""
+        return self._get_adv_value("over_humidify_protection")
+
+    def is_tank_removed(self) -> bool | None:
+        """Return state from cache."""
+        return self._get_adv_value("tank_removed")
+
+    def is_filter_missing(self) -> bool | None:
+        """Return state from cache."""
+        return self._get_adv_value("filter_missing")
+
+    def is_filter_alert_on(self) -> bool | None:
+        """Return state from cache."""
+        return self._get_adv_value("filter_alert")
+
+    def is_tilted_alert_on(self) -> bool | None:
+        """Return state from cache."""
+        return self._get_adv_value("tilted_alert")
+
+    def get_water_level(self) -> HumidifierWaterLevel | None:
+        """Return state from cache."""
+        return self._get_adv_value("water_level")
+
+    def get_filter_run_time(self) -> int | None:
+        """Return state from cache."""
+        return self._get_adv_value("filter_run_time")
+
+    def get_target_humidity(self) -> int | None:
+        """Return state from cache."""
+        return self._get_adv_value("target_humidity")
+
+    def get_humidity(self) -> int | None:
+        """Return state from cache."""
+        return self._get_adv_value("humidity")
+
+    def get_temperature(self) -> float | None:
+        """Return state from cache."""
+        return self._get_adv_value("temperature")
 
     async def _send_command(
         self, key: str, retry: int | None = None, encrypt: bool = True
