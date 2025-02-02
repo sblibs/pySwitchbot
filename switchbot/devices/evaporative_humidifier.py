@@ -33,7 +33,7 @@ MODES_COMMANDS = {
 
 
 class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
-    """Representation of a Switchbot relay switch 1pm."""
+    """Representation of a Switchbot Evaporative Humidifier"""
 
     def __init__(
         self,
@@ -104,6 +104,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
         return ok
 
     async def set_mode(self, mode: HumidifierMode, target_humidity: int = None) -> None:
+        """Set device mode."""
         if mode == HumidifierMode.DRYING_FILTER:
             return await self.start_drying_filter()
         elif mode not in MODES_COMMANDS:
@@ -124,6 +125,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
         return ok
 
     async def set_child_lock(self, enabled: bool) -> None:
+        """Set child lock."""
         result = await self._send_command(
             COMMAND_CHILD_LOCK_ON if enabled else COMMAND_CHILD_LOCK_OFF
         )
@@ -133,6 +135,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
         return ok
 
     async def start_drying_filter(self):
+        """Start drying filter."""
         result = await self._send_command(COMMAND_TURN_ON + "08")
         ok = self._check_command_result(result, 0, {1})
         if ok:
@@ -140,6 +143,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
         return ok
 
     async def stop_drying_filter(self):
+        """Stop drying filter."""
         result = await self._send_command(COMMAND_TURN_OFF)
         ok = self._check_command_result(result, 0, {0})
         if ok:
@@ -148,7 +152,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
         return ok
 
     def is_on(self) -> bool | None:
-        """Return switch state from cache."""
+        """Return state from cache."""
         return self._get_adv_value("isOn")
 
     async def _send_command(
