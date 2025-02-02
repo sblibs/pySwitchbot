@@ -70,6 +70,7 @@ class LockStatus(Enum):
     UNLOCKING_STOP = 5  # UNLOCKING_BLOCKED
     NOT_FULLY_LOCKED = 6  # LATCH_LOCKED - Only EU lock type
 
+
 class HumidifierMode(Enum):
     HIGH = 1
     MEDIUM = 2
@@ -79,6 +80,7 @@ class HumidifierMode(Enum):
     SLEEP = 6
     AUTO = 7
     DRYING_FILTER = 8
+
 
 class HumidifierWaterLevel(Enum):
     EMPTY = 0

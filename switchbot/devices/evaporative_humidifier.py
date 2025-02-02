@@ -124,7 +124,9 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
         return ok
 
     async def set_child_lock(self, enabled: bool) -> None:
-        result = await self._send_command(COMMAND_CHILD_LOCK_ON if enabled else COMMAND_CHILD_LOCK_OFF)
+        result = await self._send_command(
+            COMMAND_CHILD_LOCK_ON if enabled else COMMAND_CHILD_LOCK_OFF
+        )
         ok = self._check_command_result(result, 0, {1})
         if ok:
             self._fire_callbacks()
