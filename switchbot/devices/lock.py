@@ -7,7 +7,6 @@ import time
 from typing import Any
 
 from bleak.backends.device import BLEDevice
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from ..const import LockStatus, SwitchbotModel
 from .device import SwitchbotEncryptedDevice
