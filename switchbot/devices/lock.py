@@ -13,7 +13,6 @@ from ..const import LockStatus, SwitchbotModel
 from .device import SwitchbotEncryptedDevice
 
 COMMAND_HEADER = "57"
-COMMAND_GET_CK_IV = f"{COMMAND_HEADER}0f2103"
 COMMAND_LOCK_INFO = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0f4f8101",
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4f8102",
@@ -220,58 +219,3 @@ class SwitchbotLock(SwitchbotEncryptedDevice):
             "unclosed_alarm": bool(data[1] & 0b00100000),
             "unlocked_alarm": bool(data[1] & 0b00010000),
         }
-
-    async def _send_command(
-        self, key: str, retry: int | None = None, encrypt: bool = True
-    ) -> bytes | None:
-        if not encrypt:
-            return await super()._send_command(key[:2] + "000000" + key[2:], retry)
-
-        result = await self._ensure_encryption_initialized()
-        if not result:
-            _LOGGER.error("Failed to initialize encryption")
-            return None
-
-        encrypted = (
-            key[:2] + self._key_id + self._iv[0:2].hex() + self._encrypt(key[2:])
-        )
-        result = await super()._send_command(encrypted, retry)
-        return result[:1] + self._decrypt(result[4:])
-
-    async def _ensure_encryption_initialized(self) -> bool:
-        if self._iv is not None:
-            return True
-
-        result = await self._send_command(
-            COMMAND_GET_CK_IV + self._key_id, encrypt=False
-        )
-        ok = self._check_command_result(result, 0, COMMAND_RESULT_EXPECTED_VALUES)
-        if ok:
-            self._iv = result[4:]
-
-        return ok
-
-    async def _execute_disconnect(self) -> None:
-        await super()._execute_disconnect()
-        self._iv = None
-        self._cipher = None
-        self._notifications_enabled = False
-
-    def _get_cipher(self) -> Cipher:
-        if self._cipher is None:
-            self._cipher = Cipher(
-                algorithms.AES128(self._encryption_key), modes.CTR(self._iv)
-            )
-        return self._cipher
-
-    def _encrypt(self, data: str) -> str:
-        if len(data) == 0:
-            return ""
-        encryptor = self._get_cipher().encryptor()
-        return (encryptor.update(bytearray.fromhex(data)) + encryptor.finalize()).hex()
-
-    def _decrypt(self, data: bytearray) -> bytes:
-        if len(data) == 0:
-            return b""
-        decryptor = self._get_cipher().decryptor()
-        return decryptor.update(data) + decryptor.finalize()
