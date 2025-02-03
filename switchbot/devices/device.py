@@ -10,6 +10,7 @@ from dataclasses import replace
 from enum import Enum
 from typing import Any, TypeVar, cast
 from collections.abc import Callable
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from uuid import UUID
 
 import aiohttp
