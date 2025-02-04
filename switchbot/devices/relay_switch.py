@@ -3,7 +3,6 @@ import time
 from typing import Any
 
 from bleak.backends.device import BLEDevice
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from ..const import SwitchbotModel
 from ..models import SwitchBotAdvertisement
@@ -12,7 +11,6 @@ from .device import SwitchbotEncryptedDevice
 _LOGGER = logging.getLogger(__name__)
 
 COMMAND_HEADER = "57"
-COMMAND_GET_CK_IV = f"{COMMAND_HEADER}0f2103"
 COMMAND_TURN_OFF = f"{COMMAND_HEADER}0f70010000"
 COMMAND_TURN_ON = f"{COMMAND_HEADER}0f70010100"
 COMMAND_TOGGLE = f"{COMMAND_HEADER}0f70010200"
@@ -139,56 +137,3 @@ class SwitchbotRelaySwitch(SwitchbotEncryptedDevice):
     def is_on(self) -> bool | None:
         """Return switch state from cache."""
         return self._get_adv_value("isOn")
-
-    async def _send_command(
-        self, key: str, retry: int | None = None, encrypt: bool = True
-    ) -> bytes | None:
-        if not encrypt:
-            return await super()._send_command(key[:2] + "000000" + key[2:], retry)
-
-        result = await self._ensure_encryption_initialized()
-        if not result:
-            return None
-
-        encrypted = (
-            key[:2] + self._key_id + self._iv[0:2].hex() + self._encrypt(key[2:])
-        )
-        result = await super()._send_command(encrypted, retry)
-        return result[:1] + self._decrypt(result[4:])
-
-    async def _ensure_encryption_initialized(self) -> bool:
-        if self._iv is not None:
-            return True
-
-        result = await self._send_command(
-            COMMAND_GET_CK_IV + self._key_id, encrypt=False
-        )
-        ok = self._check_command_result(result, 0, {1})
-        if ok:
-            self._iv = result[4:]
-
-        return ok
-
-    async def _execute_disconnect(self) -> None:
-        await super()._execute_disconnect()
-        self._iv = None
-        self._cipher = None
-
-    def _get_cipher(self) -> Cipher:
-        if self._cipher is None:
-            self._cipher = Cipher(
-                algorithms.AES128(self._encryption_key), modes.CTR(self._iv)
-            )
-        return self._cipher
-
-    def _encrypt(self, data: str) -> str:
-        if len(data) == 0:
-            return ""
-        encryptor = self._get_cipher().encryptor()
-        return (encryptor.update(bytearray.fromhex(data)) + encryptor.finalize()).hex()
-
-    def _decrypt(self, data: bytearray) -> bytes:
-        if len(data) == 0:
-            return b""
-        decryptor = self._get_cipher().decryptor()
-        return decryptor.update(data) + decryptor.finalize()
