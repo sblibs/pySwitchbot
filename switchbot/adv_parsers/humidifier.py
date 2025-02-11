@@ -67,10 +67,19 @@ def process_evaporative_humidifier(
         "isOn": is_on,
         "mode": mode if is_on else None,
         "target_humidity": (mfr_data[16] & 0b01111111)
-        if mode == HumidifierMode.TARGET_HUMIDITY
+        if is_on and mode in [HumidifierMode.SLEEP, HumidifierMode.TARGET_HUMIDITY]
         else None,
         "child_lock": bool(mfr_data[8] & 0b00100000),
-        "over_humidify_protection": bool(mfr_data[8] & 0b10000000),
+        "over_humidify_protection": bool(mfr_data[8] & 0b10000000)
+        if is_on
+        and mode
+        in [
+            HumidifierMode.QUIET,
+            HumidifierMode.LOW,
+            HumidifierMode.MEDIUM,
+            HumidifierMode.HIGH,
+        ]
+        else None,
         "tank_removed": is_tank_removed,
         "tilted_alert": bool(mfr_data[8] & 0b00000010),
         "filter_missing": bool(mfr_data[8] & 0b00000001),

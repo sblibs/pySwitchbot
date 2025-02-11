@@ -68,13 +68,6 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
             advertisement,
         )
 
-    async def update(self, interface: int | None = None) -> None:
-        """Update state of device."""
-        if info := await self.get_voltage_and_current():
-            self._last_full_update = time.monotonic()
-            self._update_parsed_data(info)
-            self._fire_callbacks()
-
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Currently unknown command"""
         return None
@@ -105,7 +98,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
             raise ValueError("Invalid mode")
 
         command = COMMAND_SET_MODE + MODES_COMMANDS[mode]
-        if mode == HumidifierMode.TARGET_HUMIDITY:
+        if mode in [HumidifierMode.TARGET_HUMIDITY, HumidifierMode.SLEEP]:
             if target_humidity is None:
                 raise TypeError("target_humidity is required")
             command += f"{target_humidity:02x}"
@@ -125,6 +118,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
         )
         ok = self._check_command_result(result, 0, {1})
         if ok:
+            self._override_state({"child_lock": enabled})
             self._fire_callbacks()
         return ok
 
@@ -133,6 +127,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
         result = await self._send_command(COMMAND_TURN_ON + "08")
         ok = self._check_command_result(result, 0, {1})
         if ok:
+            self._override_state({"mode": HumidifierMode.DRYING_FILTER})
             self._fire_callbacks()
         return ok
 
@@ -141,7 +136,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
         result = await self._send_command(COMMAND_TURN_OFF)
         ok = self._check_command_result(result, 0, {0})
         if ok:
-            self._override_state({"isOn": False})
+            self._override_state({"isOn": False, "mode": None})
             self._fire_callbacks()
         return ok
 
