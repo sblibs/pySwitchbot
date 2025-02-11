@@ -4,7 +4,7 @@ import pytest
 import datetime
 from bleak.backends.device import BLEDevice
 
-from switchbot import SwitchBotAdvertisement, SwitchbotModel, parse_advertisement_data
+from switchbot import SwitchBotAdvertisement, SwitchbotModel
 from switchbot.adv_parsers.humidifier import process_evaporative_humidifier
 from switchbot.const import HumidifierWaterLevel, HumidifierMode
 from switchbot.devices import evaporative_humidifier
@@ -14,10 +14,14 @@ from .test_adv_parser import generate_ble_device
 
 def create_device_for_command_testing(init_data: dict = {}):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    evaporative_humidifier_device = evaporative_humidifier.SwitchbotEvaporativeHumidifier(
-        ble_device, "ff", "ffffffffffffffffffffffffffffffff"
+    evaporative_humidifier_device = (
+        evaporative_humidifier.SwitchbotEvaporativeHumidifier(
+            ble_device, "ff", "ffffffffffffffffffffffffffffffff"
+        )
     )
-    evaporative_humidifier_device.update_from_advertisement(make_advertisement_data(ble_device, init_data))
+    evaporative_humidifier_device.update_from_advertisement(
+        make_advertisement_data(ble_device, init_data)
+    )
     return evaporative_humidifier_device
 
 
@@ -41,8 +45,9 @@ def make_advertisement_data(ble_device: BLEDevice, init_data: dict):
                 "temperature": 16.8,
                 "filter_run_time": datetime.timedelta(days=3, seconds=57600),
                 "filter_alert": False,
-                "water_level": HumidifierWaterLevel.LOW
-            } | init_data,
+                "water_level": HumidifierWaterLevel.LOW,
+            }
+            | init_data,
             "isEncrypted": False,
             "model": "#",
             "modelFriendlyName": "Evaporative Humidifier",
@@ -54,10 +59,12 @@ def make_advertisement_data(ble_device: BLEDevice, init_data: dict):
     )
 
 
-
 @pytest.mark.asyncio
 async def test_process_advertisement():
-    data = process_evaporative_humidifier(b"#\x00\x00\x15\x1c\x00", b"\xd4\x8cIU\x95\xb2\x08\x06\x88\xb3\x90\x81\x00X\x00X2")
+    data = process_evaporative_humidifier(
+        b"#\x00\x00\x15\x1c\x00",
+        b"\xd4\x8cIU\x95\xb2\x08\x06\x88\xb3\x90\x81\x00X\x00X2",
+    )
 
     assert data == {
         "isOn": False,
@@ -74,6 +81,7 @@ async def test_process_advertisement():
         "filter_alert": False,
         "water_level": HumidifierWaterLevel.LOW,
     }
+
 
 @pytest.mark.asyncio
 async def test_process_advertisement_empty():
@@ -118,7 +126,9 @@ async def test_turn_off():
 
 @pytest.mark.asyncio
 async def test_set_mode():
-    device = create_device_for_command_testing({"isOn": True, "mode": HumidifierMode.LOW})
+    device = create_device_for_command_testing(
+        {"isOn": True, "mode": HumidifierMode.LOW}
+    )
     device._send_command = AsyncMock(return_value=b"\x01")
 
     assert device.get_mode() is HumidifierMode.LOW
@@ -157,7 +167,9 @@ async def test_set_child_lock():
 
 @pytest.mark.asyncio
 async def test_start_drying_filter():
-    device = create_device_for_command_testing({"isOn": True, "mode": HumidifierMode.AUTO})
+    device = create_device_for_command_testing(
+        {"isOn": True, "mode": HumidifierMode.AUTO}
+    )
     device._send_command = AsyncMock(return_value=b"\x01")
 
     assert device.get_mode() is HumidifierMode.AUTO
@@ -167,7 +179,9 @@ async def test_start_drying_filter():
 
 @pytest.mark.asyncio
 async def test_stop_drying_filter():
-    device = create_device_for_command_testing({"isOn": True, "mode": HumidifierMode.DRYING_FILTER})
+    device = create_device_for_command_testing(
+        {"isOn": True, "mode": HumidifierMode.DRYING_FILTER}
+    )
     device._send_command = AsyncMock(return_value=b"\x00")
 
     assert device.is_on() is True
@@ -189,7 +203,5 @@ async def test_attributes():
     assert device.is_tilted_alert_on() is False
     assert device.get_water_level() is HumidifierWaterLevel.LOW
     assert device.get_filter_run_time() == datetime.timedelta(days=3, seconds=57600)
-    assert device.get_humidity() is 51
-    assert device.get_temperature() is 16.8
-
-
+    assert device.get_humidity() == 51
+    assert device.get_temperature() == 16.8

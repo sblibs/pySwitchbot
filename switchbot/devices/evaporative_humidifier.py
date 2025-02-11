@@ -1,5 +1,4 @@
 import logging
-import time
 from typing import Any
 
 from bleak.backends.device import BLEDevice
