@@ -6,11 +6,10 @@ import asyncio
 import binascii
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import replace
 from enum import Enum
 from typing import Any, TypeVar, cast
-from collections.abc import Callable
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from uuid import UUID
 
 import aiohttp
@@ -24,6 +23,7 @@ from bleak_retry_connector import (
     ble_device_has_changed,
     establish_connection,
 )
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from ..api_config import SWITCHBOT_APP_API_BASE_URL, SWITCHBOT_APP_CLIENT_ID
 from ..const import (
@@ -35,6 +35,7 @@ from ..const import (
     SwitchbotModel,
 )
 from ..discovery import GetSwitchbotDevices
+from ..helpers import create_background_task
 from ..models import SwitchBotAdvertisement
 
 _LOGGER = logging.getLogger(__name__)
@@ -83,7 +84,6 @@ class SwitchbotOperationError(Exception):
 
 def _sb_uuid(comms_type: str = "service") -> UUID | str:
     """Return Switchbot UUID."""
-
     _uuid = {"tx": "002", "rx": "003", "service": "d00"}
 
     if comms_type in _uuid:
@@ -169,8 +169,8 @@ class SwitchbotBaseDevice:
         session: aiohttp.ClientSession,
         subdomain: str,
         path: str,
-        data: dict = None,
-        headers: dict = None,
+        data: dict | None = None,
+        headers: dict | None = None,
     ) -> dict:
         url = f"https://{subdomain}.{SWITCHBOT_APP_API_BASE_URL}/{path}"
         async with session.post(
@@ -639,7 +639,8 @@ class SwitchbotBaseDevice:
         return result[index] in values
 
     def _update_parsed_data(self, new_data: dict[str, Any]) -> bool:
-        """Update data.
+        """
+        Update data.
 
         Returns true if data has changed and False if not.
         """
@@ -693,7 +694,8 @@ class SwitchbotBaseDevice:
 
 
 class SwitchbotDevice(SwitchbotBaseDevice):
-    """Base Representation of a Switchbot Device.
+    """
+    Base Representation of a Switchbot Device.
 
     This base class consumes the advertisement data during connection. If the device
     sends stale advertisement data while connected, use
@@ -885,7 +887,8 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
 
 
 class SwitchbotDeviceOverrideStateDuringConnection(SwitchbotBaseDevice):
-    """Base Representation of a Switchbot Device.
+    """
+    Base Representation of a Switchbot Device.
 
     This base class ignores the advertisement data during connection and uses the
     data from the device instead.
@@ -903,7 +906,8 @@ class SwitchbotDeviceOverrideStateDuringConnection(SwitchbotBaseDevice):
 
 
 class SwitchbotSequenceDevice(SwitchbotDevice):
-    """A Switchbot sequence device.
+    """
+    A Switchbot sequence device.
 
     This class must not use SwitchbotDeviceOverrideStateDuringConnection because
     it needs to know when the sequence_number has changed.
@@ -922,4 +926,4 @@ class SwitchbotSequenceDevice(SwitchbotDevice):
             new_state,
         )
         if current_state != new_state:
-            asyncio.ensure_future(self.update())
+            create_background_task(self.update())

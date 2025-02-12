@@ -39,7 +39,6 @@ class GetSwitchbotDevices:
         self, retry: int = DEFAULT_RETRY_COUNT, scan_timeout: int = DEFAULT_SCAN_TIMEOUT
     ) -> dict:
         """Find switchbot devices and their advertisement data."""
-
         devices = None
         devices = bleak.BleakScanner(
             detection_callback=self.detection_callback,
