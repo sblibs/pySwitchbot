@@ -141,17 +141,11 @@ async def test_set_mode():
     await device.set_mode(HumidifierMode.DRYING_FILTER)
     assert device.get_mode() is HumidifierMode.DRYING_FILTER
 
-    try:
+    with pytest.raises(ValueError):
         await device.set_mode(0)
-        assert False
-    except ValueError:
-        assert True
 
-    try:
+    with pytest.raises(TypeError):
         await device.set_mode(HumidifierMode.TARGET_HUMIDITY)
-        assert False
-    except TypeError:
-        assert True
 
 
 @pytest.mark.asyncio
