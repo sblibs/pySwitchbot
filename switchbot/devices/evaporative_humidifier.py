@@ -74,8 +74,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
     async def turn_on(self) -> bool:
         """Turn device on."""
         result = await self._send_command(COMMAND_TURN_ON)
-        ok = self._check_command_result(result, 0, {1})
-        if ok:
+        if ok := self._check_command_result(result, 0, {1}):
             self._override_state({"isOn": True})
             self._fire_callbacks()
         return ok
@@ -83,13 +82,14 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
     async def turn_off(self) -> bool:
         """Turn device off."""
         result = await self._send_command(COMMAND_TURN_OFF)
-        ok = self._check_command_result(result, 0, {1})
-        if ok:
+        if ok := self._check_command_result(result, 0, {1}):
             self._override_state({"isOn": False})
             self._fire_callbacks()
         return ok
 
-    async def set_mode(self, mode: HumidifierMode, target_humidity: int = None) -> None:
+    async def set_mode(
+        self, mode: HumidifierMode, target_humidity: int | None = None
+    ) -> None:
         """Set device mode."""
         if mode == HumidifierMode.DRYING_FILTER:
             return await self.start_drying_filter()
@@ -102,8 +102,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
                 raise TypeError("target_humidity is required")
             command += f"{target_humidity:02x}"
         result = await self._send_command(command)
-        ok = self._check_command_result(result, 0, {1})
-        if ok:
+        if ok := self._check_command_result(result, 0, {1}):
             self._override_state({"mode": mode})
             if mode == HumidifierMode.TARGET_HUMIDITY and target_humidity is not None:
                 self._override_state({"target_humidity": target_humidity})
@@ -115,8 +114,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
         result = await self._send_command(
             COMMAND_CHILD_LOCK_ON if enabled else COMMAND_CHILD_LOCK_OFF
         )
-        ok = self._check_command_result(result, 0, {1})
-        if ok:
+        if ok := self._check_command_result(result, 0, {1}):
             self._override_state({"child_lock": enabled})
             self._fire_callbacks()
         return ok
@@ -124,8 +122,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
     async def start_drying_filter(self):
         """Start drying filter."""
         result = await self._send_command(COMMAND_TURN_ON + "08")
-        ok = self._check_command_result(result, 0, {1})
-        if ok:
+        if ok := self._check_command_result(result, 0, {1}):
             self._override_state({"mode": HumidifierMode.DRYING_FILTER})
             self._fire_callbacks()
         return ok
@@ -133,8 +130,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
     async def stop_drying_filter(self):
         """Stop drying filter."""
         result = await self._send_command(COMMAND_TURN_OFF)
-        ok = self._check_command_result(result, 0, {0})
-        if ok:
+        if ok := self._check_command_result(result, 0, {0}):
             self._override_state({"isOn": False, "mode": None})
             self._fire_callbacks()
         return ok
