@@ -92,19 +92,15 @@ class HumidifierWaterLevel(Enum):
     HIGH = 3
 
 
-OVER_HUMIDIFY_PROTECTION_MODES = set(
-    [
-        HumidifierMode.QUIET,
-        HumidifierMode.LOW,
-        HumidifierMode.MEDIUM,
-        HumidifierMode.HIGH,
-    ]
-)
+OVER_HUMIDIFY_PROTECTION_MODES = {
+    HumidifierMode.QUIET,
+    HumidifierMode.LOW,
+    HumidifierMode.MEDIUM,
+    HumidifierMode.HIGH,
+}
 
 
-TARGET_HUMIDITY_MODES = set(
-    [
-        HumidifierMode.SLEEP,
-        HumidifierMode.TARGET_HUMIDITY,
-    ]
-)
+TARGET_HUMIDITY_MODES = {
+    HumidifierMode.SLEEP,
+    HumidifierMode.TARGET_HUMIDITY,
+}

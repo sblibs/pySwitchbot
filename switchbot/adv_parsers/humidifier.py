@@ -6,10 +6,10 @@ import logging
 from datetime import timedelta
 
 from ..const import (
-    HumidifierMode,
-    HumidifierWaterLevel,
     OVER_HUMIDIFY_PROTECTION_MODES,
     TARGET_HUMIDITY_MODES,
+    HumidifierMode,
+    HumidifierWaterLevel,
 )
 
 _LOGGER = logging.getLogger(__name__)
