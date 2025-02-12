@@ -3,7 +3,7 @@ from typing import Any
 
 from bleak.backends.device import BLEDevice
 
-from ..const import SwitchbotModel, HumidifierMode, HumidifierWaterLevel
+from ..const import HumidifierMode, HumidifierWaterLevel, SwitchbotModel
 from ..models import SwitchBotAdvertisement
 from .device import SwitchbotEncryptedDevice
 

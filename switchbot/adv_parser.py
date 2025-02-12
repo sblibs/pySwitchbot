@@ -17,8 +17,7 @@ from .adv_parsers.ceiling_light import process_woceiling
 from .adv_parsers.contact import process_wocontact
 from .adv_parsers.curtain import process_wocurtain
 from .adv_parsers.hub2 import process_wohub2
-from .adv_parsers.humidifier import process_wohumidifier
-from .adv_parsers.humidifier import process_evaporative_humidifier
+from .adv_parsers.humidifier import process_evaporative_humidifier, process_wohumidifier
 from .adv_parsers.keypad import process_wokeypad
 from .adv_parsers.leak import process_leak
 from .adv_parsers.light_strip import process_wostrip

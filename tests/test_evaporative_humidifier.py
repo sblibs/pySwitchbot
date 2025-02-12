@@ -1,12 +1,12 @@
+import datetime
 from unittest.mock import AsyncMock
 
 import pytest
-import datetime
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
 from switchbot.adv_parsers.humidifier import process_evaporative_humidifier
-from switchbot.const import HumidifierWaterLevel, HumidifierMode
+from switchbot.const import HumidifierMode, HumidifierWaterLevel
 from switchbot.devices import evaporative_humidifier
 
 from .test_adv_parser import generate_ble_device
@@ -27,7 +27,6 @@ def create_device_for_command_testing(init_data: dict = {}):
 
 def make_advertisement_data(ble_device: BLEDevice, init_data: dict):
     """Set advertisement data with defaults."""
-
     return SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
