@@ -12,7 +12,7 @@ from switchbot.devices import evaporative_humidifier
 from .test_adv_parser import generate_ble_device
 
 
-def create_device_for_command_testing(init_data: dict = {}):
+def create_device_for_command_testing(init_data: dict | None = None):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     evaporative_humidifier_device = (
         evaporative_humidifier.SwitchbotEvaporativeHumidifier(
@@ -25,7 +25,9 @@ def create_device_for_command_testing(init_data: dict = {}):
     return evaporative_humidifier_device
 
 
-def make_advertisement_data(ble_device: BLEDevice, init_data: dict):
+def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None):
+    if init_data is None:
+        init_data = {}
     """Set advertisement data with defaults."""
     return SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
