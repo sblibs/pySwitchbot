@@ -29,7 +29,6 @@ def make_advertisement_data(
     ble_device: BLEDevice, in_motion: bool, position: int, calibration: bool = True
 ):
     """Set advertisement data with defaults."""
-
     return SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={

@@ -33,7 +33,6 @@ class SwitchbotBaseCover(SwitchbotDevice):
 
     def __init__(self, reverse: bool, *args: Any, **kwargs: Any) -> None:
         """Switchbot Cover device constructor."""
-
         super().__init__(*args, **kwargs)
         self._reverse = reverse
         self._settings: dict[str, Any] = {}
@@ -43,7 +42,8 @@ class SwitchbotBaseCover(SwitchbotDevice):
         self._is_closing: bool = False
 
     async def _send_multiple_commands(self, keys: list[str]) -> bool:
-        """Send multiple commands to device.
+        """
+        Send multiple commands to device.
 
         Since we current have no way to tell which command the device
         needs we send both.
@@ -84,7 +84,6 @@ class SwitchbotBaseCover(SwitchbotDevice):
 
     async def get_extended_info_adv(self) -> dict[str, Any] | None:
         """Get advance page info for device chain."""
-
         _data = await self._send_command(key=COVER_EXT_ADV_KEY)
         if not _data:
             _LOGGER.error("%s: Unsuccessful, no result from device", self.name)

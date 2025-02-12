@@ -7,7 +7,6 @@ def process_woblindtilt(
     data: bytes | None, mfr_data: bytes | None, reverse: bool = False
 ) -> dict[str, bool | int]:
     """Process woBlindTilt services data."""
-
     if mfr_data is None:
         return {}
 
