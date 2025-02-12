@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import time
 from abc import abstractmethod
 from typing import Any
 
+from ..helpers import create_background_task
 from ..models import SwitchBotAdvertisement
 from .device import ColorMode, SwitchbotDevice
 
@@ -106,4 +106,4 @@ class SwitchbotSequenceBaseLight(SwitchbotBaseLight):
             new_state,
         )
         if current_state != new_state:
-            asyncio.ensure_future(self.update())
+            create_background_task(self.update())

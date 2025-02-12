@@ -20,7 +20,6 @@ def create_device_for_command_testing(calibration=True, reverse_mode=False):
 
 def make_advertisement_data(ble_device: BLEDevice):
     """Set advertisement data with defaults."""
-
     return SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={

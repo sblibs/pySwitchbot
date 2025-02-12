@@ -38,7 +38,6 @@ class SwitchbotCurtain(SwitchbotBaseCover):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Switchbot Curtain/WoCurtain constructor."""
-
         # The position of the curtain is saved returned with 0 = open and 100 = closed.
         # This is independent of the calibration of the curtain bot (Open left to right/
         # Open right to left/Open from the middle).
