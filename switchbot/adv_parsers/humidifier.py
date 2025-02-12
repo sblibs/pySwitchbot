@@ -5,7 +5,12 @@ from __future__ import annotations
 import logging
 from datetime import timedelta
 
-from ..const import HumidifierMode, HumidifierWaterLevel
+from ..const import (
+    HumidifierMode,
+    HumidifierWaterLevel,
+    OVER_HUMIDIFY_PROTECTION_MODES,
+    TARGET_HUMIDITY_MODES,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,18 +72,11 @@ def process_evaporative_humidifier(
         "isOn": is_on,
         "mode": mode if is_on else None,
         "target_humidity": (mfr_data[16] & 0b01111111)
-        if is_on and mode in [HumidifierMode.SLEEP, HumidifierMode.TARGET_HUMIDITY]
+        if is_on and mode in TARGET_HUMIDITY_MODES
         else None,
         "child_lock": bool(mfr_data[8] & 0b00100000),
         "over_humidify_protection": bool(mfr_data[8] & 0b10000000)
-        if is_on
-        and mode
-        in [
-            HumidifierMode.QUIET,
-            HumidifierMode.LOW,
-            HumidifierMode.MEDIUM,
-            HumidifierMode.HIGH,
-        ]
+        if is_on and mode in OVER_HUMIDIFY_PROTECTION_MODES
         else None,
         "tank_removed": is_tank_removed,
         "tilted_alert": bool(mfr_data[8] & 0b00000010),

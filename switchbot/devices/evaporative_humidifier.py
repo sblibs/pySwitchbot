@@ -3,7 +3,12 @@ from typing import Any
 
 from bleak.backends.device import BLEDevice
 
-from ..const import HumidifierMode, HumidifierWaterLevel, SwitchbotModel
+from ..const import (
+    HumidifierMode,
+    HumidifierWaterLevel,
+    SwitchbotModel,
+    TARGET_HUMIDITY_MODES,
+)
 from ..models import SwitchBotAdvertisement
 from .device import SwitchbotEncryptedDevice
 
@@ -97,7 +102,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
             raise ValueError("Invalid mode")
 
         command = COMMAND_SET_MODE + MODES_COMMANDS[mode]
-        if mode in [HumidifierMode.TARGET_HUMIDITY, HumidifierMode.SLEEP]:
+        if mode in TARGET_HUMIDITY_MODES:
             if target_humidity is None:
                 raise TypeError("target_humidity is required")
             command += f"{target_humidity:02x}"
