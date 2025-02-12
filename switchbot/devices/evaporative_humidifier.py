@@ -30,7 +30,7 @@ MODES_COMMANDS = {
     HumidifierMode.LOW: "010300",
     HumidifierMode.QUIET: "010400",
     HumidifierMode.TARGET_HUMIDITY: "0200",
-    HumidifierMode.SLEEP: "030000",
+    HumidifierMode.SLEEP: "0300",
     HumidifierMode.AUTO: "040000",
 }
 
