@@ -5,8 +5,9 @@ from typing import Any
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
-from switchbot import LockStatus, SwitchbotModel
+from switchbot import SwitchbotModel
 from switchbot.adv_parser import parse_advertisement_data
+from switchbot.const.lock import LockStatus
 from switchbot.models import SwitchBotAdvertisement
 
 ADVERTISEMENT_DATA_DEFAULTS = {

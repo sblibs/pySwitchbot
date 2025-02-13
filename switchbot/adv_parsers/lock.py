@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from ..const import LockStatus
+from ..const.lock import LockStatus
 
 _LOGGER = logging.getLogger(__name__)
 
