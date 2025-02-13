@@ -94,7 +94,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
 
     async def set_mode(
         self, mode: HumidifierMode, target_humidity: int | None = None
-    ) -> None:
+    ) -> bool:
         """Set device mode."""
         if mode == HumidifierMode.DRYING_FILTER:
             return await self.start_drying_filter()
@@ -114,7 +114,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
             self._fire_callbacks()
         return ok
 
-    async def set_child_lock(self, enabled: bool) -> None:
+    async def set_child_lock(self, enabled: bool) -> bool:
         """Set child lock."""
         result = await self._send_command(
             COMMAND_CHILD_LOCK_ON if enabled else COMMAND_CHILD_LOCK_OFF
