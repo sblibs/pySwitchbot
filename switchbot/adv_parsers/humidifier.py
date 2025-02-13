@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import timedelta
 
-from ..const import (
+from ..const.evaporative_humidifier import (
     OVER_HUMIDIFY_PROTECTION_MODES,
     TARGET_HUMIDITY_MODES,
     HumidifierMode,

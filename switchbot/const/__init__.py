@@ -1,10 +1,10 @@
-"""Library to handle connection with Switchbot."""
+"""Switchbot Device Consts Library."""
 
 from __future__ import annotations
 
 from enum import Enum
 
-from .enum import StrEnum
+from ..enum import StrEnum
 
 DEFAULT_RETRY_COUNT = 3
 DEFAULT_RETRY_TIMEOUT = 1
@@ -72,35 +72,3 @@ class LockStatus(Enum):
     LOCKING_STOP = 4  # LOCKING_BLOCKED
     UNLOCKING_STOP = 5  # UNLOCKING_BLOCKED
     NOT_FULLY_LOCKED = 6  # LATCH_LOCKED - Only EU lock type
-
-
-class HumidifierMode(Enum):
-    HIGH = 1
-    MEDIUM = 2
-    LOW = 3
-    QUIET = 4
-    TARGET_HUMIDITY = 5
-    SLEEP = 6
-    AUTO = 7
-    DRYING_FILTER = 8
-
-
-class HumidifierWaterLevel(Enum):
-    EMPTY = 0
-    LOW = 1
-    MEDIUM = 2
-    HIGH = 3
-
-
-OVER_HUMIDIFY_PROTECTION_MODES = {
-    HumidifierMode.QUIET,
-    HumidifierMode.LOW,
-    HumidifierMode.MEDIUM,
-    HumidifierMode.HIGH,
-}
-
-
-TARGET_HUMIDITY_MODES = {
-    HumidifierMode.SLEEP,
-    HumidifierMode.TARGET_HUMIDITY,
-}

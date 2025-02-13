@@ -6,7 +6,7 @@ from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
 from switchbot.adv_parsers.humidifier import process_evaporative_humidifier
-from switchbot.const import HumidifierMode, HumidifierWaterLevel
+from switchbot.const.evaporative_humidifier import HumidifierMode, HumidifierWaterLevel
 from switchbot.devices import evaporative_humidifier
 
 from .test_adv_parser import generate_ble_device

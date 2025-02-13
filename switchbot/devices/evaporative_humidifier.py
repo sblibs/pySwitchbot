@@ -3,11 +3,11 @@ from typing import Any
 
 from bleak.backends.device import BLEDevice
 
-from ..const import (
+from ..const import SwitchbotModel
+from ..const.evaporative_humidifier import (
     TARGET_HUMIDITY_MODES,
     HumidifierMode,
     HumidifierWaterLevel,
-    SwitchbotModel,
 )
 from ..models import SwitchBotAdvertisement
 from .device import SwitchbotEncryptedDevice
