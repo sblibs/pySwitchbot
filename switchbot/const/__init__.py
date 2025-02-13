@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from enum import Enum
-
 from ..enum import StrEnum
+
+# Preserve old LockStatus export for backwards compatibility
+from .lock import LockStatus as LockStatus
 
 DEFAULT_RETRY_COUNT = 3
 DEFAULT_RETRY_TIMEOUT = 1
@@ -62,13 +63,3 @@ class SwitchbotModel(StrEnum):
     RELAY_SWITCH_1 = "Relay Switch 1"
     REMOTE = "WoRemote"
     EVAPORATIVE_HUMIDIFIER = "Evaporative Humidifier"
-
-
-class LockStatus(Enum):
-    LOCKED = 0
-    UNLOCKED = 1
-    LOCKING = 2
-    UNLOCKING = 3
-    LOCKING_STOP = 4  # LOCKING_BLOCKED
-    UNLOCKING_STOP = 5  # UNLOCKING_BLOCKED
-    NOT_FULLY_LOCKED = 6  # LATCH_LOCKED - Only EU lock type
