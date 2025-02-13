@@ -7,7 +7,12 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="PySwitchbot",
-    packages=["switchbot", "switchbot.devices", "switchbot.const", "switchbot.adv_parsers"],
+    packages=[
+        "switchbot",
+        "switchbot.devices",
+        "switchbot.const",
+        "switchbot.adv_parsers",
+    ],
     install_requires=[
         "aiohttp>=3.9.5",
         "bleak>=0.19.0",
