@@ -8,7 +8,8 @@ from typing import Any
 
 from bleak.backends.device import BLEDevice
 
-from ..const import LockStatus, SwitchbotModel
+from ..const import SwitchbotModel
+from ..const.lock import LockStatus
 from .device import SwitchbotEncryptedDevice
 
 COMMAND_HEADER = "57"
