@@ -131,6 +131,12 @@ class GetSwitchbotDevices:
         """Return all WoKeypad/Keypad devices with services data."""
         return await self._get_devices_by_model("y")
 
+    async def get_humidifiers(self) -> dict[str, SwitchBotAdvertisement]:
+        """Return all humidifier devices with services data."""
+        humidifiers = await self._get_devices_by_model("e")
+        evaporative_humidifiers = await self._get_devices_by_model("#")
+        return {**humidifiers, **evaporative_humidifiers}
+
     async def get_device_data(
         self, address: str
     ) -> dict[str, SwitchBotAdvertisement] | None:

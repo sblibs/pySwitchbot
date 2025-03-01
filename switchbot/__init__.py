@@ -23,6 +23,7 @@ from .devices.bulb import SwitchbotBulb
 from .devices.ceiling_light import SwitchbotCeilingLight
 from .devices.curtain import SwitchbotCurtain
 from .devices.device import ColorMode, SwitchbotDevice, SwitchbotEncryptedDevice
+from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
 from .devices.humidifier import SwitchbotHumidifier
 from .devices.light_strip import SwitchbotLightStrip
 from .devices.lock import SwitchbotLock
@@ -37,6 +38,7 @@ __all__ = [
     "LockStatus",
     "SwitchBotAdvertisement",
     "Switchbot",
+    "Switchbot",
     "SwitchbotAccountConnectionError",
     "SwitchbotApiError",
     "SwitchbotAuthenticationError",
@@ -47,12 +49,16 @@ __all__ = [
     "SwitchbotCurtain",
     "SwitchbotDevice",
     "SwitchbotEncryptedDevice",
+    "SwitchbotEvaporativeHumidifier",
     "SwitchbotHumidifier",
     "SwitchbotLightStrip",
     "SwitchbotLock",
     "SwitchbotModel",
+    "SwitchbotModel",
+    "SwitchbotPlugMini",
     "SwitchbotPlugMini",
     "SwitchbotRelaySwitch",
+    "SwitchbotSupportedType",
     "SwitchbotSupportedType",
     "close_stale_connections",
     "close_stale_connections_by_address",
