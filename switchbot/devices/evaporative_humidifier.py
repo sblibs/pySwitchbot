@@ -23,6 +23,7 @@ COMMAND_CHILD_LOCK_OFF = f"{COMMAND_HEADER}0f430500"
 COMMAND_AUTO_DRY_ON = f"{COMMAND_HEADER}0f430a01"
 COMMAND_AUTO_DRY_OFF = f"{COMMAND_HEADER}0f430a02"
 COMMAND_SET_MODE = f"{COMMAND_HEADER}0f4302"
+COMMAND_GET_BASIC_INFO = f"{COMMAND_HEADER}000300"
 
 MODES_COMMANDS = {
     HumidifierMode.HIGH: "010100",
@@ -72,9 +73,27 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
             advertisement,
         )
 
+    async def _get_basic_info(self) -> bytes | None:
+        """Return basic info of device."""
+        _data = await self._send_command(
+            key=COMMAND_GET_BASIC_INFO, retry=self._retry_count
+        )
+
+        if _data in (b"\x07", b"\x00"):
+            _LOGGER.error("Unsuccessful, please try again")
+            return None
+
+        return _data
+
     async def get_basic_info(self) -> dict[str, Any] | None:
-        """Currently unknown command"""
-        return None
+        """Get device basic settings."""
+        if not (_data := await self._get_basic_info()):
+            return None
+
+        # Not 100% sure about this data, will verify once a firmware update is available
+        return {
+            "firmware": _data[2] / 10.0,
+        }
 
     async def turn_on(self) -> bool:
         """Turn device on."""
