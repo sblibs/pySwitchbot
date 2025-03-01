@@ -41,6 +41,8 @@ SERVICE_DATA_ORDER = (
 )
 MFR_DATA_ORDER = (2409, 741, 89)
 
+APPLE_MANUFACTURER_ID = 76
+
 
 class SwitchbotSupportedType(TypedDict):
     """Supported type of Switchbot."""
@@ -248,10 +250,14 @@ def parse_advertisement_data(
 
     _mfr_data = None
     _mfr_id = None
+    manufacturer_data = advertisement_data.manufacturer_data
+    if APPLE_MANUFACTURER_ID in manufacturer_data:
+        return None
+
     for mfr_id in MFR_DATA_ORDER:
-        if mfr_id in advertisement_data.manufacturer_data:
+        if mfr_id in manufacturer_data:
             _mfr_id = mfr_id
-            _mfr_data = advertisement_data.manufacturer_data[mfr_id]
+            _mfr_data = manufacturer_data[mfr_id]
             break
 
     if _mfr_data is None and _service_data is None:

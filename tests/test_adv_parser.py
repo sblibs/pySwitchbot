@@ -1970,3 +1970,28 @@ def test_remote_passive() -> None:
         rssi=-97,
         active=False,
     )
+
+
+def test_parse_advertisement_ignores_devices_with_apple_manufacturer_id():
+    """Test parse_advertisement_data ignores devices with apple manufacturer id."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        local_name="WoCurtain",
+        manufacturer_data={
+            89: b"\xcc\xf4\xc4\xf9\xacl",
+            2409: b"\xcc\xf4\xc4\xf9\xacl\xe2\x0f\x00\x12\x04",
+            76: b"\x10",
+        },
+        service_data={
+            "00000d00-0000-1000-8000-00805f9b34fb": b"c\xd0Yd\x11\x04",
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"c\xc0d\x00\x12\x04",
+        },
+        service_uuids=[
+            "00001800-0000-1000-8000-00805f9b34fb",
+            "00001801-0000-1000-8000-00805f9b34fb",
+            "cba20d00-224d-11e6-9fb8-0002a5d5c51b",
+        ],
+        rssi=-2,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result is None
