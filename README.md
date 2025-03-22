@@ -20,18 +20,34 @@ If authentication succeeds then script should output your key id and encryption 
 Examples:
 
 - WoLock
-
-```python
+Statux:
+```
 import asyncio
 from switchbot.discovery import GetSwitchbotDevices
 from switchbot.devices import lock
-
-
 async def main():
     wolock = await GetSwitchbotDevices().get_locks()
-    await lock.SwitchbotLock(wolock['32C0F607-18B8-xxxx-xxxx-xxxxxxxxxx'].device, "key-id", "encryption-key").get_lock_status()
-
-
+    print()
+    print(wolock)
 asyncio.run(main())
-
+```
+Unlock:
+```
+import asyncio
+from switchbot.discovery import GetSwitchbotDevices
+from switchbot.devices import lock
+async def main():
+    wolock = await GetSwitchbotDevices().get_locks()
+    await lock.SwitchbotLock(wolock['"<ble-mac>").'].device, "<key-id>", "<encryption-key>").unlock()
+asyncio.run(main())
+```
+Lock:
+```
+import asyncio
+from switchbot.discovery import GetSwitchbotDevices
+from switchbot.devices import lock
+async def main():
+    wolock = await GetSwitchbotDevices().get_locks()
+    await lock.SwitchbotLock(wolock['"<ble-mac>").'].device, "<key-id>", "<encryption-key>").lock()
+asyncio.run(main())
 ```
