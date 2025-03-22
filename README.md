@@ -22,6 +22,7 @@ Examples:
 - WoLock
 
 Status:
+
 ```python
 import asyncio
 from switchbot.discovery import GetSwitchbotDevices
@@ -32,7 +33,9 @@ async def main():
     print(wolock)
 asyncio.run(main())
 ```
+
 Unlock:
+
 ```python
 import asyncio
 from switchbot.discovery import GetSwitchbotDevices
@@ -42,7 +45,9 @@ async def main():
     await lock.SwitchbotLock(wolock['"<ble-mac>").'].device, "<key-id>", "<encryption-key>").unlock()
 asyncio.run(main())
 ```
+
 Lock:
+
 ```python
 import asyncio
 from switchbot.discovery import GetSwitchbotDevices
