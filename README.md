@@ -20,8 +20,9 @@ If authentication succeeds then script should output your key id and encryption 
 Examples:
 
 - WoLock
-Statux:
-```
+
+Status:
+```python
 import asyncio
 from switchbot.discovery import GetSwitchbotDevices
 from switchbot.devices import lock
@@ -32,7 +33,7 @@ async def main():
 asyncio.run(main())
 ```
 Unlock:
-```
+```python
 import asyncio
 from switchbot.discovery import GetSwitchbotDevices
 from switchbot.devices import lock
@@ -42,7 +43,7 @@ async def main():
 asyncio.run(main())
 ```
 Lock:
-```
+```python
 import asyncio
 from switchbot.discovery import GetSwitchbotDevices
 from switchbot.devices import lock
