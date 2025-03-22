@@ -21,17 +21,39 @@ Examples:
 
 - WoLock
 
+Status:
+
 ```python
 import asyncio
 from switchbot.discovery import GetSwitchbotDevices
 from switchbot.devices import lock
-
-
 async def main():
     wolock = await GetSwitchbotDevices().get_locks()
-    await lock.SwitchbotLock(wolock['32C0F607-18B8-xxxx-xxxx-xxxxxxxxxx'].device, "key-id", "encryption-key").get_lock_status()
-
-
+    print()
+    print(wolock)
 asyncio.run(main())
+```
 
+Unlock:
+
+```python
+import asyncio
+from switchbot.discovery import GetSwitchbotDevices
+from switchbot.devices import lock
+async def main():
+    wolock = await GetSwitchbotDevices().get_locks()
+    await lock.SwitchbotLock(wolock['"<ble-mac>").'].device, "<key-id>", "<encryption-key>").unlock()
+asyncio.run(main())
+```
+
+Lock:
+
+```python
+import asyncio
+from switchbot.discovery import GetSwitchbotDevices
+from switchbot.devices import lock
+async def main():
+    wolock = await GetSwitchbotDevices().get_locks()
+    await lock.SwitchbotLock(wolock['"<ble-mac>").'].device, "<key-id>", "<encryption-key>").lock()
+asyncio.run(main())
 ```
