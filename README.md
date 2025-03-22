@@ -62,7 +62,7 @@ async def main():
 
     await curtain_device.set_position(100)
 
-    
+
 if __name__ == "__main__":
     asyncio.run(main())
 ```
