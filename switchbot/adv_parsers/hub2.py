@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..const.hub2 import LIGHT_INTENSITY_MAP
+
 
 def process_wohub2(data: bytes | None, mfr_data: bytes | None) -> dict[str, Any]:
     """Process woHub2 sensor manufacturer data."""
@@ -49,30 +51,4 @@ def calculate_light_intensity(light_level: int) -> int:
     Returns:
         Corresponding light intensity value or 0 if invalid input
     """
-    light_map = {
-        1: 0,
-        2: 10,
-        3: 20,
-        4: 30,
-        5: 40,
-        6: 50,
-        7: 60,
-        8: 70,
-        9: 80,
-        10: 90,
-        11: 105,
-        12: 205,
-        13: 317,
-        14: 416,
-        15: 510,
-        16: 610,
-        17: 707,
-        18: 801,
-        19: 897,
-        20: 1023,
-        21: 1091,
-    }
-
-    if not isinstance(light_level, int) or light_level < 1 or light_level > 21:
-        return 0
-    return light_map[light_level]
+    return LIGHT_INTENSITY_MAP.get(max(0, min(light_level, 21)), 0)
