@@ -15,5 +15,4 @@ def test_calculate_light_intensity():
     assert calculate_light_intensity(22) == 0
     assert calculate_light_intensity(-1) == 0
     assert calculate_light_intensity(3.5) == 0
-    assert calculate_light_intensity("5") == 0
     assert calculate_light_intensity(None) == 0

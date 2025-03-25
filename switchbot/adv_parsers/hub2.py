@@ -51,4 +51,6 @@ def calculate_light_intensity(light_level: int) -> int:
     Returns:
         Corresponding light intensity value or 0 if invalid input
     """
-    return LIGHT_INTENSITY_MAP.get(max(0, min(light_level, 21)), 0)
+    if not light_level:
+        return 0
+    return LIGHT_INTENSITY_MAP.get(max(0, min(light_level, 22)), 0)
