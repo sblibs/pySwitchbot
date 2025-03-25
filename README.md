@@ -40,7 +40,6 @@ asyncio.run(main())
 ```python
 import asyncio
 from pprint import pprint
-
 from switchbot import GetSwitchbotDevices
 from switchbot.devices import curtain
 
@@ -51,15 +50,16 @@ async def main():
 
     for i in advertisement_data.values():
         pprint(i)
-        print() # print newline so that devices' data is separated visually
+        print()  # print newline so that devices' data is separated visually
 
+    # find your device's BLE address by inspecting the above printed debug logs, example below
+    ble_address = "9915077C-C6FD-5FF6-27D3-45087898790B"
     # get the BLE device (via its address) and construct a curtain device
-    ble_device = advertisement_data["9915077C-C6FD-5FF6-27D3-45087898790B"].device
+    ble_device = advertisement_data[ble_address].device
     curtain_device = curtain.SwitchbotCurtain(ble_device, reverse_mode=False)
 
     pprint(await curtain_device.get_device_data())
     pprint(await curtain_device.get_basic_info())
-
     await curtain_device.set_position(100)
 
 
