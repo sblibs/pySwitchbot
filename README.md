@@ -27,10 +27,14 @@ Status:
 import asyncio
 from switchbot.discovery import GetSwitchbotDevices
 from switchbot.devices import lock
+
+
 async def main():
     wolock = await GetSwitchbotDevices().get_locks()
     print()
     print(wolock)
+
+
 asyncio.run(main())
 ```
 
@@ -40,9 +44,15 @@ Unlock:
 import asyncio
 from switchbot.discovery import GetSwitchbotDevices
 from switchbot.devices import lock
+
+
 async def main():
     wolock = await GetSwitchbotDevices().get_locks()
-    await lock.SwitchbotLock(wolock["<ble-mac>"].device, "<key-id>", "<encryption-key>").unlock()
+    await lock.SwitchbotLock(
+        wolock[BLE_MAC].device, KEY_ID, ENCRYPTION_KEY
+    ).unlock()
+
+
 asyncio.run(main())
 ```
 
@@ -52,8 +62,14 @@ Lock:
 import asyncio
 from switchbot.discovery import GetSwitchbotDevices
 from switchbot.devices import lock
+
+
 async def main():
     wolock = await GetSwitchbotDevices().get_locks()
-    await lock.SwitchbotLock(wolock["<ble-mac>"].device, "<key-id>", "<encryption-key>").lock()
+    await lock.SwitchbotLock(
+        wolock[BLE_MAC].device, KEY_ID, ENCRYPTION_KEY
+    ).lock()
+
+
 asyncio.run(main())
 ```
