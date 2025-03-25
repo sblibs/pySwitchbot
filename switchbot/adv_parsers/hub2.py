@@ -73,9 +73,6 @@ def calculate_light_intensity(light_level: int) -> int:
         21: 1091,
     }
 
-    try:
-        if not isinstance(light_level, int) or light_level < 1 or light_level > 21:
-            return 0
-        return light_map[light_level]
-    except Exception:
+    if not isinstance(light_level, int) or light_level < 1 or light_level > 21:
         return 0
+    return light_map[light_level]
