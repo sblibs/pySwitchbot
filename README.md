@@ -10,8 +10,8 @@ Usage:
 
 ```shell
 $ python3 get_encryption_key.py MAC USERNAME
-Key ID: xx
-Encryption key: xxxxxxxxxxxxxxxx
+Key ID: XX
+Encryption key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 Where `MAC` is MAC address of the lock and `USERNAME` is your SwitchBot account username, after that script will ask for your password.
@@ -19,7 +19,7 @@ If authentication succeeds then script should output your key id and encryption 
 
 Examples:
 
-- WoLock
+- Lock-Pro
 
 Status:
 
@@ -44,12 +44,16 @@ Unlock:
 import asyncio
 from switchbot.discovery import GetSwitchbotDevices
 from switchbot.devices import lock
+from switchbot.const import SwitchbotModel
 
+BLE_MAC="XX:XX:XX:XX:XX:XX" # The MAC of your lock
+KEY_ID="XX" # The key-ID of your encryption-key for your lock
+ENCRYPTION_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" # The encryption-key with key-ID "XX"
 
 async def main():
     wolock = await GetSwitchbotDevices().get_locks()
     await lock.SwitchbotLock(
-        wolock[BLE_MAC].device, KEY_ID, ENCRYPTION_KEY
+        wolock[BLE_MAC].device, KEY_ID, ENCRYPTION_KEY, model=SwitchbotModel.LOCK_PRO
     ).unlock()
 
 
@@ -62,12 +66,16 @@ Lock:
 import asyncio
 from switchbot.discovery import GetSwitchbotDevices
 from switchbot.devices import lock
+from switchbot.const import SwitchbotModel
 
+BLE_MAC="XX:XX:XX:XX:XX:XX" # The MAC of your lock
+KEY_ID="XX" # The key-ID of your encryption-key for your lock
+ENCRYPTION_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" # The encryption-key with key-ID "XX"
 
 async def main():
     wolock = await GetSwitchbotDevices().get_locks()
     await lock.SwitchbotLock(
-        wolock[BLE_MAC].device, KEY_ID, ENCRYPTION_KEY
+        wolock[BLE_MAC].device, KEY_ID, ENCRYPTION_KEY, model=SwitchbotModel.LOCK_PRO
     ).lock()
 
 
