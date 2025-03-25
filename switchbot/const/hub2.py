@@ -1,4 +1,9 @@
-# Lux measurement for each light level
+"""
+Mapping of light levels to lux measurement values for SwitchBot Hub 2.
+
+Source: After-sales consultation, line chart data provided by switchbot developers
+"""
+
 LIGHT_INTENSITY_MAP = {
     1: 0,
     2: 10,
