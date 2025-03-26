@@ -947,6 +947,7 @@ def test_wohub2_passive_and_active():
                 "fahrenheit": False,
                 "humidity": 50,
                 "lightLevel": 2,
+                "illuminance": 10,
                 "temp": {"c": 26.7, "f": 80.06},
                 "temperature": 26.7,
             },

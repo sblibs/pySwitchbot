@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..const.hub2 import LIGHT_INTENSITY_MAP
+
 
 def process_wohub2(data: bytes | None, mfr_data: bytes | None) -> dict[str, Any]:
     """Process woHub2 sensor manufacturer data."""
@@ -35,6 +37,20 @@ def process_wohub2(data: bytes | None, mfr_data: bytes | None) -> dict[str, Any]
         "fahrenheit": bool(temp_data[2] & 0b10000000),
         "humidity": humidity,
         "lightLevel": light_level,
+        "illuminance": calculate_light_intensity(light_level),
     }
 
     return _wohub2_data
+
+
+def calculate_light_intensity(light_level: int) -> int:
+    """
+    Convert Hub 2 light level (1-21) to actual light intensity value
+    Args:
+        light_level: Integer from 1-21
+    Returns:
+        Corresponding light intensity value or 0 if invalid input
+    """
+    if not light_level:
+        return 0
+    return LIGHT_INTENSITY_MAP.get(max(0, min(light_level, 22)), 0)
