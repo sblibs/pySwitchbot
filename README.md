@@ -32,12 +32,13 @@ from switchbot.const import SwitchbotModel
 BLE_MAC="XX:XX:XX:XX:XX:XX" # The MAC of your lock
 KEY_ID="XX" # The key-ID of your encryption-key for your lock
 ENC_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" # The encryption-key with key-ID "XX"
+LOCK_MODEL=SwitchbotModel.LOCK_PRO # Your lock model (here we use the Lock-Pro)
 
 
 async def main():
     wolock = await GetSwitchbotDevices().get_locks()
     await lock.SwitchbotLock(
-        wolock[BLE_MAC].device, KEY_ID, ENCRYPTION_KEY, model=SwitchbotModel.LOCK_PRO
+        wolock[BLE_MAC].device, KEY_ID, ENCRYPTION_KEY, model=LOCK_MODEL
     ).unlock()
 
 
@@ -55,12 +56,13 @@ from switchbot.const import SwitchbotModel
 BLE_MAC="XX:XX:XX:XX:XX:XX" # The MAC of your lock
 KEY_ID="XX" # The key-ID of your encryption-key for your lock
 ENC_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" # The encryption-key with key-ID "XX"
+LOCK_MODEL=SwitchbotModel.LOCK_PRO # Your lock model (here we use the Lock-Pro)
 
 
 async def main():
     wolock = await GetSwitchbotDevices().get_locks()
     await lock.SwitchbotLock(
-        wolock[BLE_MAC].device, KEY_ID, ENCRYPTION_KEY, model=SwitchbotModel.LOCK_PRO
+        wolock[BLE_MAC].device, KEY_ID, ENCRYPTION_KEY, model=LOCK_MODEL
     ).lock()
 
 
