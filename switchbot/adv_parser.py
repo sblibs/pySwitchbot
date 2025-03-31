@@ -30,6 +30,8 @@ from .adv_parsers.relay_switch import (
     process_worelay_switch_1pm,
 )
 from .adv_parsers.remote import process_woremote
+from .adv_parsers.roller_shade import process_worollershade
+from .adv_parsers.hubmini_matter import process_hubmini_matter
 from .const import SwitchbotModel
 from .models import SwitchBotAdvertisement
 
@@ -216,6 +218,18 @@ SUPPORTED_TYPES: dict[str, SwitchbotSupportedType] = {
         "func": process_woremote,
         "manufacturer_id": 89,
     },
+    ",": {
+        "modelName": SwitchbotModel.ROLLER_SHADE,
+        "modelFriendlyName": "Roller Shade",
+        "func": process_worollershade,
+        "manufacturer_id": 2409,  
+    },
+     "%": {
+        "modelName": SwitchbotModel.HUBMINI_MATTER,
+        "modelFriendlyName": "HubMini Matter",
+        "func": process_hubmini_matter,
+        "manufacturer_id": 2409,
+    },   
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {

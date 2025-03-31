@@ -63,3 +63,5 @@ class SwitchbotModel(StrEnum):
     RELAY_SWITCH_1 = "Relay Switch 1"
     REMOTE = "WoRemote"
     EVAPORATIVE_HUMIDIFIER = "Evaporative Humidifier"
+    ROLLER_SHADE = "Roller Shade"
+    HUBMINI_MATTER = "HubMini Matter"

@@ -111,7 +111,8 @@ class GetSwitchbotDevices:
         plus_meters = await self._get_devices_by_model("i")
         io_meters = await self._get_devices_by_model("w")
         hub2_meters = await self._get_devices_by_model("v")
-        return {**base_meters, **plus_meters, **io_meters, **hub2_meters}
+        hubmini_matter_meters = await self._get_devices_by_model("%")
+        return {**base_meters, **plus_meters, **io_meters, **hub2_meters, **hubmini_matter_meters}
 
     async def get_contactsensors(self) -> dict[str, SwitchBotAdvertisement]:
         """Return all WoContact/Contact sensor devices with services data."""
