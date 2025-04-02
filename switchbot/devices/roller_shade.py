@@ -6,28 +6,28 @@ import logging
 from typing import Any
 
 from ..models import SwitchBotAdvertisement
-from .device import REQ_HEADER, update_after_operation
-from .base_cover import ROLLSHADE_COMMAND, CONTROL_SOURCE, SwitchbotBaseCover
+from .device import REQ_HEADER, update_after_operation, SwitchbotSequenceDevice
+from .base_cover import ROLLERSHADE_COMMAND, CONTROL_SOURCE, SwitchbotBaseCover
 
 _LOGGER = logging.getLogger(__name__)
 
 
 OPEN_KEYS = [
-    f"{REQ_HEADER}{ROLLSHADE_COMMAND}01{CONTROL_SOURCE}0100",
-    f"{REQ_HEADER}{ROLLSHADE_COMMAND}05{CONTROL_SOURCE}",  # +speed + "00"
+    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}01{CONTROL_SOURCE}0100",
+    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}0000", 
 ]
 CLOSE_KEYS = [
-    f"{REQ_HEADER}{ROLLSHADE_COMMAND}01{CONTROL_SOURCE}0164",
-    f"{REQ_HEADER}{ROLLSHADE_COMMAND}05{CONTROL_SOURCE}",  # +speed + "64"
+    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}01{CONTROL_SOURCE}0164",
+    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}0064", 
 ]
 POSITION_KEYS = [
-    f"{REQ_HEADER}{ROLLSHADE_COMMAND}01{CONTROL_SOURCE}01",
-    f"{REQ_HEADER}{ROLLSHADE_COMMAND}05{CONTROL_SOURCE}",  # +speed
+    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}01{CONTROL_SOURCE}01",
+    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}", 
 ]  # +actual_position
-STOP_KEYS = [f"{REQ_HEADER}{ROLLSHADE_COMMAND}00{CONTROL_SOURCE}01"]
+STOP_KEYS = [f"{REQ_HEADER}{ROLLERSHADE_COMMAND}00{CONTROL_SOURCE}01"]
 
 
-class SwitchbotRollerShade(SwitchbotBaseCover):
+class SwitchbotRollerShade(SwitchbotBaseCover, SwitchbotSequenceDevice):
     """Representation of a Switchbot Roller Shade."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -37,9 +37,7 @@ class SwitchbotRollerShade(SwitchbotBaseCover):
 
         self._reverse: bool = kwargs.pop("reverse_mode", True)
         super().__init__(self._reverse, *args, **kwargs)
-        _LOGGER.info(f'reverse: {self._reverse}')
         
-
 
     def _set_parsed_data(
         self, advertisement: SwitchBotAdvertisement, data: dict[str, Any]
@@ -53,22 +51,18 @@ class SwitchbotRollerShade(SwitchbotBaseCover):
 
 
     @update_after_operation
-    async def open(self, speed: int = 0) -> bool:
-        """Send open command. 0 - performance mode, 1 - unfelt mode"""
+    async def open(self, mode: int = 0) -> bool:
+        """Send open command. 0 - performance mode, 1 - unfelt mode."""
         self._is_opening = True
         self._is_closing = False
-        return await self._send_multiple_commands(
-            [OPEN_KEYS[0], f"{OPEN_KEYS[1]}{speed:02X}00"]
-        )
+        return await self._send_multiple_commands(OPEN_KEYS)
 
     @update_after_operation
     async def close(self, speed: int = 0) -> bool:
-        """Send close command. 0 - performance mode, 1 - unfelt mode"""
+        """Send close command. 0 - performance mode, 1 - unfelt mode."""
         self._is_closing = True
         self._is_opening = False
-        return await self._send_multiple_commands(
-            [CLOSE_KEYS[0], f"{CLOSE_KEYS[1]}{speed:02X}64"]
-        )
+        return await self._send_multiple_commands(CLOSE_KEYS)
 
     @update_after_operation
     async def stop(self) -> bool:
@@ -77,17 +71,13 @@ class SwitchbotRollerShade(SwitchbotBaseCover):
         return await self._send_multiple_commands(STOP_KEYS)
 
     @update_after_operation
-    async def set_position(self, position: int, speed: int = 0) -> bool:
-        """Send position command (0-100) to device. 0 - performance mode, 1 - unfelt mode"""
-        direction_adjusted_position = (100 - position) if self._reverse else position
-        self._update_motion_direction(
-            True, self._get_adv_value("position"), direction_adjusted_position
-        )
+    async def set_position(self, position: int, mode: int = 0) -> bool:
+        """Send position command (0-100) to device. 0 - performance mode, 1 - unfelt mode."""
         position = (100 - position) if self._reverse else position
         return await self._send_multiple_commands(
             [
                 f"{POSITION_KEYS[0]}{position:02X}",
-                f"{POSITION_KEYS[1]}{speed:02X}{position:02X}",
+                f"{POSITION_KEYS[1]}{mode:02X}{position:02X}",
             ]
         )
 
@@ -102,31 +92,12 @@ class SwitchbotRollerShade(SwitchbotBaseCover):
             return None
 
         _position = max(min(_data[5], 100), 0)
-        _LOGGER.info(f'position: {_position}')
         _direction_adjusted_position = (100 - _position) if self._reverse else _position
         _previous_position = self._get_adv_value("position")
-        _in_motion = bool(_data[4] & 0b01000011)
+        _in_motion = bool(_data[4] & 0b00000011)
         self._update_motion_direction(
             _in_motion, _previous_position, _direction_adjusted_position
         )
-
-        data = {
-            "battery": _data[1],
-            "firmware": _data[2] / 10.0,
-            "chainLength": _data[3],
-            "openDirection": (
-                "clockwise" if _data[4] & 0b10000000 == 128 else "anticlockwise"
-            ),
-            "fault": bool(_data[4] & 0b00010000),
-            "solarPanel": bool(_data[4] & 0b00001000),
-            "calibration": bool(_data[4] & 0b00000100),
-            "calibrated": bool(_data[4] & 0b00000100),
-            "inMotion": _in_motion,
-            "position": _direction_adjusted_position,
-            "timers": _data[6],
-        }
-
-        _LOGGER.info(f'data11: {data}')
 
         return {
             "battery": _data[1],

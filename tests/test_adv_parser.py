@@ -1971,3 +1971,68 @@ def test_remote_passive() -> None:
         rssi=-97,
         active=False,
     )
+
+
+def test_parse_advertisement_data_hubmini_matter():
+    """Test parse_advertisement_data for the HubMini Matter."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b"\xe6\xa1\xcd\x1f[e\x00\x00\x00\x00\x00\x00\x14\x01\x985\x00"},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"%\x00"},
+        rssi=-67,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.HUBMINI_MATTER
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "data": {
+                'fahrenheit': False, 
+                'humidity': 53, 
+                'temp': {'c': 24.1, 'f': 75.38}, 
+                'temperature': 24.1
+            },
+            "isEncrypted": False,
+            "model": "%",
+            "modelFriendlyName": "HubMini Matter",
+            "modelName": SwitchbotModel.HUBMINI_MATTER,
+            "rawAdvData":  b"%\x00",
+        },
+        device=ble_device,
+        rssi=-67,
+        active=True,
+    )
+
+
+def test_parse_advertisement_data_roller_shade():
+    """Test parse_advertisement_data for roller shade."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b"\xb0\xe9\xfeT\x90\x1b,\x08\x9f\x11\x04'\x00"},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b",\x00'\x9f\x11\x04"},
+        rssi=-80,
+    )
+    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.ROLLER_SHADE)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b",\x00'\x9f\x11\x04",
+            "data": {
+                'battery': 39, 
+                'calibration': True, 
+                'deviceChain': 1, 
+                'inMotion': False,
+                'lightLevel': 1,
+                'position': 69,
+                'sequence_number': 44,
+            },
+            "isEncrypted": False,
+            "model": ",",
+            "modelFriendlyName": "Roller Shade",
+            "modelName": SwitchbotModel.ROLLER_SHADE,
+        },
+        device=ble_device,
+        rssi=-80,
+        active=True,
+    )

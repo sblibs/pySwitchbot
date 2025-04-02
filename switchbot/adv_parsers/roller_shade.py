@@ -13,12 +13,11 @@ def process_worollershade(
     device_data = mfr_data[6:]
 
     _position = max(min(device_data[2] & 0b01111111, 100), 0)
-    print(f'_position111: {mfr_data[0:6]}--{_position}')
     _calibrated = bool(device_data[2] & 0b10000000)
     _in_motion = bool(device_data[1] & 0b00000110)
     _light_level = (device_data[3] >> 4) & 0b00001111
     _device_chain = device_data[3] & 0b00001111
-
+    
     return {
         "calibration": _calibrated,
         "battery": data[2] & 0b01111111 if data else None,
