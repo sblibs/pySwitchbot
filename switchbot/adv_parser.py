@@ -17,6 +17,7 @@ from .adv_parsers.ceiling_light import process_woceiling
 from .adv_parsers.contact import process_wocontact
 from .adv_parsers.curtain import process_wocurtain
 from .adv_parsers.hub2 import process_wohub2
+from .adv_parsers.hubmini_matter import process_hubmini_matter
 from .adv_parsers.humidifier import process_evaporative_humidifier, process_wohumidifier
 from .adv_parsers.keypad import process_wokeypad
 from .adv_parsers.leak import process_leak
@@ -31,7 +32,6 @@ from .adv_parsers.relay_switch import (
 )
 from .adv_parsers.remote import process_woremote
 from .adv_parsers.roller_shade import process_worollershade
-from .adv_parsers.hubmini_matter import process_hubmini_matter
 from .const import SwitchbotModel
 from .models import SwitchBotAdvertisement
 
@@ -222,14 +222,14 @@ SUPPORTED_TYPES: dict[str, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.ROLLER_SHADE,
         "modelFriendlyName": "Roller Shade",
         "func": process_worollershade,
-        "manufacturer_id": 2409,  
+        "manufacturer_id": 2409,
     },
-     "%": {
+    "%": {
         "modelName": SwitchbotModel.HUBMINI_MATTER,
         "modelFriendlyName": "HubMini Matter",
         "func": process_hubmini_matter,
         "manufacturer_id": 2409,
-    },   
+    },
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {

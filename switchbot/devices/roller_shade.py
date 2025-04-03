@@ -6,23 +6,23 @@ import logging
 from typing import Any
 
 from ..models import SwitchBotAdvertisement
-from .device import REQ_HEADER, update_after_operation, SwitchbotSequenceDevice
-from .base_cover import ROLLERSHADE_COMMAND, CONTROL_SOURCE, SwitchbotBaseCover
+from .base_cover import CONTROL_SOURCE, ROLLERSHADE_COMMAND, SwitchbotBaseCover
+from .device import REQ_HEADER, SwitchbotSequenceDevice, update_after_operation
 
 _LOGGER = logging.getLogger(__name__)
 
 
 OPEN_KEYS = [
     f"{REQ_HEADER}{ROLLERSHADE_COMMAND}01{CONTROL_SOURCE}0100",
-    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}0000", 
+    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}0000",
 ]
 CLOSE_KEYS = [
     f"{REQ_HEADER}{ROLLERSHADE_COMMAND}01{CONTROL_SOURCE}0164",
-    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}0064", 
+    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}0064",
 ]
 POSITION_KEYS = [
     f"{REQ_HEADER}{ROLLERSHADE_COMMAND}01{CONTROL_SOURCE}01",
-    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}", 
+    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}",
 ]  # +actual_position
 STOP_KEYS = [f"{REQ_HEADER}{ROLLERSHADE_COMMAND}00{CONTROL_SOURCE}01"]
 
@@ -37,7 +37,6 @@ class SwitchbotRollerShade(SwitchbotBaseCover, SwitchbotSequenceDevice):
 
         self._reverse: bool = kwargs.pop("reverse_mode", True)
         super().__init__(self._reverse, *args, **kwargs)
-        
 
     def _set_parsed_data(
         self, advertisement: SwitchBotAdvertisement, data: dict[str, Any]
@@ -48,7 +47,6 @@ class SwitchbotRollerShade(SwitchbotBaseCover, SwitchbotSequenceDevice):
         new_position = data["position"]
         self._update_motion_direction(in_motion, previous_position, new_position)
         super()._set_parsed_data(advertisement, data)
-
 
     @update_after_operation
     async def open(self, mode: int = 0) -> bool:
@@ -128,4 +126,3 @@ class SwitchbotRollerShade(SwitchbotBaseCover, SwitchbotSequenceDevice):
         if new_position != previous_position:
             self._is_opening = new_position > previous_position
             self._is_closing = new_position < previous_position
-

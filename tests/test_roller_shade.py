@@ -33,12 +33,12 @@ def make_advertisement_data(
         data={
             "rawAdvData": b",\x00'\x9f\x11\x04",
             "data": {
-                'battery': 39, 
-                'calibration':calibration,
-                'deviceChain': 1, 
-                'inMotion': in_motion,
-                'lightLevel': 1,
-                'position': position,
+                "battery": 39,
+                "calibration": calibration,
+                "deviceChain": 1,
+                "inMotion": in_motion,
+                "lightLevel": 1,
+                "position": position,
             },
             "isEncrypted": False,
             "model": ",",
@@ -57,7 +57,9 @@ async def test_open():
     await roller_shade_device.open()
     assert roller_shade_device.is_opening() is True
     assert roller_shade_device.is_closing() is False
-    roller_shade_device._send_multiple_commands.assert_awaited_once_with(roller_shade.OPEN_KEYS)
+    roller_shade_device._send_multiple_commands.assert_awaited_once_with(
+        roller_shade.OPEN_KEYS
+    )
 
 
 @pytest.mark.asyncio
@@ -66,7 +68,9 @@ async def test_close():
     await roller_shade_device.close()
     assert roller_shade_device.is_opening() is False
     assert roller_shade_device.is_closing() is True
-    roller_shade_device._send_multiple_commands.assert_awaited_once_with(roller_shade.CLOSE_KEYS)
+    roller_shade_device._send_multiple_commands.assert_awaited_once_with(
+        roller_shade.CLOSE_KEYS
+    )
 
 
 @pytest.mark.asyncio
@@ -84,12 +88,12 @@ async def test_get_basic_info_returns_none_when_no_data():
         (
             True,
             bytes([0, 1, 10, 2, 0, 50, 4]),
-            [1, 1, 2,'anticlockwise', False, False, False, False, False, 50, 4],
+            [1, 1, 2, "anticlockwise", False, False, False, False, False, 50, 4],
         ),
         (
             True,
             bytes([0, 1, 10, 2, 214, 50, 4]),
-            [1, 1, 2, 'clockwise', True, False, True, True, True, 50, 4],
+            [1, 1, 2, "clockwise", True, False, True, True, True, 50, 4],
         ),
     ],
 )

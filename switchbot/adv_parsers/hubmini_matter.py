@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
-def process_hubmini_matter(data: bytes | None, mfr_data: bytes | None) -> dict[str, Any]:
+
+def process_hubmini_matter(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, Any]:
     """Process Hubmini matter sensor manufacturer data."""
     temp_data = None
 

@@ -11,7 +11,7 @@ from .device import REQ_HEADER, SwitchbotDevice, update_after_operation
 # Cover keys
 COVER_COMMAND = "4501"
 ROLLERSHADE_COMMAND = "4701"
-CONTROL_SOURCE = '00'
+CONTROL_SOURCE = "00"
 
 # For second element of open and close arrs we should add two bytes i.e. ff00
 # First byte [ff] stands for speed (00 or ff - normal, 01 - slow) *
