@@ -173,3 +173,49 @@ def test_device_passive_closing_then_stop(reverse_mode):
 
     assert curtain_device.is_opening() is False
     assert curtain_device.is_closing() is False
+
+
+@pytest.mark.asyncio
+async def test_stop():
+    curtain_device = create_device_for_command_testing()
+    await curtain_device.stop()
+    assert curtain_device.is_opening() is False
+    assert curtain_device.is_closing() is False
+    curtain_device._send_multiple_commands.assert_awaited_once_with(roller_shade.STOP_KEYS)
+
+
+@pytest.mark.asyncio
+async def test_set_position_opening():
+    curtain_device = create_device_for_command_testing(reverse_mode=True)
+    await curtain_device.set_position(0)
+    assert curtain_device.is_opening() is True
+    assert curtain_device.is_closing() is False
+    curtain_device._send_multiple_commands.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_set_position_closing():
+    curtain_device = create_device_for_command_testing(reverse_mode=True)
+    await curtain_device.set_position(100)
+    assert curtain_device.is_opening() is False
+    assert curtain_device.is_closing() is True
+    curtain_device._send_multiple_commands.assert_awaited_once()
+
+
+def test_get_position():
+    curtain_device = create_device_for_command_testing()
+    assert curtain_device.get_position() == 50
+
+
+def test_update_motion_direction_with_no_previous_position():
+    curtain_device = create_device_for_command_testing(reverse_mode=True)
+    curtain_device._update_motion_direction(True, None, 100)
+    assert curtain_device.is_opening() is False
+    assert curtain_device.is_closing() is False
+
+
+def test_update_motion_direction_with_previous_position():
+    curtain_device = create_device_for_command_testing(reverse_mode=True)
+    curtain_device._update_motion_direction(True, 50, 100)
+    assert curtain_device.is_opening() is True
+    assert curtain_device.is_closing() is False

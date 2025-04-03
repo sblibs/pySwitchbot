@@ -72,6 +72,9 @@ class SwitchbotRollerShade(SwitchbotBaseCover, SwitchbotSequenceDevice):
     async def set_position(self, position: int, mode: int = 0) -> bool:
         """Send position command (0-100) to device. 0 - performance mode, 1 - unfelt mode."""
         position = (100 - position) if self._reverse else position
+        self._update_motion_direction(
+            True, self._get_adv_value("position"), position
+        )
         return await self._send_multiple_commands(
             [
                 f"{POSITION_KEYS[0]}{position:02X}",
