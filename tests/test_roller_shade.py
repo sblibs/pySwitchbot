@@ -181,7 +181,9 @@ async def test_stop():
     await curtain_device.stop()
     assert curtain_device.is_opening() is False
     assert curtain_device.is_closing() is False
-    curtain_device._send_multiple_commands.assert_awaited_once_with(roller_shade.STOP_KEYS)
+    curtain_device._send_multiple_commands.assert_awaited_once_with(
+        roller_shade.STOP_KEYS
+    )
 
 
 @pytest.mark.asyncio

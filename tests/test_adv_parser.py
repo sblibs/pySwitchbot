@@ -2044,24 +2044,28 @@ def test_hubmini_matter_passive() -> None:
     """Test parsing hubmini matter with passive data."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
-        manufacturer_data={2409: b"\xe6\xa1\xcd\x1f[e\x00\x00\x00\x00\x00\x00\x14\x01\x985\x00"},
+        manufacturer_data={
+            2409: b"\xe6\xa1\xcd\x1f[e\x00\x00\x00\x00\x00\x00\x14\x01\x985\x00"
+        },
         rssi=-97,
     )
-    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.HUBMINI_MATTER)
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.HUBMINI_MATTER
+    )
     assert result == SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
             "data": {
-                'fahrenheit': False, 
-                'humidity': 53, 
-                'temp': {'c': 24.1, 'f': 75.38}, 
-                'temperature': 24.1
+                "fahrenheit": False,
+                "humidity": 53,
+                "temp": {"c": 24.1, "f": 75.38},
+                "temperature": 24.1,
             },
             "isEncrypted": False,
             "model": "%",
             "modelFriendlyName": "HubMini Matter",
             "modelName": SwitchbotModel.HUBMINI_MATTER,
-            "rawAdvData":  None,
+            "rawAdvData": None,
         },
         device=ble_device,
         rssi=-97,
@@ -2082,13 +2086,13 @@ def test_roller_shade_passive() -> None:
         data={
             "rawAdvData": None,
             "data": {
-                'battery': None, 
-                'calibration': True, 
-                'deviceChain': 1, 
-                'inMotion': False,
-                'lightLevel': 1,
-                'position': 69,
-                'sequence_number': 44,
+                "battery": None,
+                "calibration": True,
+                "deviceChain": 1,
+                "inMotion": False,
+                "lightLevel": 1,
+                "position": 69,
+                "sequence_number": 44,
             },
             "isEncrypted": False,
             "model": ",",
