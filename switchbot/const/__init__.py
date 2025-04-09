@@ -6,6 +6,7 @@ from ..enum import StrEnum
 
 # Preserve old LockStatus export for backwards compatibility
 from .lock import LockStatus as LockStatus
+from .fan import FanMode as FanMode
 
 DEFAULT_RETRY_COUNT = 3
 DEFAULT_RETRY_TIMEOUT = 1
@@ -65,3 +66,4 @@ class SwitchbotModel(StrEnum):
     EVAPORATIVE_HUMIDIFIER = "Evaporative Humidifier"
     ROLLER_SHADE = "Roller Shade"
     HUBMINI_MATTER = "HubMini Matter"
+    CIRCULATOR_FAN = "Circulator Fan"

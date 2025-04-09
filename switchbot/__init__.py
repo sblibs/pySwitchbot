@@ -15,6 +15,7 @@ from .const import (
     SwitchbotApiError,
     SwitchbotAuthenticationError,
     SwitchbotModel,
+    FanMode
 )
 from .devices.base_light import SwitchbotBaseLight
 from .devices.blind_tilt import SwitchbotBlindTilt
@@ -30,6 +31,7 @@ from .devices.lock import SwitchbotLock
 from .devices.plug import SwitchbotPlugMini
 from .devices.relay_switch import SwitchbotRelaySwitch
 from .devices.roller_shade import SwitchbotRollerShade
+from .devices.fan import SwitchbotFan
 from .discovery import GetSwitchbotDevices
 from .models import SwitchBotAdvertisement
 
@@ -37,6 +39,7 @@ __all__ = [
     "ColorMode",
     "GetSwitchbotDevices",
     "LockStatus",
+    "FanMode",
     "SwitchBotAdvertisement",
     "Switchbot",
     "Switchbot",
@@ -60,6 +63,7 @@ __all__ = [
     "SwitchbotPlugMini",
     "SwitchbotRelaySwitch",
     "SwitchbotRollerShade",
+    "SwitchbotFan",
     "SwitchbotSupportedType",
     "SwitchbotSupportedType",
     "close_stale_connections",

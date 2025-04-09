@@ -32,6 +32,7 @@ from .adv_parsers.relay_switch import (
 )
 from .adv_parsers.remote import process_woremote
 from .adv_parsers.roller_shade import process_worollershade
+from .adv_parsers.fan import process_fan
 from .const import SwitchbotModel
 from .models import SwitchBotAdvertisement
 
@@ -230,6 +231,12 @@ SUPPORTED_TYPES: dict[str, SwitchbotSupportedType] = {
         "func": process_hubmini_matter,
         "manufacturer_id": 2409,
     },
+    "~": {
+        "modelName": SwitchbotModel.CIRCULATOR_FAN,
+        "modelFriendlyName": "Circulator Fan",
+        "func": process_fan,
+        "manufacturer_id": 2409, 
+    }
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {
