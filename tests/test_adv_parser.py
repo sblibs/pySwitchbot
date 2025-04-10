@@ -2103,3 +2103,69 @@ def test_roller_shade_passive() -> None:
         rssi=-97,
         active=False,
     )
+
+
+def test_circulator_fan_active() -> None:
+    """Test parsing circulator fan with active data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b"\xb0\xe9\xfeXY\xa8~LR9"},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"~\x00R"},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.CIRCULATOR_FAN)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b"~\x00R",
+            "data": {
+                "sequence_number": 126,
+                "isOn": False,
+                "mode": "BABY",
+                "nightLight": 3,
+                "oscillating": False,
+                "battery": 82,
+                "speed": 57
+            },
+            "isEncrypted": False,
+            "model": "~",
+            "modelFriendlyName": "Circulator Fan",
+            "modelName": SwitchbotModel.CIRCULATOR_FAN,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+def test_circulator_fan_passive() -> None:
+    """Test parsing circulator fan with passive data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b"\xb0\xe9\xfeXY\xa8~LR9"},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.CIRCULATOR_FAN)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": None,
+            "data": {
+                "sequence_number": 126,
+                "isOn": False,
+                "mode": "BABY",
+                "nightLight": 3,
+                "oscillating": False,
+                "battery": 82,
+                "speed": 57
+            },
+            "isEncrypted": False,
+            "model": "~",
+            "modelFriendlyName": "Circulator Fan",
+            "modelName": SwitchbotModel.CIRCULATOR_FAN,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=False,
+    )
+    
