@@ -138,7 +138,7 @@ async def test_set_set_percentage_with_speed_is_0():
     fan_device = create_device_for_command_testing({"speed": 0, "isOn": False})
     await fan_device.turn_off()
     assert fan_device.get_current_percentage() == 0
-    assert fan_device.is_on() == False
+    assert fan_device.is_on() is False
 
 
 @pytest.mark.asyncio
@@ -152,25 +152,25 @@ async def test_set_set_percentage():
 async def test_set_not_oscillation():
     fan_device = create_device_for_command_testing({"oscillating": False})
     await fan_device.set_oscillation(False)
-    assert fan_device.get_oscillating_state() == False
+    assert fan_device.get_oscillating_state() is False
 
 
 @pytest.mark.asyncio
 async def test_set_oscillation():
     fan_device = create_device_for_command_testing({"oscillating": True})
     await fan_device.set_oscillation(True)
-    assert fan_device.get_oscillating_state() == True
+    assert fan_device.get_oscillating_state() is True
 
 
 @pytest.mark.asyncio
 async def test_turn_on():
     fan_device = create_device_for_command_testing({"isOn": True})
     await fan_device.turn_on()
-    assert fan_device.is_on() == True
+    assert fan_device.is_on() is True
 
 
 @pytest.mark.asyncio
 async def test_turn_off():
     fan_device = create_device_for_command_testing({"isOn": False})
     await fan_device.turn_off()
-    assert fan_device.is_on() == False
+    assert fan_device.is_on() is False
