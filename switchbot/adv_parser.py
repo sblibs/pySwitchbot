@@ -16,6 +16,7 @@ from .adv_parsers.bulb import process_color_bulb
 from .adv_parsers.ceiling_light import process_woceiling
 from .adv_parsers.contact import process_wocontact
 from .adv_parsers.curtain import process_wocurtain
+from .adv_parsers.fan import process_fan
 from .adv_parsers.hub2 import process_wohub2
 from .adv_parsers.hubmini_matter import process_hubmini_matter
 from .adv_parsers.humidifier import process_evaporative_humidifier, process_wohumidifier
@@ -228,6 +229,12 @@ SUPPORTED_TYPES: dict[str, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.HUBMINI_MATTER,
         "modelFriendlyName": "HubMini Matter",
         "func": process_hubmini_matter,
+        "manufacturer_id": 2409,
+    },
+    "~": {
+        "modelName": SwitchbotModel.CIRCULATOR_FAN,
+        "modelFriendlyName": "Circulator Fan",
+        "func": process_fan,
         "manufacturer_id": 2409,
     },
 }

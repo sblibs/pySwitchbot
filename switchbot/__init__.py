@@ -10,6 +10,7 @@ from bleak_retry_connector import (
 
 from .adv_parser import SwitchbotSupportedType, parse_advertisement_data
 from .const import (
+    FanMode,
     LockStatus,
     SwitchbotAccountConnectionError,
     SwitchbotApiError,
@@ -24,6 +25,7 @@ from .devices.ceiling_light import SwitchbotCeilingLight
 from .devices.curtain import SwitchbotCurtain
 from .devices.device import ColorMode, SwitchbotDevice, SwitchbotEncryptedDevice
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
+from .devices.fan import SwitchbotFan
 from .devices.humidifier import SwitchbotHumidifier
 from .devices.light_strip import SwitchbotLightStrip
 from .devices.lock import SwitchbotLock
@@ -35,6 +37,7 @@ from .models import SwitchBotAdvertisement
 
 __all__ = [
     "ColorMode",
+    "FanMode",
     "GetSwitchbotDevices",
     "LockStatus",
     "SwitchBotAdvertisement",
@@ -51,6 +54,7 @@ __all__ = [
     "SwitchbotDevice",
     "SwitchbotEncryptedDevice",
     "SwitchbotEvaporativeHumidifier",
+    "SwitchbotFan",
     "SwitchbotHumidifier",
     "SwitchbotLightStrip",
     "SwitchbotLock",
