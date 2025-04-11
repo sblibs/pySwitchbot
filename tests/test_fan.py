@@ -64,15 +64,15 @@ async def test__get_basic_info(response, expected):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("data,data1", [(True, False), (False, True), (False, False)])
-async def test_get_basic_info_returns_none(data, data1):
+@pytest.mark.parametrize("basic_info,firmware_info", [(True, False), (False, True), (False, False)])
+async def test_get_basic_info_returns_none(basic_info, firmware_info):
     fan_device = create_device_for_command_testing()
 
     async def mock_get_basic_info(arg):
         if arg == fan.COMMAND_GET_BASIC_INFO:
-            return data
+            return basic_info
         elif arg == fan.DEVICE_GET_BASIC_SETTINGS_KEY:
-            return data1
+            return firmware_info
 
     fan_device._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
 
@@ -81,7 +81,7 @@ async def test_get_basic_info_returns_none(data, data1):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "data,data1,result",
+    "basic_info,firmware_info,result",
     [
         (
             bytearray(b"\x01\x02W\x82g\xf5\xde4\x01=dPP\x03\x14P\x00\x00\x00\x00"),
@@ -95,14 +95,14 @@ async def test_get_basic_info_returns_none(data, data1):
         ),
     ],
 )
-async def test_get_basic_info(data, data1, result):
+async def test_get_basic_info(basic_info, firmware_info, result):
     fan_device = create_device_for_command_testing()
 
     async def mock_get_basic_info(arg):
         if arg == fan.COMMAND_GET_BASIC_INFO:
-            return data
+            return basic_info
         elif arg == fan.DEVICE_GET_BASIC_SETTINGS_KEY:
-            return data1
+            return firmware_info
 
     fan_device._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
 
