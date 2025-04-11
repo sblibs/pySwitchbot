@@ -69,7 +69,7 @@ class SwitchbotFan(SwitchbotSequenceDevice):
         return _data
 
     @update_after_operation
-    async def set_preset_mdoe(self, preset_mode: str) -> bool:
+    async def set_preset_mode(self, preset_mode: str) -> bool:
         """Send command to set fan preset_mode."""
         return await self._send_command(COMMAND_SET_MODE[preset_mode])
     

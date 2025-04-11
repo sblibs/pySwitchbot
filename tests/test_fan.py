@@ -127,9 +127,9 @@ async def test_get_basic_info(data, data1, result):
 
 
 @pytest.mark.asyncio
-async def test_set_preset_mdoe():
+async def test_set_preset_mode():
     fan_device = create_device_for_command_testing({"mode": "BABY"})
-    await fan_device.set_preset_mdoe("BABY")
+    await fan_device.set_preset_mode("BABY")
     assert fan_device.get_current_mode() == "BABY"
 
 
