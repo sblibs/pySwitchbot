@@ -6,7 +6,11 @@ import logging
 from typing import Any
 
 from ..const.fan import FanMode
-from .device import DEVICE_GET_BASIC_SETTINGS_KEY, SwitchbotSequenceDevice, update_after_operation
+from .device import (
+    DEVICE_GET_BASIC_SETTINGS_KEY,
+    SwitchbotSequenceDevice,
+    update_after_operation,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,25 +24,26 @@ COMMAND_SET_MODE = {
     FanMode.NORMAL.name: f"{COMMAND_HEAD}030101ff",
     FanMode.NATURAL.name: f"{COMMAND_HEAD}030102ff",
     FanMode.SLEEP.name: f"{COMMAND_HEAD}030103",
-    FanMode.BABY.name: f"{COMMAND_HEAD}030104"
+    FanMode.BABY.name: f"{COMMAND_HEAD}030104",
 }
-COMMAND_SET_PERCENTAGE = f"{COMMAND_HEAD}0302"    #  +speed
-COMMAND_GET_BASIC_INFO = f"570f428102"
+COMMAND_SET_PERCENTAGE = f"{COMMAND_HEAD}0302"  #  +speed
+COMMAND_GET_BASIC_INFO = "570f428102"
 
 
 class SwitchbotFan(SwitchbotSequenceDevice):
     """Representation of a Switchbot Circulator Fan."""
-    def __init__(self, device, password = None, interface = 0, **kwargs):
-        super().__init__(device, password, interface, **kwargs)   
-    
+
+    def __init__(self, device, password=None, interface=0, **kwargs):
+        super().__init__(device, password, interface, **kwargs)
+
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
         if not (_data := await self._get_basic_info(COMMAND_GET_BASIC_INFO)):
             return None
         if not (_data1 := await self._get_basic_info(DEVICE_GET_BASIC_SETTINGS_KEY)):
             return None
-        
-        _LOGGER.debug(f'data: {_data}')
+
+        _LOGGER.debug(f"data: {_data}")
         battery = _data[2] & 0b01111111
         isOn = bool(_data[3] & 0b10000000)
         oscillating = bool(_data[3] & 0b01100000)
@@ -53,14 +58,12 @@ class SwitchbotFan(SwitchbotSequenceDevice):
             "oscillating": oscillating,
             "mode": mode,
             "speed": speed,
-            "firmware": firmware
-        }    
+            "firmware": firmware,
+        }
 
     async def _get_basic_info(self, cmd: str) -> bytes | None:
         """Return basic info of device."""
-        _data = await self._send_command(
-            key=cmd, retry=self._retry_count
-        )
+        _data = await self._send_command(key=cmd, retry=self._retry_count)
 
         if _data in (b"\x07", b"\x00"):
             _LOGGER.error("Unsuccessful, please try again")
@@ -72,11 +75,11 @@ class SwitchbotFan(SwitchbotSequenceDevice):
     async def set_preset_mode(self, preset_mode: str) -> bool:
         """Send command to set fan preset_mode."""
         return await self._send_command(COMMAND_SET_MODE[preset_mode])
-    
+
     @update_after_operation
     async def set_percentage(self, percentage: int) -> bool:
         """Send command to set fan percentage."""
-        return await self._send_command(f'{COMMAND_SET_PERCENTAGE}{percentage:02X}')
+        return await self._send_command(f"{COMMAND_SET_PERCENTAGE}{percentage:02X}")
 
     @update_after_operation
     async def set_oscillation(self, oscillating: bool) -> bool:
@@ -85,12 +88,12 @@ class SwitchbotFan(SwitchbotSequenceDevice):
             return await self._send_command(COMMAND_START_OSCILLATION)
         else:
             return await self._send_command(COMMAND_STOP_OSCILLATION)
-    
+
     @update_after_operation
     async def turn_on(self) -> bool:
         """Turn on the fan."""
         return await self._send_command(COMMAND_TURN_ON)
-    
+
     @update_after_operation
     async def turn_off(self) -> bool:
         """Turn off the fan."""
@@ -99,7 +102,7 @@ class SwitchbotFan(SwitchbotSequenceDevice):
     def get_current_percentage(self) -> Any:
         """Return cached percentage."""
         return self._get_adv_value("speed")
-    
+
     def is_on(self) -> bool | None:
         """Return fan state from cache."""
         return self._get_adv_value("isOn")
@@ -107,7 +110,7 @@ class SwitchbotFan(SwitchbotSequenceDevice):
     def get_oscillating_state(self) -> Any:
         """Return cached oscillating."""
         return self._get_adv_value("oscillating")
-    
+
     def get_current_mode(self) -> Any:
         """Return cached mode."""
         return self._get_adv_value("mode")

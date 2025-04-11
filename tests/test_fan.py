@@ -12,19 +12,14 @@ from .test_adv_parser import generate_ble_device
 def create_device_for_command_testing(init_data: dict | None = None):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     fan_device = fan.SwitchbotFan(ble_device)
-    fan_device.update_from_advertisement(
-        make_advertisement_data(ble_device, init_data)
-    )
+    fan_device.update_from_advertisement(make_advertisement_data(ble_device, init_data))
     fan_device._send_command = AsyncMock()
     fan_device.update = AsyncMock()
     return fan_device
 
 
-def make_advertisement_data(
-    ble_device: BLEDevice, init_data: dict | None = None
-):
+def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None):
     """Set advertisement data with defaults."""
-    
     if init_data is None:
         init_data = {}
 
@@ -38,8 +33,9 @@ def make_advertisement_data(
                 "nightLight": 3,
                 "oscillating": False,
                 "battery": 60,
-                "speed": 50
-            } | init_data,
+                "speed": 50,
+            }
+            | init_data,
             "isEncrypted": False,
             "model": ",",
             "modelFriendlyName": "Circulator Fan",
@@ -68,23 +64,16 @@ async def test__get_basic_info(response, expected):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "data,data1",
-    [
-    (True, False),
-    (False, True),
-    (False, False)
-    ]
-)
+@pytest.mark.parametrize("data,data1", [(True, False), (False, True), (False, False)])
 async def test_get_basic_info_returns_none(data, data1):
     fan_device = create_device_for_command_testing()
-    
+
     async def mock_get_basic_info(arg):
         if arg == fan.COMMAND_GET_BASIC_INFO:
             return data
         elif arg == fan.DEVICE_GET_BASIC_SETTINGS_KEY:
             return data1
-        
+
     fan_device._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
 
     assert await fan_device.get_basic_info() is None
@@ -95,14 +84,14 @@ async def test_get_basic_info_returns_none(data, data1):
     "data,data1,result",
     [
         (
-            bytearray(b'\x01\x02W\x82g\xf5\xde4\x01=dPP\x03\x14P\x00\x00\x00\x00'),
-            bytearray(b'\x01W\x0b\x17\x01'),
-            [87, True, False, 'NORMAL', 61, 1.1],
+            bytearray(b"\x01\x02W\x82g\xf5\xde4\x01=dPP\x03\x14P\x00\x00\x00\x00"),
+            bytearray(b"\x01W\x0b\x17\x01"),
+            [87, True, False, "NORMAL", 61, 1.1],
         ),
         (
-            bytearray(b'\x01\x02U\xc2g\xf5\xde4\x04+dPP\x03\x14P\x00\x00\x00\x00'),
-            bytearray(b'\x01U\x0b\x17\x01'),
-            [85, True, True, 'BABY', 43, 1.1],
+            bytearray(b"\x01\x02U\xc2g\xf5\xde4\x04+dPP\x03\x14P\x00\x00\x00\x00"),
+            bytearray(b"\x01U\x0b\x17\x01"),
+            [85, True, True, "BABY", 43, 1.1],
         ),
     ],
 )

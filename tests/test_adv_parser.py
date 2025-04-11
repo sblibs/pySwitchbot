@@ -2113,7 +2113,9 @@ def test_circulator_fan_active() -> None:
         service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"~\x00R"},
         rssi=-97,
     )
-    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.CIRCULATOR_FAN)
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.CIRCULATOR_FAN
+    )
     assert result == SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
@@ -2125,7 +2127,7 @@ def test_circulator_fan_active() -> None:
                 "nightLight": 3,
                 "oscillating": False,
                 "battery": 82,
-                "speed": 57
+                "speed": 57,
             },
             "isEncrypted": False,
             "model": "~",
@@ -2145,7 +2147,9 @@ def test_circulator_fan_passive() -> None:
         manufacturer_data={2409: b"\xb0\xe9\xfeXY\xa8~LR9"},
         rssi=-97,
     )
-    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.CIRCULATOR_FAN)
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.CIRCULATOR_FAN
+    )
     assert result == SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
@@ -2157,7 +2161,7 @@ def test_circulator_fan_passive() -> None:
                 "nightLight": 3,
                 "oscillating": False,
                 "battery": 82,
-                "speed": 57
+                "speed": 57,
             },
             "isEncrypted": False,
             "model": "~",
@@ -2168,4 +2172,3 @@ def test_circulator_fan_passive() -> None:
         rssi=-97,
         active=False,
     )
-    

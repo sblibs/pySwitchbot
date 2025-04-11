@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from ..enum import StrEnum
+from .fan import FanMode as FanMode
 
 # Preserve old LockStatus export for backwards compatibility
 from .lock import LockStatus as LockStatus
-from .fan import FanMode as FanMode
 
 DEFAULT_RETRY_COUNT = 3
 DEFAULT_RETRY_TIMEOUT = 1

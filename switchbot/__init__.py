@@ -10,12 +10,12 @@ from bleak_retry_connector import (
 
 from .adv_parser import SwitchbotSupportedType, parse_advertisement_data
 from .const import (
+    FanMode,
     LockStatus,
     SwitchbotAccountConnectionError,
     SwitchbotApiError,
     SwitchbotAuthenticationError,
     SwitchbotModel,
-    FanMode
 )
 from .devices.base_light import SwitchbotBaseLight
 from .devices.blind_tilt import SwitchbotBlindTilt
@@ -25,21 +25,21 @@ from .devices.ceiling_light import SwitchbotCeilingLight
 from .devices.curtain import SwitchbotCurtain
 from .devices.device import ColorMode, SwitchbotDevice, SwitchbotEncryptedDevice
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
+from .devices.fan import SwitchbotFan
 from .devices.humidifier import SwitchbotHumidifier
 from .devices.light_strip import SwitchbotLightStrip
 from .devices.lock import SwitchbotLock
 from .devices.plug import SwitchbotPlugMini
 from .devices.relay_switch import SwitchbotRelaySwitch
 from .devices.roller_shade import SwitchbotRollerShade
-from .devices.fan import SwitchbotFan
 from .discovery import GetSwitchbotDevices
 from .models import SwitchBotAdvertisement
 
 __all__ = [
     "ColorMode",
+    "FanMode",
     "GetSwitchbotDevices",
     "LockStatus",
-    "FanMode",
     "SwitchBotAdvertisement",
     "Switchbot",
     "Switchbot",
@@ -54,6 +54,7 @@ __all__ = [
     "SwitchbotDevice",
     "SwitchbotEncryptedDevice",
     "SwitchbotEvaporativeHumidifier",
+    "SwitchbotFan",
     "SwitchbotHumidifier",
     "SwitchbotLightStrip",
     "SwitchbotLock",
@@ -63,7 +64,6 @@ __all__ = [
     "SwitchbotPlugMini",
     "SwitchbotRelaySwitch",
     "SwitchbotRollerShade",
-    "SwitchbotFan",
     "SwitchbotSupportedType",
     "SwitchbotSupportedType",
     "close_stale_connections",

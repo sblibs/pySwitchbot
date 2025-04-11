@@ -1,6 +1,7 @@
-""" Fan adv parser."""
+"""Fan adv parser."""
 
 from __future__ import annotations
+
 from ..const.fan import FanMode
 
 
@@ -8,7 +9,7 @@ def process_fan(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | 
     """Process fan services data."""
     if mfr_data is None:
         return {}
-    
+
     device_data = mfr_data[6:]
 
     _seq_num = device_data[0]
@@ -28,5 +29,5 @@ def process_fan(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | 
         "nightLight": _nightLight,
         "oscillating": _oscillate_left_and_right | _oscillate_up_and_down,
         "battery": _battery,
-        "speed": _speed
+        "speed": _speed,
     }
