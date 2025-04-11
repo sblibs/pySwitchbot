@@ -43,7 +43,7 @@ class SwitchbotFan(SwitchbotSequenceDevice):
         if not (_data1 := await self._get_basic_info(DEVICE_GET_BASIC_SETTINGS_KEY)):
             return None
 
-        _LOGGER.debug(f"data: %s", _data)
+        _LOGGER.debug("data: %s", _data)
         battery = _data[2] & 0b01111111
         isOn = bool(_data[3] & 0b10000000)
         oscillating = bool(_data[3] & 0b01100000)

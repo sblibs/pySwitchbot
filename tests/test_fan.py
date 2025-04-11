@@ -64,7 +64,9 @@ async def test__get_basic_info(response, expected):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("basic_info,firmware_info", [(True, False), (False, True), (False, False)])
+@pytest.mark.parametrize(
+    "basic_info,firmware_info", [(True, False), (False, True), (False, False)]
+)
 async def test_get_basic_info_returns_none(basic_info, firmware_info):
     fan_device = create_device_for_command_testing()
 
