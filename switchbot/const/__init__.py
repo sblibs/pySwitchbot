@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ..enum import StrEnum
+from .fan import FanMode as FanMode
 
 # Preserve old LockStatus export for backwards compatibility
 from .lock import LockStatus as LockStatus
@@ -65,3 +66,4 @@ class SwitchbotModel(StrEnum):
     EVAPORATIVE_HUMIDIFIER = "Evaporative Humidifier"
     ROLLER_SHADE = "Roller Shade"
     HUBMINI_MATTER = "HubMini Matter"
+    CIRCULATOR_FAN = "Circulator Fan"
