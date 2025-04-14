@@ -2172,3 +2172,28 @@ def test_circulator_fan_passive() -> None:
         rssi=-97,
         active=False,
     )
+
+
+def test_circulator_fan_with_empty_data() -> None:
+    """Test parsing circulator fan with empty data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: None},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"~\x00R"},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.CIRCULATOR_FAN
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b"~\x00R",
+            "data": {},
+            "isEncrypted": False,
+            "model": "~",
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )

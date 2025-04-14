@@ -5,6 +5,7 @@ from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
 from switchbot.devices import fan
+from switchbot.const.fan import FanMode
 
 from .test_adv_parser import generate_ble_device
 
@@ -163,3 +164,7 @@ async def test_turn_off():
     fan_device = create_device_for_command_testing({"isOn": False})
     await fan_device.turn_off()
     assert fan_device.is_on() is False
+
+
+def test_get_modes():
+    assert FanMode.get_modes() == ["NORMAL", "NATURAL", "SLEEP", "BABY"]
