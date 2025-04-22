@@ -169,4 +169,4 @@ async def test_turn_off():
 
 
 def test_get_modes():
-    assert FanMode.get_modes() == ["NORMAL", "NATURAL", "SLEEP", "BABY"]
+    assert FanMode.get_modes() == ["normal", "natural", "sleep", "baby"]
