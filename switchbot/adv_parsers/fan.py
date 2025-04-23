@@ -15,7 +15,7 @@ def process_fan(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | 
     _seq_num = device_data[0]
     _isOn = bool(device_data[1] & 0b10000000)
     _mode = (device_data[1] & 0b01110000) >> 4
-    _mode = FanMode(_mode).name if 1 <= _mode <= 4 else None
+    _mode = FanMode(_mode).name.lower() if 1 <= _mode <= 4 else None
     _nightLight = (device_data[1] & 0b00001100) >> 2
     _oscillate_left_and_right = bool(device_data[1] & 0b00000010)
     _oscillate_up_and_down = bool(device_data[1] & 0b00000001)

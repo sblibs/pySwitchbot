@@ -2123,7 +2123,7 @@ def test_circulator_fan_active() -> None:
             "data": {
                 "sequence_number": 126,
                 "isOn": False,
-                "mode": "BABY",
+                "mode": "baby",
                 "nightLight": 3,
                 "oscillating": False,
                 "battery": 82,
@@ -2157,7 +2157,7 @@ def test_circulator_fan_passive() -> None:
             "data": {
                 "sequence_number": 126,
                 "isOn": False,
-                "mode": "BABY",
+                "mode": "baby",
                 "nightLight": 3,
                 "oscillating": False,
                 "battery": 82,
