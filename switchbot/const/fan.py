@@ -11,4 +11,4 @@ class FanMode(Enum):
 
     @classmethod
     def get_modes(cls) -> list[str]:
-        return [mode.name for mode in cls]
+        return [mode.name.lower() for mode in cls]

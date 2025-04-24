@@ -21,10 +21,10 @@ COMMAND_TURN_OFF = f"{COMMAND_HEAD}0102"
 COMMAND_START_OSCILLATION = f"{COMMAND_HEAD}020101ff"
 COMMAND_STOP_OSCILLATION = f"{COMMAND_HEAD}020102ff"
 COMMAND_SET_MODE = {
-    FanMode.NORMAL.name: f"{COMMAND_HEAD}030101ff",
-    FanMode.NATURAL.name: f"{COMMAND_HEAD}030102ff",
-    FanMode.SLEEP.name: f"{COMMAND_HEAD}030103",
-    FanMode.BABY.name: f"{COMMAND_HEAD}030104",
+    FanMode.NORMAL.name.lower(): f"{COMMAND_HEAD}030101ff",
+    FanMode.NATURAL.name.lower(): f"{COMMAND_HEAD}030102ff",
+    FanMode.SLEEP.name.lower(): f"{COMMAND_HEAD}030103",
+    FanMode.BABY.name.lower(): f"{COMMAND_HEAD}030104",
 }
 COMMAND_SET_PERCENTAGE = f"{COMMAND_HEAD}0302"  #  +speed
 COMMAND_GET_BASIC_INFO = "570f428102"
@@ -48,7 +48,7 @@ class SwitchbotFan(SwitchbotSequenceDevice):
         isOn = bool(_data[3] & 0b10000000)
         oscillating = bool(_data[3] & 0b01100000)
         _mode = _data[8] & 0b00000111
-        mode = FanMode(_mode).name if 1 <= _mode <= 4 else None
+        mode = FanMode(_mode).name.lower() if 1 <= _mode <= 4 else None
         speed = _data[9]
         firmware = _data1[2] / 10.0
 

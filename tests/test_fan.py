@@ -89,12 +89,12 @@ async def test_get_basic_info_returns_none(basic_info, firmware_info):
         (
             bytearray(b"\x01\x02W\x82g\xf5\xde4\x01=dPP\x03\x14P\x00\x00\x00\x00"),
             bytearray(b"\x01W\x0b\x17\x01"),
-            [87, True, False, "NORMAL", 61, 1.1],
+            [87, True, False, "normal", 61, 1.1],
         ),
         (
             bytearray(b"\x01\x02U\xc2g\xf5\xde4\x04+dPP\x03\x14P\x00\x00\x00\x00"),
             bytearray(b"\x01U\x0b\x17\x01"),
-            [85, True, True, "BABY", 43, 1.1],
+            [85, True, True, "baby", 43, 1.1],
         ),
     ],
 )
@@ -120,9 +120,9 @@ async def test_get_basic_info(basic_info, firmware_info, result):
 
 @pytest.mark.asyncio
 async def test_set_preset_mode():
-    fan_device = create_device_for_command_testing({"mode": "BABY"})
-    await fan_device.set_preset_mode("BABY")
-    assert fan_device.get_current_mode() == "BABY"
+    fan_device = create_device_for_command_testing({"mode": "baby"})
+    await fan_device.set_preset_mode("baby")
+    assert fan_device.get_current_mode() == "baby"
 
 
 @pytest.mark.asyncio
@@ -169,4 +169,4 @@ async def test_turn_off():
 
 
 def test_get_modes():
-    assert FanMode.get_modes() == ["NORMAL", "NATURAL", "SLEEP", "BABY"]
+    assert FanMode.get_modes() == ["normal", "natural", "sleep", "baby"]
