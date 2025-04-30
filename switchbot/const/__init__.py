@@ -67,3 +67,8 @@ class SwitchbotModel(StrEnum):
     ROLLER_SHADE = "Roller Shade"
     HUBMINI_MATTER = "HubMini Matter"
     CIRCULATOR_FAN = "Circulator Fan"
+    K20_VACUUM = "K20 Vacuum"
+    S10_VACUUM = "S10 Vacuum"
+    K10_VACUUM = "K10 Vacuum"
+    K10_PRO_VACUUM = "K10+ Pro Vacuum"
+    K10_PRO_COMBO_VACUUM = "K10+ Pro Combo Vacuum"

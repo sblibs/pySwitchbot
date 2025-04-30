@@ -33,6 +33,7 @@ from .adv_parsers.relay_switch import (
 )
 from .adv_parsers.remote import process_woremote
 from .adv_parsers.roller_shade import process_worollershade
+from .adv_parsers.vacuum import process_vacuum, process_vacuum_k
 from .const import SwitchbotModel
 from .models import SwitchBotAdvertisement
 
@@ -237,6 +238,36 @@ SUPPORTED_TYPES: dict[str, SwitchbotSupportedType] = {
         "func": process_fan,
         "manufacturer_id": 2409,
     },
+    ".": {
+        "modelName": SwitchbotModel.K20_VACUUM,
+        "modelFriendlyName": "K20 Vacuum",
+        "func": process_vacuum,
+        "manufacturer_id": 2409,
+    },
+    "z": {
+        "modelName": SwitchbotModel.S10_VACUUM,
+        "modelFriendlyName": "S10 Vacuum",
+        "func": process_vacuum,
+        "manufacturer_id": 2409,
+    },
+    "3": {
+        "modelName": SwitchbotModel.K10_PRO_COMBO_VACUUM,
+        "modelFriendlyName": "K10+ Pro Combo",
+        "func": process_vacuum,
+        "manufacturer_id": 2409,
+    },
+    "}": {
+        "modelName": SwitchbotModel.K10_VACUUM,
+        "modelFriendlyName": "K10 Vacuum",
+        "func": process_vacuum_k,
+        "manufacturer_id": 2409,
+    },
+    "(": {
+        "modelName": SwitchbotModel.K10_PRO_VACUUM,
+        "modelFriendlyName": "K10+ Pro Vacuum",
+        "func": process_vacuum_k,
+        "manufacturer_id": 2409,
+    },        
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {
