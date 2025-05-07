@@ -40,7 +40,7 @@ def make_advertisement_data(ble_device: BLEDevice, protocol_version: int, rawAdv
                     "sequence_number": 2,
                     'dusbin_connected': False,
                     'dustbin_bound': False,
-                    'network_conncted': True,
+                    'network_connected': True,
                     "battery": 100,
                     "work_status": 0,
                 },
