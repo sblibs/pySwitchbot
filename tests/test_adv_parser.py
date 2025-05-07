@@ -2197,3 +2197,463 @@ def test_circulator_fan_with_empty_data() -> None:
         rssi=-97,
         active=True,
     )
+
+
+def test_k20_active() -> None:
+    """Test parsing k20 with active data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b"\xb0\xe9\xfe\x01\xf3\x8f'\x01\x11S\x00\x10d\x0f"},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b".\x00d"},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.K20_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b".\x00d",
+            "data": {
+                "sequence_number": 39,
+                "soc_version": "1.1.083",
+                "step": 0,
+                "mqtt_connected": True,
+                "battery": 100,
+                "work_status": 15,
+            },
+            "isEncrypted": False,
+            "model": ".",
+            "modelFriendlyName": "K20 Vacuum",
+            "modelName": SwitchbotModel.K20_VACUUM,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+def test_k20_passive() -> None:
+    """Test parsing k20 with passive data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b"\xb0\xe9\xfe\x01\xf3\x8f'\x01\x11S\x00\x10d\x0f"},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.K20_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": None,
+            "data": {
+                "sequence_number": 39,
+                "soc_version": "1.1.083",
+                "step": 0,
+                "mqtt_connected": True,
+                "battery": 100,
+                "work_status": 15,
+            },
+            "isEncrypted": False,
+            "model": ".",
+            "modelFriendlyName": "K20 Vacuum",
+            "modelName": SwitchbotModel.K20_VACUUM,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=False,
+    )
+
+
+def test_k20_with_empty_data() -> None:
+    """Test parsing k20 with empty data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: None},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b".\x00d"},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.K20_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b".\x00d",
+            "data": {},
+            "isEncrypted": False,
+            "model": ".",
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+    
+
+def test_k10_pro_active() -> None:
+    """Test parsing k10 pro with active data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b'\xb0\xe9\xfeP\x8d\x8d\x02 d'},
+        service_data={'0000fd3d-0000-1000-8000-00805f9b34fb': b'(\x00'},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.K10_PRO_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b'(\x00',
+            "data": {
+                "sequence_number": 2,
+                'dusbin_connected': False,
+                'dustbin_bound': False,
+                'network_conncted': True,
+                "battery": 100,
+                "work_status": 0,
+            },
+            "isEncrypted": False,
+            "model": "(",
+            "modelFriendlyName": "K10+ Pro Vacuum",
+            "modelName": SwitchbotModel.K10_PRO_VACUUM,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+def test_k10_pro_passive() -> None:
+    """Test parsing k10 pro with passive data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b'\xb0\xe9\xfeP\x8d\x8d\x02 d'},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.K10_PRO_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": None,
+            "data": {
+                "sequence_number": 2,
+                'dusbin_connected': False,
+                'dustbin_bound': False,
+                'network_conncted': True,
+                "battery": 100,
+                "work_status": 0,
+            },
+            "isEncrypted": False,
+            "model": "(",
+            "modelFriendlyName": "K10+ Pro Vacuum",
+            "modelName": SwitchbotModel.K10_PRO_VACUUM,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=False,
+    )
+
+
+def test_k10_pro_with_empty_data() -> None:
+    """Test parsing k10 pro with empty data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: None},
+        service_data={'0000fd3d-0000-1000-8000-00805f9b34fb': b'(\x00'},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.K10_PRO_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b'(\x00',
+            "data": {},
+            "isEncrypted": False,
+            "model": "(",
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+def test_k10_active() -> None:
+    """Test parsing k10+ with active data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b'\xca8\x06\xa9_\xf1\x02 d'},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b'}\x00'},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.K10_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b'}\x00',
+            "data": {
+                "sequence_number": 2,
+                'dusbin_connected': False,
+                'dustbin_bound': False,
+                'network_conncted': True,
+                "battery": 100,
+                "work_status": 0,
+            },
+            "isEncrypted": False,
+            "model": "}",
+            "modelFriendlyName": "K10+ Vacuum",
+            "modelName": SwitchbotModel.K10_VACUUM,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+def test_k10_passive() -> None:
+    """Test parsing k10+ with passive data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b'\xca8\x06\xa9_\xf1\x02 d'},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.K10_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": None,
+            "data": {
+                "sequence_number": 2,
+                'dusbin_connected': False,
+                'dustbin_bound': False,
+                'network_conncted': True,
+                "battery": 100,
+                "work_status": 0,
+            },
+            "isEncrypted": False,
+            "model": "}",
+            "modelFriendlyName": "K10+ Vacuum",
+            "modelName": SwitchbotModel.K10_VACUUM,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=False,
+    )
+
+
+def test_k10_with_empty_data() -> None:
+    """Test parsing k10+ with empty data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: None},
+        service_data={'0000fd3d-0000-1000-8000-00805f9b34fb': b'}\x00'},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.K10_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b'}\x00',
+            "data": {},
+            "isEncrypted": False,
+            "model": "}",
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+def test_k10_pro_combo_active() -> None:
+    """Test parsing k10+ pro combo with active data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b'\xb0\xe9\xfe\x01\xf4\x1d\x0b\x01\x01\xb1\x03\x118\x01'},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b'3\x00\x00'},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.K10_PRO_COMBO_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b'3\x00\x00',
+            "data": {
+                "sequence_number": 11,
+                "soc_version": "1.0.945",
+                "step": 1,
+                "mqtt_connected": True,
+                "battery": 56,
+                "work_status": 1,
+            },
+            "isEncrypted": False,
+            "model": "3",
+            "modelFriendlyName": "K10+ Pro Combo Vacuum",
+            "modelName": SwitchbotModel.K10_PRO_COMBO_VACUUM,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+def test_k10_pro_combo_passive() -> None:
+    """Test parsing k10+ pro combo with passive data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b'\xb0\xe9\xfe\x01\xf4\x1d\x0b\x01\x01\xb1\x03\x118\x01'},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.K10_PRO_COMBO_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": None,
+            "data": {
+                "sequence_number": 11,
+                "soc_version": "1.0.945",
+                "step": 1,
+                "mqtt_connected": True,
+                "battery": 56,
+                "work_status": 1,
+            },
+            "isEncrypted": False,
+            "model": "3",
+            "modelFriendlyName": "K10+ Pro Combo Vacuum",
+            "modelName": SwitchbotModel.K10_PRO_COMBO_VACUUM,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=False,
+    )
+
+
+def test_k10_pro_combo_with_empty_data() -> None:
+    """Test parsing k10+ pro combo with empty data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: None},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b'3\x00\x00'},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.K10_PRO_COMBO_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b'3\x00\x00',
+            "data": {},
+            "isEncrypted": False,
+            "model": "3",
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+def test_s10_active() -> None:
+    """Test parsing s10 with active data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b'\xb0\xe9\xfe\x00\x08|\n\x01\x11\x05\x00\x10M\x02'},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b'z\x00\x00'},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.S10_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b'z\x00\x00',
+            "data": {
+                "sequence_number": 10,
+                "soc_version": "1.1.005",
+                "step": 0,
+                "mqtt_connected": True,
+                "battery": 77,
+                "work_status": 2,
+            },
+            "isEncrypted": False,
+            "model": "z",
+            "modelFriendlyName": "S10 Vacuum",
+            "modelName": SwitchbotModel.S10_VACUUM,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+def test_s10_passive() -> None:
+    """Test parsing s10 with passive data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b'\xb0\xe9\xfe\x00\x08|\n\x01\x11\x05\x00\x10M\x02'},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.S10_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": None,
+            "data": {
+                "sequence_number": 10,
+                "soc_version": "1.1.005",
+                "step": 0,
+                "mqtt_connected": True,
+                "battery": 77,
+                "work_status": 2,
+            },
+            "isEncrypted": False,
+            "model": "z",
+            "modelFriendlyName": "S10 Vacuum",
+            "modelName": SwitchbotModel.S10_VACUUM,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=False,
+    )
+
+
+def test_s10_with_empty_data() -> None:
+    """Test parsing s10 with empty data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: None},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b'z\x00\x00'},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.S10_VACUUM
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b'z\x00\x00',
+            "data": {},
+            "isEncrypted": False,
+            "model": "z",
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )

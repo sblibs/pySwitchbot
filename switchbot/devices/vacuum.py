@@ -1,11 +1,8 @@
 """Library to handle connection with Switchbot."""
 
 from __future__ import annotations
-
+from typing import Any
 from .device import SwitchbotSequenceDevice, update_after_operation
-
-COMMMAND_HEAD = "5A40010101"
-COMMAND_RETURN_DOCK = F"{COMMMAND_HEAD}0225"
 
 COMMAND_CLEAN_UP = {
     1: "570F5A00FFFF7001",
@@ -31,10 +28,14 @@ class SwitchbotVacuum(SwitchbotSequenceDevice):
     async def return_to_dock(self, protocol_version: int) -> bool:
         """Send command to return the dock."""
         return await self._send_command(COMMAND_RETURN_DOCK[protocol_version])
-
-    def get_ble_version(self) -> int:
-        """Return device ble version."""
-        return self._get_adv_value("firmware")
+    
+    async def get_basic_info(self) -> dict[str, Any] | None:
+        """Only support get the ble version through the command."""
+        if not (_data := await self._get_basic_info()):
+            return None
+        return {
+            "firmware": _data[2],
+        }
     
     def get_soc_version(self) -> str:
         """Return device soc version."""

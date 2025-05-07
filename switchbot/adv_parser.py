@@ -252,13 +252,13 @@ SUPPORTED_TYPES: dict[str, SwitchbotSupportedType] = {
     },
     "3": {
         "modelName": SwitchbotModel.K10_PRO_COMBO_VACUUM,
-        "modelFriendlyName": "K10+ Pro Combo",
+        "modelFriendlyName": "K10+ Pro Combo Vacuum",
         "func": process_vacuum,
         "manufacturer_id": 2409,
     },
     "}": {
         "modelName": SwitchbotModel.K10_VACUUM,
-        "modelFriendlyName": "K10 Vacuum",
+        "modelFriendlyName": "K10+ Vacuum",
         "func": process_vacuum_k,
         "manufacturer_id": 2409,
     },
