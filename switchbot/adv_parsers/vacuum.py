@@ -44,7 +44,7 @@ def process_vacuum_k(data: bytes | None, mfr_data: bytes | None) -> dict[str, bo
     _seq_num = mfr_data[6]
     _dustbin_bound = bool(mfr_data[7] & 0b10000000)
     _dusbin_connected = bool(mfr_data[7] & 0b01000000)
-    _network_conncted = bool(mfr_data[7] & 0b00100000)
+    _network_connected = bool(mfr_data[7] & 0b00100000)
     _work_status = (mfr_data[7] & 0b00010000) >> 4
     _battery = mfr_data[8] & 0b01111111
 
@@ -52,7 +52,7 @@ def process_vacuum_k(data: bytes | None, mfr_data: bytes | None) -> dict[str, bo
         "sequence_number": _seq_num,
         "dustbin_bound": _dustbin_bound,
         "dusbin_connected": _dusbin_connected,
-        "network_conncted": _network_conncted,
+        "network_connected": _network_connected,
         "work_status": _work_status,
         "battery": _battery
     }

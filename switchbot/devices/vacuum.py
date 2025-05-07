@@ -50,7 +50,7 @@ class SwitchbotVacuum(SwitchbotSequenceDevice):
         return self._get_adv_value("mqtt_connected")
     
     def get_battery(self) -> int:
-        """Return device battey."""
+        """Return device battery."""
         return self._get_adv_value("battery")
     
     def get_work_status(self) -> int:
@@ -66,5 +66,5 @@ class SwitchbotVacuum(SwitchbotSequenceDevice):
         return self._get_adv_value("dusbin_connected")
 
     def get_network_connected_status(self) -> bool:
-        """Return the network conncted status"""
-        return self._get_adv_value("network_conncted")
+        """Return the network connected status"""
+        return self._get_adv_value("network_connected")
