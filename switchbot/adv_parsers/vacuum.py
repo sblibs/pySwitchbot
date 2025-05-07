@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import struct
 
-def process_vacuum(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | int | str]:
-    """Support for s10, k10+ pro combo, k20 process service data."""
 
+def process_vacuum(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int | str]:
+    """Support for s10, k10+ pro combo, k20 process service data."""
     if mfr_data is None:
         return {}
 
@@ -27,17 +29,18 @@ def process_vacuum(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool
         "work_status": _work_status,
     }
 
+
 def get_device_fw_version(version_bytes: bytes) -> str | None:
-    version1 = version_bytes[0] & 0x0f
+    version1 = version_bytes[0] & 0x0F
     version2 = version_bytes[0] >> 4
-    version3 = struct.unpack('<H', version_bytes[1:])[0]
-    return f'{version1}.{version2}.{version3:>03d}'
+    version3 = struct.unpack("<H", version_bytes[1:])[0]
+    return f"{version1}.{version2}.{version3:>03d}"
 
 
-
-def process_vacuum_k(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | int | str]:
+def process_vacuum_k(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int | str]:
     """Support for k10+, k10+ pro process service data."""
-
     if mfr_data is None:
         return {}
 
@@ -54,5 +57,5 @@ def process_vacuum_k(data: bytes | None, mfr_data: bytes | None) -> dict[str, bo
         "dusbin_connected": _dusbin_connected,
         "network_connected": _network_connected,
         "work_status": _work_status,
-        "battery": _battery
+        "battery": _battery,
     }

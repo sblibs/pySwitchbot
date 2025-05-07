@@ -267,7 +267,7 @@ SUPPORTED_TYPES: dict[str, SwitchbotSupportedType] = {
         "modelFriendlyName": "K10+ Pro Vacuum",
         "func": process_vacuum_k,
         "manufacturer_id": 2409,
-    },        
+    },
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {
