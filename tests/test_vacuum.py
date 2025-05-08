@@ -57,32 +57,32 @@ def make_advertisement_data(
             rssi=-97,
             active=True,
         )
-    else:
-        return SwitchBotAdvertisement(
-            address="aa:bb:cc:dd:ee:ff",
-            data={
-                "rawAdvData": rawAdvData,
-                "data": {
-                    "soc_version": "1.1.083",
-                    "step": 0,
-                    "mqtt_connected": True,
-                    "battery": 100,
-                    "work_status": 15,
-                },
-                "isEncrypted": False,
-                "model": model,
-                "modelFriendlyName": SUPPORTED_TYPES[model]["modelFriendlyName"],
-                "modelName": SUPPORTED_TYPES[model]["modelName"],
+    return SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": rawAdvData,
+            "data": {
+                "soc_version": "1.1.083",
+                "step": 0,
+                "mqtt_connected": True,
+                "battery": 100,
+                "work_status": 15,
             },
-            device=ble_device,
-            rssi=-97,
-            active=True,
-        )
+            "isEncrypted": False,
+            "model": model,
+            "modelFriendlyName": SUPPORTED_TYPES[model]["modelFriendlyName"],
+            "modelName": SUPPORTED_TYPES[model]["modelName"],
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "rawAdvData,model", [(b".\x00d", "."), (b"z\x00\x00", "z"), (b"3\x00\x00", "3")]
+    ("rawAdvData", "model"),
+    [(b".\x00d", "."), (b"z\x00\x00", "z"), (b"3\x00\x00", "3")],
 )
 async def test_status_from_proceess_adv(rawAdvData, model, protocol_version=2):
     device = create_device_for_command_testing(protocol_version, rawAdvData, model)
@@ -94,7 +94,7 @@ async def test_status_from_proceess_adv(rawAdvData, model, protocol_version=2):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("rawAdvData,model", [(b"(\x00", "("), (b"}\x00", "}")])
+@pytest.mark.parametrize(("rawAdvData", "model"), [(b"(\x00", "("), (b"}\x00", "}")])
 async def test_status_from_proceess_adv_k(rawAdvData, model, protocol_version=1):
     device = create_device_for_command_testing(protocol_version, rawAdvData, model)
     assert device.get_dustbin_bound_status() is False
@@ -105,7 +105,7 @@ async def test_status_from_proceess_adv_k(rawAdvData, model, protocol_version=1)
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("rawAdvData,model,protocol_version", common_params)
+@pytest.mark.parametrize(("rawAdvData", "model", "protocol_version"), common_params)
 async def test_clean_up(rawAdvData, model, protocol_version):
     device = create_device_for_command_testing(protocol_version, rawAdvData, model)
     await device.clean_up(protocol_version)
@@ -115,7 +115,7 @@ async def test_clean_up(rawAdvData, model, protocol_version):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("rawAdvData,model,protocol_version", common_params)
+@pytest.mark.parametrize(("rawAdvData", "model", "protocol_version"), common_params)
 async def test_return_to_dock(rawAdvData, model, protocol_version):
     device = create_device_for_command_testing(protocol_version, rawAdvData, model)
     await device.return_to_dock(protocol_version)
@@ -125,7 +125,7 @@ async def test_return_to_dock(rawAdvData, model, protocol_version):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("rawAdvData,model,protocol_version", common_params)
+@pytest.mark.parametrize(("rawAdvData", "model", "protocol_version"), common_params)
 async def test_get_basic_info_returns_none_when_no_data(
     rawAdvData, model, protocol_version
 ):
