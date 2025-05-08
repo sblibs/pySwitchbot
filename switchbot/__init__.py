@@ -10,6 +10,7 @@ from bleak_retry_connector import (
 
 from .adv_parser import SwitchbotSupportedType, parse_advertisement_data
 from .const import (
+    AirPurifierMode,
     FanMode,
     LockStatus,
     SwitchbotAccountConnectionError,
@@ -17,6 +18,7 @@ from .const import (
     SwitchbotAuthenticationError,
     SwitchbotModel,
 )
+from .devices.air_purifier import SwitchbotAirPurifier
 from .devices.base_light import SwitchbotBaseLight
 from .devices.blind_tilt import SwitchbotBlindTilt
 from .devices.bot import Switchbot
@@ -37,6 +39,7 @@ from .discovery import GetSwitchbotDevices
 from .models import SwitchBotAdvertisement
 
 __all__ = [
+    "AirPurifierMode",
     "ColorMode",
     "FanMode",
     "GetSwitchbotDevices",
@@ -45,6 +48,7 @@ __all__ = [
     "Switchbot",
     "Switchbot",
     "SwitchbotAccountConnectionError",
+    "SwitchbotAirPurifier",
     "SwitchbotApiError",
     "SwitchbotAuthenticationError",
     "SwitchbotBaseLight",

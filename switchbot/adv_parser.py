@@ -10,6 +10,7 @@ from typing import Any, TypedDict
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
+from .adv_parsers.air_purifier import process_air_purifier
 from .adv_parsers.blind_tilt import process_woblindtilt
 from .adv_parsers.bot import process_wohand
 from .adv_parsers.bulb import process_color_bulb
@@ -266,6 +267,30 @@ SUPPORTED_TYPES: dict[str, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.K10_PRO_VACUUM,
         "modelFriendlyName": "K10+ Pro Vacuum",
         "func": process_vacuum_k,
+        "manufacturer_id": 2409,
+    },
+    "*": {
+        "modelName": SwitchbotModel.AIR_PURIFIER,
+        "modelFriendlyName": "Air Purifier",
+        "func": process_air_purifier,
+        "manufacturer_id": 2409,
+    },
+    "+": {
+        "modelName": SwitchbotModel.AIR_PURIFIER,
+        "modelFriendlyName": "Air Purifier",
+        "func": process_air_purifier,
+        "manufacturer_id": 2409,
+    },
+    "7": {
+        "modelName": SwitchbotModel.AIR_PURIFIER,
+        "modelFriendlyName": "Air Purifier",
+        "func": process_air_purifier,
+        "manufacturer_id": 2409,
+    },
+    "8": {
+        "modelName": SwitchbotModel.AIR_PURIFIER,
+        "modelFriendlyName": "Air Purifier",
+        "func": process_air_purifier,
         "manufacturer_id": 2409,
     },
 }
