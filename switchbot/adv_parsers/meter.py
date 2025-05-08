@@ -35,7 +35,7 @@ def process_wosensorth(data: bytes | None, mfr_data: bytes | None) -> dict[str, 
     if _temp_c == 0 and humidity == 0 and battery == 0:
         return {}
 
-    _wosensorth_data = {
+    return {
         # Data should be flat, but we keep the original structure for now
         "temp": {"c": _temp_c, "f": _temp_f},
         "temperature": _temp_c,
@@ -43,8 +43,6 @@ def process_wosensorth(data: bytes | None, mfr_data: bytes | None) -> dict[str, 
         "humidity": humidity,
         "battery": battery,
     }
-
-    return _wosensorth_data
 
 
 def process_wosensorth_c(data: bytes | None, mfr_data: bytes | None) -> dict[str, Any]:

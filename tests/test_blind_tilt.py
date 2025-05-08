@@ -61,7 +61,8 @@ async def test_open():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "position,keys", [(5, blind_tilt.CLOSE_DOWN_KEYS), (55, blind_tilt.CLOSE_UP_KEYS)]
+    ("position", "keys"),
+    [(5, blind_tilt.CLOSE_DOWN_KEYS), (55, blind_tilt.CLOSE_UP_KEYS)],
 )
 async def test_close(position, keys):
     blind_device = create_device_for_command_testing(position=position)
@@ -79,7 +80,7 @@ async def test_get_basic_info_returns_none_when_no_data():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "reverse_mode,data,result",
+    ("reverse_mode", "data", "result"),
     [
         (
             False,
@@ -152,7 +153,7 @@ async def test_get_extended_info_summary_returns_none_when_bad_data(data_value):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "data,result", [(bytes([0, 0]), False), (bytes([0, 255]), True)]
+    ("data", "result"), [(bytes([0, 0]), False), (bytes([0, 255]), True)]
 )
 async def test_get_extended_info_summary(data, result):
     blind_device = create_device_for_command_testing()

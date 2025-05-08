@@ -285,10 +285,8 @@ def parse_advertisement_data(
             _mfr_id,
             model,
         )
-    except Exception as err:  # pylint: disable=broad-except
-        _LOGGER.exception(
-            "Failed to parse advertisement data: %s: %s", advertisement_data, err
-        )
+    except Exception:  # pylint: disable=broad-except
+        _LOGGER.exception("Failed to parse advertisement data: %s", advertisement_data)
         return None
 
     if not data:

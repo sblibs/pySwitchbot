@@ -50,7 +50,7 @@ def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "response, expected",
+    ("response", "expected"),
     [
         (b"\x00", None),
         (b"\x07", None),
@@ -66,7 +66,7 @@ async def test__get_basic_info(response, expected):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "basic_info,firmware_info", [(True, False), (False, True), (False, False)]
+    ("basic_info", "firmware_info"), [(True, False), (False, True), (False, False)]
 )
 async def test_get_basic_info_returns_none(basic_info, firmware_info):
     fan_device = create_device_for_command_testing()
@@ -74,8 +74,9 @@ async def test_get_basic_info_returns_none(basic_info, firmware_info):
     async def mock_get_basic_info(arg):
         if arg == fan.COMMAND_GET_BASIC_INFO:
             return basic_info
-        elif arg == fan.DEVICE_GET_BASIC_SETTINGS_KEY:
+        if arg == fan.DEVICE_GET_BASIC_SETTINGS_KEY:
             return firmware_info
+        return None
 
     fan_device._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
 
@@ -84,7 +85,7 @@ async def test_get_basic_info_returns_none(basic_info, firmware_info):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "basic_info,firmware_info,result",
+    ("basic_info", "firmware_info", "result"),
     [
         (
             bytearray(b"\x01\x02W\x82g\xf5\xde4\x01=dPP\x03\x14P\x00\x00\x00\x00"),
@@ -104,8 +105,9 @@ async def test_get_basic_info(basic_info, firmware_info, result):
     async def mock_get_basic_info(arg):
         if arg == fan.COMMAND_GET_BASIC_INFO:
             return basic_info
-        elif arg == fan.DEVICE_GET_BASIC_SETTINGS_KEY:
+        if arg == fan.DEVICE_GET_BASIC_SETTINGS_KEY:
             return firmware_info
+        return None
 
     fan_device._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
 

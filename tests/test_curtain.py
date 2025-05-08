@@ -268,7 +268,7 @@ async def test_get_basic_info_returns_none_when_no_data():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "data,result",
+    ("data", "result"),
     [
         (
             bytes([0, 1, 10, 2, 255, 255, 50, 4]),
@@ -373,7 +373,7 @@ async def test_get_extended_info_summary_returns_none_when_bad_data(data_value):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "data,result",
+    ("data", "result"),
     [
         ([0, 0, 0], [True, False, False, "right_to_left"]),
         ([255, 255, 0], [False, True, True, "left_to_right"]),
@@ -392,7 +392,7 @@ async def test_get_extended_info_summary_returns_device0(data, result):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "data,result",
+    ("data", "result"),
     [
         ([0, 0, 1], [True, False, False, "right_to_left"]),
         ([255, 255, 255], [False, True, True, "left_to_right"]),

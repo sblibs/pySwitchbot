@@ -111,7 +111,7 @@ async def test_get_extended_info_adv_returns_both_devices():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "data_value,result",
+    ("data_value", "result"),
     [
         (0, "not_charging"),
         (1, "charging_by_adapter"),
@@ -132,7 +132,7 @@ async def test_get_extended_info_adv_returns_device0_charge_states(data_value, r
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "data_value,result",
+    ("data_value", "result"),
     [
         (0, "not_charging"),
         (1, "charging_by_adapter"),
