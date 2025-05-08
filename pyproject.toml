@@ -28,8 +28,13 @@ ignore = [
     "UP038", # Use `X | Y` in `isinstance` is slower
     "S603", #  check for execution of untrusted input
     "S105", # possible hard coded creds
+    "TID252", # not for this lib
+    "TRY003", # nice but too many to fix,
+    "G201", # too noisy
+    "PLR2004", # too many to fix
 ]
 select = [
+    "ASYNC", # async rules
     "B",   # flake8-bugbear
     "D",   # flake8-docstrings
     "C4",  # flake8-comprehensions
@@ -40,6 +45,24 @@ select = [
     "UP",  # pyupgrade
     "I",   # isort
     "RUF", # ruff specific
+    "FLY", # flynt
+    "G", # flake8-logging-format   ,
+    "PERF", # Perflint
+    "PGH", # pygrep-hooks
+    "PIE", # flake8-pie
+    "PL", # pylint
+    "PT", # flake8-pytest-style
+    "PTH", # flake8-pathlib
+    "PYI", # flake8-pyi
+    "RET", # flake8-return
+    "RSE", # flake8-raise    ,
+    "SIM", # flake8-simplify
+    "SLF", # flake8-self
+    "SLOT", # flake8-slots
+    "T100", # Trace found: {name} used
+    "T20", # flake8-print
+    "TID", # Tidy imports
+    "TRY", # tryceratops
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -50,10 +73,15 @@ select = [
     "D103",
     "D104",
     "S101",
+    "SLF001",
+    "PLR2004",
 ]
 "setup.py" = ["D100"]
 "conftest.py" = ["D100"]
 "docs/conf.py" = ["D100"]
+"scripts/**/*" = [
+    "T201"
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["pySwitchbot", "tests"]

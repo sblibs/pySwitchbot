@@ -28,10 +28,9 @@ def process_hubmini_matter(
     if _temp_c == 0 and humidity == 0:
         return {}
 
-    paraser_data = {
+    return {
         "temp": {"c": _temp_c, "f": _temp_f},
         "temperature": _temp_c,
         "fahrenheit": bool(temp_data[2] & 0b10000000),
         "humidity": humidity,
     }
-    return paraser_data

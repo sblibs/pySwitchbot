@@ -86,8 +86,7 @@ class SwitchbotFan(SwitchbotSequenceDevice):
         """Send command to set fan oscillation"""
         if oscillating:
             return await self._send_command(COMMAND_START_OSCILLATION)
-        else:
-            return await self._send_command(COMMAND_STOP_OSCILLATION)
+        return await self._send_command(COMMAND_STOP_OSCILLATION)
 
     @update_after_operation
     async def turn_on(self) -> bool:

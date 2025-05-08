@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from ..enum import StrEnum
-from .fan import FanMode as FanMode
+from .fan import FanMode
 
 # Preserve old LockStatus export for backwards compatibility
-from .lock import LockStatus as LockStatus
+from .lock import LockStatus
 
 DEFAULT_RETRY_COUNT = 3
 DEFAULT_RETRY_TIMEOUT = 1
@@ -72,3 +72,16 @@ class SwitchbotModel(StrEnum):
     K10_VACUUM = "K10+ Vacuum"
     K10_PRO_VACUUM = "K10+ Pro Vacuum"
     K10_PRO_COMBO_VACUUM = "K10+ Pro Combo Vacuum"
+
+
+__all__ = [
+    "DEFAULT_RETRY_COUNT",
+    "DEFAULT_RETRY_TIMEOUT",
+    "DEFAULT_SCAN_TIMEOUT",
+    "FanMode",
+    "LockStatus",
+    "SwitchbotAccountConnectionError",
+    "SwitchbotApiError",
+    "SwitchbotAuthenticationError",
+    "SwitchbotModel",
+]

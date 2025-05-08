@@ -106,9 +106,7 @@ class SwitchbotRelaySwitch(SwitchbotEncryptedDevice):
         ):
             return False
         time_since_last_full_update = time.monotonic() - self._last_full_update
-        if time_since_last_full_update < PASSIVE_POLL_INTERVAL:
-            return False
-        return True
+        return not time_since_last_full_update < PASSIVE_POLL_INTERVAL
 
     async def turn_on(self) -> bool:
         """Turn device on."""
@@ -131,8 +129,7 @@ class SwitchbotRelaySwitch(SwitchbotEncryptedDevice):
     async def async_toggle(self, **kwargs) -> bool:
         """Toggle device."""
         result = await self._send_command(COMMAND_TOGGLE)
-        status = self._check_command_result(result, 0, {1})
-        return status
+        return self._check_command_result(result, 0, {1})
 
     def is_on(self) -> bool | None:
         """Return switch state from cache."""
