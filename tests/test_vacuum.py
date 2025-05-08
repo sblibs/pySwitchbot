@@ -57,27 +57,26 @@ def make_advertisement_data(
             rssi=-97,
             active=True,
         )
-    else:
-        return SwitchBotAdvertisement(
-            address="aa:bb:cc:dd:ee:ff",
-            data={
-                "rawAdvData": rawAdvData,
-                "data": {
-                    "soc_version": "1.1.083",
-                    "step": 0,
-                    "mqtt_connected": True,
-                    "battery": 100,
-                    "work_status": 15,
-                },
-                "isEncrypted": False,
-                "model": model,
-                "modelFriendlyName": SUPPORTED_TYPES[model]["modelFriendlyName"],
-                "modelName": SUPPORTED_TYPES[model]["modelName"],
+    return SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": rawAdvData,
+            "data": {
+                "soc_version": "1.1.083",
+                "step": 0,
+                "mqtt_connected": True,
+                "battery": 100,
+                "work_status": 15,
             },
-            device=ble_device,
-            rssi=-97,
-            active=True,
-        )
+            "isEncrypted": False,
+            "model": model,
+            "modelFriendlyName": SUPPORTED_TYPES[model]["modelFriendlyName"],
+            "modelName": SUPPORTED_TYPES[model]["modelName"],
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
 
 
 @pytest.mark.asyncio
