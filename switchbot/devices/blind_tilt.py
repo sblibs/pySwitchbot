@@ -100,8 +100,7 @@ class SwitchbotBlindTilt(SwitchbotBaseCover, SwitchbotSequenceDevice):
         """Send close command."""
         if self.get_position() > 50:
             return await self.close_up()
-        else:
-            return await self.close_down()
+        return await self.close_down()
 
     def get_position(self) -> Any:
         """Return cached tilt (0-100) of Blind Tilt."""

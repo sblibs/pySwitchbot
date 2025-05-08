@@ -117,7 +117,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
         """Set device mode."""
         if mode == HumidifierMode.DRYING_FILTER:
             return await self.start_drying_filter()
-        elif mode not in MODES_COMMANDS:
+        if mode not in MODES_COMMANDS:
             raise ValueError("Invalid mode")
 
         command = COMMAND_SET_MODE + MODES_COMMANDS[mode]

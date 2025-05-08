@@ -83,7 +83,7 @@ async def test_get_basic_info_returns_none_when_no_data():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "reverse_mode,data,result",
+    ("reverse_mode", "data", "result"),
     [
         (
             True,

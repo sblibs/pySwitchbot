@@ -143,7 +143,7 @@ async def test_set_mode():
     await device.set_mode(HumidifierMode.DRYING_FILTER)
     assert device.get_mode() is HumidifierMode.DRYING_FILTER
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         await device.set_mode(0)
 
     with pytest.raises(TypeError):

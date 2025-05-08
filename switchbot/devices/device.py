@@ -646,7 +646,7 @@ class SwitchbotBaseDevice:
         """
         if not self._sb_adv_data:
             _LOGGER.exception("No advertisement data to update")
-            return
+            return None
         old_data = self._sb_adv_data.data.get("data") or {}
         merged_data = _merge_data(old_data, new_data)
         if merged_data == old_data:
@@ -688,9 +688,7 @@ class SwitchbotBaseDevice:
         ):
             return False
         time_since_last_full_update = time.monotonic() - self._last_full_update
-        if time_since_last_full_update < PASSIVE_POLL_INTERVAL:
-            return False
-        return True
+        return not time_since_last_full_update < PASSIVE_POLL_INTERVAL
 
 
 class SwitchbotDevice(SwitchbotBaseDevice):
@@ -723,11 +721,11 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         """Switchbot base class constructor for encrypted devices."""
         if len(key_id) == 0:
             raise ValueError("key_id is missing")
-        elif len(key_id) != 2:
+        if len(key_id) != 2:
             raise ValueError("key_id is invalid")
         if len(encryption_key) == 0:
             raise ValueError("encryption_key is missing")
-        elif len(encryption_key) != 32:
+        if len(encryption_key) != 32:
             raise ValueError("encryption_key is invalid")
         self._key_id = key_id
         self._encryption_key = bytearray.fromhex(encryption_key)

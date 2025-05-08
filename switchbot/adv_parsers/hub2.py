@@ -30,7 +30,7 @@ def process_wohub2(data: bytes | None, mfr_data: bytes | None) -> dict[str, Any]
     if _temp_c == 0 and humidity == 0:
         return {}
 
-    _wohub2_data = {
+    return {
         # Data should be flat, but we keep the original structure for now
         "temp": {"c": _temp_c, "f": _temp_f},
         "temperature": _temp_c,
@@ -39,8 +39,6 @@ def process_wohub2(data: bytes | None, mfr_data: bytes | None) -> dict[str, Any]
         "lightLevel": light_level,
         "illuminance": calculate_light_intensity(light_level),
     }
-
-    return _wohub2_data
 
 
 def calculate_light_intensity(light_level: int) -> int:
