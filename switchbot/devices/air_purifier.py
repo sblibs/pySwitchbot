@@ -32,7 +32,6 @@ COMMAND_SET_MODE = {
     AirPurifierMode.PET.name.lower(): f"{COMMAND_HEAD}01010300",
     AirPurifierMode.SLEEP.name.lower(): f"{COMMAND_HEAD}01010400",
 }
-COMMAND_SET_PERCENTAGE = f"{COMMAND_HEAD}02"  #  +speed
 DEVICE_GET_BASIC_SETTINGS_KEY = "570f4d81"
 
 
@@ -110,12 +109,6 @@ class SwitchbotAirPurifier(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     async def set_preset_mode(self, preset_mode: str) -> bool:
         """Send command to set air purifier preset_mode."""
         result = await self._send_command(COMMAND_SET_MODE[preset_mode])
-        return self._check_command_result(result, 0, {1})
-
-    @update_after_operation
-    async def set_percentage(self, percentage: int) -> bool:
-        """Send command to set air purifier percentage."""
-        result = await self._send_command(f"{COMMAND_SET_PERCENTAGE}{percentage:02X}")
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation

@@ -21,7 +21,7 @@ def process_air_purifier(data: bytes | None, mfr_data: bytes | None) -> dict[str
     _speed = device_data[3] & 0b01111111
     _aqi_level = (device_data[4] & 0b00000110) >> 1
     _aqi_level = AirQualityLevel(_aqi_level).name.lower()
-    _work_time = struct.unpack('<H', device_data[5:7])[0]
+    _work_time = struct.unpack('>H', device_data[5:7])[0]
     _err_code = device_data[7]
 
     return {
@@ -40,13 +40,11 @@ def process_air_purifier(data: bytes | None, mfr_data: bytes | None) -> dict[str
 def get_air_purifier_mode(mode: int, speed: int) -> str | None:
     if mode == 1:
         if 0 <= speed <= 33:
-            return 'level_1'
-        elif 34 <= speed <= 66:
-            return 'level_2'
-        else:
-            return 'level_3'
-    elif 1 < mode <=4:
+            return "level_1"
+        if 34 <= speed <= 66:
+            return "level_2"
+        return "level_3"
+    if 1 < mode <=4:
         mode += 2
         return AirPurifierMode(mode).name.lower()
-    else:
-        return None
+    return None
