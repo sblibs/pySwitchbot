@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from ..enum import StrEnum
-from .air_purifier import AirPurifierMode as AirPurifierMode
-from .fan import FanMode as FanMode
+from .air_purifier import AirPurifierMode
+from .fan import FanMode
 
 # Preserve old LockStatus export for backwards compatibility
 from .lock import LockStatus
@@ -79,6 +79,7 @@ __all__ = [
     "DEFAULT_RETRY_COUNT",
     "DEFAULT_RETRY_TIMEOUT",
     "DEFAULT_SCAN_TIMEOUT",
+    "AirPurifierMode",
     "FanMode",
     "LockStatus",
     "SwitchbotAccountConnectionError",
