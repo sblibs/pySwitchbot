@@ -10,16 +10,20 @@ from switchbot.devices import air_purifier
 from .test_adv_parser import generate_ble_device
 
 common_params = [
-    (b'7\x00\x00\x95-\x00', "7"),
-    (b'*\x00\x00\x15\x04\x00', "*"),
-    (b'+\x00\x00\x15\x04\x00', "+"),
-    (b'8\x00\x00\x95-\x00', "8"),
+    (b"7\x00\x00\x95-\x00", "7"),
+    (b"*\x00\x00\x15\x04\x00", "*"),
+    (b"+\x00\x00\x15\x04\x00", "+"),
+    (b"8\x00\x00\x95-\x00", "8"),
 ]
 
 
-def create_device_for_command_testing(rawAdvData: bytes, model: str, init_data: dict | None = None):
+def create_device_for_command_testing(
+    rawAdvData: bytes, model: str, init_data: dict | None = None
+):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    device = air_purifier.SwitchbotAirPurifier(ble_device, "ff", "ffffffffffffffffffffffffffffffff")
+    device = air_purifier.SwitchbotAirPurifier(
+        ble_device, "ff", "ffffffffffffffffffffffffffffffff"
+    )
     device.update_from_advertisement(
         make_advertisement_data(ble_device, rawAdvData, model, init_data)
     )
@@ -29,7 +33,9 @@ def create_device_for_command_testing(rawAdvData: bytes, model: str, init_data: 
     return device
 
 
-def make_advertisement_data(ble_device: BLEDevice, rawAdvData: bytes, model: str, init_data: dict | None = None):
+def make_advertisement_data(
+    ble_device: BLEDevice, rawAdvData: bytes, model: str, init_data: dict | None = None
+):
     """Set advertisement data with defaults."""
     if init_data is None:
         init_data = {}
@@ -44,7 +50,7 @@ def make_advertisement_data(ble_device: BLEDevice, rawAdvData: bytes, model: str
                 "isAqiValid": False,
                 "child_lock": False,
                 "speed": 100,
-                "aqi_level": 'excellent',
+                "aqi_level": "excellent",
                 "filter element working time": 405,
                 "err_code": 0,
                 "sequence_number": 161,
@@ -59,7 +65,6 @@ def make_advertisement_data(ble_device: BLEDevice, rawAdvData: bytes, model: str
         rssi=-80,
         active=True,
     )
-
 
 
 @pytest.mark.asyncio
@@ -92,15 +97,13 @@ async def test_get_basic_info_returns_none_when_no_data(rawAdvData, model):
     assert await device.get_basic_info() is None
 
 
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("rawAdvData", "model"),
     common_params,
 )
 @pytest.mark.parametrize(
-    "mode",
-    ["level_1", "level_2", "level_3", "auto", "pet", "sleep"]
+    "mode", ["level_1", "level_2", "level_3", "auto", "pet", "sleep"]
 )
 async def test_set_preset_mode(rawAdvData, model, mode):
     device = create_device_for_command_testing(rawAdvData, model, {"mode": mode})
@@ -159,11 +162,15 @@ async def test__get_basic_info(rawAdvData, model, response, expected):
     ("basic_info", "result"),
     [
         (
-            bytearray(b'\x01\xa7\xe9\x8c\x08\x00\xb2\x01\x96\x00\x00\x00\xf0\x00\x00\x17'),
+            bytearray(
+                b"\x01\xa7\xe9\x8c\x08\x00\xb2\x01\x96\x00\x00\x00\xf0\x00\x00\x17"
+            ),
             [True, 2, "level_2", True, False, "excellent", 50, 240, 2.3],
         ),
         (
-            bytearray(b'\x01\xa8\xec\x8c\x08\x00\xb2\x01\x96\x00\x00\x00\xf0\x00\x00\x17'),
+            bytearray(
+                b"\x01\xa8\xec\x8c\x08\x00\xb2\x01\x96\x00\x00\x00\xf0\x00\x00\x17"
+            ),
             [True, 2, "sleep", True, False, "excellent", 50, 240, 2.3],
         ),
     ],
@@ -214,4 +221,11 @@ async def test_verify_encryption_key(mock_parent_verify):
 
 
 def test_get_modes():
-    assert AirPurifierMode.get_modes() == ["level_1", "level_2", "level_3", "auto", "pet", "sleep"]
+    assert AirPurifierMode.get_modes() == [
+        "level_1",
+        "level_2",
+        "level_3",
+        "auto",
+        "pet",
+        "sleep",
+    ]

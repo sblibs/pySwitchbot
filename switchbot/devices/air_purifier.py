@@ -20,7 +20,6 @@ from .device import (
 _LOGGER = logging.getLogger(__name__)
 
 
-
 COMMAND_HEAD = "570f4c"
 COMMAND_TURN_OFF = f"{COMMAND_HEAD}010000"
 COMMAND_TURN_ON = f"{COMMAND_HEAD}010100"
@@ -76,7 +75,7 @@ class SwitchbotAirPurifier(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         _aqi_level = (_data[4] & 0b00000110) >> 1
         aqi_level = AirQualityLevel(_aqi_level).name.lower()
         speed = _data[6] & 0b01111111
-        pm25 = struct.unpack('<H', _data[12:14])[0] & 0xfff
+        pm25 = struct.unpack("<H", _data[12:14])[0] & 0xFFF
         firmware = _data[15] / 10.0
         mode = get_air_purifier_mode(_mode, speed)
 
@@ -103,7 +102,6 @@ class SwitchbotAirPurifier(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             return None
 
         return _data
-
 
     @update_after_operation
     async def set_preset_mode(self, preset_mode: str) -> bool:
