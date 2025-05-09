@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ..enum import StrEnum
+from .air_purifier import AirPurifierMode
 from .fan import FanMode
 
 # Preserve old LockStatus export for backwards compatibility
@@ -72,12 +73,14 @@ class SwitchbotModel(StrEnum):
     K10_VACUUM = "K10+ Vacuum"
     K10_PRO_VACUUM = "K10+ Pro Vacuum"
     K10_PRO_COMBO_VACUUM = "K10+ Pro Combo Vacuum"
+    AIR_PURIFIER = "Air Purifier"
 
 
 __all__ = [
     "DEFAULT_RETRY_COUNT",
     "DEFAULT_RETRY_TIMEOUT",
     "DEFAULT_SCAN_TIMEOUT",
+    "AirPurifierMode",
     "FanMode",
     "LockStatus",
     "SwitchbotAccountConnectionError",

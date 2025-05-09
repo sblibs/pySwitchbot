@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
@@ -2638,6 +2639,190 @@ def test_s10_with_empty_data() -> None:
             "data": {},
             "isEncrypted": False,
             "model": "z",
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+@pytest.mark.parametrize(
+    ("manufacturer_data", "service_data", "data", "model"),
+    [
+        (
+            b"\xf0\x9e\x9e\x96j\xd6\xa1\x81\x88\xe4\x00\x01\x95\x00\x00",
+            b"7\x00\x00\x95-\x00",
+            {
+                "isOn": True,
+                "mode": "level_3",
+                "isAqiValid": False,
+                "child_lock": False,
+                "speed": 100,
+                "aqi_level": "excellent",
+                "filter element working time": 405,
+                "err_code": 0,
+                "sequence_number": 161,
+            },
+            "7",
+        ),
+        (
+            b'\xcc\x8d\xa2\xa7\x92>\t"\x80\x000\x00\x0f\x00\x00',
+            b"*\x00\x00\x15\x04\x00",
+            {
+                "isOn": False,
+                "mode": "auto",
+                "isAqiValid": False,
+                "child_lock": False,
+                "speed": 0,
+                "aqi_level": "excellent",
+                "filter element working time": 15,
+                "err_code": 0,
+                "sequence_number": 9,
+            },
+            "*",
+        ),
+        (
+            b"\xcc\x8d\xa2\xa7\xe4\xa6\x0b\x83\x88d\x00\xea`\x00\x00",
+            b"+\x00\x00\x15\x04\x00",
+            {
+                "isOn": True,
+                "mode": "pet",
+                "isAqiValid": False,
+                "child_lock": False,
+                "speed": 100,
+                "aqi_level": "excellent",
+                "filter element working time": 60000,
+                "err_code": 0,
+                "sequence_number": 11,
+            },
+            "+",
+        ),
+        (
+            b"\xcc\x8d\xa2\xa7\xc1\xae\x9b\x81\x8c\xb2\x00\x01\x94\x00\x00",
+            b"8\x00\x00\x95-\x00",
+            {
+                "isOn": True,
+                "mode": "level_2",
+                "isAqiValid": True,
+                "child_lock": False,
+                "speed": 50,
+                "aqi_level": "excellent",
+                "filter element working time": 404,
+                "err_code": 0,
+                "sequence_number": 155,
+            },
+            "8",
+        ),
+        (
+            b"\xcc\x8d\xa2\xa7\xc1\xae\x9e\xa1\x8c\x800\x01\x95\x00\x00",
+            b"8\x00\x00\x95-\x00",
+            {
+                "isOn": True,
+                "mode": "level_1",
+                "isAqiValid": True,
+                "child_lock": False,
+                "speed": 0,
+                "aqi_level": "excellent",
+                "filter element working time": 405,
+                "err_code": 0,
+                "sequence_number": 158,
+            },
+            "8",
+        ),
+        (
+            b"\xcc\x8d\xa2\xa7\xc1\xae\x9e\x05\x8c\x800\x01\x95\x00\x00",
+            b"8\x00\x00\x95-\x00",
+            {
+                "isOn": False,
+                "mode": None,
+                "isAqiValid": True,
+                "child_lock": False,
+                "speed": 0,
+                "aqi_level": "excellent",
+                "filter element working time": 405,
+                "err_code": 0,
+                "sequence_number": 158,
+            },
+            "8",
+        ),
+    ],
+)
+def test_air_purifier_active(manufacturer_data, service_data, data, model) -> None:
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: manufacturer_data},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": service_data},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": service_data,
+            "data": data,
+            "isEncrypted": False,
+            "model": model,
+            "modelFriendlyName": "Air Purifier",
+            "modelName": SwitchbotModel.AIR_PURIFIER,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+def test_air_purifier_passive() -> None:
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xf0\x9e\x9e\x96j\xd6\xa1\x81\x88\xe4\x00\x01\x95\x00\x00"
+        },
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.AIR_PURIFIER)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": None,
+            "data": {
+                "isOn": True,
+                "mode": "level_3",
+                "isAqiValid": False,
+                "child_lock": False,
+                "speed": 100,
+                "aqi_level": "excellent",
+                "filter element working time": 405,
+                "err_code": 0,
+                "sequence_number": 161,
+            },
+            "isEncrypted": False,
+            "model": "8",
+            "modelFriendlyName": "Air Purifier",
+            "modelName": SwitchbotModel.AIR_PURIFIER,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=False,
+    )
+
+
+def test_air_purifier_with_empty_data() -> None:
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: None},
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"+\x00\x00\x15\x04\x00",
+        },
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b"+\x00\x00\x15\x04\x00",
+            "data": {},
+            "isEncrypted": False,
+            "model": "+",
         },
         device=ble_device,
         rssi=-97,
