@@ -2759,7 +2759,7 @@ def test_s10_with_empty_data() -> None:
             "Air Purifier Table",
             SwitchbotModel.AIR_PURIFIER_TABLE,
         ),
-    ]
+    ],
 )
 def test_air_purifier_active(test_case: AirPurifierTestCase) -> None:
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
