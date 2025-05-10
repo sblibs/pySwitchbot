@@ -74,6 +74,7 @@ class SwitchbotModel(StrEnum):
     K10_PRO_VACUUM = "K10+ Pro Vacuum"
     K10_PRO_COMBO_VACUUM = "K10+ Pro Combo Vacuum"
     AIR_PURIFIER = "Air Purifier"
+    AIR_PURIFIER_TABLE = "Air Purifier Table"
 
 
 __all__ = [

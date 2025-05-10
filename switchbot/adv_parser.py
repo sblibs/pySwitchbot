@@ -282,14 +282,14 @@ SUPPORTED_TYPES: dict[str, SwitchbotSupportedType] = {
         "manufacturer_id": 2409,
     },
     "7": {
-        "modelName": SwitchbotModel.AIR_PURIFIER,
-        "modelFriendlyName": "Air Purifier",
+        "modelName": SwitchbotModel.AIR_PURIFIER_TABLE,
+        "modelFriendlyName": "Air Purifier Table",
         "func": process_air_purifier,
         "manufacturer_id": 2409,
     },
     "8": {
-        "modelName": SwitchbotModel.AIR_PURIFIER,
-        "modelFriendlyName": "Air Purifier",
+        "modelName": SwitchbotModel.AIR_PURIFIER_TABLE,
+        "modelFriendlyName": "Air Purifier Table",
         "func": process_air_purifier,
         "manufacturer_id": 2409,
     },
