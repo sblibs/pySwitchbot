@@ -11,6 +11,8 @@ from switchbot.adv_parser import parse_advertisement_data
 from switchbot.const.lock import LockStatus
 from switchbot.models import SwitchBotAdvertisement
 
+from . import AirPurifierTestCase
+
 ADVERTISEMENT_DATA_DEFAULTS = {
     "local_name": "",
     "manufacturer_data": {},
@@ -2647,9 +2649,9 @@ def test_s10_with_empty_data() -> None:
 
 
 @pytest.mark.parametrize(
-    ("manufacturer_data", "service_data", "data", "model"),
+    "test_case",
     [
-        (
+        AirPurifierTestCase(
             b"\xf0\x9e\x9e\x96j\xd6\xa1\x81\x88\xe4\x00\x01\x95\x00\x00",
             b"7\x00\x00\x95-\x00",
             {
@@ -2664,8 +2666,10 @@ def test_s10_with_empty_data() -> None:
                 "sequence_number": 161,
             },
             "7",
+            "Air Purifier Table",
+            SwitchbotModel.AIR_PURIFIER_TABLE,
         ),
-        (
+        AirPurifierTestCase(
             b'\xcc\x8d\xa2\xa7\x92>\t"\x80\x000\x00\x0f\x00\x00',
             b"*\x00\x00\x15\x04\x00",
             {
@@ -2680,8 +2684,10 @@ def test_s10_with_empty_data() -> None:
                 "sequence_number": 9,
             },
             "*",
+            "Air Purifier",
+            SwitchbotModel.AIR_PURIFIER,
         ),
-        (
+        AirPurifierTestCase(
             b"\xcc\x8d\xa2\xa7\xe4\xa6\x0b\x83\x88d\x00\xea`\x00\x00",
             b"+\x00\x00\x15\x04\x00",
             {
@@ -2696,8 +2702,10 @@ def test_s10_with_empty_data() -> None:
                 "sequence_number": 11,
             },
             "+",
+            "Air Purifier",
+            SwitchbotModel.AIR_PURIFIER,
         ),
-        (
+        AirPurifierTestCase(
             b"\xcc\x8d\xa2\xa7\xc1\xae\x9b\x81\x8c\xb2\x00\x01\x94\x00\x00",
             b"8\x00\x00\x95-\x00",
             {
@@ -2712,8 +2720,10 @@ def test_s10_with_empty_data() -> None:
                 "sequence_number": 155,
             },
             "8",
+            "Air Purifier Table",
+            SwitchbotModel.AIR_PURIFIER_TABLE,
         ),
-        (
+        AirPurifierTestCase(
             b"\xcc\x8d\xa2\xa7\xc1\xae\x9e\xa1\x8c\x800\x01\x95\x00\x00",
             b"8\x00\x00\x95-\x00",
             {
@@ -2728,8 +2738,10 @@ def test_s10_with_empty_data() -> None:
                 "sequence_number": 158,
             },
             "8",
+            "Air Purifier Table",
+            SwitchbotModel.AIR_PURIFIER_TABLE,
         ),
-        (
+        AirPurifierTestCase(
             b"\xcc\x8d\xa2\xa7\xc1\xae\x9e\x05\x8c\x800\x01\x95\x00\x00",
             b"8\x00\x00\x95-\x00",
             {
@@ -2744,26 +2756,28 @@ def test_s10_with_empty_data() -> None:
                 "sequence_number": 158,
             },
             "8",
+            "Air Purifier Table",
+            SwitchbotModel.AIR_PURIFIER_TABLE,
         ),
     ],
 )
-def test_air_purifier_active(manufacturer_data, service_data, data, model) -> None:
+def test_air_purifier_active(test_case: AirPurifierTestCase) -> None:
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
-        manufacturer_data={2409: manufacturer_data},
-        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": service_data},
+        manufacturer_data={2409: test_case.manufacturer_data},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": test_case.service_data},
         rssi=-97,
     )
     result = parse_advertisement_data(ble_device, adv_data)
     assert result == SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
-            "rawAdvData": service_data,
-            "data": data,
+            "rawAdvData": test_case.service_data,
+            "data": test_case.data,
             "isEncrypted": False,
-            "model": model,
-            "modelFriendlyName": "Air Purifier",
-            "modelName": SwitchbotModel.AIR_PURIFIER,
+            "model": test_case.model,
+            "modelFriendlyName": test_case.modelFriendlyName,
+            "modelName": test_case.modelName,
         },
         device=ble_device,
         rssi=-97,
@@ -2796,7 +2810,7 @@ def test_air_purifier_passive() -> None:
                 "sequence_number": 161,
             },
             "isEncrypted": False,
-            "model": "8",
+            "model": "+",
             "modelFriendlyName": "Air Purifier",
             "modelName": SwitchbotModel.AIR_PURIFIER,
         },
