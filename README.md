@@ -1,4 +1,4 @@
-# pySwitchbot [![Build Status](https://travis-ci.org/sblibs/pySwitchbot.svg?branch=master)](https://travis-ci.org/sblibs/pySwitchbot)
+# pySwitchbot [![codecov](https://codecov.io/gh/sblibs/pySwitchbot/graph/badge.svg?token=TI027U5ISQ)](https://codecov.io/gh/sblibs/pySwitchbot)
 
 Library to control Switchbot IoT devices https://www.switch-bot.com/bot
 
