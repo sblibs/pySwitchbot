@@ -28,8 +28,8 @@ COMMAND_SET_MODE = {
     AirPurifierMode.LEVEL_2.name.lower(): f"{COMMAND_HEAD}01010132",
     AirPurifierMode.LEVEL_3.name.lower(): f"{COMMAND_HEAD}01010164",
     AirPurifierMode.AUTO.name.lower(): f"{COMMAND_HEAD}01010200",
-    AirPurifierMode.PET.name.lower(): f"{COMMAND_HEAD}01010300",
-    AirPurifierMode.SLEEP.name.lower(): f"{COMMAND_HEAD}01010400",
+    AirPurifierMode.SLEEP.name.lower(): f"{COMMAND_HEAD}01010300",
+    AirPurifierMode.PET.name.lower(): f"{COMMAND_HEAD}01010400",
 }
 DEVICE_GET_BASIC_SETTINGS_KEY = "570f4d81"
 

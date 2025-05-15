@@ -2692,7 +2692,7 @@ def test_s10_with_empty_data() -> None:
             b"+\x00\x00\x15\x04\x00",
             {
                 "isOn": True,
-                "mode": "pet",
+                "mode": "sleep",
                 "isAqiValid": False,
                 "child_lock": False,
                 "speed": 100,
