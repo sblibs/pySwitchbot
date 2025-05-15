@@ -8,8 +8,8 @@ class AirPurifierMode(Enum):
     LEVEL_2 = 2
     LEVEL_3 = 3
     AUTO = 4
-    PET = 5
-    SLEEP = 6
+    SLEEP = 5
+    PET = 6
 
     @classmethod
     def get_modes(cls) -> list[str]:

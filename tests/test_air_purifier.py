@@ -171,7 +171,7 @@ async def test__get_basic_info(rawAdvData, model, response, expected):
             bytearray(
                 b"\x01\xa8\xec\x8c\x08\x00\xb2\x01\x96\x00\x00\x00\xf0\x00\x00\x17"
             ),
-            [True, 2, "sleep", True, False, "excellent", 50, 240, 2.3],
+            [True, 2, "pet", True, False, "excellent", 50, 240, 2.3],
         ),
     ],
 )
@@ -226,6 +226,6 @@ def test_get_modes():
         "level_2",
         "level_3",
         "auto",
-        "pet",
         "sleep",
+        "pet",
     ]
