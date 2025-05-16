@@ -19,6 +19,7 @@ from .adv_parsers.contact import process_wocontact
 from .adv_parsers.curtain import process_wocurtain
 from .adv_parsers.fan import process_fan
 from .adv_parsers.hub2 import process_wohub2
+from .adv_parsers.hub3 import process_hub3
 from .adv_parsers.hubmini_matter import process_hubmini_matter
 from .adv_parsers.humidifier import process_evaporative_humidifier, process_wohumidifier
 from .adv_parsers.keypad import process_wokeypad
@@ -57,7 +58,7 @@ class SwitchbotSupportedType(TypedDict):
     manufacturer_data_length: int | None
 
 
-SUPPORTED_TYPES: dict[str, SwitchbotSupportedType] = {
+SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
     "d": {
         "modelName": SwitchbotModel.CONTACT_SENSOR,
         "modelFriendlyName": "Contact Sensor",
@@ -293,6 +294,12 @@ SUPPORTED_TYPES: dict[str, SwitchbotSupportedType] = {
         "func": process_air_purifier,
         "manufacturer_id": 2409,
     },
+    b"\x00\x10\xb9\x40": {
+        "modelName": SwitchbotModel.HUB3,
+        "modelFriendlyName": "Hub3",
+        "func": process_hub3,
+        "manufacturer_id": 2409,
+    },
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {
@@ -371,6 +378,8 @@ def _parse_data(
             if model_data.get("manufacturer_data_length") == len(_mfr_data):
                 _model = model_chr
                 break
+    if _service_data and len(_service_data) > 5 and _service_data[-4:] in SUPPORTED_TYPES:
+        _model = _service_data[-4:]
 
     if not _model:
         return None
