@@ -11,7 +11,7 @@ from switchbot.adv_parser import parse_advertisement_data
 from switchbot.const.lock import LockStatus
 from switchbot.models import SwitchBotAdvertisement
 
-from . import AirPurifierTestCase
+from . import TestCase
 
 ADVERTISEMENT_DATA_DEFAULTS = {
     "local_name": "",
@@ -1288,248 +1288,6 @@ def test_motion_with_light_detected():
     )
 
 
-def test_parsing_lock_active():
-    """Test parsing lock with active data."""
-    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    adv_data = generate_advertisement_data(
-        manufacturer_data={2409: b"\xf1\t\x9fE\x1a]\x07\x83\x00 "},
-        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"o\x80d"},
-        rssi=-67,
-    )
-    result = parse_advertisement_data(ble_device, adv_data)
-    assert result == SwitchBotAdvertisement(
-        address="aa:bb:cc:dd:ee:ff",
-        data={
-            "data": {
-                "auto_lock_paused": False,
-                "battery": 100,
-                "calibration": True,
-                "door_open": False,
-                "double_lock_mode": False,
-                "night_latch": False,
-                "status": LockStatus.LOCKED,
-                "unclosed_alarm": False,
-                "unlocked_alarm": False,
-                "update_from_secondary_lock": False,
-            },
-            "isEncrypted": False,
-            "model": "o",
-            "modelFriendlyName": "Lock",
-            "modelName": SwitchbotModel.LOCK,
-            "rawAdvData": b"o\x80d",
-        },
-        device=ble_device,
-        rssi=-67,
-        active=True,
-    )
-
-
-def test_parsing_lock_passive():
-    """Test parsing lock with active data."""
-    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    adv_data = generate_advertisement_data(
-        manufacturer_data={2409: b"\xf1\t\x9fE\x1a]\x07\x83\x00 "}, rssi=-67
-    )
-    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.LOCK)
-    assert result == SwitchBotAdvertisement(
-        address="aa:bb:cc:dd:ee:ff",
-        data={
-            "data": {
-                "auto_lock_paused": False,
-                "battery": None,
-                "calibration": True,
-                "door_open": False,
-                "double_lock_mode": False,
-                "night_latch": False,
-                "status": LockStatus.LOCKED,
-                "unclosed_alarm": False,
-                "unlocked_alarm": False,
-                "update_from_secondary_lock": False,
-            },
-            "isEncrypted": False,
-            "model": "o",
-            "modelFriendlyName": "Lock",
-            "modelName": SwitchbotModel.LOCK,
-            "rawAdvData": None,
-        },
-        device=ble_device,
-        rssi=-67,
-        active=False,
-    )
-
-
-def test_parsing_lock_pro_active():
-    """Test parsing lock pro with active data."""
-    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    adv_data = generate_advertisement_data(
-        manufacturer_data={2409: b"\xc8\xf5,\xd9-V\x07\x82\x00d\x00\x00"},
-        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"$\x80d"},
-        rssi=-80,
-    )
-    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.LOCK_PRO)
-    assert result == SwitchBotAdvertisement(
-        address="aa:bb:cc:dd:ee:ff",
-        data={
-            "data": {
-                "battery": 100,
-                "calibration": True,
-                "status": LockStatus.LOCKED,
-                "update_from_secondary_lock": False,
-                "door_open": False,
-                "double_lock_mode": False,
-                "unclosed_alarm": False,
-                "unlocked_alarm": False,
-                "auto_lock_paused": False,
-                "night_latch": False,
-            },
-            "model": "$",
-            "isEncrypted": False,
-            "modelFriendlyName": "Lock Pro",
-            "modelName": SwitchbotModel.LOCK_PRO,
-            "rawAdvData": b"$\x80d",
-        },
-        device=ble_device,
-        rssi=-80,
-        active=True,
-    )
-
-
-def test_parsing_lock_pro_passive():
-    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    adv_data = generate_advertisement_data(
-        manufacturer_data={2409: bytes.fromhex("aabbccddeeff208200640000")}, rssi=-67
-    )
-    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.LOCK_PRO)
-    assert result == SwitchBotAdvertisement(
-        address="aa:bb:cc:dd:ee:ff",
-        data={
-            "data": {
-                "battery": None,
-                "calibration": True,
-                "status": LockStatus.LOCKED,
-                "update_from_secondary_lock": False,
-                "door_open": False,
-                "double_lock_mode": False,
-                "unclosed_alarm": False,
-                "unlocked_alarm": False,
-                "auto_lock_paused": False,
-                "night_latch": False,
-            },
-            "model": "$",
-            "isEncrypted": False,
-            "modelFriendlyName": "Lock Pro",
-            "modelName": SwitchbotModel.LOCK_PRO,
-            "rawAdvData": None,
-        },
-        device=ble_device,
-        rssi=-67,
-        active=False,
-    )
-
-
-def test_parsing_lock_pro_passive_nightlatch_disabled():
-    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    adv_data = generate_advertisement_data(
-        manufacturer_data={2409: bytes.fromhex("aabbccddeeff0a8200630000")}, rssi=-67
-    )
-    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.LOCK_PRO)
-    assert result == SwitchBotAdvertisement(
-        address="aa:bb:cc:dd:ee:ff",
-        data={
-            "data": {
-                "battery": None,
-                "calibration": True,
-                "status": LockStatus.LOCKED,
-                "update_from_secondary_lock": False,
-                "door_open": False,
-                "double_lock_mode": False,
-                "unclosed_alarm": False,
-                "unlocked_alarm": False,
-                "auto_lock_paused": False,
-                "night_latch": False,
-            },
-            "model": "$",
-            "isEncrypted": False,
-            "modelFriendlyName": "Lock Pro",
-            "modelName": SwitchbotModel.LOCK_PRO,
-            "rawAdvData": None,
-        },
-        device=ble_device,
-        rssi=-67,
-        active=False,
-    )
-
-
-def test_parsing_lock_active_old_firmware():
-    """Test parsing lock with active data. Old firmware."""
-    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    adv_data = generate_advertisement_data(
-        manufacturer_data={2409: b"\xf1\t\x9fE\x1a]\x07\x83\x00"},
-        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"o\x80d"},
-        rssi=-67,
-    )
-    result = parse_advertisement_data(ble_device, adv_data)
-    assert result == SwitchBotAdvertisement(
-        address="aa:bb:cc:dd:ee:ff",
-        data={
-            "data": {
-                "auto_lock_paused": False,
-                "battery": 100,
-                "calibration": True,
-                "door_open": False,
-                "double_lock_mode": False,
-                "night_latch": False,
-                "status": LockStatus.LOCKED,
-                "unclosed_alarm": False,
-                "unlocked_alarm": False,
-                "update_from_secondary_lock": False,
-            },
-            "isEncrypted": False,
-            "model": "o",
-            "modelFriendlyName": "Lock",
-            "modelName": SwitchbotModel.LOCK,
-            "rawAdvData": b"o\x80d",
-        },
-        device=ble_device,
-        rssi=-67,
-        active=True,
-    )
-
-
-def test_parsing_lock_passive_old_firmware():
-    """Test parsing lock with active data. Old firmware."""
-    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    adv_data = generate_advertisement_data(
-        manufacturer_data={2409: b"\xf1\t\x9fE\x1a]\x07\x83\x00"}, rssi=-67
-    )
-    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.LOCK)
-    assert result == SwitchBotAdvertisement(
-        address="aa:bb:cc:dd:ee:ff",
-        data={
-            "data": {
-                "auto_lock_paused": False,
-                "battery": None,
-                "calibration": True,
-                "door_open": False,
-                "double_lock_mode": False,
-                "night_latch": False,
-                "status": LockStatus.LOCKED,
-                "unclosed_alarm": False,
-                "unlocked_alarm": False,
-                "update_from_secondary_lock": False,
-            },
-            "isEncrypted": False,
-            "model": "o",
-            "modelFriendlyName": "Lock",
-            "modelName": SwitchbotModel.LOCK,
-            "rawAdvData": None,
-        },
-        device=ble_device,
-        rssi=-67,
-        active=False,
-    )
-
-
 def test_meter_pro_active() -> None:
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
@@ -2651,7 +2409,7 @@ def test_s10_with_empty_data() -> None:
 @pytest.mark.parametrize(
     "test_case",
     [
-        AirPurifierTestCase(
+        TestCase(
             b"\xf0\x9e\x9e\x96j\xd6\xa1\x81\x88\xe4\x00\x01\x95\x00\x00",
             b"7\x00\x00\x95-\x00",
             {
@@ -2669,7 +2427,7 @@ def test_s10_with_empty_data() -> None:
             "Air Purifier Table",
             SwitchbotModel.AIR_PURIFIER_TABLE,
         ),
-        AirPurifierTestCase(
+        TestCase(
             b'\xcc\x8d\xa2\xa7\x92>\t"\x80\x000\x00\x0f\x00\x00',
             b"*\x00\x00\x15\x04\x00",
             {
@@ -2687,7 +2445,7 @@ def test_s10_with_empty_data() -> None:
             "Air Purifier",
             SwitchbotModel.AIR_PURIFIER,
         ),
-        AirPurifierTestCase(
+        TestCase(
             b"\xcc\x8d\xa2\xa7\xe4\xa6\x0b\x83\x88d\x00\xea`\x00\x00",
             b"+\x00\x00\x15\x04\x00",
             {
@@ -2705,7 +2463,7 @@ def test_s10_with_empty_data() -> None:
             "Air Purifier",
             SwitchbotModel.AIR_PURIFIER,
         ),
-        AirPurifierTestCase(
+        TestCase(
             b"\xcc\x8d\xa2\xa7\xc1\xae\x9b\x81\x8c\xb2\x00\x01\x94\x00\x00",
             b"8\x00\x00\x95-\x00",
             {
@@ -2723,7 +2481,7 @@ def test_s10_with_empty_data() -> None:
             "Air Purifier Table",
             SwitchbotModel.AIR_PURIFIER_TABLE,
         ),
-        AirPurifierTestCase(
+        TestCase(
             b"\xcc\x8d\xa2\xa7\xc1\xae\x9e\xa1\x8c\x800\x01\x95\x00\x00",
             b"8\x00\x00\x95-\x00",
             {
@@ -2741,7 +2499,7 @@ def test_s10_with_empty_data() -> None:
             "Air Purifier Table",
             SwitchbotModel.AIR_PURIFIER_TABLE,
         ),
-        AirPurifierTestCase(
+        TestCase(
             b"\xcc\x8d\xa2\xa7\xc1\xae\x9e\x05\x8c\x800\x01\x95\x00\x00",
             b"8\x00\x00\x95-\x00",
             {
@@ -2761,7 +2519,7 @@ def test_s10_with_empty_data() -> None:
         ),
     ],
 )
-def test_air_purifier_active(test_case: AirPurifierTestCase) -> None:
+def test_air_purifier_active(test_case: TestCase) -> None:
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
         manufacturer_data={2409: test_case.manufacturer_data},
@@ -2942,3 +2700,306 @@ def test_hub3_with_empty_data() -> None:
         rssi=-97,
         active=True,
     )
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        TestCase(
+            b'\xe9\xd5\x11\xb2kS\x17\x93\x08 ',
+            b'-\x80d',
+            {
+                "sequence_number": 23,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": False,
+                "double_lock_mode": False,
+                "unclosed_alarm": False,
+                "unlocked_alarm": False,
+                "auto_lock_paused": False,
+                "night_latch": False,
+            },
+            "-",
+            "Lock Lite",
+            SwitchbotModel.LOCK_LITE,
+        ),
+        TestCase(
+            b'\xee\xf5\xe6\t\x8f\xe8\x11\x97\x08 ',
+            b'o\x80d',
+            {
+                "sequence_number": 17,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": True,
+                "double_lock_mode": False,
+                "unclosed_alarm": False,
+                "unlocked_alarm": False,
+                "auto_lock_paused": False,
+                "night_latch": False,
+            },
+            "o",
+            "Lock",
+            SwitchbotModel.LOCK,
+        ),
+        TestCase(
+            b'\xf7a\x07H\xe6\xe8:\x8a\x00d\x00\x00',
+            b'$\x80d',
+            {
+                "sequence_number": 58,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.LOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": False,
+                'door_open_from_secondary_lock': False,
+                "double_lock_mode": False,
+                'is_secondary_lock': False,
+                'left_battery_compartment_alarm': 0,
+                'right_battery_compartment_alarm': 0,
+                'low_temperature_alarm': False,
+                'manual_unlock_linkage': False,
+                "unclosed_alarm": False,
+                "unlocked_alarm": False,
+                "auto_lock_paused": False,
+                "night_latch": False,
+            },
+            "$",
+            "Lock Pro",
+            SwitchbotModel.LOCK_PRO,
+        ),
+        TestCase(
+            b'\xb0\xe9\xfe\xb6j=%\x8204\x00\x04',
+            b'\x00\x804\x00\x10\xa5\xb8',
+            {
+                "sequence_number": 37,
+                "battery": 52,
+                "calibration": True,
+                "status": LockStatus.LOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": True,
+                'door_open_from_secondary_lock': True,
+                "double_lock_mode": False,
+                'is_secondary_lock': False,
+                'manual_unlock_linkage': False,
+                "unclosed_alarm": False,
+                "unlocked_alarm": False,
+                "auto_lock_paused": False,
+                "night_latch": False,
+                "power_alarm": False,
+                'battery_status': 4,
+            },
+            b'\x00\x10\xa5\xb8',
+            "Lock Ultra",
+            SwitchbotModel.LOCK_ULTRA,
+        ),
+    ]
+)
+def test_lock_active(test_case: TestCase) -> None:
+    """Test lokc series with active data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: test_case.manufacturer_data},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": test_case.service_data},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": test_case.service_data,
+            "data": test_case.data,
+            "isEncrypted": False,
+            "model": test_case.model,
+            "modelFriendlyName": test_case.modelFriendlyName,
+            "modelName": test_case.modelName,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        TestCase(
+            b'\xe9\xd5\x11\xb2kS\x17\x93\x08 ',
+            b'-\x80d',
+            {
+                "sequence_number": 23,
+                "battery": None,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": False,
+                "double_lock_mode": False,
+                "unclosed_alarm": False,
+                "unlocked_alarm": False,
+                "auto_lock_paused": False,
+                "night_latch": False,
+            },
+            "-",
+            "Lock Lite",
+            SwitchbotModel.LOCK_LITE,
+        ),
+        TestCase(
+            b'\xee\xf5\xe6\t\x8f\xe8\x11\x97\x08 ',
+            b'o\x80d',
+            {
+                "sequence_number": 17,
+                "battery": None,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": True,
+                "double_lock_mode": False,
+                "unclosed_alarm": False,
+                "unlocked_alarm": False,
+                "auto_lock_paused": False,
+                "night_latch": False,
+            },
+            "o",
+            "Lock",
+            SwitchbotModel.LOCK,
+        ),
+        TestCase(
+            b'\xf7a\x07H\xe6\xe8:\x8a\x00d\x00\x00',
+            b'$\x80d',
+            {
+                "sequence_number": 58,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.LOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": False,
+                'door_open_from_secondary_lock': False,
+                "double_lock_mode": False,
+                'is_secondary_lock': False,
+                'left_battery_compartment_alarm': 0,
+                'right_battery_compartment_alarm': 0,
+                'low_temperature_alarm': False,
+                'manual_unlock_linkage': False,
+                "unclosed_alarm": False,
+                "unlocked_alarm": False,
+                "auto_lock_paused": False,
+                "night_latch": False,
+            },
+            "$",
+            "Lock Pro",
+            SwitchbotModel.LOCK_PRO,
+        ),
+        TestCase(
+            b'\xb0\xe9\xfe\xb6j=%\x8204\x00\x04',
+            b'\x00\x804\x00\x10\xa5\xb8',
+            {
+                "sequence_number": 37,
+                "battery": 52,
+                "calibration": True,
+                "status": LockStatus.LOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": True,
+                'door_open_from_secondary_lock': True,
+                "double_lock_mode": False,
+                'is_secondary_lock': False,
+                'manual_unlock_linkage': False,
+                "unclosed_alarm": False,
+                "unlocked_alarm": False,
+                "auto_lock_paused": False,
+                "night_latch": False,
+                "power_alarm": False,
+                'battery_status': 4,
+            },
+            b'\x00\x10\xa5\xb8',
+            "Lock Ultra",
+            SwitchbotModel.LOCK_ULTRA,
+        ),
+    ]
+)
+def test_lock_passive(test_case: TestCase) -> None:
+    """Test lokc series with passive data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: test_case.manufacturer_data},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data, test_case.modelName)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": None,
+            "data": test_case.data,
+            "isEncrypted": False,
+            "model": test_case.model,
+            "modelFriendlyName": test_case.modelFriendlyName,
+            "modelName": test_case.modelName,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=False,
+    )
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        TestCase(
+            None,
+            b'-\x80d',
+            {},
+            "-",
+            "Lock Lite",
+            SwitchbotModel.LOCK_LITE,
+        ),
+        TestCase(
+            None,
+            b'o\x80d',
+            {},
+            "o",
+            "Lock",
+            SwitchbotModel.LOCK,
+        ),
+        TestCase(
+            None,
+            b'$\x80d',
+            {},
+            "$",
+            "Lock Pro",
+            SwitchbotModel.LOCK_PRO,
+        ),
+        TestCase(
+            None,
+            b'\x00\x804\x00\x10\xa5\xb8',
+            {},
+            b'\x00\x10\xa5\xb8',
+            "Lock Ultra",
+            SwitchbotModel.LOCK_ULTRA,
+        ),
+    ]
+)
+def test_lock_with_empty_data(test_case: TestCase) -> None:
+    """Test lokc series with empty data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: test_case.manufacturer_data},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": test_case.service_data},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data, test_case.modelName)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": test_case.service_data,
+            "data": {},
+            "isEncrypted": False,
+            "model": test_case.model,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+

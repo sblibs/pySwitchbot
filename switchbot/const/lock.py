@@ -11,3 +11,4 @@ class LockStatus(Enum):
     LOCKING_STOP = 4  # LOCKING_BLOCKED
     UNLOCKING_STOP = 5  # UNLOCKING_BLOCKED
     NOT_FULLY_LOCKED = 6  # LATCH_LOCKED - Only EU lock type
+    HALF_LOCKED = 7  # Only Lock2 EU lock type

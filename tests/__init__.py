@@ -4,10 +4,10 @@ from switchbot import SwitchbotModel
 
 
 @dataclass
-class AirPurifierTestCase:
-    manufacturer_data: bytes
+class TestCase:
+    manufacturer_data: bytes | None
     service_data: bytes
     data: dict
-    model: str
+    model: str | bytes
     modelFriendlyName: str
     modelName: SwitchbotModel
