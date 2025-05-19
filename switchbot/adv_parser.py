@@ -378,7 +378,11 @@ def _parse_data(
             if model_data.get("manufacturer_data_length") == len(_mfr_data):
                 _model = model_chr
                 break
-    if _service_data and len(_service_data) > 5 and _service_data[-4:] in SUPPORTED_TYPES:
+    if (
+        _service_data
+        and len(_service_data) > 5
+        and _service_data[-4:] in SUPPORTED_TYPES
+    ):
         _model = _service_data[-4:]
 
     if not _model:

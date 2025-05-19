@@ -45,7 +45,6 @@ def process_hub3(data: bytes | None, mfr_data: bytes | None) -> dict[str, Any]:
     }
 
 
-
 def calculate_light_intensity(light_level: int) -> int:
     """
     Convert Hub 3 light level (1-10) to actual light intensity value

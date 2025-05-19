@@ -2849,7 +2849,9 @@ def test_hub3_active() -> None:
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
         manufacturer_data={2409: b"\xb0\xe9\xfen^)\x00\xffh&\xd6d\x83\x03\x994\x80"},
-        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00d\x00\x10\xb9@"},
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00d\x00\x10\xb9@"
+        },
         rssi=-97,
     )
     result = parse_advertisement_data(ble_device, adv_data)
@@ -2885,9 +2887,7 @@ def test_hub3_passive() -> None:
     """Test parsing hub3 with passive data."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
-        manufacturer_data={
-            2409: b"\xb0\xe9\xfen^)\x00\xffh&\xd6d\x83\x03\x994\x80"
-        },
+        manufacturer_data={2409: b"\xb0\xe9\xfen^)\x00\xffh&\xd6d\x83\x03\x994\x80"},
         rssi=-97,
     )
     result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.HUB3)
@@ -2924,14 +2924,16 @@ def test_hub3_with_empty_data() -> None:
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
         manufacturer_data={2409: None},
-        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00d\x00\x10\xb9@"},
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00d\x00\x10\xb9@"
+        },
         rssi=-97,
     )
     result = parse_advertisement_data(ble_device, adv_data)
     assert result == SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
-            "rawAdvData": b'\x00\x00d\x00\x10\xb9@',
+            "rawAdvData": b"\x00\x00d\x00\x10\xb9@",
             "data": {},
             "isEncrypted": False,
             "model": b"\x00\x10\xb9@",
