@@ -11,7 +11,7 @@ from switchbot.adv_parser import parse_advertisement_data
 from switchbot.const.lock import LockStatus
 from switchbot.models import SwitchBotAdvertisement
 
-from . import TestCase
+from . import AdvTestCase
 
 ADVERTISEMENT_DATA_DEFAULTS = {
     "local_name": "",
@@ -2409,7 +2409,7 @@ def test_s10_with_empty_data() -> None:
 @pytest.mark.parametrize(
     "test_case",
     [
-        TestCase(
+        AdvTestCase(
             b"\xf0\x9e\x9e\x96j\xd6\xa1\x81\x88\xe4\x00\x01\x95\x00\x00",
             b"7\x00\x00\x95-\x00",
             {
@@ -2427,7 +2427,7 @@ def test_s10_with_empty_data() -> None:
             "Air Purifier Table",
             SwitchbotModel.AIR_PURIFIER_TABLE,
         ),
-        TestCase(
+        AdvTestCase(
             b'\xcc\x8d\xa2\xa7\x92>\t"\x80\x000\x00\x0f\x00\x00',
             b"*\x00\x00\x15\x04\x00",
             {
@@ -2445,7 +2445,7 @@ def test_s10_with_empty_data() -> None:
             "Air Purifier",
             SwitchbotModel.AIR_PURIFIER,
         ),
-        TestCase(
+        AdvTestCase(
             b"\xcc\x8d\xa2\xa7\xe4\xa6\x0b\x83\x88d\x00\xea`\x00\x00",
             b"+\x00\x00\x15\x04\x00",
             {
@@ -2463,7 +2463,7 @@ def test_s10_with_empty_data() -> None:
             "Air Purifier",
             SwitchbotModel.AIR_PURIFIER,
         ),
-        TestCase(
+        AdvTestCase(
             b"\xcc\x8d\xa2\xa7\xc1\xae\x9b\x81\x8c\xb2\x00\x01\x94\x00\x00",
             b"8\x00\x00\x95-\x00",
             {
@@ -2481,7 +2481,7 @@ def test_s10_with_empty_data() -> None:
             "Air Purifier Table",
             SwitchbotModel.AIR_PURIFIER_TABLE,
         ),
-        TestCase(
+        AdvTestCase(
             b"\xcc\x8d\xa2\xa7\xc1\xae\x9e\xa1\x8c\x800\x01\x95\x00\x00",
             b"8\x00\x00\x95-\x00",
             {
@@ -2499,7 +2499,7 @@ def test_s10_with_empty_data() -> None:
             "Air Purifier Table",
             SwitchbotModel.AIR_PURIFIER_TABLE,
         ),
-        TestCase(
+        AdvTestCase(
             b"\xcc\x8d\xa2\xa7\xc1\xae\x9e\x05\x8c\x800\x01\x95\x00\x00",
             b"8\x00\x00\x95-\x00",
             {
@@ -2519,7 +2519,7 @@ def test_s10_with_empty_data() -> None:
         ),
     ],
 )
-def test_air_purifier_active(test_case: TestCase) -> None:
+def test_air_purifier_active(test_case: AdvTestCase) -> None:
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
         manufacturer_data={2409: test_case.manufacturer_data},
@@ -2705,7 +2705,7 @@ def test_hub3_with_empty_data() -> None:
 @pytest.mark.parametrize(
     "test_case",
     [
-        TestCase(
+        AdvTestCase(
             b'\xe9\xd5\x11\xb2kS\x17\x93\x08 ',
             b'-\x80d',
             {
@@ -2725,7 +2725,7 @@ def test_hub3_with_empty_data() -> None:
             "Lock Lite",
             SwitchbotModel.LOCK_LITE,
         ),
-        TestCase(
+        AdvTestCase(
             b'\xee\xf5\xe6\t\x8f\xe8\x11\x97\x08 ',
             b'o\x80d',
             {
@@ -2745,7 +2745,7 @@ def test_hub3_with_empty_data() -> None:
             "Lock",
             SwitchbotModel.LOCK,
         ),
-        TestCase(
+        AdvTestCase(
             b'\xf7a\x07H\xe6\xe8:\x8a\x00d\x00\x00',
             b'$\x80d',
             {
@@ -2771,7 +2771,7 @@ def test_hub3_with_empty_data() -> None:
             "Lock Pro",
             SwitchbotModel.LOCK_PRO,
         ),
-        TestCase(
+        AdvTestCase(
             b'\xb0\xe9\xfe\xb6j=%\x8204\x00\x04',
             b'\x00\x804\x00\x10\xa5\xb8',
             {
@@ -2798,7 +2798,7 @@ def test_hub3_with_empty_data() -> None:
         ),
     ]
 )
-def test_lock_active(test_case: TestCase) -> None:
+def test_lock_active(test_case: AdvTestCase) -> None:
     """Test lokc series with active data."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
@@ -2827,7 +2827,7 @@ def test_lock_active(test_case: TestCase) -> None:
 @pytest.mark.parametrize(
     "test_case",
     [
-        TestCase(
+        AdvTestCase(
             b'\xe9\xd5\x11\xb2kS\x17\x93\x08 ',
             b'-\x80d',
             {
@@ -2847,7 +2847,7 @@ def test_lock_active(test_case: TestCase) -> None:
             "Lock Lite",
             SwitchbotModel.LOCK_LITE,
         ),
-        TestCase(
+        AdvTestCase(
             b'\xee\xf5\xe6\t\x8f\xe8\x11\x97\x08 ',
             b'o\x80d',
             {
@@ -2867,7 +2867,7 @@ def test_lock_active(test_case: TestCase) -> None:
             "Lock",
             SwitchbotModel.LOCK,
         ),
-        TestCase(
+        AdvTestCase(
             b'\xf7a\x07H\xe6\xe8:\x8a\x00d\x00\x00',
             b'$\x80d',
             {
@@ -2893,7 +2893,7 @@ def test_lock_active(test_case: TestCase) -> None:
             "Lock Pro",
             SwitchbotModel.LOCK_PRO,
         ),
-        TestCase(
+        AdvTestCase(
             b'\xb0\xe9\xfe\xb6j=%\x8204\x00\x04',
             b'\x00\x804\x00\x10\xa5\xb8',
             {
@@ -2920,7 +2920,7 @@ def test_lock_active(test_case: TestCase) -> None:
         ),
     ]
 )
-def test_lock_passive(test_case: TestCase) -> None:
+def test_lock_passive(test_case: AdvTestCase) -> None:
     """Test lokc series with passive data."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
@@ -2947,7 +2947,7 @@ def test_lock_passive(test_case: TestCase) -> None:
 @pytest.mark.parametrize(
     "test_case",
     [
-        TestCase(
+        AdvTestCase(
             None,
             b'-\x80d',
             {},
@@ -2955,7 +2955,7 @@ def test_lock_passive(test_case: TestCase) -> None:
             "Lock Lite",
             SwitchbotModel.LOCK_LITE,
         ),
-        TestCase(
+        AdvTestCase(
             None,
             b'o\x80d',
             {},
@@ -2963,7 +2963,7 @@ def test_lock_passive(test_case: TestCase) -> None:
             "Lock",
             SwitchbotModel.LOCK,
         ),
-        TestCase(
+        AdvTestCase(
             None,
             b'$\x80d',
             {},
@@ -2971,7 +2971,7 @@ def test_lock_passive(test_case: TestCase) -> None:
             "Lock Pro",
             SwitchbotModel.LOCK_PRO,
         ),
-        TestCase(
+        AdvTestCase(
             None,
             b'\x00\x804\x00\x10\xa5\xb8',
             {},
@@ -2981,7 +2981,7 @@ def test_lock_passive(test_case: TestCase) -> None:
         ),
     ]
 )
-def test_lock_with_empty_data(test_case: TestCase) -> None:
+def test_lock_with_empty_data(test_case: AdvTestCase) -> None:
     """Test lokc series with empty data."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(

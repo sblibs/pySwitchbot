@@ -4,7 +4,7 @@ from switchbot import SwitchbotModel
 
 
 @dataclass
-class TestCase:
+class AdvTestCase:
     manufacturer_data: bytes | None
     service_data: bytes
     data: dict
