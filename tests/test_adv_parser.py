@@ -2706,8 +2706,8 @@ def test_hub3_with_empty_data() -> None:
     "test_case",
     [
         AdvTestCase(
-            b'\xe9\xd5\x11\xb2kS\x17\x93\x08 ',
-            b'-\x80d',
+            b"\xe9\xd5\x11\xb2kS\x17\x93\x08 ",
+            b"-\x80d",
             {
                 "sequence_number": 23,
                 "battery": 100,
@@ -2726,8 +2726,8 @@ def test_hub3_with_empty_data() -> None:
             SwitchbotModel.LOCK_LITE,
         ),
         AdvTestCase(
-            b'\xee\xf5\xe6\t\x8f\xe8\x11\x97\x08 ',
-            b'o\x80d',
+            b"\xee\xf5\xe6\t\x8f\xe8\x11\x97\x08 ",
+            b"o\x80d",
             {
                 "sequence_number": 17,
                 "battery": 100,
@@ -2746,8 +2746,8 @@ def test_hub3_with_empty_data() -> None:
             SwitchbotModel.LOCK,
         ),
         AdvTestCase(
-            b'\xf7a\x07H\xe6\xe8:\x8a\x00d\x00\x00',
-            b'$\x80d',
+            b"\xf7a\x07H\xe6\xe8:\x8a\x00d\x00\x00",
+            b"$\x80d",
             {
                 "sequence_number": 58,
                 "battery": 100,
@@ -2755,13 +2755,13 @@ def test_hub3_with_empty_data() -> None:
                 "status": LockStatus.LOCKED,
                 "update_from_secondary_lock": False,
                 "door_open": False,
-                'door_open_from_secondary_lock': False,
+                "door_open_from_secondary_lock": False,
                 "double_lock_mode": False,
-                'is_secondary_lock': False,
-                'left_battery_compartment_alarm': 0,
-                'right_battery_compartment_alarm': 0,
-                'low_temperature_alarm': False,
-                'manual_unlock_linkage': False,
+                "is_secondary_lock": False,
+                "left_battery_compartment_alarm": 0,
+                "right_battery_compartment_alarm": 0,
+                "low_temperature_alarm": False,
+                "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
                 "unlocked_alarm": False,
                 "auto_lock_paused": False,
@@ -2772,8 +2772,8 @@ def test_hub3_with_empty_data() -> None:
             SwitchbotModel.LOCK_PRO,
         ),
         AdvTestCase(
-            b'\xb0\xe9\xfe\xb6j=%\x8204\x00\x04',
-            b'\x00\x804\x00\x10\xa5\xb8',
+            b"\xb0\xe9\xfe\xb6j=%\x8204\x00\x04",
+            b"\x00\x804\x00\x10\xa5\xb8",
             {
                 "sequence_number": 37,
                 "battery": 52,
@@ -2781,22 +2781,22 @@ def test_hub3_with_empty_data() -> None:
                 "status": LockStatus.LOCKED,
                 "update_from_secondary_lock": False,
                 "door_open": True,
-                'door_open_from_secondary_lock': True,
+                "door_open_from_secondary_lock": True,
                 "double_lock_mode": False,
-                'is_secondary_lock': False,
-                'manual_unlock_linkage': False,
+                "is_secondary_lock": False,
+                "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
                 "unlocked_alarm": False,
                 "auto_lock_paused": False,
                 "night_latch": False,
                 "power_alarm": False,
-                'battery_status': 4,
+                "battery_status": 4,
             },
-            b'\x00\x10\xa5\xb8',
+            b"\x00\x10\xa5\xb8",
             "Lock Ultra",
             SwitchbotModel.LOCK_ULTRA,
         ),
-    ]
+    ],
 )
 def test_lock_active(test_case: AdvTestCase) -> None:
     """Test lokc series with active data."""
@@ -2823,13 +2823,12 @@ def test_lock_active(test_case: AdvTestCase) -> None:
     )
 
 
-
 @pytest.mark.parametrize(
     "test_case",
     [
         AdvTestCase(
-            b'\xe9\xd5\x11\xb2kS\x17\x93\x08 ',
-            b'-\x80d',
+            b"\xe9\xd5\x11\xb2kS\x17\x93\x08 ",
+            b"-\x80d",
             {
                 "sequence_number": 23,
                 "battery": None,
@@ -2848,8 +2847,8 @@ def test_lock_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.LOCK_LITE,
         ),
         AdvTestCase(
-            b'\xee\xf5\xe6\t\x8f\xe8\x11\x97\x08 ',
-            b'o\x80d',
+            b"\xee\xf5\xe6\t\x8f\xe8\x11\x97\x08 ",
+            b"o\x80d",
             {
                 "sequence_number": 17,
                 "battery": None,
@@ -2868,8 +2867,8 @@ def test_lock_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.LOCK,
         ),
         AdvTestCase(
-            b'\xf7a\x07H\xe6\xe8:\x8a\x00d\x00\x00',
-            b'$\x80d',
+            b"\xf7a\x07H\xe6\xe8:\x8a\x00d\x00\x00",
+            b"$\x80d",
             {
                 "sequence_number": 58,
                 "battery": 100,
@@ -2877,13 +2876,13 @@ def test_lock_active(test_case: AdvTestCase) -> None:
                 "status": LockStatus.LOCKED,
                 "update_from_secondary_lock": False,
                 "door_open": False,
-                'door_open_from_secondary_lock': False,
+                "door_open_from_secondary_lock": False,
                 "double_lock_mode": False,
-                'is_secondary_lock': False,
-                'left_battery_compartment_alarm': 0,
-                'right_battery_compartment_alarm': 0,
-                'low_temperature_alarm': False,
-                'manual_unlock_linkage': False,
+                "is_secondary_lock": False,
+                "left_battery_compartment_alarm": 0,
+                "right_battery_compartment_alarm": 0,
+                "low_temperature_alarm": False,
+                "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
                 "unlocked_alarm": False,
                 "auto_lock_paused": False,
@@ -2894,8 +2893,8 @@ def test_lock_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.LOCK_PRO,
         ),
         AdvTestCase(
-            b'\xb0\xe9\xfe\xb6j=%\x8204\x00\x04',
-            b'\x00\x804\x00\x10\xa5\xb8',
+            b"\xb0\xe9\xfe\xb6j=%\x8204\x00\x04",
+            b"\x00\x804\x00\x10\xa5\xb8",
             {
                 "sequence_number": 37,
                 "battery": 52,
@@ -2903,22 +2902,22 @@ def test_lock_active(test_case: AdvTestCase) -> None:
                 "status": LockStatus.LOCKED,
                 "update_from_secondary_lock": False,
                 "door_open": True,
-                'door_open_from_secondary_lock': True,
+                "door_open_from_secondary_lock": True,
                 "double_lock_mode": False,
-                'is_secondary_lock': False,
-                'manual_unlock_linkage': False,
+                "is_secondary_lock": False,
+                "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
                 "unlocked_alarm": False,
                 "auto_lock_paused": False,
                 "night_latch": False,
                 "power_alarm": False,
-                'battery_status': 4,
+                "battery_status": 4,
             },
-            b'\x00\x10\xa5\xb8',
+            b"\x00\x10\xa5\xb8",
             "Lock Ultra",
             SwitchbotModel.LOCK_ULTRA,
         ),
-    ]
+    ],
 )
 def test_lock_passive(test_case: AdvTestCase) -> None:
     """Test lokc series with passive data."""
@@ -2949,7 +2948,7 @@ def test_lock_passive(test_case: AdvTestCase) -> None:
     [
         AdvTestCase(
             None,
-            b'-\x80d',
+            b"-\x80d",
             {},
             "-",
             "Lock Lite",
@@ -2957,7 +2956,7 @@ def test_lock_passive(test_case: AdvTestCase) -> None:
         ),
         AdvTestCase(
             None,
-            b'o\x80d',
+            b"o\x80d",
             {},
             "o",
             "Lock",
@@ -2965,7 +2964,7 @@ def test_lock_passive(test_case: AdvTestCase) -> None:
         ),
         AdvTestCase(
             None,
-            b'$\x80d',
+            b"$\x80d",
             {},
             "$",
             "Lock Pro",
@@ -2973,13 +2972,13 @@ def test_lock_passive(test_case: AdvTestCase) -> None:
         ),
         AdvTestCase(
             None,
-            b'\x00\x804\x00\x10\xa5\xb8',
+            b"\x00\x804\x00\x10\xa5\xb8",
             {},
-            b'\x00\x10\xa5\xb8',
+            b"\x00\x10\xa5\xb8",
             "Lock Ultra",
             SwitchbotModel.LOCK_ULTRA,
         ),
-    ]
+    ],
 )
 def test_lock_with_empty_data(test_case: AdvTestCase) -> None:
     """Test lokc series with empty data."""
@@ -3002,4 +3001,3 @@ def test_lock_with_empty_data(test_case: AdvTestCase) -> None:
         rssi=-97,
         active=True,
     )
-

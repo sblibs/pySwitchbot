@@ -71,9 +71,7 @@ def process_wolock_pro(
     return common_data | lock_pro_data
 
 
-def process_lock2(
-    data: bytes | None, mfr_data: bytes | None
-) -> dict[str, bool | int]:
+def process_lock2(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | int]:
     """Support for lock2 process data."""
     common_data = parse_common_data(mfr_data)
     if not common_data:

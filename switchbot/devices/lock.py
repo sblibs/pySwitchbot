@@ -64,7 +64,12 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         model: SwitchbotModel = SwitchbotModel.LOCK,
         **kwargs: Any,
     ) -> None:
-        if model not in (SwitchbotModel.LOCK, SwitchbotModel.LOCK_PRO, SwitchbotModel.LOCK_LITE, SwitchbotModel.LOCK_ULTRA):
+        if model not in (
+            SwitchbotModel.LOCK,
+            SwitchbotModel.LOCK_PRO,
+            SwitchbotModel.LOCK_LITE,
+            SwitchbotModel.LOCK_ULTRA,
+        ):
             raise ValueError("initializing SwitchbotLock with a non-lock model")
         self._notifications_enabled: bool = False
         super().__init__(device, key_id, encryption_key, model, interface, **kwargs)

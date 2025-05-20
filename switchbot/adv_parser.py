@@ -311,7 +311,7 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelFriendlyName": "Lock Ultra",
         "func": process_lock2,
         "manufacturer_id": 2409,
-    }
+    },
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {
