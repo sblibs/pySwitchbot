@@ -1,4 +1,4 @@
-"""Air Purifier adv parser."""
+"""Hub3 adv parser."""
 
 from __future__ import annotations
 
