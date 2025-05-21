@@ -1,4 +1,3 @@
-
 import pytest
 
 from switchbot import SwitchbotModel
@@ -11,8 +10,8 @@ def create_device_for_command_testing(model: str):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     return lock.SwitchbotLock(
         ble_device, "ff", "ffffffffffffffffffffffffffffffff", model=model
-
     )
+
 
 @pytest.mark.parametrize(
     "model",
@@ -37,5 +36,7 @@ def test_lock_init(model: str):
 )
 def test_lock_init_with_invalid_model(model: str):
     """Test that initializing with an invalid model raises ValueError."""
-    with pytest.raises(ValueError, match="initializing SwitchbotLock with a non-lock model"):
+    with pytest.raises(
+        ValueError, match="initializing SwitchbotLock with a non-lock model"
+    ):
         create_device_for_command_testing(model)
