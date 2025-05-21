@@ -3001,3 +3001,89 @@ def test_lock_with_empty_data(test_case: AdvTestCase) -> None:
         rssi=-97,
         active=True,
     )
+
+
+def test_blind_tilt_active() -> None:
+    """Test parsing blind tilt with active data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b"\xfc(\\6l\x7f\x0b'\x00\xa1\x84"},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"x\x00H"},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b"x\x00H",
+            "data": {
+                "sequence_number": 11,
+                "battery": 72,
+                "tilt": 0,
+                "inMotion": False,
+                "calibration": True,
+                "lightLevel": 10,
+            },
+            "isEncrypted": False,
+            "model": "x",
+            "modelFriendlyName": "Blind Tilt",
+            "modelName": SwitchbotModel.BLIND_TILT,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+def test_blind_tilt_passive() -> None:
+    """Test parsing blind tilt with passive data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b"\xfc(\\6l\x7f\x0b'\x00\xa1\x84"},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.BLIND_TILT)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": None,
+            "data": {
+                "sequence_number": 11,
+                "battery": None,
+                "tilt": 0,
+                "inMotion": False,
+                "calibration": True,
+                "lightLevel": 10,
+            },
+            "isEncrypted": False,
+            "model": "x",
+            "modelFriendlyName": "Blind Tilt",
+            "modelName": SwitchbotModel.BLIND_TILT,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=False,
+    )
+
+
+def test_blind_tilt_with_empty_data() -> None:
+    """Test parsing blind tilt with empty data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: None},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"x\x00H"},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b"x\x00H",
+            "data": {},
+            "isEncrypted": False,
+            "model": "x",
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
