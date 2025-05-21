@@ -76,6 +76,8 @@ class SwitchbotModel(StrEnum):
     AIR_PURIFIER = "Air Purifier"
     AIR_PURIFIER_TABLE = "Air Purifier Table"
     HUB3 = "Hub3"
+    LOCK_ULTRA = "Lock Ultra"
+    LOCK_LITE = "Lock Lite"
 
 
 __all__ = [

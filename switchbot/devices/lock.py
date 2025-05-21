@@ -10,24 +10,32 @@ from bleak.backends.device import BLEDevice
 
 from ..const import SwitchbotModel
 from ..const.lock import LockStatus
-from .device import SwitchbotEncryptedDevice
+from .device import SwitchbotEncryptedDevice, SwitchbotSequenceDevice
 
 COMMAND_HEADER = "57"
 COMMAND_LOCK_INFO = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0f4f8101",
+    SwitchbotModel.LOCK_LITE: f"{COMMAND_HEADER}0f4f8101",
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4f8102",
+    SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4f8102",
 }
 COMMAND_UNLOCK = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0f4e01011080",
+    SwitchbotModel.LOCK_LITE: f"{COMMAND_HEADER}0f4e01011080",
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e0101000080",
+    SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000080",
 }
 COMMAND_UNLOCK_WITHOUT_UNLATCH = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0f4e010110a0",
+    SwitchbotModel.LOCK_LITE: f"{COMMAND_HEADER}0f4e010110a0",
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e01010000a0",
+    SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e01010000a0",
 }
 COMMAND_LOCK = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0f4e01011000",
+    SwitchbotModel.LOCK_LITE: f"{COMMAND_HEADER}0f4e01011000",
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e0101000000",
+    SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000000",
 }
 COMMAND_ENABLE_NOTIFICATIONS = f"{COMMAND_HEADER}0e01001e00008101"
 COMMAND_DISABLE_NOTIFICATIONS = f"{COMMAND_HEADER}0e00"
@@ -44,7 +52,7 @@ COMMAND_RESULT_EXPECTED_VALUES = {1, 6}
 # The return value of the command is 6 when the command is successful but the battery is low.
 
 
-class SwitchbotLock(SwitchbotEncryptedDevice):
+class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Lock."""
 
     def __init__(
@@ -56,7 +64,12 @@ class SwitchbotLock(SwitchbotEncryptedDevice):
         model: SwitchbotModel = SwitchbotModel.LOCK,
         **kwargs: Any,
     ) -> None:
-        if model not in (SwitchbotModel.LOCK, SwitchbotModel.LOCK_PRO):
+        if model not in (
+            SwitchbotModel.LOCK,
+            SwitchbotModel.LOCK_PRO,
+            SwitchbotModel.LOCK_LITE,
+            SwitchbotModel.LOCK_ULTRA,
+        ):
             raise ValueError("initializing SwitchbotLock with a non-lock model")
         self._notifications_enabled: bool = False
         super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
