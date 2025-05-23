@@ -1437,71 +1437,6 @@ def test_parse_advertisement_data_keypad():
     )
 
 
-def test_parse_advertisement_data_relay_switch_1pm():
-    """Test parse_advertisement_data for the keypad."""
-    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    adv_data = generate_advertisement_data(
-        manufacturer_data={2409: b"$X|\x0866G\x81\x00\x00\x001\x00\x00\x00\x00"},
-        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"<\x00\x00\x00"},
-        rssi=-67,
-    )
-    result = parse_advertisement_data(
-        ble_device, adv_data, SwitchbotModel.RELAY_SWITCH_1PM
-    )
-    assert result == SwitchBotAdvertisement(
-        address="aa:bb:cc:dd:ee:ff",
-        data={
-            "data": {
-                "switchMode": True,
-                "sequence_number": 71,
-                "isOn": True,
-                "power": 4.9,
-                "voltage": 0,
-                "current": 0,
-            },
-            "isEncrypted": False,
-            "model": "<",
-            "modelFriendlyName": "Relay Switch 1PM",
-            "modelName": SwitchbotModel.RELAY_SWITCH_1PM,
-            "rawAdvData": b"<\x00\x00\x00",
-        },
-        device=ble_device,
-        rssi=-67,
-        active=True,
-    )
-
-
-def test_parse_advertisement_data_relay_switch_1():
-    """Test parse_advertisement_data for the keypad."""
-    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    adv_data = generate_advertisement_data(
-        manufacturer_data={2409: b"$X|\x0866G\x81\x00\x00\x001\x00\x00\x00\x00"},
-        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b";\x00\x00\x00"},
-        rssi=-67,
-    )
-    result = parse_advertisement_data(
-        ble_device, adv_data, SwitchbotModel.RELAY_SWITCH_1
-    )
-    assert result == SwitchBotAdvertisement(
-        address="aa:bb:cc:dd:ee:ff",
-        data={
-            "data": {
-                "switchMode": True,
-                "sequence_number": 71,
-                "isOn": True,
-            },
-            "isEncrypted": False,
-            "model": ";",
-            "modelFriendlyName": "Relay Switch 1",
-            "modelName": SwitchbotModel.RELAY_SWITCH_1,
-            "rawAdvData": b";\x00\x00\x00",
-        },
-        device=ble_device,
-        rssi=-67,
-        active=True,
-    )
-
-
 def test_leak_active():
     """Test parse_advertisement_data for the leak detector."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
@@ -3082,6 +3017,272 @@ def test_blind_tilt_with_empty_data() -> None:
             "data": {},
             "isEncrypted": False,
             "model": "x",
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        AdvTestCase(
+            b'\xc0N0\xdd\xb9\xf2\x8a\xc1\x00\x00\x00\x00\x00F\x00\x00',
+            b'=\x00\x00\x00',
+            {
+                1: {
+                    'isOn': True,
+                    'power': 0.0,
+                    'sequence_number': 138,
+                    'switchMode': True,
+                },
+                2: {
+                    'isOn': True,
+                    'power': 7.0,
+                    'sequence_number': 138,
+                    'switchMode': True,
+                },
+            },
+            '=',
+            'Relay Switch 2PM',
+            SwitchbotModel.RELAY_SWITCH_2PM,
+        ),
+        AdvTestCase(
+            b"$X|\x0866G\x81\x00\x00\x001\x00\x00\x00\x00",
+            b";\x00\x00\x00",
+            {
+                'isOn': True,
+                "sequence_number": 71,
+                'switchMode': True,
+            },
+            ';',
+            'Relay Switch 1',
+            SwitchbotModel.RELAY_SWITCH_1,
+        ),
+        AdvTestCase(
+            b"$X|\x0866G\x81\x00\x00\x001\x00\x00\x00\x00",
+            b"<\x00\x00\x00",
+            {
+                'isOn': True,
+                'power': 4.9,
+                'sequence_number': 71,
+                'switchMode': True,
+            },
+            '<',
+            'Relay Switch 1PM',
+            SwitchbotModel.RELAY_SWITCH_1PM,
+        ),
+        AdvTestCase(
+            b'$X|\x05BN\x0f\x00\x00\x03\x00\x00\x00\x00\x00\x00',
+            b'>\x00\x00\x00',
+            {
+                'door_open': True,
+                'isOn': False,
+                'sequence_number': 15,
+                'switchMode': True,
+            },
+            '>',
+            'Garage Door Opener',
+            SwitchbotModel.GARAGE_DOOR_OPENER,
+        ),
+
+    ],
+)
+def test_adv_active(test_case: AdvTestCase) -> None:
+    """Test with active data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: test_case.manufacturer_data},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": test_case.service_data},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": test_case.service_data,
+            "data": test_case.data,
+            "isEncrypted": False,
+            "model": test_case.model,
+            "modelFriendlyName": test_case.modelFriendlyName,
+            "modelName": test_case.modelName,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        AdvTestCase(
+            b'\xc0N0\xdd\xb9\xf2\x8a\xc1\x00\x00\x00\x00\x00F\x00\x00',
+            b'=\x00\x00\x00',
+            {
+                1: {
+                    'isOn': True,
+                    'power': 0.0,
+                    'sequence_number': 138,
+                    'switchMode': True,
+                },
+                2: {
+                    'isOn': True,
+                    'power': 7.0,
+                    'sequence_number': 138,
+                    'switchMode': True,
+                },
+            },
+            '=',
+            'Relay Switch 2PM',
+            SwitchbotModel.RELAY_SWITCH_2PM,
+        ),
+        AdvTestCase(
+            b"$X|\x0866G\x81\x00\x00\x001\x00\x00\x00\x00",
+            b";\x00\x00\x00",
+            {
+                'isOn': True,
+                "sequence_number": 71,
+                'switchMode': True,
+            },
+            ';',
+            'Relay Switch 1',
+            SwitchbotModel.RELAY_SWITCH_1,
+        ),
+        AdvTestCase(
+            b"$X|\x0866G\x81\x00\x00\x001\x00\x00\x00\x00",
+            b"<\x00\x00\x00",
+            {
+                'isOn': True,
+                'power': 4.9,
+                'sequence_number': 71,
+                'switchMode': True,
+            },
+            '<',
+            'Relay Switch 1PM',
+            SwitchbotModel.RELAY_SWITCH_1PM,
+        ),
+        AdvTestCase(
+            b'$X|\x05BN\x0f\x00\x00\x03\x00\x00\x00\x00\x00\x00',
+            b'>\x00\x00\x00',
+            {
+                'door_open': True,
+                'isOn': False,
+                'sequence_number': 15,
+                'switchMode': True,
+            },
+            '>',
+            'Garage Door Opener',
+            SwitchbotModel.GARAGE_DOOR_OPENER,
+        ),
+
+    ],
+)
+def test_adv_passive(test_case: AdvTestCase) -> None:
+    """Test with passive data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: test_case.manufacturer_data},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data, test_case.modelName)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": None,
+            "data": test_case.data,
+            "isEncrypted": False,
+            "model": test_case.model,
+            "modelFriendlyName": test_case.modelFriendlyName,
+            "modelName": test_case.modelName,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=False,
+    )
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        AdvTestCase(
+            None,
+            b'=\x00\x00\x00',
+            {
+                1: {
+                    'isOn': True,
+                    'power': 0.0,
+                    'sequence_number': 138,
+                    'switchMode': True,
+                },
+                2: {
+                    'isOn': True,
+                    'power': 7.0,
+                    'sequence_number': 138,
+                    'switchMode': True,
+                },
+            },
+            '=',
+            'Relay Switch 2PM',
+            SwitchbotModel.RELAY_SWITCH_2PM,
+        ),
+        AdvTestCase(
+            None,
+            b";\x00\x00\x00",
+            {
+                'isOn': True,
+                "sequence_number": 71,
+                'switchMode': True,
+            },
+            ';',
+            'Relay Switch 1',
+            SwitchbotModel.RELAY_SWITCH_1,
+        ),
+        AdvTestCase(
+            None,
+            b"<\x00\x00\x00",
+            {
+                'isOn': True,
+                'power': 4.9,
+                'sequence_number': 71,
+                'switchMode': True,
+            },
+            '<',
+            'Relay Switch 1PM',
+            SwitchbotModel.RELAY_SWITCH_1PM,
+        ),
+        AdvTestCase(
+            None,
+            b'>\x00\x00\x00',
+            {
+                'door_open': True,
+                'isOn': False,
+                'sequence_number': 15,
+                'switchMode': True,
+            },
+            '>',
+            'Garage Door Opener',
+            SwitchbotModel.GARAGE_DOOR_OPENER,
+        ),
+
+    ],
+)
+def test_adv_with_empty_data(test_case: AdvTestCase) -> None:
+    """Test with empty data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: None},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": test_case.service_data},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": test_case.service_data,
+            "data": {},
+            "isEncrypted": False,
+            "model": test_case.model,
         },
         device=ble_device,
         rssi=-97,
