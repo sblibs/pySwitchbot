@@ -30,8 +30,10 @@ from .adv_parsers.meter import process_wosensorth, process_wosensorth_c
 from .adv_parsers.motion import process_wopresence
 from .adv_parsers.plug import process_woplugmini
 from .adv_parsers.relay_switch import (
-    process_worelay_switch_1,
-    process_worelay_switch_1pm,
+    process_garage_door_opener,
+    process_relay_switch_1pm,
+    process_relay_switch_2pm,
+    process_relay_switch_common_data,
 )
 from .adv_parsers.remote import process_woremote
 from .adv_parsers.roller_shade import process_worollershade
@@ -207,13 +209,13 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
     "<": {
         "modelName": SwitchbotModel.RELAY_SWITCH_1PM,
         "modelFriendlyName": "Relay Switch 1PM",
-        "func": process_worelay_switch_1pm,
+        "func": process_relay_switch_1pm,
         "manufacturer_id": 2409,
     },
     ";": {
         "modelName": SwitchbotModel.RELAY_SWITCH_1,
         "modelFriendlyName": "Relay Switch 1",
-        "func": process_worelay_switch_1,
+        "func": process_relay_switch_common_data,
         "manufacturer_id": 2409,
     },
     "b": {
@@ -312,6 +314,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_lock2,
         "manufacturer_id": 2409,
     },
+    ">": {
+        "modelName": SwitchbotModel.GARAGE_DOOR_OPENER,
+        "modelFriendlyName": "Garage Door Opener",
+        "func": process_garage_door_opener,
+        "manufacturer_id": 2409,
+    },
+    "=": {
+        "modelName": SwitchbotModel.RELAY_SWITCH_2PM,
+        "modelFriendlyName": "Relay Switch 2PM",
+        "func": process_relay_switch_2pm,
+        "manufacturer_id": 2409,
+    }
+
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {
