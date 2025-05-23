@@ -116,7 +116,9 @@ def _merge_data(old_data: dict[str, Any], new_data: dict[str, Any]) -> dict[str,
     """Merge data but only add None keys if they are missing."""
     merged = old_data.copy()
     for key, value in new_data.items():
-        if value is not None or key not in old_data:
+        if isinstance(value, dict) and isinstance(old_data.get(key), dict):
+            merged[key] = _merge_data(old_data[key], value)
+        elif value is not None or key not in old_data:
             merged[key] = value
     return merged
 
@@ -538,7 +540,7 @@ class SwitchbotBaseDevice:
         self._override_adv_data.update(state)
         self._update_parsed_data(state)
 
-    def _get_adv_value(self, key: str) -> Any:
+    def _get_adv_value(self, key: str, channel: int | None = None) -> Any:
         """Return value from advertisement data."""
         if self._override_adv_data and key in self._override_adv_data:
             _LOGGER.debug(
@@ -550,6 +552,8 @@ class SwitchbotBaseDevice:
             return self._override_adv_data[key]
         if not self._sb_adv_data:
             return None
+        if channel is not None:
+            return self._sb_adv_data.data["data"].get(channel, {}).get(key)
         return self._sb_adv_data.data["data"].get(key)
 
     def get_battery_percent(self) -> Any:
@@ -583,10 +587,10 @@ class SwitchbotBaseDevice:
 
         return self._sb_adv_data
 
-    async def _get_basic_info(self) -> bytes | None:
+    async def _get_basic_info(self, cmd: str = DEVICE_GET_BASIC_SETTINGS_KEY) -> bytes | None:
         """Return basic info of device."""
         _data = await self._send_command(
-            key=DEVICE_GET_BASIC_SETTINGS_KEY, retry=self._retry_count
+            key=cmd, retry=self._retry_count
         )
 
         if _data in (b"\x07", b"\x00"):
