@@ -5,6 +5,7 @@ from typing import Any
 from bleak.backends.device import BLEDevice
 
 from ..const import SwitchbotModel
+from ..models import SwitchBotAdvertisement
 from .device import (
     SwitchbotEncryptedDevice,
     SwitchbotSequenceDevice,
@@ -76,6 +77,22 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         return await super().verify_encryption_key(
             device, key_id, encryption_key, model, **kwargs
         )
+
+    def update_from_advertisement(self, advertisement: SwitchBotAdvertisement) -> None:
+        """Update device data from advertisement."""
+        adv_data = advertisement.data["data"]
+        channel = self._channel if hasattr(self, "_channel") else None
+
+        if channel is None:
+            adv_data["voltage"] = self._get_adv_value("voltage") or 0
+            adv_data["current"] = self._get_adv_value("current") or 0
+        else:
+            for i in range(1, channel + 1):
+                adv_data[i] = adv_data.get(i, {})
+                adv_data[i]["voltage"] = self._get_adv_value("voltage", i) or 0
+                adv_data[i]["current"] = self._get_adv_value("current", i) or 0
+        super().update_from_advertisement(advertisement)
+
 
     def get_current_time_and_start_time(self) -> int:
         """Get current time in seconds since epoch."""
