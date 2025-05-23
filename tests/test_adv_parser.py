@@ -3033,13 +3033,11 @@ def test_blind_tilt_with_empty_data() -> None:
             {
                 1: {
                     'isOn': True,
-                    'power': 0.0,
                     'sequence_number': 138,
                     'switchMode': True,
                 },
                 2: {
                     'isOn': True,
-                    'power': 7.0,
                     'sequence_number': 138,
                     'switchMode': True,
                 },
@@ -3065,7 +3063,6 @@ def test_blind_tilt_with_empty_data() -> None:
             b"<\x00\x00\x00",
             {
                 'isOn': True,
-                'power': 4.9,
                 'sequence_number': 71,
                 'switchMode': True,
             },
@@ -3123,13 +3120,11 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             {
                 1: {
                     'isOn': True,
-                    'power': 0.0,
                     'sequence_number': 138,
                     'switchMode': True,
                 },
                 2: {
                     'isOn': True,
-                    'power': 7.0,
                     'sequence_number': 138,
                     'switchMode': True,
                 },
@@ -3155,7 +3150,6 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             b"<\x00\x00\x00",
             {
                 'isOn': True,
-                'power': 4.9,
                 'sequence_number': 71,
                 'switchMode': True,
             },

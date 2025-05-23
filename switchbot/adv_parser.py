@@ -31,7 +31,6 @@ from .adv_parsers.motion import process_wopresence
 from .adv_parsers.plug import process_woplugmini
 from .adv_parsers.relay_switch import (
     process_garage_door_opener,
-    process_relay_switch_1pm,
     process_relay_switch_2pm,
     process_relay_switch_common_data,
 )
@@ -209,7 +208,7 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
     "<": {
         "modelName": SwitchbotModel.RELAY_SWITCH_1PM,
         "modelFriendlyName": "Relay Switch 1PM",
-        "func": process_relay_switch_1pm,
+        "func": process_relay_switch_common_data,
         "manufacturer_id": 2409,
     },
     ";": {
