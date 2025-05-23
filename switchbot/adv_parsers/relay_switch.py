@@ -28,8 +28,6 @@ def process_relay_switch_1pm(data: bytes | None, mfr_data: bytes | None) -> dict
         return {}
     common_data = process_relay_switch_common_data(data, mfr_data)
     common_data["power"] = parse_power_data(mfr_data, 10, 12)
-    common_data["voltage"] = 0
-    common_data["current"] = 0
     return common_data
 
 
@@ -51,16 +49,12 @@ def process_relay_switch_2pm(data: bytes | None, mfr_data: bytes | None) -> dict
         1: {
             **process_relay_switch_common_data(data, mfr_data),
             "power": parse_power_data(mfr_data, 10, 12),
-            "voltage": 0,
-            "current": 0,
         },
         2: {
             "switchMode": True,  # for compatibility, useless
             "sequence_number": mfr_data[6],
             "isOn": bool(mfr_data[7] & 0b01000000),
             "power": parse_power_data(mfr_data, 12, 14),
-            "voltage": 0,
-            "current": 0,
         },
     }
 
