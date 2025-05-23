@@ -78,19 +78,50 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             device, key_id, encryption_key, model, **kwargs
         )
 
+    def _reset_power_data(self, data: dict[str, Any]) -> None:
+        """Reset power-related data to 0."""
+        for key in ["power", "current", "voltage"]:
+            data[key] = 0
+
+    def _parse_common_data(self, raw_data: bytes) -> dict[str, Any]:
+        """Parse common data from raw bytes."""
+        return {
+            "sequence_number": raw_data[1],
+            "isOn": bool(raw_data[2] & 0b10000000),
+            "firmware": raw_data[16] / 10.0,
+            "channel2_isOn": bool(raw_data[2] & 0b01000000),
+        }
+
+    def _parse_user_data(self, raw_data: bytes) -> dict[str, Any]:
+        """Parse user-specific data from raw bytes."""
+        return {
+            "Electricity": round(int.from_bytes(raw_data[1:4], "big") / 60000, 2),
+            "Electricity Usage Yesterday": round(int.from_bytes(raw_data[4:7], "big") / 60000, 2),
+            "use_time": round(int.from_bytes(raw_data[7:9], "big") / 60, 2),
+            "voltage": int.from_bytes(raw_data[9:11], "big") / 10.0,
+            "current": int.from_bytes(raw_data[11:13], "big"),
+            "power": int.from_bytes(raw_data[13:15], "big") / 10.0,
+        }
+
     def update_from_advertisement(self, advertisement: SwitchBotAdvertisement) -> None:
         """Update device data from advertisement."""
         adv_data = advertisement.data["data"]
         channel = self._channel if hasattr(self, "_channel") else None
 
-        if channel is None:
-            adv_data["voltage"] = self._get_adv_value("voltage") or 0
-            adv_data["current"] = self._get_adv_value("current") or 0
-        else:
-            for i in range(1, channel + 1):
-                adv_data[i] = adv_data.get(i, {})
-                adv_data[i]["voltage"] = self._get_adv_value("voltage", i) or 0
-                adv_data[i]["current"] = self._get_adv_value("current", i) or 0
+        if self._model in (
+            SwitchbotModel.RELAY_SWITCH_1PM,
+            SwitchbotModel.RELAY_SWITCH_2PM,
+        ):
+            if channel is None:
+                adv_data["voltage"] = self._get_adv_value("voltage") or 0
+                adv_data["current"] = self._get_adv_value("current") or 0
+                adv_data["power"] = self._get_adv_value("power") or 0
+            else:
+                for i in range(1, channel + 1):
+                    adv_data[i] = adv_data.get(i, {})
+                    adv_data[i]["voltage"] = self._get_adv_value("voltage", i) or 0
+                    adv_data[i]["current"] = self._get_adv_value("current", i) or 0
+                    adv_data[i]["power"] = self._get_adv_value("power", i) or 0
         super().update_from_advertisement(advertisement)
 
 
@@ -112,29 +143,22 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if not (_channel1_data := await self._get_basic_info(COMMAND_GET_CHANNEL1_INFO.format(current_time_hex, current_day_start_time_hex))):
             return None
 
-        common_data = {
-            "isOn": bool(_data[2] & 0b10000000),
-            "firmware": _data[16] / 10.0,
-            "use_time": int.from_bytes(_channel1_data[7:9], "big"),
+        _LOGGER.debug("on-off hex: %s, channel1_hex_data: %s", _data.hex(), _channel1_data.hex())
 
-        }
+        common_data = self._parse_common_data(_data)
+        user_data = self._parse_user_data(_channel1_data)
 
-        user_data = {
-            "Electricity Usage Today": int.from_bytes(_channel1_data[1:4], "big"),
-            "Electricity Usage Yesterday": int.from_bytes(_channel1_data[4:7], "big"),
-            "voltage": int.from_bytes(_channel1_data[9:11], "big") / 10.0,
-            "current": int.from_bytes(_channel1_data[11:13], "big"),
-            "power": int.from_bytes(_channel1_data[13:15], "big") / 10.0,
-        }
+        if self._model in (SwitchbotModel.RELAY_SWITCH_1, SwitchbotModel.GARAGE_DOOR_OPENER):
+            for key in ["voltage", "current", "power"]:
+                user_data.pop(key, None)
 
-        garage_door_opener_data = {
-            "door_open": not bool(_data[7] & 0b00100000),
-        }
+        if not common_data["isOn"]:
+            self._reset_power_data(user_data)
 
-        _LOGGER.debug("common_data: %s, garage_door_opener_data: %s", common_data, garage_door_opener_data)
+        garage_door_opener_data = {"door_open": not bool(_data[7] & 0b00100000)}
 
-        if self._model == SwitchbotModel.RELAY_SWITCH_1:
-            return common_data
+        _LOGGER.debug("common_data: %s, user_data: %s", common_data, user_data)
+
         if self._model == SwitchbotModel.GARAGE_DOOR_OPENER:
             return common_data | garage_door_opener_data
         return common_data | user_data
@@ -195,23 +219,16 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch):
             ):
             return None
 
+        _LOGGER.debug("channel2_hex_data: %s", _channel2_data.hex())
 
-        result = {
-            1: common_data,
-            2: {
-                "isOn": bool(_channel2_data[2] & 0b01000000),
-                "Electricity Usage Today": int.from_bytes(_channel2_data[1:4], "big"),
-                "Electricity Usage Yesterday": int.from_bytes(_channel2_data[4:7], "big"),
-                "use_time": int.from_bytes(_channel2_data[7:9], "big"),
-                "voltage": int.from_bytes(_channel2_data[9:11], "big") / 10.0,
-                "current": int.from_bytes(_channel2_data[11:13], "big"),
-                "power": int.from_bytes(_channel2_data[13:15], "big") / 10.0,
-            }
-        }
+        channel2_data = self._parse_user_data(_channel2_data)
+        channel2_data["isOn"] = common_data["channel2_isOn"]
 
-        _LOGGER.debug("Multi channel basic info: %s", result)
+        if not channel2_data["isOn"]:
+            self._reset_power_data(channel2_data)
 
-        return result
+        _LOGGER.debug("channel1_data: %s, channel2_data: %s", common_data, channel2_data)
+        return {1: common_data, 2: channel2_data}
 
     @update_after_operation
     async def turn_on(self, channel: int) -> bool:
