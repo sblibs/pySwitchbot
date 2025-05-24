@@ -223,13 +223,13 @@ async def test_get_basic_info_2PM(common_parametrize_2pm, info_data, result):
     assert 2 in info
 
     assert info[1]["isOn"] == result[0]
-    assert info[1]["electricity"] == result[1]
+    assert info[1]["energy"] == result[1]
     assert info[1]["voltage"] == result[2]
     assert info[1]["current"] == result[3]
     assert info[1]["power"] == result[4]
 
     assert info[2]["isOn"] == result[5]
-    assert info[2]["electricity"] == result[6]
+    assert info[2]["energy"] == result[6]
     assert info[2]["voltage"] == result[7]
     assert info[2]["current"] == result[8]
     assert info[2]["power"] == result[9]
