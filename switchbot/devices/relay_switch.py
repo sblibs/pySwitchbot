@@ -95,8 +95,8 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     def _parse_user_data(self, raw_data: bytes) -> dict[str, Any]:
         """Parse user-specific data from raw bytes."""
         return {
-            "Electricity": round(int.from_bytes(raw_data[1:4], "big") / 60000, 2),
-            "Electricity Usage Yesterday": round(int.from_bytes(raw_data[4:7], "big") / 60000, 2),
+            "electricity": round(int.from_bytes(raw_data[1:4], "big") / 60000, 2),
+            "electricity usage yesterday": round(int.from_bytes(raw_data[4:7], "big") / 60000, 2),
             "use_time": round(int.from_bytes(raw_data[7:9], "big") / 60, 2),
             "voltage": int.from_bytes(raw_data[9:11], "big") / 10.0,
             "current": int.from_bytes(raw_data[11:13], "big"),
