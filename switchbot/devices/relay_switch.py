@@ -95,8 +95,8 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     def _parse_user_data(self, raw_data: bytes) -> dict[str, Any]:
         """Parse user-specific data from raw bytes."""
         return {
-            "electricity": round(int.from_bytes(raw_data[1:4], "big") / 60000, 2),
-            "electricity usage yesterday": round(int.from_bytes(raw_data[4:7], "big") / 60000, 2),
+            "energy": round(int.from_bytes(raw_data[1:4], "big") / 60000, 2),
+            "energy usage yesterday": round(int.from_bytes(raw_data[4:7], "big") / 60000, 2),
             "use_time": round(int.from_bytes(raw_data[7:9], "big") / 60, 2),
             "voltage": int.from_bytes(raw_data[9:11], "big") / 10.0,
             "current": int.from_bytes(raw_data[11:13], "big"),
@@ -116,12 +116,14 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                 adv_data["voltage"] = self._get_adv_value("voltage") or 0
                 adv_data["current"] = self._get_adv_value("current") or 0
                 adv_data["power"] = self._get_adv_value("power") or 0
+                adv_data["energy"] = self._get_adv_value("energy") or 0
             else:
                 for i in range(1, channel + 1):
                     adv_data[i] = adv_data.get(i, {})
                     adv_data[i]["voltage"] = self._get_adv_value("voltage", i) or 0
                     adv_data[i]["current"] = self._get_adv_value("current", i) or 0
                     adv_data[i]["power"] = self._get_adv_value("power", i) or 0
+                    adv_data[i]["energy"] = self._get_adv_value("energy", i) or 0
         super().update_from_advertisement(advertisement)
 
 
@@ -149,7 +151,7 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         user_data = self._parse_user_data(_channel1_data)
 
         if self._model in (SwitchbotModel.RELAY_SWITCH_1, SwitchbotModel.GARAGE_DOOR_OPENER):
-            for key in ["voltage", "current", "power"]:
+            for key in ["voltage", "current", "power", "energy"]:
                 user_data.pop(key, None)
 
         if not common_data["isOn"]:
