@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ..enum import StrEnum
 from .air_purifier import AirPurifierMode
+from .evaporative_humidifier import HumidifierMode, HumidifierWaterLevel
 from .fan import FanMode
 
 # Preserve old LockStatus export for backwards compatibility
@@ -86,6 +87,8 @@ __all__ = [
     "DEFAULT_SCAN_TIMEOUT",
     "AirPurifierMode",
     "FanMode",
+    "HumidifierMode",
+    "HumidifierWaterLevel",
     "LockStatus",
     "SwitchbotAccountConnectionError",
     "SwitchbotApiError",

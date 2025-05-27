@@ -13,12 +13,20 @@ class HumidifierMode(Enum):
     AUTO = 7
     DRYING_FILTER = 8
 
+    @classmethod
+    def get_modes(cls) -> list[str]:
+        return [mode.name.lower() for mode in cls]
+
 
 class HumidifierWaterLevel(Enum):
     EMPTY = 0
     LOW = 1
     MEDIUM = 2
     HIGH = 3
+
+    @classmethod
+    def get_levels(cls) -> list[str]:
+        return [level.name.lower() for level in cls]
 
 
 OVER_HUMIDIFY_PROTECTION_MODES = {
