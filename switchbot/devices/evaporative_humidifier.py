@@ -92,7 +92,7 @@ class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncrypted
             _data[3:6], is_meter_binded
         )
 
-        water_level = HumidifierWaterLevel(_data[5] & 0b00000011)
+        water_level = HumidifierWaterLevel(_data[5] & 0b00000011).name.lower()
         filter_run_time = int.from_bytes(_data[6:8], byteorder="big") & 0xfff
         target_humidity = _data[10] & 0b01111111
 

@@ -87,10 +87,12 @@ def process_evaporative_humidifier(
 def calculate_temperature_and_humidity(data: bytes, is_meter_binded: bool) -> tuple[float | None, float | None, int | None]:
     """Calculate temperature and humidity based on the given flag."""
     if is_meter_binded:
-        humidity = data[1] & 0b01111111
-        _temp_sign = 1 if data[2] & 0b10000000 else -1
+        humidity = data[0] & 0b01111111
+        if humidity == 127:           # get the meter binded data timeout
+            return None, None, None
+        _temp_sign = 1 if data[1] & 0b10000000 else -1
         _temp_c = _temp_sign * (
-            (data[2] & 0b01111111) + ((data[3] >> 4) / 10)
+            (data[1] & 0b01111111) + ((data[2] >> 4) / 10)
         )
         _temp_f = (_temp_c * 9 / 5) + 32
     else:
