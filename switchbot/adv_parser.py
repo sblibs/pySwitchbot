@@ -324,8 +324,7 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelFriendlyName": "Relay Switch 2PM",
         "func": process_relay_switch_2pm,
         "manufacturer_id": 2409,
-    }
-
+    },
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {

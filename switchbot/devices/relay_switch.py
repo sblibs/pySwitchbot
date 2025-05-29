@@ -103,7 +103,9 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
         return {
             "energy": 0.01 if 0 < _energy <= 0.01 else round(_energy, 2),
-            "energy usage yesterday": 0.01 if 0 < _energy_usage_yesterday <= 0.01 else round(_energy_usage_yesterday, 2),
+            "energy usage yesterday": 0.01
+            if 0 < _energy_usage_yesterday <= 0.01
+            else round(_energy_usage_yesterday, 2),
             "use_time": round(_use_time, 1),
             "voltage": 0.1 if 0 < _voltage <= 0.1 else round(_voltage),
             "current": 0.1 if 0 < _current <= 0.1 else round(_current, 1),
@@ -133,7 +135,6 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                     adv_data[i]["energy"] = self._get_adv_value("energy", i) or 0
         super().update_from_advertisement(advertisement)
 
-
     def get_current_time_and_start_time(self) -> int:
         """Get current time in seconds since epoch."""
         current_time = int(time.time())
@@ -145,19 +146,32 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
-        current_time_hex, current_day_start_time_hex = self.get_current_time_and_start_time()
+        current_time_hex, current_day_start_time_hex = (
+            self.get_current_time_and_start_time()
+        )
 
         if not (_data := await self._get_basic_info(COMMAND_GET_BASIC_INFO)):
             return None
-        if not (_channel1_data := await self._get_basic_info(COMMAND_GET_CHANNEL1_INFO.format(current_time_hex, current_day_start_time_hex))):
+        if not (
+            _channel1_data := await self._get_basic_info(
+                COMMAND_GET_CHANNEL1_INFO.format(
+                    current_time_hex, current_day_start_time_hex
+                )
+            )
+        ):
             return None
 
-        _LOGGER.debug("on-off hex: %s, channel1_hex_data: %s", _data.hex(), _channel1_data.hex())
+        _LOGGER.debug(
+            "on-off hex: %s, channel1_hex_data: %s", _data.hex(), _channel1_data.hex()
+        )
 
         common_data = self._parse_common_data(_data)
         user_data = self._parse_user_data(_channel1_data)
 
-        if self._model in (SwitchbotModel.RELAY_SWITCH_1, SwitchbotModel.GARAGE_DOOR_OPENER):
+        if self._model in (
+            SwitchbotModel.RELAY_SWITCH_1,
+            SwitchbotModel.GARAGE_DOOR_OPENER,
+        ):
             for key in ["voltage", "current", "power", "energy"]:
                 user_data.pop(key, None)
 
@@ -220,12 +234,18 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch):
         return data.get(channel, {})
 
     async def get_basic_info(self):
-        current_time_hex, current_day_start_time_hex = self.get_current_time_and_start_time()
+        current_time_hex, current_day_start_time_hex = (
+            self.get_current_time_and_start_time()
+        )
         if not (common_data := await super().get_basic_info()):
             return None
         if not (
-                _channel2_data := await self._get_basic_info(COMMAND_GET_CHANNEL2_INFO.format(current_time_hex, current_day_start_time_hex))
-            ):
+            _channel2_data := await self._get_basic_info(
+                COMMAND_GET_CHANNEL2_INFO.format(
+                    current_time_hex, current_day_start_time_hex
+                )
+            )
+        ):
             return None
 
         _LOGGER.debug("channel2_hex_data: %s", _channel2_data.hex())
@@ -236,25 +256,33 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch):
         if not channel2_data["isOn"]:
             self._reset_power_data(channel2_data)
 
-        _LOGGER.debug("channel1_data: %s, channel2_data: %s", common_data, channel2_data)
+        _LOGGER.debug(
+            "channel1_data: %s, channel2_data: %s", common_data, channel2_data
+        )
         return {1: common_data, 2: channel2_data}
 
     @update_after_operation
     async def turn_on(self, channel: int) -> bool:
         """Turn device on."""
-        result = await self._send_command(MULTI_CHANNEL_COMMANDS_TURN_ON[self._model][channel])
+        result = await self._send_command(
+            MULTI_CHANNEL_COMMANDS_TURN_ON[self._model][channel]
+        )
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def turn_off(self, channel: int) -> bool:
         """Turn device off."""
-        result = await self._send_command(MULTI_CHANNEL_COMMANDS_TURN_OFF[self._model][channel])
+        result = await self._send_command(
+            MULTI_CHANNEL_COMMANDS_TURN_OFF[self._model][channel]
+        )
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def async_toggle(self, channel: int) -> bool:
         """Toggle device."""
-        result = await self._send_command(MULTI_CHANNEL_COMMANDS_TOGGLE[self._model][channel])
+        result = await self._send_command(
+            MULTI_CHANNEL_COMMANDS_TOGGLE[self._model][channel]
+        )
         return self._check_command_result(result, 0, {1})
 
     def is_on(self, channel: int) -> bool | None:

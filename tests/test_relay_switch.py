@@ -11,7 +11,7 @@ from .test_adv_parser import generate_ble_device
 common_params = [
     (b";\x00\x00\x00", SwitchbotModel.RELAY_SWITCH_1),
     (b"<\x00\x00\x00", SwitchbotModel.RELAY_SWITCH_1PM),
-    (b'>\x00\x00\x00', SwitchbotModel.GARAGE_DOOR_OPENER),
+    (b">\x00\x00\x00", SwitchbotModel.GARAGE_DOOR_OPENER),
 ]
 
 
@@ -25,7 +25,8 @@ def common_parametrize_2pm():
 
 
 def create_device_for_command_testing(
-    rawAdvData: bytes, model: str, init_data: dict | None = None):
+    rawAdvData: bytes, model: str, init_data: dict | None = None
+):
     """Create a device for command testing."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device_class = (
@@ -43,6 +44,7 @@ def create_device_for_command_testing(
     device._check_command_result = MagicMock()
     device.update = AsyncMock()
     return device
+
 
 def make_advertisement_data(
     ble_device: BLEDevice, rawAdvData: bytes, model: str, init_data: dict | None = None
@@ -84,7 +86,8 @@ def make_advertisement_data(
                     "sequence_number": 96,
                     "isOn": True,
                     "door_open": False,
-                } | init_data,
+                }
+                | init_data,
                 "isEncrypted": False,
             },
             device=ble_device,
@@ -108,6 +111,7 @@ def make_advertisement_data(
         active=True,
     )
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "init_data",
@@ -117,7 +121,9 @@ def make_advertisement_data(
 )
 async def test_turn_on_2PM(common_parametrize_2pm, init_data):
     """Test turn on command."""
-    device = create_device_for_command_testing(common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"], init_data)
+    device = create_device_for_command_testing(
+        common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"], init_data
+    )
     await device.turn_on(1)
     device._send_command.assert_called_with(
         relay_switch.MULTI_CHANNEL_COMMANDS_TURN_ON[common_parametrize_2pm["model"]][1]
@@ -130,6 +136,7 @@ async def test_turn_on_2PM(common_parametrize_2pm, init_data):
     )
     assert device.is_on(2) is True
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "init_data",
@@ -139,7 +146,9 @@ async def test_turn_on_2PM(common_parametrize_2pm, init_data):
 )
 async def test_turn_off_2PM(common_parametrize_2pm, init_data):
     """Test turn off command."""
-    device = create_device_for_command_testing(common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"], init_data)
+    device = create_device_for_command_testing(
+        common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"], init_data
+    )
     await device.turn_off(1)
     device._send_command.assert_called_with(
         relay_switch.MULTI_CHANNEL_COMMANDS_TURN_OFF[common_parametrize_2pm["model"]][1]
@@ -152,10 +161,13 @@ async def test_turn_off_2PM(common_parametrize_2pm, init_data):
     )
     assert device.is_on(2) is False
 
+
 @pytest.mark.asyncio
 async def test_turn_toggle_2PM(common_parametrize_2pm):
     """Test toggle command."""
-    device = create_device_for_command_testing(common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"])
+    device = create_device_for_command_testing(
+        common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"]
+    )
     await device.async_toggle(1)
     device._send_command.assert_called_with(
         relay_switch.MULTI_CHANNEL_COMMANDS_TOGGLE[common_parametrize_2pm["model"]][1]
@@ -168,12 +180,16 @@ async def test_turn_toggle_2PM(common_parametrize_2pm):
     )
     assert device.is_on(2) is False
 
+
 @pytest.mark.asyncio
 async def test_get_switch_mode_2PM(common_parametrize_2pm):
     """Test get switch mode."""
-    device = create_device_for_command_testing(common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"])
+    device = create_device_for_command_testing(
+        common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"]
+    )
     assert device.switch_mode(1) is True
     assert device.switch_mode(2) is True
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -181,29 +197,33 @@ async def test_get_switch_mode_2PM(common_parametrize_2pm):
     [
         (
             {
-                "basic_info": b'\x01\x98A\x0c\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10',
-                "channel1_info": b'\x01\x00\x00\x00\x00\x00\x00\x02\x99\x00\xe9\x00\x03\x00\x00',
+                "basic_info": b"\x01\x98A\x0c\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10",
+                "channel1_info": b"\x01\x00\x00\x00\x00\x00\x00\x02\x99\x00\xe9\x00\x03\x00\x00",
                 "channel2_info": b"\x01\x00\x055\x00'<\x02\x9f\x00\xe9\x01,\x00F",
             },
             [False, 0, 0, 0, 0, True, 0.02, 23, 0.3, 7.0],
         ),
         (
             {
-                "basic_info": b'\x01\x9e\x81\x0c\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10',
-                "channel1_info": b'\x01\x00\x00\x00\x00\x00\x00\x02\x99\x00\xe9\x00\x03\x00\x00',
+                "basic_info": b"\x01\x9e\x81\x0c\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10",
+                "channel1_info": b"\x01\x00\x00\x00\x00\x00\x00\x02\x99\x00\xe9\x00\x03\x00\x00",
                 "channel2_info": b"\x01\x00\x05\xbc\x00'<\x02\xb1\x00\xea\x01-\x00F",
             },
             [True, 0, 23, 0.1, 0.0, False, 0.02, 0, 0, 0],
-        )
+        ),
     ],
 )
 async def test_get_basic_info_2PM(common_parametrize_2pm, info_data, result):
     """Test get_basic_info for 2PM devices."""
-    device = create_device_for_command_testing(common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"])
+    device = create_device_for_command_testing(
+        common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"]
+    )
 
     assert device.channel == 2
 
-    device.get_current_time_and_start_time = MagicMock(return_value=("683074d6", "682fba80"))
+    device.get_current_time_and_start_time = MagicMock(
+        return_value=("683074d6", "682fba80")
+    )
 
     async def mock_get_basic_info(arg):
         if arg == relay_switch.COMMAND_GET_BASIC_INFO:
@@ -241,26 +261,30 @@ async def test_get_basic_info_2PM(common_parametrize_2pm, info_data, result):
     [
         {
             "basic_info": None,
-            "channel1_info": b'\x01\x00\x00\x00\x00\x00\x00\x02\x99\x00\xe9\x00\x03\x00\x00',
+            "channel1_info": b"\x01\x00\x00\x00\x00\x00\x00\x02\x99\x00\xe9\x00\x03\x00\x00",
             "channel2_info": b"\x01\x00\x055\x00'<\x02\x9f\x00\xe9\x01,\x00F",
         },
         {
-            "basic_info": b'\x01\x98A\x0c\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10',
+            "basic_info": b"\x01\x98A\x0c\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10",
             "channel1_info": None,
             "channel2_info": b"\x01\x00\x055\x00'<\x02\x9f\x00\xe9\x01,\x00F",
         },
         {
-            "basic_info": b'\x01\x98A\x0c\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10',
-            "channel1_info": b'\x01\x00\x00\x00\x00\x00\x00\x02\x99\x00\xe9\x00\x03\x00\x00',
+            "basic_info": b"\x01\x98A\x0c\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10",
+            "channel1_info": b"\x01\x00\x00\x00\x00\x00\x00\x02\x99\x00\xe9\x00\x03\x00\x00",
             "channel2_info": None,
         },
     ],
 )
 async def test_basic_info_exceptions_2PM(common_parametrize_2pm, info_data):
     """Test get_basic_info exceptions."""
-    device = create_device_for_command_testing(common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"])
+    device = create_device_for_command_testing(
+        common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"]
+    )
 
-    device.get_current_time_and_start_time = MagicMock(return_value=("683074d6", "682fba80"))
+    device.get_current_time_and_start_time = MagicMock(
+        return_value=("683074d6", "682fba80")
+    )
 
     async def mock_get_basic_info(arg):
         if arg == relay_switch.COMMAND_GET_BASIC_INFO:
@@ -281,7 +305,9 @@ async def test_basic_info_exceptions_2PM(common_parametrize_2pm, info_data):
 @pytest.mark.asyncio
 async def test_get_parsed_data_2PM(common_parametrize_2pm):
     """Test get_parsed_data for 2PM devices."""
-    device = create_device_for_command_testing(common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"])
+    device = create_device_for_command_testing(
+        common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"]
+    )
 
     info = device.get_parsed_data(1)
     assert info["isOn"] is True
@@ -299,10 +325,9 @@ async def test_turn_on(rawAdvData, model):
     """Test turn on command."""
     device = create_device_for_command_testing(rawAdvData, model)
     await device.turn_on()
-    device._send_command.assert_awaited_once_with(
-        relay_switch.COMMAND_TURN_ON
-    )
+    device._send_command.assert_awaited_once_with(relay_switch.COMMAND_TURN_ON)
     assert device.is_on() is True
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -313,10 +338,9 @@ async def test_turn_off(rawAdvData, model):
     """Test turn off command."""
     device = create_device_for_command_testing(rawAdvData, model, {"isOn": False})
     await device.turn_off()
-    device._send_command.assert_awaited_once_with(
-        relay_switch.COMMAND_TURN_OFF
-    )
+    device._send_command.assert_awaited_once_with(relay_switch.COMMAND_TURN_OFF)
     assert device.is_on() is False
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -327,42 +351,43 @@ async def test_toggle(rawAdvData, model):
     """Test toggle command."""
     device = create_device_for_command_testing(rawAdvData, model)
     await device.async_toggle()
-    device._send_command.assert_awaited_once_with(
-        relay_switch.COMMAND_TOGGLE
-    )
+    device._send_command.assert_awaited_once_with(relay_switch.COMMAND_TOGGLE)
     assert device.is_on() is True
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("rawAdvData", "model", "info_data"),
     [
         (
-            b'>\x00\x00\x00',
+            b">\x00\x00\x00",
             SwitchbotModel.GARAGE_DOOR_OPENER,
             {
-                "basic_info": b'\x01>\x80\x0c\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x10',
-                "channel1_info": b'\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+                "basic_info": b"\x01>\x80\x0c\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x10",
+                "channel1_info": b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
             },
         )
-    ]
+    ],
 )
 async def test_get_basic_info_garage_door_opener(rawAdvData, model, info_data):
     """Test get_basic_info for garage door opener."""
     device = create_device_for_command_testing(rawAdvData, model)
-    device.get_current_time_and_start_time = MagicMock(return_value=("683074d6", "682fba80"))
+    device.get_current_time_and_start_time = MagicMock(
+        return_value=("683074d6", "682fba80")
+    )
+
     async def mock_get_basic_info(arg):
         if arg == relay_switch.COMMAND_GET_BASIC_INFO:
             return info_data["basic_info"]
         if arg == relay_switch.COMMAND_GET_CHANNEL1_INFO.format("683074d6", "682fba80"):
             return info_data["channel1_info"]
         return None
+
     device._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
     info = await device.get_basic_info()
     assert info is not None
     assert info["isOn"] is True
     assert info["door_open"] is True
-
-
 
 
 @pytest.mark.asyncio
