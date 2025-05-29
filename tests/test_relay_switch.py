@@ -185,7 +185,7 @@ async def test_get_switch_mode_2PM(common_parametrize_2pm):
                 "channel1_info": b'\x01\x00\x00\x00\x00\x00\x00\x02\x99\x00\xe9\x00\x03\x00\x00',
                 "channel2_info": b"\x01\x00\x055\x00'<\x02\x9f\x00\xe9\x01,\x00F",
             },
-            [False, 0, 0, 0, 0, True, 0.02, 23.3, 300, 7.0],
+            [False, 0, 0, 0, 0, True, 0.02, 23, 0.3, 7.0],
         ),
         (
             {
@@ -193,7 +193,7 @@ async def test_get_switch_mode_2PM(common_parametrize_2pm):
                 "channel1_info": b'\x01\x00\x00\x00\x00\x00\x00\x02\x99\x00\xe9\x00\x03\x00\x00',
                 "channel2_info": b"\x01\x00\x05\xbc\x00'<\x02\xb1\x00\xea\x01-\x00F",
             },
-            [True, 0, 23.3, 3, 0.0, False, 0.02, 0, 0, 0],
+            [True, 0, 23, 0.1, 0.0, False, 0.02, 0, 0, 0],
         )
     ],
 )
