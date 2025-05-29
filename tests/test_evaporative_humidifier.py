@@ -260,7 +260,10 @@ async def test_set_mode(mode, command):
 @pytest.mark.parametrize(
     ("init_data", "result"),
     [
-        ({"isOn": False, "mode": HumidifierMode.AUTO}, [False, HumidifierMode.AUTO, HumidifierAction.OFF]),
+        (
+            {"isOn": False, "mode": HumidifierMode.AUTO},
+            [False, HumidifierMode.AUTO, HumidifierAction.OFF],
+        ),
         (
             {"isOn": True, "mode": HumidifierMode.TARGET_HUMIDITY},
             [True, HumidifierMode.TARGET_HUMIDITY, HumidifierAction.HUMIDIFYING],
