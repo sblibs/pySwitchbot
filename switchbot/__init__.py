@@ -12,6 +12,7 @@ from .adv_parser import SwitchbotSupportedType, parse_advertisement_data
 from .const import (
     AirPurifierMode,
     FanMode,
+    HumidifierAction,
     HumidifierMode,
     HumidifierWaterLevel,
     LockStatus,
@@ -45,6 +46,7 @@ __all__ = [
     "ColorMode",
     "FanMode",
     "GetSwitchbotDevices",
+    "HumidifierAction",
     "HumidifierMode",
     "HumidifierWaterLevel",
     "LockStatus",

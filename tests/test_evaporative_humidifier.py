@@ -5,6 +5,7 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import (
+    HumidifierAction,
     HumidifierMode,
     HumidifierWaterLevel,
     SwitchBotAdvertisement,
@@ -259,14 +260,14 @@ async def test_set_mode(mode, command):
 @pytest.mark.parametrize(
     ("init_data", "result"),
     [
-        ({"isOn": False, "mode": HumidifierMode.AUTO}, [False, HumidifierMode.AUTO, 0]),
+        ({"isOn": False, "mode": HumidifierMode.AUTO}, [False, HumidifierMode.AUTO, HumidifierAction.OFF]),
         (
             {"isOn": True, "mode": HumidifierMode.TARGET_HUMIDITY},
-            [True, HumidifierMode.TARGET_HUMIDITY, 1],
+            [True, HumidifierMode.TARGET_HUMIDITY, HumidifierAction.HUMIDIFYING],
         ),
         (
             {"isOn": True, "mode": HumidifierMode.DRYING_FILTER},
-            [True, HumidifierMode.DRYING_FILTER, 2],
+            [True, HumidifierMode.DRYING_FILTER, HumidifierAction.DRYING],
         ),
     ],
 )

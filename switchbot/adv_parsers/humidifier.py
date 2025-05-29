@@ -9,6 +9,7 @@ from ..const.evaporative_humidifier import (
     HumidifierMode,
     HumidifierWaterLevel,
 )
+from . import calculate_temperature_and_humidity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,22 +85,3 @@ def process_evaporative_humidifier(
         "filter_alert": filter_run_time.days >= 10,
         "target_humidity": target_humidity,
     }
-
-
-def calculate_temperature_and_humidity(
-    data: bytes, is_meter_binded: bool
-) -> tuple[float | None, float | None, int | None]:
-    """Calculate temperature and humidity based on the given flag."""
-    if is_meter_binded:
-        humidity = data[0] & 0b01111111
-        if humidity == 127:  # get the meter binded data timeout
-            return None, None, None
-        _temp_sign = 1 if data[1] & 0b10000000 else -1
-        _temp_c = _temp_sign * ((data[1] & 0b01111111) + ((data[2] >> 4) / 10))
-        _temp_f = (_temp_c * 9 / 5) + 32
-    else:
-        humidity = None
-        _temp_c = None
-        _temp_f = None
-
-    return _temp_c, _temp_f, humidity

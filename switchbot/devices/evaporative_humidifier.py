@@ -7,6 +7,7 @@ from ..adv_parsers.humidifier import calculate_temperature_and_humidity
 from ..const import SwitchbotModel
 from ..const.evaporative_humidifier import (
     TARGET_HUMIDITY_MODES,
+    HumidifierAction,
     HumidifierMode,
     HumidifierWaterLevel,
 )
@@ -245,10 +246,10 @@ class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncrypted
     def get_action(self) -> int:
         """Return current action from cache."""
         if not self.is_on():
-            return 0
+            return HumidifierAction.OFF
         if self.get_mode() != HumidifierMode.DRYING_FILTER:
-            return 1
-        return 2
+            return HumidifierAction.HUMIDIFYING
+        return HumidifierAction.DRYING
 
     def is_meter_binded(self) -> bool | None:
         """Return meter bind state from cache."""

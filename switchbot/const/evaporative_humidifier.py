@@ -29,6 +29,12 @@ class HumidifierWaterLevel(Enum):
         return [level.name.lower() for level in cls]
 
 
+class HumidifierAction(Enum):
+    OFF = 0
+    HUMIDIFYING = 1
+    DRYING = 2
+
+
 OVER_HUMIDIFY_PROTECTION_MODES = {
     HumidifierMode.QUIET,
     HumidifierMode.LOW,
