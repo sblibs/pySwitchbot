@@ -94,13 +94,20 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     def _parse_user_data(self, raw_data: bytes) -> dict[str, Any]:
         """Parse user-specific data from raw bytes."""
+        _energy = int.from_bytes(raw_data[1:4], "big") / 60000
+        _energy_usage_yesterday = int.from_bytes(raw_data[4:7], "big") / 60000
+        _use_time = int.from_bytes(raw_data[7:9], "big") / 60.0
+        _voltage = int.from_bytes(raw_data[9:11], "big") / 10.0
+        _current = int.from_bytes(raw_data[11:13], "big") / 1000.0
+        _power = int.from_bytes(raw_data[13:15], "big") / 10.0
+
         return {
-            "energy": round(int.from_bytes(raw_data[1:4], "big") / 60000, 2),
-            "energy usage yesterday": round(int.from_bytes(raw_data[4:7], "big") / 60000, 2),
-            "use_time": round(int.from_bytes(raw_data[7:9], "big") / 60, 2),
-            "voltage": int.from_bytes(raw_data[9:11], "big") / 10.0,
-            "current": int.from_bytes(raw_data[11:13], "big"),
-            "power": int.from_bytes(raw_data[13:15], "big") / 10.0,
+            "energy": 0.01 if 0 < _energy <= 0.01 else round(_energy, 2),
+            "energy usage yesterday": 0.01 if 0 < _energy_usage_yesterday <= 0.01 else round(_energy_usage_yesterday, 2),
+            "use_time": round(_use_time, 1),
+            "voltage": 0.1 if 0 < _voltage <= 0.1 else round(_voltage),
+            "current": 0.1 if 0 < _current <= 0.1 else round(_current, 1),
+            "power": 0.1 if 0 < _power <= 0.1 else round(_power, 1),
         }
 
     def update_from_advertisement(self, advertisement: SwitchBotAdvertisement) -> None:
@@ -157,7 +164,7 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if not common_data["isOn"]:
             self._reset_power_data(user_data)
 
-        garage_door_opener_data = {"door_open": not bool(_data[7] & 0b00100000)}
+        garage_door_opener_data = {"door_open": not bool(_data[2] & 0b00100000)}
 
         _LOGGER.debug("common_data: %s, user_data: %s", common_data, user_data)
 
