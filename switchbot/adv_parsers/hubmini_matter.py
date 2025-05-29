@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..helpers import celsius_to_fahrenheit
+
 
 def process_hubmini_matter(
     data: bytes | None, mfr_data: bytes | None
@@ -21,7 +23,7 @@ def process_hubmini_matter(
     _temp_c = _temp_sign * (
         (temp_data[1] & 0b01111111) + ((temp_data[0] & 0b00001111) / 10)
     )
-    _temp_f = (_temp_c * 9 / 5) + 32
+    _temp_f = celsius_to_fahrenheit(_temp_c)
     _temp_f = (_temp_f * 10) / 10
     humidity = temp_data[2] & 0b01111111
 

@@ -15,3 +15,8 @@ def create_background_task(target: Coroutine[Any, Any, _R]) -> asyncio.Task[_R]:
     _BACKGROUND_TASKS.add(task)
     task.add_done_callback(_BACKGROUND_TASKS.remove)
     return task
+
+
+def celsius_to_fahrenheit(celsius: float) -> float:
+    """Convert temperature from Celsius to Fahrenheit."""
+    return (celsius * 9 / 5) + 32

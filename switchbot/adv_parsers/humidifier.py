@@ -9,7 +9,7 @@ from ..const.evaporative_humidifier import (
     HumidifierMode,
     HumidifierWaterLevel,
 )
-from . import calculate_temperature_and_humidity
+from ..helpers import celsius_to_fahrenheit
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,6 +22,26 @@ _LOGGER = logging.getLogger(__name__)
 # Low:  658000c5222b6300
 # Med:  658000c5432b6300
 # High: 658000c5642b6300
+
+
+def calculate_temperature_and_humidity(
+    data: bytes, is_meter_binded: bool = True
+) -> tuple[float | None, float | None, int | None]:
+    """Calculate temperature and humidity based on the given flag."""
+    if len(data) < 3 or not is_meter_binded:
+        return None, None, None
+
+    humidity = data[0] & 0b01111111
+    if humidity > 100:
+        return None, None, None
+
+    _temp_sign = 1 if data[1] & 0b10000000 else -1
+    _temp_c = _temp_sign * ((data[1] & 0b01111111) + ((data[2] >> 4) / 10))
+    _temp_f = celsius_to_fahrenheit(_temp_c)
+
+    return _temp_c, _temp_f, humidity
+
+
 def process_wohumidifier(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int]:

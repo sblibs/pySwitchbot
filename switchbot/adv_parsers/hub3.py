@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..const.hub3 import LIGHT_INTENSITY_MAP
+from ..helpers import celsius_to_fahrenheit
 
 
 def process_hub3(data: bytes | None, mfr_data: bytes | None) -> dict[str, Any]:
@@ -26,7 +27,7 @@ def process_hub3(data: bytes | None, mfr_data: bytes | None) -> dict[str, Any]:
     _temp_c = _temp_sign * (
         (temp_data[1] & 0b01111111) + ((temp_data[0] & 0b00001111) / 10)
     )
-    _temp_f = round(((_temp_c * 9 / 5) + 32), 1)
+    _temp_f = round(celsius_to_fahrenheit(_temp_c), 1)
     humidity = temp_data[2] & 0b01111111
     motion_detected = bool(device_data[10] & 0b10000000)
 
