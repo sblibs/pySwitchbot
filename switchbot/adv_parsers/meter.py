@@ -5,6 +5,8 @@ from __future__ import annotations
 import struct
 from typing import Any
 
+from ..helpers import celsius_to_fahrenheit
+
 CO2_UNPACK = struct.Struct(">H").unpack_from
 
 
@@ -28,7 +30,7 @@ def process_wosensorth(data: bytes | None, mfr_data: bytes | None) -> dict[str, 
     _temp_c = _temp_sign * (
         (temp_data[1] & 0b01111111) + ((temp_data[0] & 0b00001111) / 10)
     )
-    _temp_f = (_temp_c * 9 / 5) + 32
+    _temp_f = celsius_to_fahrenheit(_temp_c)
     _temp_f = (_temp_f * 10) / 10
     humidity = temp_data[2] & 0b01111111
 

@@ -3,14 +3,20 @@ from typing import Any
 
 from bleak.backends.device import BLEDevice
 
+from ..adv_parsers.humidifier import calculate_temperature_and_humidity
 from ..const import SwitchbotModel
 from ..const.evaporative_humidifier import (
     TARGET_HUMIDITY_MODES,
+    HumidifierAction,
     HumidifierMode,
     HumidifierWaterLevel,
 )
-from ..models import SwitchBotAdvertisement
-from .device import SwitchbotEncryptedDevice
+from .device import (
+    SwitchbotEncryptedDevice,
+    SwitchbotOperationError,
+    SwitchbotSequenceDevice,
+    update_after_operation,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +30,7 @@ COMMAND_AUTO_DRY_ON = f"{COMMAND_HEADER}0f430a01"
 COMMAND_AUTO_DRY_OFF = f"{COMMAND_HEADER}0f430a02"
 COMMAND_SET_MODE = f"{COMMAND_HEADER}0f4302"
 COMMAND_GET_BASIC_INFO = f"{COMMAND_HEADER}000300"
+COMMAND_SET_DRYING_FILTER = f"{COMMAND_TURN_ON}08"
 
 MODES_COMMANDS = {
     HumidifierMode.HIGH: "010100",
@@ -35,8 +42,10 @@ MODES_COMMANDS = {
     HumidifierMode.AUTO: "040000",
 }
 
+DEVICE_GET_BASIC_SETTINGS_KEY = "570f4481"
 
-class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
+
+class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Evaporative Humidifier"""
 
     def __init__(
@@ -64,100 +73,123 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
             device, key_id, encryption_key, model, **kwargs
         )
 
-    def update_from_advertisement(self, advertisement: SwitchBotAdvertisement) -> None:
-        """Update device data from advertisement."""
-        super().update_from_advertisement(advertisement)
-        _LOGGER.debug(
-            "%s: update advertisement: %s",
-            self.name,
-            advertisement,
-        )
-
-    async def _get_basic_info(self) -> bytes | None:
-        """Return basic info of device."""
-        _data = await self._send_command(
-            key=COMMAND_GET_BASIC_INFO, retry=self._retry_count
-        )
-
-        if _data in (b"\x07", b"\x00"):
-            _LOGGER.error("Unsuccessful, please try again")
-            return None
-
-        return _data
-
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
-        if not (_data := await self._get_basic_info()):
+        if not (_data := await self._get_basic_info(DEVICE_GET_BASIC_SETTINGS_KEY)):
             return None
 
-        # Not 100% sure about this data, will verify once a firmware update is available
+        _LOGGER.debug("basic info data: %s", _data.hex())
+        isOn = bool(_data[1] & 0b10000000)
+        mode = HumidifierMode(_data[1] & 0b00001111)
+        over_humidify_protection = bool(_data[2] & 0b10000000)
+        child_lock = bool(_data[2] & 0b00100000)
+        tank_removed = bool(_data[2] & 0b00000100)
+        tilted_alert = bool(_data[2] & 0b00000010)
+        filter_missing = bool(_data[2] & 0b00000001)
+        is_meter_binded = bool(_data[3] & 0b10000000)
+
+        _temp_c, _temp_f, humidity = calculate_temperature_and_humidity(
+            _data[3:6], is_meter_binded
+        )
+
+        water_level = HumidifierWaterLevel(_data[5] & 0b00000011).name.lower()
+        filter_run_time = int.from_bytes(_data[6:8], byteorder="big") & 0xFFF
+        target_humidity = _data[10] & 0b01111111
+
         return {
-            "firmware": _data[2] / 10.0,
+            "isOn": isOn,
+            "mode": mode,
+            "over_humidify_protection": over_humidify_protection,
+            "child_lock": child_lock,
+            "tank_removed": tank_removed,
+            "tilted_alert": tilted_alert,
+            "filter_missing": filter_missing,
+            "is_meter_binded": is_meter_binded,
+            "humidity": humidity,
+            "temperature": _temp_c,
+            "temp": {"c": _temp_c, "f": _temp_f},
+            "water_level": water_level,
+            "filter_run_time": filter_run_time,
+            "target_humidity": target_humidity,
         }
 
+    @update_after_operation
     async def turn_on(self) -> bool:
         """Turn device on."""
         result = await self._send_command(COMMAND_TURN_ON)
-        if ok := self._check_command_result(result, 0, {1}):
-            self._override_state({"isOn": True})
-            self._fire_callbacks()
-        return ok
+        return self._check_command_result(result, 0, {1})
 
+    @update_after_operation
     async def turn_off(self) -> bool:
         """Turn device off."""
         result = await self._send_command(COMMAND_TURN_OFF)
-        if ok := self._check_command_result(result, 0, {1}):
-            self._override_state({"isOn": False})
-            self._fire_callbacks()
-        return ok
+        return self._check_command_result(result, 0, {1})
 
-    async def set_mode(
-        self, mode: HumidifierMode, target_humidity: int | None = None
-    ) -> bool:
+    @update_after_operation
+    async def set_target_humidity(self, target_humidity: int) -> bool:
+        """Set target humidity."""
+        self._validate_water_level()
+        self._validate_mode_for_target_humidity()
+        command = (
+            COMMAND_SET_MODE
+            + MODES_COMMANDS[self.get_mode()]
+            + f"{target_humidity:02x}"
+        )
+        result = await self._send_command(command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def set_mode(self, mode: HumidifierMode) -> bool:
         """Set device mode."""
-        if mode == HumidifierMode.DRYING_FILTER:
-            return await self.start_drying_filter()
-        if mode not in MODES_COMMANDS:
-            raise ValueError("Invalid mode")
+        self._validate_water_level()
+        self._validate_meter_binding(mode)
 
-        command = COMMAND_SET_MODE + MODES_COMMANDS[mode]
+        if mode == HumidifierMode.DRYING_FILTER:
+            command = COMMAND_SET_DRYING_FILTER
+        else:
+            command = COMMAND_SET_MODE + MODES_COMMANDS[mode]
+
         if mode in TARGET_HUMIDITY_MODES:
+            target_humidity = self.get_target_humidity()
             if target_humidity is None:
-                raise TypeError("target_humidity is required")
+                raise SwitchbotOperationError(
+                    "Target humidity must be set before switching to target humidity mode or sleep mode"
+                )
             command += f"{target_humidity:02x}"
         result = await self._send_command(command)
-        if ok := self._check_command_result(result, 0, {1}):
-            self._override_state({"mode": mode})
-            if mode == HumidifierMode.TARGET_HUMIDITY and target_humidity is not None:
-                self._override_state({"target_humidity": target_humidity})
-            self._fire_callbacks()
-        return ok
+        return self._check_command_result(result, 0, {1})
 
+    def _validate_water_level(self) -> None:
+        """Validate that the water level is not empty."""
+        if self.get_water_level() == HumidifierWaterLevel.EMPTY.name.lower():
+            raise SwitchbotOperationError(
+                "Cannot perform operation when water tank is empty"
+            )
+
+    def _validate_mode_for_target_humidity(self) -> None:
+        """Validate that the current mode supports target humidity."""
+        if self.get_mode() not in TARGET_HUMIDITY_MODES:
+            raise SwitchbotOperationError(
+                "Target humidity can only be set in target humidity mode or sleep mode"
+            )
+
+    def _validate_meter_binding(self, mode: HumidifierMode) -> None:
+        """Validate that the meter is binded for specific modes."""
+        if not self.is_meter_binded() and mode in [
+            HumidifierMode.TARGET_HUMIDITY,
+            HumidifierMode.AUTO,
+        ]:
+            raise SwitchbotOperationError(
+                "Cannot set target humidity or auto mode when meter is not binded"
+            )
+
+    @update_after_operation
     async def set_child_lock(self, enabled: bool) -> bool:
         """Set child lock."""
         result = await self._send_command(
             COMMAND_CHILD_LOCK_ON if enabled else COMMAND_CHILD_LOCK_OFF
         )
-        if ok := self._check_command_result(result, 0, {1}):
-            self._override_state({"child_lock": enabled})
-            self._fire_callbacks()
-        return ok
-
-    async def start_drying_filter(self):
-        """Start drying filter."""
-        result = await self._send_command(COMMAND_TURN_ON + "08")
-        if ok := self._check_command_result(result, 0, {1}):
-            self._override_state({"mode": HumidifierMode.DRYING_FILTER})
-            self._fire_callbacks()
-        return ok
-
-    async def stop_drying_filter(self):
-        """Stop drying filter."""
-        result = await self._send_command(COMMAND_TURN_OFF)
-        if ok := self._check_command_result(result, 0, {0}):
-            self._override_state({"isOn": False, "mode": None})
-            self._fire_callbacks()
-        return ok
+        return self._check_command_result(result, 0, {1})
 
     def is_on(self) -> bool | None:
         """Return state from cache."""
@@ -210,3 +242,15 @@ class SwitchbotEvaporativeHumidifier(SwitchbotEncryptedDevice):
     def get_temperature(self) -> float | None:
         """Return state from cache."""
         return self._get_adv_value("temperature")
+
+    def get_action(self) -> int:
+        """Return current action from cache."""
+        if not self.is_on():
+            return HumidifierAction.OFF
+        if self.get_mode() != HumidifierMode.DRYING_FILTER:
+            return HumidifierAction.HUMIDIFYING
+        return HumidifierAction.DRYING
+
+    def is_meter_binded(self) -> bool | None:
+        """Return meter bind state from cache."""
+        return self._get_adv_value("is_meter_binded")

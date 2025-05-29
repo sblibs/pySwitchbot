@@ -583,11 +583,11 @@ class SwitchbotBaseDevice:
 
         return self._sb_adv_data
 
-    async def _get_basic_info(self) -> bytes | None:
+    async def _get_basic_info(
+        self, cmd: str = DEVICE_GET_BASIC_SETTINGS_KEY
+    ) -> bytes | None:
         """Return basic info of device."""
-        _data = await self._send_command(
-            key=DEVICE_GET_BASIC_SETTINGS_KEY, retry=self._retry_count
-        )
+        _data = await self._send_command(key=cmd, retry=self._retry_count)
 
         if _data in (b"\x07", b"\x00"):
             _LOGGER.error("Unsuccessful, please try again")

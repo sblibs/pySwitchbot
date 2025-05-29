@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import datetime
 from typing import Any
 
 import pytest
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
-from switchbot import SwitchbotModel
+from switchbot import HumidifierMode, SwitchbotModel
 from switchbot.adv_parser import parse_advertisement_data
 from switchbot.const.lock import LockStatus
 from switchbot.models import SwitchBotAdvertisement
@@ -3082,6 +3083,212 @@ def test_blind_tilt_with_empty_data() -> None:
             "data": {},
             "isEncrypted": False,
             "model": "x",
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        AdvTestCase(
+            b"\xa0\xa3\xb3,\x9c\xe68\x86\x88\xb5\x99\x12\x10\x1b\x00\x85]",
+            b"#\x00\x00\x15\x1c\x00",
+            {
+                "seq_number": 56,
+                "isOn": True,
+                "mode": HumidifierMode(6),
+                "over_humidify_protection": True,
+                "child_lock": False,
+                "tank_removed": False,
+                "tilted_alert": False,
+                "filter_missing": False,
+                "is_meter_binded": True,
+                "humidity": 53,
+                "temperature": 25.1,
+                "temp": {"c": 25.1, "f": 77.18},
+                "water_level": "medium",
+                "filter_run_time": datetime.timedelta(days=1, seconds=10800),
+                "filter_alert": False,
+                "target_humidity": 93,
+            },
+            "#",
+            "Evaporative Humidifier",
+            SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
+        ),
+        AdvTestCase(
+            b"\xa0\xa3\xb3,\x9c\xe6H\x86\x80\x7f\xff\xf2\x10\x1d\x00\x874",
+            b"#\x00\x00\x15\x1c\x00",
+            {
+                "seq_number": 72,
+                "isOn": True,
+                "mode": HumidifierMode(6),
+                "over_humidify_protection": True,
+                "child_lock": False,
+                "tank_removed": False,
+                "tilted_alert": False,
+                "filter_missing": False,
+                "is_meter_binded": False,
+                "humidity": None,
+                "temperature": None,
+                "temp": {"c": None, "f": None},
+                "water_level": "medium",
+                "filter_run_time": datetime.timedelta(days=1, seconds=18000),
+                "filter_alert": False,
+                "target_humidity": 52,
+            },
+            "#",
+            "Evaporative Humidifier",
+            SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
+        ),
+        AdvTestCase(
+            b"\xa0\xa3\xb3,\x9c\xe6H\x86\x80\xff\xff\xf2\x10\x1d\x00\x874",
+            b"#\x00\x00\x15\x1c\x00",
+            {
+                "seq_number": 72,
+                "isOn": True,
+                "mode": HumidifierMode(6),
+                "over_humidify_protection": True,
+                "child_lock": False,
+                "tank_removed": False,
+                "tilted_alert": False,
+                "filter_missing": False,
+                "is_meter_binded": True,
+                "humidity": None,
+                "temperature": None,
+                "temp": {"c": None, "f": None},
+                "water_level": "medium",
+                "filter_run_time": datetime.timedelta(days=1, seconds=18000),
+                "filter_alert": False,
+                "target_humidity": 52,
+            },
+            "#",
+            "Evaporative Humidifier",
+            SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
+        ),
+        AdvTestCase(
+            b"\xacg\xb2\xcd\xfa\xbe",
+            b"e\x80\x00\xf9\x80Bc\x00",
+            {
+                "isOn": True,
+                "level": 128,
+                "switchMode": True,
+            },
+            "e",
+            "Humidifier",
+            SwitchbotModel.HUMIDIFIER,
+        ),
+    ],
+)
+def test_humidifer_active(test_case: AdvTestCase) -> None:
+    """Test humidifier with active data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: test_case.manufacturer_data},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": test_case.service_data},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": test_case.service_data,
+            "data": test_case.data,
+            "isEncrypted": False,
+            "model": test_case.model,
+            "modelFriendlyName": test_case.modelFriendlyName,
+            "modelName": test_case.modelName,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        AdvTestCase(
+            b"\xa0\xa3\xb3,\x9c\xe68\x86\x88\xb5\x99\x12\x10\x1b\x00\x85]",
+            b"#\x00\x00\x15\x1c\x00",
+            {
+                "seq_number": 56,
+                "isOn": True,
+                "mode": HumidifierMode(6),
+                "over_humidify_protection": True,
+                "child_lock": False,
+                "tank_removed": False,
+                "tilted_alert": False,
+                "filter_missing": False,
+                "is_meter_binded": True,
+                "humidity": 53,
+                "temperature": 25.1,
+                "temp": {"c": 25.1, "f": 77.18},
+                "water_level": "medium",
+                "filter_run_time": datetime.timedelta(days=1, seconds=10800),
+                "filter_alert": False,
+                "target_humidity": 93,
+            },
+            "#",
+            "Evaporative Humidifier",
+            SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
+        ),
+        AdvTestCase(
+            b"\xacg\xb2\xcd\xfa\xbe",
+            b"e\x80\x00\xf9\x80Bc\x00",
+            {
+                "isOn": None,
+                "level": None,
+                "switchMode": True,
+            },
+            "e",
+            "Humidifier",
+            SwitchbotModel.HUMIDIFIER,
+        ),
+    ],
+)
+def test_humidifer_passive(test_case: AdvTestCase) -> None:
+    """Test humidifier with passive data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: test_case.manufacturer_data},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data, test_case.modelName)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": None,
+            "data": test_case.data,
+            "isEncrypted": False,
+            "model": test_case.model,
+            "modelFriendlyName": test_case.modelFriendlyName,
+            "modelName": test_case.modelName,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=False,
+    )
+
+
+def test_humidifer_with_empty_data() -> None:
+    """Test humidifier with empty data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: None},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"#\x00\x00\x15\x1c\x00"},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b"#\x00\x00\x15\x1c\x00",
+            "data": {},
+            "isEncrypted": False,
+            "model": "#",
         },
         device=ble_device,
         rssi=-97,
