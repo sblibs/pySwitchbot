@@ -44,7 +44,6 @@ MODES_COMMANDS = {
 DEVICE_GET_BASIC_SETTINGS_KEY = "570f4481"
 
 
-
 class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Evaporative Humidifier"""
 
@@ -93,9 +92,8 @@ class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncrypted
         )
 
         water_level = HumidifierWaterLevel(_data[5] & 0b00000011).name.lower()
-        filter_run_time = int.from_bytes(_data[6:8], byteorder="big") & 0xfff
+        filter_run_time = int.from_bytes(_data[6:8], byteorder="big") & 0xFFF
         target_humidity = _data[10] & 0b01111111
-
 
         return {
             "isOn": isOn,
@@ -131,7 +129,11 @@ class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncrypted
         """Set target humidity."""
         self._validate_water_level()
         self._validate_mode_for_target_humidity()
-        command = COMMAND_SET_MODE + MODES_COMMANDS[self.get_mode()] + f"{target_humidity:02x}"
+        command = (
+            COMMAND_SET_MODE
+            + MODES_COMMANDS[self.get_mode()]
+            + f"{target_humidity:02x}"
+        )
         result = await self._send_command(command)
         return self._check_command_result(result, 0, {1})
 
@@ -149,7 +151,9 @@ class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncrypted
         if mode in TARGET_HUMIDITY_MODES:
             target_humidity = self.get_target_humidity()
             if target_humidity is None:
-                raise SwitchbotOperationError("Target humidity must be set before switching to target humidity mode or sleep mode")
+                raise SwitchbotOperationError(
+                    "Target humidity must be set before switching to target humidity mode or sleep mode"
+                )
             command += f"{target_humidity:02x}"
         result = await self._send_command(command)
         return self._check_command_result(result, 0, {1})
@@ -157,7 +161,9 @@ class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncrypted
     def _validate_water_level(self) -> None:
         """Validate that the water level is not empty."""
         if self.get_water_level() == HumidifierWaterLevel.EMPTY.name.lower():
-            raise SwitchbotOperationError("Cannot perform operation when water tank is empty")
+            raise SwitchbotOperationError(
+                "Cannot perform operation when water tank is empty"
+            )
 
     def _validate_mode_for_target_humidity(self) -> None:
         """Validate that the current mode supports target humidity."""
@@ -168,7 +174,10 @@ class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncrypted
 
     def _validate_meter_binding(self, mode: HumidifierMode) -> None:
         """Validate that the meter is binded for specific modes."""
-        if not self.is_meter_binded() and mode in [HumidifierMode.TARGET_HUMIDITY, HumidifierMode.AUTO]:
+        if not self.is_meter_binded() and mode in [
+            HumidifierMode.TARGET_HUMIDITY,
+            HumidifierMode.AUTO,
+        ]:
             raise SwitchbotOperationError(
                 "Cannot set target humidity or auto mode when meter is not binded"
             )

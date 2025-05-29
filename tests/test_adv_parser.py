@@ -3094,8 +3094,8 @@ def test_blind_tilt_with_empty_data() -> None:
     "test_case",
     [
         AdvTestCase(
-            b'\xa0\xa3\xb3,\x9c\xe68\x86\x88\xb5\x99\x12\x10\x1b\x00\x85]',
-            b'#\x00\x00\x15\x1c\x00',
+            b"\xa0\xa3\xb3,\x9c\xe68\x86\x88\xb5\x99\x12\x10\x1b\x00\x85]",
+            b"#\x00\x00\x15\x1c\x00",
             {
                 "seq_number": 56,
                 "isOn": True,
@@ -3109,7 +3109,7 @@ def test_blind_tilt_with_empty_data() -> None:
                 "humidity": 53,
                 "temperature": 25.1,
                 "temp": {"c": 25.1, "f": 77.18},
-                "water_level": 'medium',
+                "water_level": "medium",
                 "filter_run_time": datetime.timedelta(days=1, seconds=10800),
                 "filter_alert": False,
                 "target_humidity": 93,
@@ -3119,8 +3119,8 @@ def test_blind_tilt_with_empty_data() -> None:
             SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
         ),
         AdvTestCase(
-            b'\xa0\xa3\xb3,\x9c\xe6H\x86\x80\x7f\xff\xf2\x10\x1d\x00\x874',
-            b'#\x00\x00\x15\x1c\x00',
+            b"\xa0\xa3\xb3,\x9c\xe6H\x86\x80\x7f\xff\xf2\x10\x1d\x00\x874",
+            b"#\x00\x00\x15\x1c\x00",
             {
                 "seq_number": 72,
                 "isOn": True,
@@ -3134,7 +3134,7 @@ def test_blind_tilt_with_empty_data() -> None:
                 "humidity": None,
                 "temperature": None,
                 "temp": {"c": None, "f": None},
-                "water_level": 'medium',
+                "water_level": "medium",
                 "filter_run_time": datetime.timedelta(days=1, seconds=18000),
                 "filter_alert": False,
                 "target_humidity": 52,
@@ -3144,8 +3144,8 @@ def test_blind_tilt_with_empty_data() -> None:
             SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
         ),
         AdvTestCase(
-            b'\xa0\xa3\xb3,\x9c\xe6H\x86\x80\xff\xff\xf2\x10\x1d\x00\x874',
-            b'#\x00\x00\x15\x1c\x00',
+            b"\xa0\xa3\xb3,\x9c\xe6H\x86\x80\xff\xff\xf2\x10\x1d\x00\x874",
+            b"#\x00\x00\x15\x1c\x00",
             {
                 "seq_number": 72,
                 "isOn": True,
@@ -3159,7 +3159,7 @@ def test_blind_tilt_with_empty_data() -> None:
                 "humidity": None,
                 "temperature": None,
                 "temp": {"c": None, "f": None},
-                "water_level": 'medium',
+                "water_level": "medium",
                 "filter_run_time": datetime.timedelta(days=1, seconds=18000),
                 "filter_alert": False,
                 "target_humidity": 52,
@@ -3211,8 +3211,8 @@ def test_humidifer_active(test_case: AdvTestCase) -> None:
     "test_case",
     [
         AdvTestCase(
-            b'\xa0\xa3\xb3,\x9c\xe68\x86\x88\xb5\x99\x12\x10\x1b\x00\x85]',
-            b'#\x00\x00\x15\x1c\x00',
+            b"\xa0\xa3\xb3,\x9c\xe68\x86\x88\xb5\x99\x12\x10\x1b\x00\x85]",
+            b"#\x00\x00\x15\x1c\x00",
             {
                 "seq_number": 56,
                 "isOn": True,
@@ -3226,7 +3226,7 @@ def test_humidifer_active(test_case: AdvTestCase) -> None:
                 "humidity": 53,
                 "temperature": 25.1,
                 "temp": {"c": 25.1, "f": 77.18},
-                "water_level": 'medium',
+                "water_level": "medium",
                 "filter_run_time": datetime.timedelta(days=1, seconds=10800),
                 "filter_alert": False,
                 "target_humidity": 93,
@@ -3271,6 +3271,7 @@ def test_humidifer_passive(test_case: AdvTestCase) -> None:
         rssi=-97,
         active=False,
     )
+
 
 def test_humidifer_with_empty_data() -> None:
     """Test humidifier with empty data."""

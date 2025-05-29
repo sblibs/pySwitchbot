@@ -55,8 +55,7 @@ def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None
                 "temp": {"c": 16.8, "f": 62.24},
                 "filter_run_time": datetime.timedelta(days=3, seconds=57600),
                 "filter_alert": False,
-                "water_level": 'medium',
-
+                "water_level": "medium",
             }
             | init_data,
             "isEncrypted": False,
@@ -70,8 +69,6 @@ def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None
     )
 
 
-
-
 @pytest.mark.asyncio
 async def test_turn_on():
     """Test the turn_on method."""
@@ -79,12 +76,14 @@ async def test_turn_on():
     await device.turn_on()
     assert device.is_on() is True
 
+
 @pytest.mark.asyncio
 async def test_turn_off():
     """Test the turn_off method."""
     device = create_device_for_command_testing({"isOn": False})
     await device.turn_off()
     assert device.is_on() is False
+
 
 @pytest.mark.asyncio
 async def test_get_basic_is_none():
@@ -96,17 +95,49 @@ async def test_get_basic_is_none():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-        ("basic_info", "result"),
-        [
-           (
-                bytearray(b'\x01\x86\x88\xb1\x98\x82\x00\x1e\x00\x88-\xc4\xff\xff \n\x07'),
-                [True, HumidifierMode(6), True, False, False, False, False, True, 49, 24.8, 24.8, 76.64, 'medium', 30, 45]
-           ),
-           (
-                bytearray(b'\x01\x08 \xb1\x98r\x00\x1e\x00\x89-\xc4\xff\xff\x00\x00\x00'),
-                [False, HumidifierMode(8), False, True, False, False, False, True, 49, 24.7, 24.7, 76.46, 'medium', 30, 45]
-           )
-        ]
+    ("basic_info", "result"),
+    [
+        (
+            bytearray(b"\x01\x86\x88\xb1\x98\x82\x00\x1e\x00\x88-\xc4\xff\xff \n\x07"),
+            [
+                True,
+                HumidifierMode(6),
+                True,
+                False,
+                False,
+                False,
+                False,
+                True,
+                49,
+                24.8,
+                24.8,
+                76.64,
+                "medium",
+                30,
+                45,
+            ],
+        ),
+        (
+            bytearray(b"\x01\x08 \xb1\x98r\x00\x1e\x00\x89-\xc4\xff\xff\x00\x00\x00"),
+            [
+                False,
+                HumidifierMode(8),
+                False,
+                True,
+                False,
+                False,
+                False,
+                True,
+                49,
+                24.7,
+                24.7,
+                76.46,
+                "medium",
+                30,
+                45,
+            ],
+        ),
+    ],
 )
 async def test_get_basic_info(basic_info, result):
     """Test the get_basic_info method."""
@@ -144,7 +175,7 @@ async def test_get_basic_info(basic_info, result):
             "Cannot perform operation when water tank is empty",
             HumidifierMode.TARGET_HUMIDITY,
             "empty",
-        )
+        ),
     ],
 )
 async def test_set_target_humidity_with_invalid_conditions(err_msg, mode, water_level):
@@ -160,7 +191,6 @@ async def test_set_target_humidity_with_invalid_conditions(err_msg, mode, water_
 @pytest.mark.parametrize(
     ("err_msg", "mode", "water_level", "is_meter_binded", "target_humidity"),
     [
-
         (
             "Cannot perform operation when water tank is empty",
             HumidifierMode.TARGET_HUMIDITY,
@@ -181,10 +211,12 @@ async def test_set_target_humidity_with_invalid_conditions(err_msg, mode, water_
             "medium",
             True,
             None,
-        )
+        ),
     ],
 )
-async def test_set_mode_with_invalid_conditions(err_msg, mode, water_level, is_meter_binded, target_humidity):
+async def test_set_mode_with_invalid_conditions(
+    err_msg, mode, water_level, is_meter_binded, target_humidity
+):
     """Test setting target humidity with invalid mode."""
     device = create_device_for_command_testing()
     device.get_water_level = MagicMock(return_value=water_level)
@@ -193,6 +225,7 @@ async def test_set_mode_with_invalid_conditions(err_msg, mode, water_level, is_m
     with pytest.raises(SwitchbotOperationError, match=err_msg):
         await device.set_mode(mode)
 
+
 @pytest.mark.asyncio
 async def test_set_target_humidity():
     """Test setting target humidity."""
@@ -200,16 +233,17 @@ async def test_set_target_humidity():
     device.get_mode = MagicMock(return_value=HumidifierMode.TARGET_HUMIDITY)
 
     await device.set_target_humidity(45)
-    device._send_command.assert_awaited_once_with('570f430202002d')
+    device._send_command.assert_awaited_once_with("570f430202002d")
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("mode", "command"),
     [
-        (HumidifierMode.TARGET_HUMIDITY, '570f430202002d'),
-        (HumidifierMode.AUTO, '570f4302040000'),
-        (HumidifierMode.SLEEP, '570f430203002d'),
-        (HumidifierMode.DRYING_FILTER, '570f43010108'),
+        (HumidifierMode.TARGET_HUMIDITY, "570f430202002d"),
+        (HumidifierMode.AUTO, "570f4302040000"),
+        (HumidifierMode.SLEEP, "570f430203002d"),
+        (HumidifierMode.DRYING_FILTER, "570f43010108"),
     ],
 )
 async def test_set_mode(mode, command):
@@ -225,26 +259,14 @@ async def test_set_mode(mode, command):
 @pytest.mark.parametrize(
     ("init_data", "result"),
     [
+        ({"isOn": False, "mode": HumidifierMode.AUTO}, [False, HumidifierMode.AUTO, 0]),
         (
-            {
-                "isOn": False,
-                "mode": HumidifierMode.AUTO
-            },
-            [False, HumidifierMode.AUTO, 0]
+            {"isOn": True, "mode": HumidifierMode.TARGET_HUMIDITY},
+            [True, HumidifierMode.TARGET_HUMIDITY, 1],
         ),
         (
-            {
-                "isOn": True,
-                "mode": HumidifierMode.TARGET_HUMIDITY
-            },
-            [True, HumidifierMode.TARGET_HUMIDITY, 1]
-        ),
-        (
-            {
-                "isOn": True,
-                "mode": HumidifierMode.DRYING_FILTER
-            },
-            [True, HumidifierMode.DRYING_FILTER, 2]
+            {"isOn": True, "mode": HumidifierMode.DRYING_FILTER},
+            [True, HumidifierMode.DRYING_FILTER, 2],
         ),
     ],
 )
@@ -260,7 +282,7 @@ async def test_status_from_process_adv(init_data, result):
     assert device.is_filter_missing() is False
     assert device.is_filter_alert_on() is False
     assert device.is_tilted_alert_on() is False
-    assert device.get_water_level() == 'medium'
+    assert device.get_water_level() == "medium"
     assert device.get_filter_run_time() == datetime.timedelta(days=3, seconds=57600)
     assert device.get_target_humidity() == 52
     assert device.get_humidity() == 51
@@ -273,8 +295,8 @@ async def test_status_from_process_adv(init_data, result):
 @pytest.mark.parametrize(
     ("enabled", "command"),
     [
-        (True, '570f430501'),
-        (False, '570f430500'),
+        (True, "570f430501"),
+        (False, "570f430500"),
     ],
 )
 async def test_set_child_lock(enabled, command):
@@ -282,7 +304,6 @@ async def test_set_child_lock(enabled, command):
     device = create_device_for_command_testing()
     await device.set_child_lock(enabled)
     device._send_command.assert_awaited_once_with(command)
-
 
 
 @pytest.mark.asyncio
@@ -309,6 +330,7 @@ async def test_verify_encryption_key(mock_parent_verify):
 
     assert result is True
 
+
 def test_evaporative_humidifier_modes():
     assert HumidifierMode.get_modes() == [
         "high",
@@ -320,6 +342,7 @@ def test_evaporative_humidifier_modes():
         "auto",
         "drying_filter",
     ]
+
 
 def test_evaporative_humidifier_water_levels():
     assert HumidifierWaterLevel.get_levels() == [

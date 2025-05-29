@@ -61,7 +61,9 @@ def process_evaporative_humidifier(
     )
 
     water_level = HumidifierWaterLevel(mfr_data[11] & 0b00000011).name.lower()
-    filter_run_time = timedelta(hours=int.from_bytes(mfr_data[12:14], byteorder="big") & 0xfff)
+    filter_run_time = timedelta(
+        hours=int.from_bytes(mfr_data[12:14], byteorder="big") & 0xFFF
+    )
     target_humidity = mfr_data[16] & 0b01111111
 
     return {
@@ -84,16 +86,16 @@ def process_evaporative_humidifier(
     }
 
 
-def calculate_temperature_and_humidity(data: bytes, is_meter_binded: bool) -> tuple[float | None, float | None, int | None]:
+def calculate_temperature_and_humidity(
+    data: bytes, is_meter_binded: bool
+) -> tuple[float | None, float | None, int | None]:
     """Calculate temperature and humidity based on the given flag."""
     if is_meter_binded:
         humidity = data[0] & 0b01111111
-        if humidity == 127:           # get the meter binded data timeout
+        if humidity == 127:  # get the meter binded data timeout
             return None, None, None
         _temp_sign = 1 if data[1] & 0b10000000 else -1
-        _temp_c = _temp_sign * (
-            (data[1] & 0b01111111) + ((data[2] >> 4) / 10)
-        )
+        _temp_c = _temp_sign * ((data[1] & 0b01111111) + ((data[2] >> 4) / 10))
         _temp_f = (_temp_c * 9 / 5) + 32
     else:
         humidity = None
