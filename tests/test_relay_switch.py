@@ -5,6 +5,7 @@ from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotEncryptedDevice, SwitchbotModel
 from switchbot.devices import relay_switch
+from switchbot.devices.device import _merge_data as merge_data
 
 from .test_adv_parser import generate_ble_device
 
@@ -423,3 +424,23 @@ async def test_verify_encryption_key(mock_parent_verify, model):
     )
 
     assert result is True
+
+@pytest.mark.parametrize(
+    ("old_data", "new_data", "expected_result"),
+    [
+        (
+            {"isOn": True, "sequence_number": 1},
+            {"isOn": False},
+            {"isOn": False, "sequence_number": 1}
+        ),
+        (
+            {1: {"current": 0, "voltage": 220, "power": 0}, 2: {"current": 1, "voltage": 0, "power": 10}},
+            {1: {"current": 1, "power": 10}, 2: {"current": 0, "voltage": 220}},
+            {1: {"current": 1, "voltage": 220, "power": 10}, 2: {"current": 0, "voltage": 220, "power": 10}}
+        )
+    ],
+)
+def test_merge_data(old_data, new_data, expected_result):
+    """Test merging of data dictionaries."""
+    result = merge_data(old_data, new_data)
+    assert result == expected_result
