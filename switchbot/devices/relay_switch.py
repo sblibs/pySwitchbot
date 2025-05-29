@@ -5,6 +5,7 @@ from typing import Any
 from bleak.backends.device import BLEDevice
 
 from ..const import SwitchbotModel
+from ..helpers import parse_power_data, parse_uint24_be
 from ..models import SwitchBotAdvertisement
 from .device import (
     SwitchbotEncryptedDevice,
@@ -13,6 +14,11 @@ from .device import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# Bit masks for status parsing
+SWITCH1_ON_MASK = 0b10000000
+SWITCH2_ON_MASK = 0b01000000
+DOOR_OPEN_MASK = 0b00100000
 
 COMMAND_HEADER = "57"
 COMMAND_TURN_OFF = f"{COMMAND_HEADER}0f70010000"
@@ -87,19 +93,19 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         """Parse common data from raw bytes."""
         return {
             "sequence_number": raw_data[1],
-            "isOn": bool(raw_data[2] & 0b10000000),
+            "isOn": bool(raw_data[2] & SWITCH1_ON_MASK),
             "firmware": raw_data[16] / 10.0,
-            "channel2_isOn": bool(raw_data[2] & 0b01000000),
+            "channel2_isOn": bool(raw_data[2] & SWITCH2_ON_MASK),
         }
 
     def _parse_user_data(self, raw_data: bytes) -> dict[str, Any]:
         """Parse user-specific data from raw bytes."""
-        _energy = int.from_bytes(raw_data[1:4], "big") / 60000
-        _energy_usage_yesterday = int.from_bytes(raw_data[4:7], "big") / 60000
-        _use_time = int.from_bytes(raw_data[7:9], "big") / 60.0
-        _voltage = int.from_bytes(raw_data[9:11], "big") / 10.0
-        _current = int.from_bytes(raw_data[11:13], "big") / 1000.0
-        _power = int.from_bytes(raw_data[13:15], "big") / 10.0
+        _energy = parse_uint24_be(raw_data, 1) / 60000
+        _energy_usage_yesterday = parse_uint24_be(raw_data, 4) / 60000
+        _use_time = parse_power_data(raw_data, 7, 60.0)
+        _voltage = parse_power_data(raw_data, 9, 10.0)
+        _current = parse_power_data(raw_data, 11, 1000.0)
+        _power = parse_power_data(raw_data, 13, 10.0)
 
         return {
             "energy": 0.01 if 0 < _energy <= 0.01 else round(_energy, 2),
@@ -178,7 +184,7 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if not common_data["isOn"]:
             self._reset_power_data(user_data)
 
-        garage_door_opener_data = {"door_open": not bool(_data[2] & 0b00100000)}
+        garage_door_opener_data = {"door_open": not bool(_data[2] & DOOR_OPEN_MASK)}
 
         _LOGGER.debug("common_data: %s, user_data: %s", common_data, user_data)
 
