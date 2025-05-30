@@ -425,19 +425,26 @@ async def test_verify_encryption_key(mock_parent_verify, model):
 
     assert result is True
 
+
 @pytest.mark.parametrize(
     ("old_data", "new_data", "expected_result"),
     [
         (
             {"isOn": True, "sequence_number": 1},
             {"isOn": False},
-            {"isOn": False, "sequence_number": 1}
+            {"isOn": False, "sequence_number": 1},
         ),
         (
-            {1: {"current": 0, "voltage": 220, "power": 0}, 2: {"current": 1, "voltage": 0, "power": 10}},
+            {
+                1: {"current": 0, "voltage": 220, "power": 0},
+                2: {"current": 1, "voltage": 0, "power": 10},
+            },
             {1: {"current": 1, "power": 10}, 2: {"current": 0, "voltage": 220}},
-            {1: {"current": 1, "voltage": 220, "power": 10}, 2: {"current": 0, "voltage": 220, "power": 10}}
-        )
+            {
+                1: {"current": 1, "voltage": 220, "power": 10},
+                2: {"current": 0, "voltage": 220, "power": 10},
+            },
+        ),
     ],
 )
 def test_merge_data(old_data, new_data, expected_result):
