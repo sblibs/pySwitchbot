@@ -115,13 +115,13 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
     },
     "4": {
         "modelName": SwitchbotModel.METER_PRO,
-        "modelFriendlyName": "Meter",
+        "modelFriendlyName": "Meter Pro",
         "func": process_wosensorth,
         "manufacturer_id": 2409,
     },
     "5": {
         "modelName": SwitchbotModel.METER_PRO_C,
-        "modelFriendlyName": "Meter",
+        "modelFriendlyName": "Meter Pro CO2",
         "func": process_wosensorth_c,
         "manufacturer_id": 2409,
     },
