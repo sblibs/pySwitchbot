@@ -293,6 +293,7 @@ async def test_send_multiple_commands(commands, results, final_result):
 async def test_unimplemented_color_mode():
     class TestDevice(SwitchbotBaseLight):
         pass
+
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device = TestDevice(ble_device)
 
