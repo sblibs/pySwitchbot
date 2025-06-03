@@ -41,13 +41,19 @@ _BULB_COLOR_MODE_MAP = {
 }
 
 
+EFFECT_DICT = {
+    "Colorful": "570F4701010300",
+    "Flickering": "570F4701010301",
+    "Breathing": "570F4701010302",
+}
+
 class SwitchbotBulb(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot bulb."""
 
     @property
-    def color_modes(self) -> set[ColorMode]:
+    def color_modes(self) -> set[BulbColorMode]:
         """Return the supported color modes."""
-        return {ColorMode.RGB, ColorMode.COLOR_TEMP}
+        return {BulbColorMode.RGB, BulbColorMode.COLOR_TEMP}
 
     @property
     def color_mode(self) -> ColorMode:

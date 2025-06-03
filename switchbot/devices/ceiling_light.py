@@ -38,9 +38,9 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot ceiling light."""
 
     @property
-    def color_modes(self) -> set[ColorMode]:
+    def color_modes(self) -> set[CeilingLightColorMode]:
         """Return the supported color modes."""
-        return {ColorMode.COLOR_TEMP}
+        return {CeilingLightColorMode.COLOR_TEMP}
 
     @property
     def color_mode(self) -> ColorMode:
