@@ -5,6 +5,7 @@ from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
 from switchbot.devices import light_strip
+from switchbot.devices.base_light import SwitchbotBaseLight
 from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperationError
 
 from .test_adv_parser import generate_ble_device
@@ -286,3 +287,14 @@ async def test_send_multiple_commands(commands, results, final_result):
     result = await device._send_multiple_commands(list(commands))
 
     assert result is final_result
+
+
+@pytest.mark.asyncio
+async def test_unimplemented_color_mode():
+    class TestDevice(SwitchbotBaseLight):
+        pass
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    device = TestDevice(ble_device)
+
+    with pytest.raises(NotImplementedError):
+        _ = device.color_mode
