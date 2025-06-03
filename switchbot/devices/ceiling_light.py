@@ -52,7 +52,9 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
         """Set brightness."""
         assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
         color_temp = self._state.get("cw", 4001)
-        result = await self._send_command(f"{BRIGHTNESS_KEY}{brightness:02X}{color_temp:04X}")
+        result = await self._send_command(
+            f"{BRIGHTNESS_KEY}{brightness:02X}{color_temp:04X}"
+        )
         return self._check_command_result(result, 0, {1})
 
     async def set_color_temp(self, brightness: int, color_temp: int) -> bool:
@@ -64,7 +66,6 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
         )
         return self._check_command_result(result, 0, {1})
 
-
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
         if not (_data := await self._get_basic_info(DEVICE_GET_BASIC_SETTINGS_KEY)):
@@ -72,7 +73,12 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
         if not (_version_info := await self._get_basic_info(DEVICE_GET_VERSION_KEY)):
             return None
 
-        _LOGGER.debug("data: %s, version info: %s, address: %s", _data, _version_info, self._device.address)
+        _LOGGER.debug(
+            "data: %s, version info: %s, address: %s",
+            _data,
+            _version_info,
+            self._device.address,
+        )
 
         self._state["cw"] = int.from_bytes(_data[3:5], "big")
 

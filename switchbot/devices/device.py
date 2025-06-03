@@ -8,7 +8,6 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import replace
-from enum import Enum
 from typing import Any, TypeVar, cast
 from uuid import UUID
 

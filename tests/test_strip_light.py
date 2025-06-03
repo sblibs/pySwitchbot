@@ -15,18 +15,14 @@ def create_device_for_command_testing(init_data: dict | None = None):
     device = light_strip.SwitchbotStripLight3(
         ble_device, "ff", "ffffffffffffffffffffffffffffffff"
     )
-    device.update_from_advertisement(
-        make_advertisement_data(ble_device, init_data)
-    )
+    device.update_from_advertisement(make_advertisement_data(ble_device, init_data))
     device._send_command = AsyncMock()
     device._check_command_result = MagicMock()
     device.update = AsyncMock()
     return device
 
 
-def make_advertisement_data(
-    ble_device: BLEDevice, init_data: dict | None = None
-):
+def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None):
     """Set advertisement data with defaults."""
     if init_data is None:
         init_data = {}
@@ -34,7 +30,7 @@ def make_advertisement_data(
     return SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
-            "rawAdvData": b'\x00\x00\x00\x00\x10\xd0\xb1',
+            "rawAdvData": b"\x00\x00\x00\x00\x10\xd0\xb1",
             "data": {
                 "sequence_number": 133,
                 "isOn": True,
@@ -46,7 +42,7 @@ def make_advertisement_data(
             }
             | init_data,
             "isEncrypted": False,
-            "model": b'\x00\x10\xd0\xb1',
+            "model": b"\x00\x10\xd0\xb1",
             "modelFriendlyName": "Strip Light 3",
             "modelName": SwitchbotModel.STRIP_LIGHT_3,
         },
@@ -54,6 +50,7 @@ def make_advertisement_data(
         rssi=-80,
         active=True,
     )
+
 
 @pytest.mark.asyncio
 async def test_default_info():
@@ -67,7 +64,10 @@ async def test_default_info():
     assert device.is_on() is True
     assert device.on is True
     assert device.color_mode == light_strip.StripLightColorMode.RGB
-    assert device.color_modes == {light_strip.StripLightColorMode.RGB, light_strip.StripLightColorMode.COLOR_TEMP}
+    assert device.color_modes == {
+        light_strip.StripLightColorMode.RGB,
+        light_strip.StripLightColorMode.COLOR_TEMP,
+    }
     assert device.rgb == (30, 0, 0)
     assert device.color_temp == 3200
     assert device.brightness == 30
@@ -101,27 +101,26 @@ async def test_get_basic_info_returns_none(basic_info, version_info):
     [
         (
             {
-                "basic_info": b'\x01\x00<\xff\x00\xd8\x00\x19d\x00\x03',
-                "version_info": b'\x01\x01\n'
+                "basic_info": b"\x01\x00<\xff\x00\xd8\x00\x19d\x00\x03",
+                "version_info": b"\x01\x01\n",
             },
-            [False, 60, 255, 0, 216, 6500, 3, 1.0]
+            [False, 60, 255, 0, 216, 6500, 3, 1.0],
         ),
         (
             {
-                "basic_info": b'\x01\x80NK\xff:\x00\x19d\xff\x02',
-                "version_info": b'\x01\x01\n'
+                "basic_info": b"\x01\x80NK\xff:\x00\x19d\xff\x02",
+                "version_info": b"\x01\x01\n",
             },
-            [True, 78, 75, 255, 58, 6500, 2, 1.0]
+            [True, 78, 75, 255, 58, 6500, 2, 1.0],
         ),
         (
             {
-                "basic_info": b'\x01\x80$K\xff:\x00\x13\xf9\xff\x06',
-                "version_info": b'\x01\x01\n'
+                "basic_info": b"\x01\x80$K\xff:\x00\x13\xf9\xff\x06",
+                "version_info": b"\x01\x01\n",
             },
-            [True, 36, 75, 255, 58, 5113, 6, 1.0]
-        )
-
-    ]
+            [True, 36, 75, 255, 58, 5113, 6, 1.0],
+        ),
+    ],
 )
 async def test_strip_light_get_basic_info(info_data, result):
     """Test getting basic info from the strip light."""
@@ -156,6 +155,7 @@ async def test_set_color_temp():
 
     device._send_command.assert_called_with(f"{light_strip.COLOR_TEMP_KEY}320BB8")
 
+
 @pytest.mark.asyncio
 async def test_turn_on():
     """Test turning on the strip light."""
@@ -166,6 +166,7 @@ async def test_turn_on():
     device._send_command.assert_called_with(light_strip.STRIP_ON_KEY)
 
     assert device.is_on() is True
+
 
 @pytest.mark.asyncio
 async def test_turn_off():
@@ -178,6 +179,7 @@ async def test_turn_off():
 
     assert device.is_on() is False
 
+
 @pytest.mark.asyncio
 async def test_set_brightness():
     """Test setting brightness."""
@@ -186,6 +188,7 @@ async def test_set_brightness():
     await device.set_brightness(75)
 
     device._send_command.assert_called_with(f"{light_strip.BRIGHTNESS_KEY}4B")
+
 
 @pytest.mark.asyncio
 async def test_set_rgb():
@@ -196,13 +199,17 @@ async def test_set_rgb():
 
     device._send_command.assert_called_with(f"{light_strip.RGB_BRIGHTNESS_KEY}64FF8040")
 
+
 @pytest.mark.asyncio
 async def test_set_effect_with_invalid_effect():
     """Test setting an invalid effect."""
     device = create_device_for_command_testing()
 
-    with pytest.raises(SwitchbotOperationError, match="Effect invalid_effect not supported"):
+    with pytest.raises(
+        SwitchbotOperationError, match="Effect invalid_effect not supported"
+    ):
         await device.set_effect("invalid_effect")
+
 
 @pytest.mark.asyncio
 async def test_set_effect_with_valid_effect():
@@ -212,7 +219,9 @@ async def test_set_effect_with_valid_effect():
 
     await device.set_effect("Christmas")
 
-    device._send_multiple_commands.assert_called_with(light_strip.EFFECT_DICT["Christmas"])
+    device._send_multiple_commands.assert_called_with(
+        light_strip.EFFECT_DICT["Christmas"]
+    )
 
     assert device.get_effect() == "Christmas"
 
@@ -241,9 +250,11 @@ async def test_verify_encryption_key(mock_parent_verify):
 
     assert result is True
 
+
 def create_strip_light_device(init_data: dict | None = None):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     return light_strip.SwitchbotLightStrip(ble_device)
+
 
 @pytest.mark.asyncio
 async def test_strip_light_supported_color_modes():
@@ -254,25 +265,14 @@ async def test_strip_light_supported_color_modes():
         light_strip.StripLightColorMode.RGB,
     }
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("commands", "results", "final_result"),
     [
-        (
-            ("command1", "command2"),
-            [(b'\x01', False), (None, False)],
-            False
-        ),
-        (
-            ("command1", "command2"),
-            [(None, False), (b'\x01', True)],
-            True
-        ),
-        (
-            ("command1", "command2"),
-            [(b'\x01', True), (b'\x01', False)],
-            True
-        ),
+        (("command1", "command2"), [(b"\x01", False), (None, False)], False),
+        (("command1", "command2"), [(None, False), (b"\x01", True)], True),
+        (("command1", "command2"), [(b"\x01", True), (b"\x01", False)], True),
     ],
 )
 async def test_send_multiple_commands(commands, results, final_result):

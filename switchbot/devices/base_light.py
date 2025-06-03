@@ -102,6 +102,7 @@ class SwitchbotBaseLight(SwitchbotDevice):
             final_result |= self._check_command_result(result, 0, {1})
         return final_result
 
+
 class SwitchbotSequenceBaseLight(SwitchbotBaseLight):
     """Representation of a Switchbot light."""
 

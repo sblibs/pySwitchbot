@@ -90,7 +90,6 @@ class SwitchbotModel(StrEnum):
     FLOOR_LAMP = "Floor Lamp"
 
 
-
 __all__ = [
     "DEFAULT_RETRY_COUNT",
     "DEFAULT_RETRY_TIMEOUT",

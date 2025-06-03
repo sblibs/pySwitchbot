@@ -9,15 +9,16 @@ class StripLightColorMode(Enum):
     COLOR_TEMP = 6
     UNKNOWN = 10
 
+
 class BulbColorMode(Enum):
     COLOR_TEMP = 1
     RGB = 2
     DYNAMIC = 3
     UNKNOWN = 10
 
+
 class CeilingLightColorMode(Enum):
     COLOR_TEMP = 0
     NIGHT = 1
     MUSIC = 4
     UNKNOWN = 10
-

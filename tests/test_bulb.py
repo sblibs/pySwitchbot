@@ -13,18 +13,14 @@ from .test_adv_parser import generate_ble_device
 def create_device_for_command_testing(init_data: dict | None = None):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device = bulb.SwitchbotBulb(ble_device)
-    device.update_from_advertisement(
-        make_advertisement_data(ble_device, init_data)
-    )
+    device.update_from_advertisement(make_advertisement_data(ble_device, init_data))
     device._send_command = AsyncMock()
     device._check_command_result = MagicMock()
     device.update = AsyncMock()
     return device
 
 
-def make_advertisement_data(
-    ble_device: BLEDevice, init_data: dict | None = None
-):
+def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None):
     """Set advertisement data with defaults."""
     if init_data is None:
         init_data = {}
@@ -32,20 +28,20 @@ def make_advertisement_data(
     return SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
-            "rawAdvData": b'u\x00d',
+            "rawAdvData": b"u\x00d",
             "data": {
-                'brightness': 1,
-                'color_mode': 2,
-                'delay': False,
-                'isOn': True,
+                "brightness": 1,
+                "color_mode": 2,
+                "delay": False,
+                "isOn": True,
                 "loop_index": 0,
-                'preset': False,
-                'sequence_number': 2,
-                'speed': 0,
+                "preset": False,
+                "sequence_number": 2,
+                "speed": 0,
             }
             | init_data,
             "isEncrypted": False,
-            "model": 'u',
+            "model": "u",
             "modelFriendlyName": "Color Bulb",
             "modelName": SwitchbotModel.COLOR_BULB,
         },
@@ -101,27 +97,26 @@ async def test_get_basic_info_returns_none(basic_info, version_info):
     [
         (
             {
-                "basic_info": b'\x01\x80\x01\xff\x91\x96\x00\x00\xff\xff\x02',
-                "version_info": b'\x01\x01\x11'
+                "basic_info": b"\x01\x80\x01\xff\x91\x96\x00\x00\xff\xff\x02",
+                "version_info": b"\x01\x01\x11",
             },
-            [True, 1, 255, 145, 150, 0, 2, 1.7]
+            [True, 1, 255, 145, 150, 0, 2, 1.7],
         ),
         (
             {
-                "basic_info": b'\x01\x80;\x00\x00\x00\x0c\x99\xff\xff\x01',
-                "version_info": b'\x01\x01\x11'
+                "basic_info": b"\x01\x80;\x00\x00\x00\x0c\x99\xff\xff\x01",
+                "version_info": b"\x01\x01\x11",
             },
-            [True, 59, 0, 0, 0, 3225, 1, 1.7]
+            [True, 59, 0, 0, 0, 3225, 1, 1.7],
         ),
         (
             {
-                "basic_info": b'\x01\x80\t!7\xff\x00\x00\xff\xff\x02',
-                "version_info": b'\x01\x01\x11'
+                "basic_info": b"\x01\x80\t!7\xff\x00\x00\xff\xff\x02",
+                "version_info": b"\x01\x01\x11",
             },
-            [True, 9, 33, 55, 255, 0, 2, 1.7]
-        )
-
-    ]
+            [True, 9, 33, 55, 255, 0, 2, 1.7],
+        ),
+    ],
 )
 async def test_get_basic_info(info_data, result):
     """Test getting basic info from the color bulb."""
@@ -146,6 +141,7 @@ async def test_get_basic_info(info_data, result):
     assert info["color_mode"] == result[6]
     assert info["firmware"] == result[7]
 
+
 @pytest.mark.asyncio
 async def test_set_color_temp():
     """Test setting color temperature."""
@@ -154,6 +150,7 @@ async def test_set_color_temp():
     await device.set_color_temp(50, 3000)
 
     device._send_command.assert_called_with(f"{bulb.CW_BRIGHTNESS_KEY}320BB8")
+
 
 @pytest.mark.asyncio
 async def test_turn_on():
@@ -165,6 +162,7 @@ async def test_turn_on():
     device._send_command.assert_called_with(bulb.BULB_ON_KEY)
 
     assert device.is_on() is True
+
 
 @pytest.mark.asyncio
 async def test_turn_off():
@@ -187,6 +185,7 @@ async def test_set_brightness():
 
     device._send_command.assert_called_with(f"{bulb.BRIGHTNESS_KEY}4B")
 
+
 @pytest.mark.asyncio
 async def test_set_rgb():
     """Test setting RGB values."""
@@ -196,13 +195,17 @@ async def test_set_rgb():
 
     device._send_command.assert_called_with(f"{bulb.RGB_BRIGHTNESS_KEY}64FF8040")
 
+
 @pytest.mark.asyncio
 async def test_set_effect_with_invalid_effect():
     """Test setting an invalid effect."""
     device = create_device_for_command_testing()
 
-    with pytest.raises(SwitchbotOperationError, match="Effect invalid_effect not supported"):
+    with pytest.raises(
+        SwitchbotOperationError, match="Effect invalid_effect not supported"
+    ):
         await device.set_effect("invalid_effect")
+
 
 @pytest.mark.asyncio
 async def test_set_effect_with_valid_effect():

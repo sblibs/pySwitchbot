@@ -32,6 +32,7 @@ EFFECT_DICT = {
     "Breathing": "570F4701010302",
 }
 
+
 class SwitchbotBulb(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot bulb."""
 
@@ -97,7 +98,6 @@ class SwitchbotBulb(SwitchbotSequenceBaseLight):
             self._override_state({"effect": effect})
         return result
 
-
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
         if not (_data := await self._get_basic_info(DEVICE_GET_BASIC_SETTINGS_KEY)):
@@ -105,7 +105,12 @@ class SwitchbotBulb(SwitchbotSequenceBaseLight):
         if not (_version_info := await self._get_basic_info(DEVICE_GET_VERSION_KEY)):
             return None
 
-        _LOGGER.debug("data: %s, version info: %s, address: %s", _data, _version_info, self._device.address)
+        _LOGGER.debug(
+            "data: %s, version info: %s, address: %s",
+            _data,
+            _version_info,
+            self._device.address,
+        )
 
         self._state["r"] = _data[3]
         self._state["g"] = _data[4]
@@ -126,6 +131,3 @@ class SwitchbotBulb(SwitchbotSequenceBaseLight):
     def get_effect_list(self):
         """Return the list of supported effects."""
         return list(EFFECT_DICT.keys())
-
-
-

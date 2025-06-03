@@ -12,18 +12,14 @@ from .test_adv_parser import generate_ble_device
 def create_device_for_command_testing(init_data: dict | None = None):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device = ceiling_light.SwitchbotCeilingLight(ble_device)
-    device.update_from_advertisement(
-        make_advertisement_data(ble_device, init_data)
-    )
+    device.update_from_advertisement(make_advertisement_data(ble_device, init_data))
     device._send_command = AsyncMock()
     device._check_command_result = MagicMock()
     device.update = AsyncMock()
     return device
 
 
-def make_advertisement_data(
-    ble_device: BLEDevice, init_data: dict | None = None
-):
+def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None):
     """Set advertisement data with defaults."""
     if init_data is None:
         init_data = {}
@@ -31,17 +27,17 @@ def make_advertisement_data(
     return SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
-            "rawAdvData": b'q\x00',
+            "rawAdvData": b"q\x00",
             "data": {
-                'brightness': 1,
-                'color_mode': 1,
-                'cw': 6387,
-                'isOn': False,
-                'sequence_number': 10,
+                "brightness": 1,
+                "color_mode": 1,
+                "cw": 6387,
+                "isOn": False,
+                "sequence_number": 10,
             }
             | init_data,
             "isEncrypted": False,
-            "model": b'q\x00',
+            "model": b"q\x00",
             "modelFriendlyName": "Ceiling Light",
             "modelName": SwitchbotModel.CEILING_LIGHT,
         },
@@ -70,6 +66,7 @@ async def test_default_info():
     assert device.max_temp == 6500
     assert device.get_effect_list() is None
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("basic_info", "version_info"), [(True, False), (False, True), (False, False)]
@@ -95,27 +92,26 @@ async def test_get_basic_info_returns_none(basic_info, version_info):
     [
         (
             {
-                "basic_info": b'\x01\x80=\x0f\xa1\x00\x01',
-                "version_info": b'\x01d\x15\x0f\x00\x00\x00\x00\x00\x00\x00\n\x00'
+                "basic_info": b"\x01\x80=\x0f\xa1\x00\x01",
+                "version_info": b"\x01d\x15\x0f\x00\x00\x00\x00\x00\x00\x00\n\x00",
             },
-            [True, 61, 4001, 0, 2.1]
+            [True, 61, 4001, 0, 2.1],
         ),
         (
             {
-                "basic_info": b'\x01\x80\x0e\x12B\x00\x01',
-                "version_info": b'\x01d\x15\x0f\x00\x00\x00\x00\x00\x00\x00\n\x00'
+                "basic_info": b"\x01\x80\x0e\x12B\x00\x01",
+                "version_info": b"\x01d\x15\x0f\x00\x00\x00\x00\x00\x00\x00\n\x00",
             },
-            [True, 14, 4674, 0, 2.1]
+            [True, 14, 4674, 0, 2.1],
         ),
         (
             {
-                "basic_info": b'\x01\x00\x0e\x10\x96\x00\x01',
-                "version_info": b'\x01d\x15\x0f\x00\x00\x00\x00\x00\x00\x00\n\x00',
+                "basic_info": b"\x01\x00\x0e\x10\x96\x00\x01",
+                "version_info": b"\x01d\x15\x0f\x00\x00\x00\x00\x00\x00\x00\n\x00",
             },
-            [False, 14, 4246, 0, 2.1]
-        )
-
-    ]
+            [False, 14, 4246, 0, 2.1],
+        ),
+    ],
 )
 async def test_get_basic_info(info_data, result):
     """Test getting basic info from the ceiling light."""
@@ -137,6 +133,7 @@ async def test_get_basic_info(info_data, result):
     assert info["color_mode"] == result[3]
     assert info["firmware"] == result[4]
 
+
 @pytest.mark.asyncio
 async def test_set_color_temp():
     """Test setting color temperature."""
@@ -145,6 +142,7 @@ async def test_set_color_temp():
     await device.set_color_temp(50, 3000)
 
     device._send_command.assert_called_with(f"{ceiling_light.CW_BRIGHTNESS_KEY}320BB8")
+
 
 @pytest.mark.asyncio
 async def test_turn_on():
@@ -156,6 +154,7 @@ async def test_turn_on():
     device._send_command.assert_called_with(ceiling_light.CEILING_LIGHT_ON_KEY)
 
     assert device.is_on() is True
+
 
 @pytest.mark.asyncio
 async def test_turn_off():
