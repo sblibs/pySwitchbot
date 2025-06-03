@@ -47,6 +47,7 @@ EFFECT_DICT = {
     "Breathing": "570F4701010302",
 }
 
+
 class SwitchbotBulb(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot bulb."""
 

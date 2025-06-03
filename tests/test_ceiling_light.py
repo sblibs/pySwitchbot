@@ -68,6 +68,7 @@ async def test_default_info():
     assert device.get_effect_list is None
 
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("basic_info", "version_info"), [(True, False), (False, True), (False, False)]
