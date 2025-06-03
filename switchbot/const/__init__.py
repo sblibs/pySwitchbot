@@ -10,6 +10,7 @@ from .evaporative_humidifier import (
     HumidifierWaterLevel,
 )
 from .fan import FanMode
+from .light import BulbColorMode, CeilingLightColorMode, StripLightColorMode
 
 # Preserve old LockStatus export for backwards compatibility
 from .lock import LockStatus
@@ -85,6 +86,9 @@ class SwitchbotModel(StrEnum):
     LOCK_LITE = "Lock Lite"
     GARAGE_DOOR_OPENER = "Garage Door Opener"
     RELAY_SWITCH_2PM = "Relay Switch 2PM"
+    STRIP_LIGHT_3 = "Strip Light 3"
+    FLOOR_LAMP = "Floor Lamp"
+
 
 
 __all__ = [
@@ -92,11 +96,14 @@ __all__ = [
     "DEFAULT_RETRY_TIMEOUT",
     "DEFAULT_SCAN_TIMEOUT",
     "AirPurifierMode",
+    "BulbColorMode",
+    "CeilingLightColorMode",
     "FanMode",
     "HumidifierAction",
     "HumidifierMode",
     "HumidifierWaterLevel",
     "LockStatus",
+    "StripLightColorMode",
     "SwitchbotAccountConnectionError",
     "SwitchbotApiError",
     "SwitchbotAuthenticationError",

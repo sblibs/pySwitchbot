@@ -60,13 +60,6 @@ DBUS_ERROR_BACKOFF_TIME = 0.25
 DISCONNECT_DELAY = 8.5
 
 
-class ColorMode(Enum):
-    OFF = 0
-    COLOR_TEMP = 1
-    RGB = 2
-    EFFECT = 3
-
-
 # If the scanner is in passive mode, we
 # need to poll the device to get the
 # battery and a few rarely updating
