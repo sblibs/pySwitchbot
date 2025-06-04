@@ -67,6 +67,11 @@ class SwitchbotBulb(SwitchbotSequenceBaseLight):
         """Return the list of supported effects."""
         return list(EFFECT_DICT.keys())
 
+    @property
+    def get_effect_list(self) -> list[str]:
+        """Return the list of supported effects."""
+        return list(EFFECT_DICT.keys())
+
     @update_after_operation
     async def turn_on(self) -> bool:
         """Turn device on."""
