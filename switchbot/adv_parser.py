@@ -24,7 +24,7 @@ from .adv_parsers.hubmini_matter import process_hubmini_matter
 from .adv_parsers.humidifier import process_evaporative_humidifier, process_wohumidifier
 from .adv_parsers.keypad import process_wokeypad
 from .adv_parsers.leak import process_leak
-from .adv_parsers.light_strip import process_wostrip
+from .adv_parsers.light_strip import process_light, process_wostrip
 from .adv_parsers.lock import process_lock2, process_wolock, process_wolock_pro
 from .adv_parsers.meter import process_wosensorth, process_wosensorth_c
 from .adv_parsers.motion import process_wopresence
@@ -323,6 +323,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.RELAY_SWITCH_2PM,
         "modelFriendlyName": "Relay Switch 2PM",
         "func": process_relay_switch_2pm,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x10\xd0\xb0": {
+        "modelName": SwitchbotModel.FLOOR_LAMP,
+        "modelFriendlyName": "Floor Lamp",
+        "func": process_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x10\xd0\xb1": {
+        "modelName": SwitchbotModel.STRIP_LIGHT_3,
+        "modelFriendlyName": "Strip Light 3",
+        "func": process_light,
         "manufacturer_id": 2409,
     },
 }

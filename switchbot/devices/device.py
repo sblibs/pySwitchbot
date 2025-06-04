@@ -8,7 +8,6 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import replace
-from enum import Enum
 from typing import Any, TypeVar, cast
 from uuid import UUID
 
@@ -58,13 +57,6 @@ DBUS_ERROR_BACKOFF_TIME = 0.25
 # to wait for additional commands for
 # disconnecting the device.
 DISCONNECT_DELAY = 8.5
-
-
-class ColorMode(Enum):
-    OFF = 0
-    COLOR_TEMP = 1
-    RGB = 2
-    EFFECT = 3
 
 
 # If the scanner is in passive mode, we

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import logging
-import time
 from abc import abstractmethod
 from typing import Any
 
 from ..helpers import create_background_task
 from ..models import SwitchBotAdvertisement
-from .device import ColorMode, SwitchbotDevice
+from .device import SwitchbotDevice
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,9 +42,10 @@ class SwitchbotBaseLight(SwitchbotDevice):
         return self._get_adv_value("brightness") or 0
 
     @property
-    def color_mode(self) -> ColorMode:
+    @abstractmethod
+    def color_mode(self) -> Any:
         """Return the current color mode."""
-        return ColorMode(self._get_adv_value("color_mode") or 0)
+        raise NotImplementedError("Subclasses must implement color mode")
 
     @property
     def min_temp(self) -> int:
@@ -57,9 +57,18 @@ class SwitchbotBaseLight(SwitchbotDevice):
         """Return maximum color temp."""
         return 6500
 
+    @property
+    def get_effect_list(self) -> list[str] | None:
+        """Return the list of supported effects."""
+        return None
+
     def is_on(self) -> bool | None:
         """Return bulb state from cache."""
         return self._get_adv_value("isOn")
+
+    def get_effect(self):
+        """Return the current effect."""
+        return self._get_adv_value("effect")
 
     @abstractmethod
     async def turn_on(self) -> bool:
@@ -81,13 +90,18 @@ class SwitchbotBaseLight(SwitchbotDevice):
     async def set_rgb(self, brightness: int, r: int, g: int, b: int) -> bool:
         """Set rgb."""
 
-    def poll_needed(self, last_poll_time: float | None) -> bool:
-        """Return if poll is needed."""
-        return False
+    async def _send_multiple_commands(self, keys: list[str]) -> bool:
+        """
+        Send multiple commands to device.
 
-    async def update(self) -> None:
-        """Update device data."""
-        self._last_full_update = time.monotonic()
+        Since we current have no way to tell which command the device
+        needs we send both.
+        """
+        final_result = False
+        for key in keys:
+            result = await self._send_command(key)
+            final_result |= self._check_command_result(result, 0, {1})
+        return final_result
 
 
 class SwitchbotSequenceBaseLight(SwitchbotBaseLight):

@@ -11,11 +11,14 @@ from bleak_retry_connector import (
 from .adv_parser import SwitchbotSupportedType, parse_advertisement_data
 from .const import (
     AirPurifierMode,
+    BulbColorMode,
+    CeilingLightColorMode,
     FanMode,
     HumidifierAction,
     HumidifierMode,
     HumidifierWaterLevel,
     LockStatus,
+    StripLightColorMode,
     SwitchbotAccountConnectionError,
     SwitchbotApiError,
     SwitchbotAuthenticationError,
@@ -28,11 +31,11 @@ from .devices.bot import Switchbot
 from .devices.bulb import SwitchbotBulb
 from .devices.ceiling_light import SwitchbotCeilingLight
 from .devices.curtain import SwitchbotCurtain
-from .devices.device import ColorMode, SwitchbotDevice, SwitchbotEncryptedDevice
+from .devices.device import SwitchbotDevice, SwitchbotEncryptedDevice
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
 from .devices.fan import SwitchbotFan
 from .devices.humidifier import SwitchbotHumidifier
-from .devices.light_strip import SwitchbotLightStrip
+from .devices.light_strip import SwitchbotLightStrip, SwitchbotStripLight3
 from .devices.lock import SwitchbotLock
 from .devices.plug import SwitchbotPlugMini
 from .devices.relay_switch import SwitchbotRelaySwitch, SwitchbotRelaySwitch2PM
@@ -43,13 +46,15 @@ from .models import SwitchBotAdvertisement
 
 __all__ = [
     "AirPurifierMode",
-    "ColorMode",
+    "BulbColorMode",
+    "CeilingLightColorMode",
     "FanMode",
     "GetSwitchbotDevices",
     "HumidifierAction",
     "HumidifierMode",
     "HumidifierWaterLevel",
     "LockStatus",
+    "StripLightColorMode",
     "SwitchBotAdvertisement",
     "Switchbot",
     "Switchbot",
@@ -76,6 +81,7 @@ __all__ = [
     "SwitchbotRelaySwitch",
     "SwitchbotRelaySwitch2PM",
     "SwitchbotRollerShade",
+    "SwitchbotStripLight3",
     "SwitchbotSupportedType",
     "SwitchbotSupportedType",
     "SwitchbotVacuum",
