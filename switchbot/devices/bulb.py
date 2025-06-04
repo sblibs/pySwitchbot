@@ -46,6 +46,11 @@ class SwitchbotBulb(SwitchbotSequenceBaseLight):
         """Return the current color mode."""
         return BulbColorMode(self._get_adv_value("color_mode") or 10)
 
+    @property
+    def get_effect_list(self) -> list[str]:
+        """Return the list of supported effects."""
+        return list(EFFECT_DICT.keys())
+
     @update_after_operation
     async def turn_on(self) -> bool:
         """Turn device on."""
@@ -127,7 +132,3 @@ class SwitchbotBulb(SwitchbotSequenceBaseLight):
             "color_mode": _data[10] & 0b00001111,
             "firmware": _version_info[2] / 10.0,
         }
-
-    def get_effect_list(self):
-        """Return the list of supported effects."""
-        return list(EFFECT_DICT.keys())

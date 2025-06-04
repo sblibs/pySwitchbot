@@ -18,6 +18,7 @@ BRIGHTNESS_KEY = f"{CEILING_LIGHT_COMMAND}01FF01"
 
 DEVICE_GET_VERSION_KEY = "5702"
 DEVICE_GET_BASIC_SETTINGS_KEY = "570f5581"
+DEFAULT_CW = 4001
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,12 +52,13 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
     async def set_brightness(self, brightness: int) -> bool:
         """Set brightness."""
         assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
-        color_temp = self._state.get("cw", 4001)
+        color_temp = self._state.get("cw", DEFAULT_CW)
         result = await self._send_command(
             f"{BRIGHTNESS_KEY}{brightness:02X}{color_temp:04X}"
         )
         return self._check_command_result(result, 0, {1})
 
+    @update_after_operation
     async def set_color_temp(self, brightness: int, color_temp: int) -> bool:
         """Set color temp."""
         assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"

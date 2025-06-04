@@ -74,7 +74,7 @@ async def test_default_info():
     assert device.brightness == 30
     assert device.min_temp == 2700
     assert device.max_temp == 6500
-    assert device.get_effect_list() == list(light_strip.EFFECT_DICT.keys())
+    assert device.get_effect_list == list(light_strip.EFFECT_DICT.keys())
 
 
 @pytest.mark.asyncio

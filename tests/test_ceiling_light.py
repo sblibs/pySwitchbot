@@ -64,7 +64,7 @@ async def test_default_info():
     assert device.brightness == 1
     assert device.min_temp == 2700
     assert device.max_temp == 6500
-    assert device.get_effect_list() is None
+    assert device.get_effect_list is None
 
 
 @pytest.mark.asyncio

@@ -123,7 +123,8 @@ class SwitchbotLightStrip(SwitchbotSequenceBaseLight):
         """Return the current color mode."""
         return StripLightColorMode(self._get_adv_value("color_mode") or 10)
 
-    def get_effect_list(self):
+    @property
+    def get_effect_list(self) -> list[str]:
         """Return the list of supported effects."""
         return list(EFFECT_DICT.keys())
 

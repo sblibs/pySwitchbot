@@ -57,13 +57,14 @@ class SwitchbotBaseLight(SwitchbotDevice):
         """Return maximum color temp."""
         return 6500
 
+    @property
+    def get_effect_list(self) -> list[str] | None:
+        """Return the list of supported effects."""
+        return None
+
     def is_on(self) -> bool | None:
         """Return bulb state from cache."""
         return self._get_adv_value("isOn")
-
-    def get_effect_list(self) -> list[str]:
-        """Return the list of supported effects."""
-        return None
 
     def get_effect(self):
         """Return the current effect."""
