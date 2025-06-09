@@ -4,6 +4,7 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
+from switchbot.const.light import ColorMode
 from switchbot.devices import bulb
 from switchbot.devices.device import SwitchbotOperationError
 
@@ -62,8 +63,8 @@ async def test_default_info():
 
     assert device.is_on() is True
     assert device.on is True
-    assert device.color_mode == bulb.BulbColorMode.RGB
-    assert device.color_modes == {bulb.BulbColorMode.RGB, bulb.BulbColorMode.COLOR_TEMP}
+    assert device.color_mode == ColorMode.RGB
+    assert device.color_modes == {ColorMode.RGB, ColorMode.COLOR_TEMP}
     assert device.rgb == (30, 0, 0)
     assert device.color_temp == 3200
     assert device.brightness == 1

@@ -4,6 +4,7 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
+from switchbot.const.light import ColorMode
 from switchbot.devices import ceiling_light
 
 from .test_adv_parser import generate_ble_device
@@ -58,8 +59,8 @@ async def test_default_info():
 
     assert device.is_on() is False
     assert device.on is False
-    assert device.color_mode == ceiling_light.CeilingLightColorMode.NIGHT
-    assert device.color_modes == {ceiling_light.CeilingLightColorMode.COLOR_TEMP}
+    assert device.color_mode == ColorMode.COLOR_TEMP
+    assert device.color_modes == {ColorMode.COLOR_TEMP}
     assert device.color_temp == 3200
     assert device.brightness == 1
     assert device.min_temp == 2700

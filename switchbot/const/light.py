@@ -1,6 +1,13 @@
 from enum import Enum
 
 
+class ColorMode(Enum):
+    OFF = 0
+    COLOR_TEMP = 1
+    RGB = 2
+    EFFECT = 3
+
+
 class StripLightColorMode(Enum):
     RGB = 2
     SCENE = 3
