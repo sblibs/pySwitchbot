@@ -3,7 +3,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from ..const.light import DEFAULT_COLOR_TEMP, CeilingLightColorMode
+from ..const.light import (
+    DEFAULT_COLOR_TEMP,
+    CeilingLightColorMode,
+    ColorMode,
+)
 from .base_light import SwitchbotSequenceBaseLight
 from .device import REQ_HEADER, update_after_operation
 
@@ -21,19 +25,28 @@ DEVICE_GET_BASIC_SETTINGS_KEY = "570f5581"
 
 _LOGGER = logging.getLogger(__name__)
 
+# Private mapping from device-specific color modes to original ColorMode enum
+_CEILING_LIGHT_COLOR_MODE_MAP = {
+    CeilingLightColorMode.COLOR_TEMP: ColorMode.COLOR_TEMP,
+    CeilingLightColorMode.NIGHT: ColorMode.COLOR_TEMP,
+    CeilingLightColorMode.MUSIC: ColorMode.EFFECT,
+    CeilingLightColorMode.UNKNOWN: ColorMode.OFF,
+}
+
 
 class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot ceiling light."""
 
     @property
-    def color_modes(self) -> set[CeilingLightColorMode]:
+    def color_modes(self) -> set[ColorMode]:
         """Return the supported color modes."""
-        return {CeilingLightColorMode.COLOR_TEMP}
+        return {ColorMode.COLOR_TEMP}
 
     @property
-    def color_mode(self) -> CeilingLightColorMode:
+    def color_mode(self) -> ColorMode:
         """Return the current color mode."""
-        return CeilingLightColorMode(self._get_adv_value("color_mode") or 10)
+        device_mode = CeilingLightColorMode(self._get_adv_value("color_mode") or 10)
+        return _CEILING_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
 
     @update_after_operation
     async def turn_on(self) -> bool:

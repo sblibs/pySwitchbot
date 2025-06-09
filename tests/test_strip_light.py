@@ -4,6 +4,7 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
+from switchbot.const.light import ColorMode
 from switchbot.devices import light_strip
 from switchbot.devices.base_light import SwitchbotBaseLight
 from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperationError
@@ -64,10 +65,10 @@ async def test_default_info():
 
     assert device.is_on() is True
     assert device.on is True
-    assert device.color_mode == light_strip.StripLightColorMode.RGB
+    assert device.color_mode == ColorMode.RGB
     assert device.color_modes == {
-        light_strip.StripLightColorMode.RGB,
-        light_strip.StripLightColorMode.COLOR_TEMP,
+        ColorMode.RGB,
+        ColorMode.COLOR_TEMP,
     }
     assert device.rgb == (30, 0, 0)
     assert device.color_temp == 3200
@@ -263,7 +264,7 @@ async def test_strip_light_supported_color_modes():
     device = create_strip_light_device()
 
     assert device.color_modes == {
-        light_strip.StripLightColorMode.RGB,
+        ColorMode.RGB,
     }
 
 

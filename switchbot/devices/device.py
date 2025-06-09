@@ -28,6 +28,7 @@ from ..api_config import SWITCHBOT_APP_API_BASE_URL, SWITCHBOT_APP_CLIENT_ID
 from ..const import (
     DEFAULT_RETRY_COUNT,
     DEFAULT_SCAN_TIMEOUT,
+    ColorMode,  # noqa: F401
     SwitchbotAccountConnectionError,
     SwitchbotApiError,
     SwitchbotAuthenticationError,
