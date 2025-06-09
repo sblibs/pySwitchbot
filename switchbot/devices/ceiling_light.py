@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from ..const.light import CeilingLightColorMode
+from ..const.light import DEFAULT_COLOR_TEMP, CeilingLightColorMode
 from .base_light import SwitchbotSequenceBaseLight
 from .device import REQ_HEADER, update_after_operation
 
@@ -18,7 +18,6 @@ BRIGHTNESS_KEY = f"{CEILING_LIGHT_COMMAND}01FF01"
 
 DEVICE_GET_VERSION_KEY = "5702"
 DEVICE_GET_BASIC_SETTINGS_KEY = "570f5581"
-DEFAULT_CW = 4001
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
     async def set_brightness(self, brightness: int) -> bool:
         """Set brightness."""
         assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
-        color_temp = self._state.get("cw", DEFAULT_CW)
+        color_temp = self._state.get("cw", DEFAULT_COLOR_TEMP)
         result = await self._send_command(
             f"{BRIGHTNESS_KEY}{brightness:02X}{color_temp:04X}"
         )
@@ -62,7 +61,7 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
     async def set_color_temp(self, brightness: int, color_temp: int) -> bool:
         """Set color temp."""
         assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
-        assert 2700 <= color_temp <= 6500, "Color Temp must be between 0 and 100"
+        assert 2700 <= color_temp <= 6500, "Color Temp must be between 2700 and 6500"
         result = await self._send_command(
             f"{CW_BRIGHTNESS_KEY}{brightness:02X}{color_temp:04X}"
         )

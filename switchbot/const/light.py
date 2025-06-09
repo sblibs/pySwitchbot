@@ -22,3 +22,6 @@ class CeilingLightColorMode(Enum):
     NIGHT = 1
     MUSIC = 4
     UNKNOWN = 10
+
+
+DEFAULT_COLOR_TEMP = 4001
