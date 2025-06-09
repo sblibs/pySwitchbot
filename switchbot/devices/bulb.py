@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from ..const.light import BULB_COLOR_MODE_MAP, BulbColorMode, ColorMode
+from ..const.light import BulbColorMode, ColorMode
 from .base_light import SwitchbotSequenceBaseLight
 from .device import REQ_HEADER, SwitchbotOperationError, update_after_operation
 
@@ -32,6 +32,14 @@ EFFECT_DICT = {
     "Breathing": "570F4701010302",
 }
 
+# Private mapping from device-specific color modes to original ColorMode enum
+_BULB_COLOR_MODE_MAP = {
+    BulbColorMode.COLOR_TEMP: ColorMode.COLOR_TEMP,
+    BulbColorMode.RGB: ColorMode.RGB,
+    BulbColorMode.DYNAMIC: ColorMode.EFFECT,
+    BulbColorMode.UNKNOWN: ColorMode.OFF,
+}
+
 
 class SwitchbotBulb(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot bulb."""
@@ -45,7 +53,7 @@ class SwitchbotBulb(SwitchbotSequenceBaseLight):
     def color_mode(self) -> ColorMode:
         """Return the current color mode."""
         device_mode = BulbColorMode(self._get_adv_value("color_mode") or 10)
-        return BULB_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
+        return _BULB_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
 
     @property
     def get_effect_list(self) -> list[str]:
