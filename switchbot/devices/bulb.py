@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from ..const.light import BulbColorMode
+from ..const.light import BULB_COLOR_MODE_MAP, BulbColorMode, ColorMode
 from .base_light import SwitchbotSequenceBaseLight
 from .device import REQ_HEADER, SwitchbotOperationError, update_after_operation
 
@@ -37,14 +37,15 @@ class SwitchbotBulb(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot bulb."""
 
     @property
-    def color_modes(self) -> set[BulbColorMode]:
+    def color_modes(self) -> set[ColorMode]:
         """Return the supported color modes."""
-        return {BulbColorMode.RGB, BulbColorMode.COLOR_TEMP}
+        return {ColorMode.RGB, ColorMode.COLOR_TEMP}
 
     @property
-    def color_mode(self) -> BulbColorMode:
+    def color_mode(self) -> ColorMode:
         """Return the current color mode."""
-        return BulbColorMode(self._get_adv_value("color_mode") or 10)
+        device_mode = BulbColorMode(self._get_adv_value("color_mode") or 10)
+        return BULB_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
 
     @property
     def get_effect_list(self) -> list[str]:

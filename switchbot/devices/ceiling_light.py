@@ -3,7 +3,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from ..const.light import DEFAULT_COLOR_TEMP, CeilingLightColorMode
+from ..const.light import (
+    CEILING_LIGHT_COLOR_MODE_MAP,
+    DEFAULT_COLOR_TEMP,
+    CeilingLightColorMode,
+    ColorMode,
+)
 from .base_light import SwitchbotSequenceBaseLight
 from .device import REQ_HEADER, update_after_operation
 
@@ -26,14 +31,15 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot ceiling light."""
 
     @property
-    def color_modes(self) -> set[CeilingLightColorMode]:
+    def color_modes(self) -> set[ColorMode]:
         """Return the supported color modes."""
-        return {CeilingLightColorMode.COLOR_TEMP}
+        return {ColorMode.COLOR_TEMP}
 
     @property
-    def color_mode(self) -> CeilingLightColorMode:
+    def color_mode(self) -> ColorMode:
         """Return the current color mode."""
-        return CeilingLightColorMode(self._get_adv_value("color_mode") or 10)
+        device_mode = CeilingLightColorMode(self._get_adv_value("color_mode") or 10)
+        return CEILING_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
 
     @update_after_operation
     async def turn_on(self) -> bool:

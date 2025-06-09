@@ -6,7 +6,7 @@ from typing import Any
 from bleak.backends.device import BLEDevice
 
 from ..const import SwitchbotModel
-from ..const.light import StripLightColorMode
+from ..const.light import STRIP_LIGHT_COLOR_MODE_MAP, ColorMode, StripLightColorMode
 from .base_light import SwitchbotSequenceBaseLight
 from .device import (
     REQ_HEADER,
@@ -114,14 +114,15 @@ class SwitchbotLightStrip(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot light strip."""
 
     @property
-    def color_modes(self) -> set[StripLightColorMode]:
+    def color_modes(self) -> set[ColorMode]:
         """Return the supported color modes."""
-        return {StripLightColorMode.RGB}
+        return {ColorMode.RGB}
 
     @property
-    def color_mode(self) -> StripLightColorMode:
+    def color_mode(self) -> ColorMode:
         """Return the current color mode."""
-        return StripLightColorMode(self._get_adv_value("color_mode") or 10)
+        device_mode = StripLightColorMode(self._get_adv_value("color_mode") or 10)
+        return STRIP_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
 
     @property
     def get_effect_list(self) -> list[str]:
@@ -233,9 +234,9 @@ class SwitchbotStripLight3(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         )
 
     @property
-    def color_modes(self) -> set[StripLightColorMode]:
+    def color_modes(self) -> set[ColorMode]:
         """Return the supported color modes."""
-        return {StripLightColorMode.RGB, StripLightColorMode.COLOR_TEMP}
+        return {ColorMode.RGB, ColorMode.COLOR_TEMP}
 
     @update_after_operation
     async def set_color_temp(self, brightness: int, color_temp: int) -> bool:

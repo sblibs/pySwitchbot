@@ -10,7 +10,12 @@ from .evaporative_humidifier import (
     HumidifierWaterLevel,
 )
 from .fan import FanMode
-from .light import BulbColorMode, CeilingLightColorMode, StripLightColorMode
+from .light import (
+    BulbColorMode,
+    CeilingLightColorMode,
+    ColorMode,
+    StripLightColorMode,
+)
 
 # Preserve old LockStatus export for backwards compatibility
 from .lock import LockStatus
@@ -97,6 +102,7 @@ __all__ = [
     "AirPurifierMode",
     "BulbColorMode",
     "CeilingLightColorMode",
+    "ColorMode",
     "FanMode",
     "HumidifierAction",
     "HumidifierMode",
