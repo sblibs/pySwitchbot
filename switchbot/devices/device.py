@@ -851,8 +851,6 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         return result[:1] + self._decrypt(result[4:])
 
     async def _ensure_encryption_initialized(self) -> bool:
-        if self._iv is not None:
-            return True
 
         result = await self._send_command(
             COMMAND_GET_CK_IV + self._key_id, encrypt=False
