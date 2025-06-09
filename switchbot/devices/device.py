@@ -838,37 +838,74 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         if not encrypt:
             return await super()._send_command(key[:2] + "000000" + key[2:], retry)
 
-        result = await self._ensure_encryption_initialized()
-        if not result:
-            _LOGGER.error("Failed to initialize encryption")
-            return None
+        if retry is None:
+            retry = self._retry_count
 
-        encrypted = (
-            key[:2] + self._key_id + self._iv[0:2].hex() + self._encrypt(key[2:])
-        )
-        result = await super()._send_command(encrypted, retry)
-        return result[:1] + self._decrypt(result[4:])
+        if self._operation_lock.locked():
+            _LOGGER.debug(
+                "%s: Operation already in progress, waiting for it to complete; RSSI: %s",
+                self.name,
+                self.rssi,
+            )
+
+        async with self._operation_lock:
+            result = await self._ensure_encryption_initialized()
+            if not result:
+                _LOGGER.error("Failed to initialize encryption")
+                return None
+
+            encrypted = (
+                key[:2] + self._key_id + self._iv[0:2].hex() + self._encrypt(key[2:])
+            )
+            command = bytearray.fromhex(self._commandkey(encrypted))
+            _LOGGER.debug("%s: Scheduling command %s", self.name, command.hex())
+            max_attempts = retry + 1
+
+            result = await self._send_command_locked_with_retry(
+                encrypted, command, retry, max_attempts
+            )
+            if result is None:
+                return None
+            return result[:1] + self._decrypt(result[4:])
 
     async def _ensure_encryption_initialized(self) -> bool:
+        """Ensure encryption is initialized, must be called with operation lock held."""
+        assert self._operation_lock.locked(), "Operation lock must be held"
+
         if self._iv is not None:
             return True
 
-        result = await self._send_command(
-            COMMAND_GET_CK_IV + self._key_id, encrypt=False
+        _LOGGER.debug("%s: Initializing encryption", self.name)
+        # Call parent's _send_command_locked_with_retry directly since we already hold the lock
+        key = COMMAND_GET_CK_IV + self._key_id
+        command = bytearray.fromhex(self._commandkey(key[:2] + "000000" + key[2:]))
+
+        result = await self._send_command_locked_with_retry(
+            key[:2] + "000000" + key[2:],
+            command,
+            self._retry_count,
+            self._retry_count + 1,
         )
-        ok = self._check_command_result(result, 0, {1})
-        if ok:
+        if result is None:
+            return False
+
+        if ok := self._check_command_result(result, 0, {1}):
             self._iv = result[4:]
+            self._cipher = None  # Reset cipher when IV changes
+            _LOGGER.debug("%s: Encryption initialized successfully", self.name)
 
         return ok
 
     async def _execute_disconnect(self) -> None:
-        await super()._execute_disconnect()
-        self._iv = None
-        self._cipher = None
+        async with self._connect_lock:
+            self._iv = None
+            self._cipher = None
+            await self._execute_disconnect_with_lock()
 
     def _get_cipher(self) -> Cipher:
         if self._cipher is None:
+            if self._iv is None:
+                raise RuntimeError("Cannot create cipher: IV is None")
             self._cipher = Cipher(
                 algorithms.AES128(self._encryption_key), modes.CTR(self._iv)
             )
@@ -877,12 +914,16 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
     def _encrypt(self, data: str) -> str:
         if len(data) == 0:
             return ""
+        if self._iv is None:
+            raise RuntimeError("Cannot encrypt: IV is None")
         encryptor = self._get_cipher().encryptor()
         return (encryptor.update(bytearray.fromhex(data)) + encryptor.finalize()).hex()
 
     def _decrypt(self, data: bytearray) -> bytes:
         if len(data) == 0:
             return b""
+        if self._iv is None:
+            raise RuntimeError("Cannot decrypt: IV is None")
         decryptor = self._get_cipher().decryptor()
         return decryptor.update(data) + decryptor.finalize()
 
