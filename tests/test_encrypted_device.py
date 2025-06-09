@@ -342,7 +342,7 @@ async def test_command_retry_with_encryption() -> None:
 
         # First attempt fails, second succeeds
         mock_send_locked.side_effect = [
-            BleakDBusError("org.bluez.Error", "Test error"),
+            BleakDBusError("org.bluez.Error", []),
             b"\x01\x00\x00\x00data",
         ]
 

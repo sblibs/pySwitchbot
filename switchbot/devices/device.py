@@ -849,8 +849,7 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
             )
 
         async with self._operation_lock:
-            result = await self._ensure_encryption_initialized()
-            if not result:
+            if not (result := await self._ensure_encryption_initialized()):
                 _LOGGER.error("Failed to initialize encryption")
                 return None
 
