@@ -202,6 +202,54 @@ class SwitchbotBaseDevice:
         key_suffix = key[4:]
         return KEY_PASSWORD_PREFIX + key_action + self._password_encoded + key_suffix
 
+    async def _send_command_locked_with_retry(
+        self, key: str, command: bytes, retry: int, max_attempts: int
+    ) -> bytes | None:
+        for attempt in range(max_attempts):
+            try:
+                return await self._send_command_locked(key, command)
+            except BleakNotFoundError:
+                _LOGGER.error(
+                    "%s: device not found, no longer in range, or poor RSSI: %s",
+                    self.name,
+                    self.rssi,
+                    exc_info=True,
+                )
+                raise
+            except CharacteristicMissingError as ex:
+                if attempt == retry:
+                    _LOGGER.error(
+                        "%s: characteristic missing: %s; Stopping trying; RSSI: %s",
+                        self.name,
+                        ex,
+                        self.rssi,
+                        exc_info=True,
+                    )
+                    raise
+
+                _LOGGER.debug(
+                    "%s: characteristic missing: %s; RSSI: %s",
+                    self.name,
+                    ex,
+                    self.rssi,
+                    exc_info=True,
+                )
+            except BLEAK_RETRY_EXCEPTIONS:
+                if attempt == retry:
+                    _LOGGER.error(
+                        "%s: communication failed; Stopping trying; RSSI: %s",
+                        self.name,
+                        self.rssi,
+                        exc_info=True,
+                    )
+                    raise
+
+                _LOGGER.debug(
+                    "%s: communication failed with:", self.name, exc_info=True
+                )
+
+        raise RuntimeError("Unreachable")
+
     async def _send_command(self, key: str, retry: int | None = None) -> bytes | None:
         """Send command to device and read response."""
         if retry is None:
@@ -216,50 +264,9 @@ class SwitchbotBaseDevice:
                 self.rssi,
             )
         async with self._operation_lock:
-            for attempt in range(max_attempts):
-                try:
-                    return await self._send_command_locked(key, command)
-                except BleakNotFoundError:
-                    _LOGGER.error(
-                        "%s: device not found, no longer in range, or poor RSSI: %s",
-                        self.name,
-                        self.rssi,
-                        exc_info=True,
-                    )
-                    raise
-                except CharacteristicMissingError as ex:
-                    if attempt == retry:
-                        _LOGGER.error(
-                            "%s: characteristic missing: %s; Stopping trying; RSSI: %s",
-                            self.name,
-                            ex,
-                            self.rssi,
-                            exc_info=True,
-                        )
-                        raise
-
-                    _LOGGER.debug(
-                        "%s: characteristic missing: %s; RSSI: %s",
-                        self.name,
-                        ex,
-                        self.rssi,
-                        exc_info=True,
-                    )
-                except BLEAK_RETRY_EXCEPTIONS:
-                    if attempt == retry:
-                        _LOGGER.error(
-                            "%s: communication failed; Stopping trying; RSSI: %s",
-                            self.name,
-                            self.rssi,
-                            exc_info=True,
-                        )
-                        raise
-
-                    _LOGGER.debug(
-                        "%s: communication failed with:", self.name, exc_info=True
-                    )
-
-        raise RuntimeError("Unreachable")
+            return await self._send_command_locked_with_retry(
+                key, command, retry, max_attempts
+            )
 
     @property
     def name(self) -> str:
