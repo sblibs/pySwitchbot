@@ -32,7 +32,6 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
         self._set_color_temp_command: str = f"{CEILING_LIGHT_CONTROL_HEADER}01FF01{{}}"
         self._get_basic_info_command: list[str] = ["5702", "570f5581"]
 
-
     @property
     def color_modes(self) -> set[ColorMode]:
         """Return the supported color modes."""
@@ -51,17 +50,13 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
         hex_brightness = f"{brightness:02X}"
         color_temp = self._state.get("cw", DEFAULT_COLOR_TEMP)
         hex_data = f"{hex_brightness}{color_temp:04X}"
-        result = await self._send_command(
-            self._set_brightness_command.format(hex_data)
-        )
+        result = await self._send_command(self._set_brightness_command.format(hex_data))
         return self._check_command_result(result, 0, {1})
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
         if not (
-            res := await self._get_multi_commands_results(
-                self._get_basic_info_command
-            )
+            res := await self._get_multi_commands_results(self._get_basic_info_command)
         ):
             return None
         _version_info, _data = res

@@ -188,9 +188,7 @@ async def test_set_brightness():
 
     await device.set_brightness(75)
 
-    device._send_command.assert_called_with(
-        device._set_brightness_command.format("4B")
-    )
+    device._send_command.assert_called_with(device._set_brightness_command.format("4B"))
 
 
 @pytest.mark.asyncio
@@ -200,9 +198,7 @@ async def test_set_rgb():
 
     await device.set_rgb(100, 255, 128, 64)
 
-    device._send_command.assert_called_with(
-        device._set_rgb_command.format("64FF8040")
-    )
+    device._send_command.assert_called_with(device._set_rgb_command.format("64FF8040"))
 
 
 @pytest.mark.asyncio
@@ -223,8 +219,6 @@ async def test_set_effect_with_valid_effect():
 
     await device.set_effect("Colorful")
 
-    device._send_command.assert_called_with(
-        device._effect_dict["Colorful"][0]
-    )
+    device._send_command.assert_called_with(device._effect_dict["Colorful"][0])
 
     assert device.get_effect() == "Colorful"

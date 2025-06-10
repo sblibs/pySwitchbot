@@ -702,7 +702,7 @@ class SwitchbotBaseDevice:
             raise SwitchbotOperationError(
                 f"Current device {self._device.address} does not support this functionality"
             )
-        
+
     @update_after_operation
     async def turn_on(self) -> bool:
         """Turn device on."""

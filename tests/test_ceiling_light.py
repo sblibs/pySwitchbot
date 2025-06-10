@@ -156,9 +156,7 @@ async def test_turn_on():
 
     await device.turn_on()
 
-    device._send_command.assert_called_with(
-        device._turn_on_command
-    )
+    device._send_command.assert_called_with(device._turn_on_command)
 
     assert device.is_on() is True
 
@@ -170,9 +168,7 @@ async def test_turn_off():
 
     await device.turn_off()
 
-    device._send_command.assert_called_with(
-        device._turn_off_command
-    )
+    device._send_command.assert_called_with(device._turn_off_command)
 
     assert device.is_on() is False
 

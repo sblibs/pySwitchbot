@@ -77,9 +77,7 @@ async def test_default_info():
     assert device.brightness == 30
     assert device.min_temp == 2700
     assert device.max_temp == 6500
-    assert device.get_effect_list == list(
-        device._effect_dict.keys()
-    )
+    assert device.get_effect_list == list(device._effect_dict.keys())
 
 
 @pytest.mark.asyncio
@@ -171,9 +169,7 @@ async def test_turn_on():
 
     await device.turn_on()
 
-    device._send_command.assert_called_with(
-        device._turn_on_command
-    )
+    device._send_command.assert_called_with(device._turn_on_command)
 
     assert device.is_on() is True
 
@@ -185,9 +181,7 @@ async def test_turn_off():
 
     await device.turn_off()
 
-    device._send_command.assert_called_with(
-        device._turn_off_command
-    )
+    device._send_command.assert_called_with(device._turn_off_command)
 
     assert device.is_on() is False
 
@@ -199,9 +193,7 @@ async def test_set_brightness():
 
     await device.set_brightness(75)
 
-    device._send_command.assert_called_with(
-        device._set_brightness_command.format("4B")
-    )
+    device._send_command.assert_called_with(device._set_brightness_command.format("4B"))
 
 
 @pytest.mark.asyncio
@@ -211,9 +203,7 @@ async def test_set_rgb():
 
     await device.set_rgb(100, 255, 128, 64)
 
-    device._send_command.assert_called_with(
-        device._set_rgb_command.format("64FF8040")
-    )
+    device._send_command.assert_called_with(device._set_rgb_command.format("64FF8040"))
 
 
 @pytest.mark.asyncio
@@ -235,9 +225,7 @@ async def test_set_effect_with_valid_effect():
 
     await device.set_effect("Christmas")
 
-    device._send_multiple_commands.assert_called_with(
-        device._effect_dict["Christmas"]
-    )
+    device._send_multiple_commands.assert_called_with(device._effect_dict["Christmas"])
 
     assert device.get_effect() == "Christmas"
 

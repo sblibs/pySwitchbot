@@ -64,10 +64,7 @@ class SwitchbotBaseLight(SwitchbotDevice):
     @property
     def get_effect_list(self) -> list[str] | None:
         """Return the list of supported effects."""
-        return (
-            list(self._effect_dict.keys())
-            if self._effect_dict else None
-        )
+        return list(self._effect_dict.keys()) if self._effect_dict else None
 
     def is_on(self) -> bool | None:
         """Return bulb state from cache."""
@@ -95,9 +92,7 @@ class SwitchbotBaseLight(SwitchbotDevice):
         assert 2700 <= color_temp <= 6500, "Color Temp must be between 2700 and 6500"
         hex_data = f"{brightness:02X}{color_temp:04X}"
         self._check_function_support(self._set_color_temp_command)
-        result = await self._send_command(
-            self._set_color_temp_command.format(hex_data)
-        )
+        result = await self._send_command(self._set_color_temp_command.format(hex_data))
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
