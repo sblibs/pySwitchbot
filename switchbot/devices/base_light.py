@@ -4,12 +4,6 @@ import logging
 from abc import abstractmethod
 from typing import Any
 
-from ..const.const import (
-    COMMAND_SET_BRIGHTNESS,
-    COMMAND_SET_COLOR_TEMP,
-    COMMAND_SET_RGB,
-    EFFECT_DICT,
-)
 from ..helpers import create_background_task
 from ..models import SwitchBotAdvertisement
 from .device import SwitchbotDevice, SwitchbotOperationError, update_after_operation
@@ -24,6 +18,10 @@ class SwitchbotBaseLight(SwitchbotDevice):
         """Switchbot bulb constructor."""
         super().__init__(*args, **kwargs)
         self._state: dict[str, Any] = {}
+        self._effect_dict: dict[str, Any] = {}
+        self._set_brightness_command: str | None = None
+        self._set_color_temp_command: str | None = None
+        self._set_rgb_command: str | None = None
 
     @property
     def on(self) -> bool | None:
@@ -67,9 +65,8 @@ class SwitchbotBaseLight(SwitchbotDevice):
     def get_effect_list(self) -> list[str] | None:
         """Return the list of supported effects."""
         return (
-            list(EFFECT_DICT[self._model].keys())
-            if self._model in EFFECT_DICT
-            else None
+            list(self._effect_dict.keys())
+            if self._effect_dict else None
         )
 
     def is_on(self) -> bool | None:
@@ -80,21 +77,14 @@ class SwitchbotBaseLight(SwitchbotDevice):
         """Return the current effect."""
         return self._get_adv_value("effect")
 
-    def _check_function_support(self, command_dict: dict[Any, Any]) -> None:
-        """Check if the command is supported by the device model."""
-        if self._model not in command_dict:
-            raise SwitchbotOperationError(
-                f"Model {self._model} does not support this functionality"
-            )
-
     @update_after_operation
     async def set_brightness(self, brightness: int) -> bool:
         """Set brightness."""
         assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
         hex_brightness = f"{brightness:02X}"
-        self._check_function_support(COMMAND_SET_BRIGHTNESS)
+        self._check_function_support(self._set_brightness_command)
         result = await self._send_command(
-            COMMAND_SET_BRIGHTNESS[self._model].format(hex_brightness)
+            self._set_brightness_command.format(hex_brightness)
         )
         return self._check_command_result(result, 0, {1})
 
@@ -104,9 +94,9 @@ class SwitchbotBaseLight(SwitchbotDevice):
         assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
         assert 2700 <= color_temp <= 6500, "Color Temp must be between 2700 and 6500"
         hex_data = f"{brightness:02X}{color_temp:04X}"
-        self._check_function_support(COMMAND_SET_COLOR_TEMP)
+        self._check_function_support(self._set_color_temp_command)
         result = await self._send_command(
-            COMMAND_SET_COLOR_TEMP[self._model].format(hex_data)
+            self._set_color_temp_command.format(hex_data)
         )
         return self._check_command_result(result, 0, {1})
 
@@ -117,16 +107,16 @@ class SwitchbotBaseLight(SwitchbotDevice):
         assert 0 <= r <= 255, "r must be between 0 and 255"
         assert 0 <= g <= 255, "g must be between 0 and 255"
         assert 0 <= b <= 255, "b must be between 0 and 255"
-        self._check_function_support(COMMAND_SET_RGB)
+        self._check_function_support(self._set_rgb_command)
         hex_data = f"{brightness:02X}{r:02X}{g:02X}{b:02X}"
-        result = await self._send_command(COMMAND_SET_RGB[self._model].format(hex_data))
+        result = await self._send_command(self._set_rgb_command.format(hex_data))
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def set_effect(self, effect: str) -> bool:
         """Set effect."""
-        self._check_function_support(EFFECT_DICT)
-        effect_template = EFFECT_DICT[self._model].get(effect)
+        self._check_function_support(self._effect_dict)
+        effect_template = self._effect_dict.get(effect)
         if not effect_template:
             raise SwitchbotOperationError(f"Effect {effect} not supported")
         result = await self._send_multiple_commands(effect_template)

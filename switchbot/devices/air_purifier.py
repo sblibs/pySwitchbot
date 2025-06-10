@@ -45,6 +45,8 @@ class SwitchbotAirPurifier(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         **kwargs: Any,
     ) -> None:
         super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
+        self._turn_on_command: str = f"{COMMAND_HEAD}010100"
+        self._turn_off_command: str = f"{COMMAND_HEAD}010000"
 
     @classmethod
     async def verify_encryption_key(

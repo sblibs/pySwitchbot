@@ -33,6 +33,8 @@ class SwitchbotFan(SwitchbotSequenceDevice):
 
     def __init__(self, device, password=None, interface=0, **kwargs):
         super().__init__(device, password, interface, **kwargs)
+        self._turn_on_command: str = f"{COMMAND_HEAD}0101"
+        self._turn_off_command: str = f"{COMMAND_HEAD}0102"
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""

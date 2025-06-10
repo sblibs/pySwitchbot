@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..const import SwitchbotModel
-from ..const.const import COMMAND_DEVICE_GET_BASIC_INFO
 from ..const.light import BulbColorMode, ColorMode
 from .base_light import SwitchbotSequenceBaseLight
 
@@ -14,10 +12,27 @@ _BULB_COLOR_MODE_MAP = {
     BulbColorMode.DYNAMIC: ColorMode.EFFECT,
     BulbColorMode.UNKNOWN: ColorMode.OFF,
 }
+COLOR_BULB_CONTROL_HEADER = "570F4701"
 
 
 class SwitchbotBulb(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot bulb."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Switchbot bulb constructor."""
+        super().__init__(*args, **kwargs)
+
+        self._effect_dict: dict[str, Any] = {
+            "Colorful": ["570F4701010300"],
+            "Flickering": ["570F4701010301"],
+            "Breathing": ["570F4701010302"],
+        }
+        self._turn_on_command: str = f"{COLOR_BULB_CONTROL_HEADER}01"
+        self._turn_off_command: str = f"{COLOR_BULB_CONTROL_HEADER}02"
+        self._set_rgb_command: str = f"{COLOR_BULB_CONTROL_HEADER}12{{}}"
+        self._set_color_temp_command: str = f"{COLOR_BULB_CONTROL_HEADER}13{{}}"
+        self._set_brightness_command: str = f"{COLOR_BULB_CONTROL_HEADER}14{{}}"
+        self._get_basic_info_command: list[str] = ["570003", "570f4801"]
 
     @property
     def color_modes(self) -> set[ColorMode]:
@@ -34,7 +49,7 @@ class SwitchbotBulb(SwitchbotSequenceBaseLight):
         """Get device basic settings."""
         if not (
             res := await self._get_multi_commands_results(
-                COMMAND_DEVICE_GET_BASIC_INFO[SwitchbotModel.COLOR_BULB]
+                self._get_basic_info_command
             )
         ):
             return None

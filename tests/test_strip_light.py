@@ -4,15 +4,6 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
-from switchbot.const.const import (
-    COMMAND_DEVICE_GET_BASIC_INFO,
-    COMMAND_SET_BRIGHTNESS,
-    COMMAND_SET_COLOR_TEMP,
-    COMMAND_SET_RGB,
-    COMMAND_TURN_OFF,
-    COMMAND_TURN_ON,
-    EFFECT_DICT,
-)
 from switchbot.const.light import ColorMode
 from switchbot.devices import light_strip
 from switchbot.devices.base_light import SwitchbotBaseLight
@@ -87,7 +78,7 @@ async def test_default_info():
     assert device.min_temp == 2700
     assert device.max_temp == 6500
     assert device.get_effect_list == list(
-        EFFECT_DICT[SwitchbotModel.STRIP_LIGHT_3].keys()
+        device._effect_dict.keys()
     )
 
 
@@ -99,9 +90,9 @@ async def test_get_basic_info_returns_none(basic_info, version_info):
     device = create_device_for_command_testing()
 
     async def mock_get_basic_info(arg):
-        if arg == COMMAND_DEVICE_GET_BASIC_INFO[SwitchbotModel.LIGHT_STRIP][1]:
+        if arg == device._get_basic_info_command[1]:
             return basic_info
-        if arg == COMMAND_DEVICE_GET_BASIC_INFO[SwitchbotModel.LIGHT_STRIP][0]:
+        if arg == device._get_basic_info_command[0]:
             return version_info
         return None
 
@@ -142,9 +133,9 @@ async def test_strip_light_get_basic_info(info_data, result):
     device = create_device_for_command_testing()
 
     async def mock_get_basic_info(args: str) -> list[int] | None:
-        if args == COMMAND_DEVICE_GET_BASIC_INFO[SwitchbotModel.LIGHT_STRIP][1]:
+        if args == device._get_basic_info_command[1]:
             return info_data["basic_info"]
-        if args == COMMAND_DEVICE_GET_BASIC_INFO[SwitchbotModel.LIGHT_STRIP][0]:
+        if args == device._get_basic_info_command[0]:
             return info_data["version_info"]
         return None
 
@@ -169,7 +160,7 @@ async def test_set_color_temp():
     await device.set_color_temp(50, 3000)
 
     device._send_command.assert_called_with(
-        COMMAND_SET_COLOR_TEMP[SwitchbotModel.STRIP_LIGHT_3].format("320BB8")
+        device._set_color_temp_command.format("320BB8")
     )
 
 
@@ -181,7 +172,7 @@ async def test_turn_on():
     await device.turn_on()
 
     device._send_command.assert_called_with(
-        COMMAND_TURN_ON[SwitchbotModel.STRIP_LIGHT_3]
+        device._turn_on_command
     )
 
     assert device.is_on() is True
@@ -195,7 +186,7 @@ async def test_turn_off():
     await device.turn_off()
 
     device._send_command.assert_called_with(
-        COMMAND_TURN_OFF[SwitchbotModel.STRIP_LIGHT_3]
+        device._turn_off_command
     )
 
     assert device.is_on() is False
@@ -209,7 +200,7 @@ async def test_set_brightness():
     await device.set_brightness(75)
 
     device._send_command.assert_called_with(
-        COMMAND_SET_BRIGHTNESS[SwitchbotModel.STRIP_LIGHT_3].format("4B")
+        device._set_brightness_command.format("4B")
     )
 
 
@@ -221,7 +212,7 @@ async def test_set_rgb():
     await device.set_rgb(100, 255, 128, 64)
 
     device._send_command.assert_called_with(
-        COMMAND_SET_RGB[SwitchbotModel.STRIP_LIGHT_3].format("64FF8040")
+        device._set_rgb_command.format("64FF8040")
     )
 
 
@@ -245,7 +236,7 @@ async def test_set_effect_with_valid_effect():
     await device.set_effect("Christmas")
 
     device._send_multiple_commands.assert_called_with(
-        EFFECT_DICT[SwitchbotModel.STRIP_LIGHT_3]["Christmas"]
+        device._effect_dict["Christmas"]
     )
 
     assert device.get_effect() == "Christmas"
@@ -336,6 +327,6 @@ async def test_exception_with_wrong_model():
 
     with pytest.raises(
         SwitchbotOperationError,
-        match="Model unknown does not support this functionality",
+        match="Current device aa:bb:cc:dd:ee:ff does not support this functionality",
     ):
         await device.set_rgb(100, 255, 128, 64)

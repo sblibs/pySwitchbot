@@ -58,6 +58,8 @@ class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncrypted
     ) -> None:
         self._force_next_update = False
         super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
+        self._turn_on_command: str = COMMAND_TURN_ON
+        self._turn_off_command: str = f"{COMMAND_HEADER}0f430100"
 
     @classmethod
     async def verify_encryption_key(

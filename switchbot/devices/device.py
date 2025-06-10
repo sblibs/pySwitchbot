@@ -34,7 +34,6 @@ from ..const import (
     SwitchbotAuthenticationError,
     SwitchbotModel,
 )
-from ..const.const import COMMAND_TURN_OFF, COMMAND_TURN_ON
 from ..discovery import GetSwitchbotDevices
 from ..helpers import create_background_task
 from ..models import SwitchBotAdvertisement
@@ -158,7 +157,8 @@ class SwitchbotBaseDevice:
         self._notify_future: asyncio.Future[bytearray] | None = None
         self._last_full_update: float = -PASSIVE_POLL_INTERVAL
         self._timed_disconnect_task: asyncio.Task[None] | None = None
-        self._model: SwitchbotModel | None = kwargs.get("model")
+        self._turn_on_command: str | None = None
+        self._turn_off_command: str | None = None
 
     @classmethod
     async def api_request(
@@ -696,16 +696,25 @@ class SwitchbotBaseDevice:
         time_since_last_full_update = time.monotonic() - self._last_full_update
         return not time_since_last_full_update < PASSIVE_POLL_INTERVAL
 
+    def _check_function_support(self, cmd: str | None = None) -> None:
+        """Check if the command is supported by the device model."""
+        if not cmd:
+            raise SwitchbotOperationError(
+                f"Current device {self._device.address} does not support this functionality"
+            )
+        
     @update_after_operation
     async def turn_on(self) -> bool:
         """Turn device on."""
-        result = await self._send_command(COMMAND_TURN_ON[self._model])
+        self._check_function_support(self._turn_on_command)
+        result = await self._send_command(self._turn_on_command)
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def turn_off(self) -> bool:
         """Turn device off."""
-        result = await self._send_command(COMMAND_TURN_OFF[self._model])
+        self._check_function_support(self._turn_off_command)
+        result = await self._send_command(self._turn_off_command)
         return self._check_command_result(result, 0, {1})
 
 

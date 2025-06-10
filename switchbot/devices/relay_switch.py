@@ -21,7 +21,8 @@ SWITCH2_ON_MASK = 0b01000000
 DOOR_OPEN_MASK = 0b00100000
 
 COMMAND_HEADER = "57"
-COMMAND_TOGGLE = f"{COMMAND_HEADER}0f70010200"
+COMMAND_CONTROL = "570f70"
+COMMAND_TOGGLE = f"{COMMAND_CONTROL}010200"
 COMMAND_GET_VOLTAGE_AND_CURRENT = f"{COMMAND_HEADER}0f7106000000"
 
 COMMAND_GET_BASIC_INFO = f"{COMMAND_HEADER}0f7181"
@@ -68,6 +69,8 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         **kwargs: Any,
     ) -> None:
         super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
+        self._turn_on_command = f"{COMMAND_CONTROL}010100"
+        self._turn_off_command = f"{COMMAND_CONTROL}010000"
 
     @classmethod
     async def verify_encryption_key(
