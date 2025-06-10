@@ -9,9 +9,9 @@ from ..const.const import (
     COMMAND_SET_BRIGHTNESS,
     COMMAND_SET_COLOR_TEMP,
     COMMAND_SET_RGB,
-    DEFAULT_CW,
     EFFECT_DICT,
 )
+from ..const.light import DEFAULT_COLOR_TEMP
 from ..helpers import create_background_task
 from ..models import SwitchBotAdvertisement
 from .device import SwitchbotDevice, SwitchbotOperationError, update_after_operation
@@ -92,7 +92,7 @@ class SwitchbotBaseLight(SwitchbotDevice):
         hex_brightness = f"{brightness:02X}"
         self._check_function_support(COMMAND_SET_BRIGHTNESS)
         if self._model == SwitchbotModel.CEILING_LIGHT:
-            color_temp = self._state.get("cw", DEFAULT_CW)
+            color_temp = self._state.get("cw", DEFAULT_COLOR_TEMP)
             hex_data = f"{hex_brightness}{color_temp:04X}"
             result = await self._send_command(COMMAND_SET_BRIGHTNESS[self._model].format(hex_data))
         else:
