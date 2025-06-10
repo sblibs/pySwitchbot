@@ -18,21 +18,17 @@ COLOR_BULB_CONTROL_HEADER = "570F4701"
 class SwitchbotBulb(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot bulb."""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Switchbot bulb constructor."""
-        super().__init__(*args, **kwargs)
-
-        self._effect_dict: dict[str, Any] = {
-            "Colorful": ["570F4701010300"],
-            "Flickering": ["570F4701010301"],
-            "Breathing": ["570F4701010302"],
-        }
-        self._turn_on_command: str = f"{COLOR_BULB_CONTROL_HEADER}01"
-        self._turn_off_command: str = f"{COLOR_BULB_CONTROL_HEADER}02"
-        self._set_rgb_command: str = f"{COLOR_BULB_CONTROL_HEADER}12{{}}"
-        self._set_color_temp_command: str = f"{COLOR_BULB_CONTROL_HEADER}13{{}}"
-        self._set_brightness_command: str = f"{COLOR_BULB_CONTROL_HEADER}14{{}}"
-        self._get_basic_info_command: list[str] = ["570003", "570f4801"]
+    _turn_on_command: str = f"{COLOR_BULB_CONTROL_HEADER}01"
+    _turn_off_command: str = f"{COLOR_BULB_CONTROL_HEADER}02"
+    _set_rgb_command: str = f"{COLOR_BULB_CONTROL_HEADER}12{{}}"
+    _set_color_temp_command: str = f"{COLOR_BULB_CONTROL_HEADER}13{{}}"
+    _set_brightness_command: str = f"{COLOR_BULB_CONTROL_HEADER}14{{}}"
+    _get_basic_info_command: list[str] = ["570003", "570f4801"]
+    _effect_dict: dict[str, Any] = {
+        "Colorful": ["570F4701010300"],
+        "Flickering": ["570F4701010301"],
+        "Breathing": ["570F4701010302"],
+    }
 
     @property
     def color_modes(self) -> set[ColorMode]:

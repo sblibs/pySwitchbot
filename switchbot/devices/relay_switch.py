@@ -59,6 +59,9 @@ MULTI_CHANNEL_COMMANDS_GET_VOLTAGE_AND_CURRENT = {
 class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot relay switch 1pm."""
 
+    _turn_on_command = f"{COMMAND_CONTROL}010100"
+    _turn_off_command = f"{COMMAND_CONTROL}010000"
+
     def __init__(
         self,
         device: BLEDevice,
@@ -69,8 +72,6 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         **kwargs: Any,
     ) -> None:
         super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-        self._turn_on_command = f"{COMMAND_CONTROL}010100"
-        self._turn_off_command = f"{COMMAND_CONTROL}010000"
 
     @classmethod
     async def verify_encryption_key(

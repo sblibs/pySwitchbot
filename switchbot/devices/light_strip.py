@@ -102,15 +102,13 @@ COMMON_EFFECTS = {
 class SwitchbotLightStrip(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot light strip."""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self._effect_dict: dict[str, Any] = COMMON_EFFECTS
-        self._turn_on_command: str = f"{LIGHT_STRIP_CONTROL_HEADER}01"
-        self._turn_off_command: str = f"{LIGHT_STRIP_CONTROL_HEADER}02"
-        self._set_rgb_command: str = f"{LIGHT_STRIP_CONTROL_HEADER}12{{}}"
-        self._set_color_temp_command: str = f"{LIGHT_STRIP_CONTROL_HEADER}11{{}}"
-        self._set_brightness_command: str = f"{LIGHT_STRIP_CONTROL_HEADER}14{{}}"
-        self._get_basic_info_command: list[str] = ["570003", "570f4A01"]
+    _effect_dict = COMMON_EFFECTS
+    _turn_on_command = f"{LIGHT_STRIP_CONTROL_HEADER}01"
+    _turn_off_command = f"{LIGHT_STRIP_CONTROL_HEADER}02"
+    _set_rgb_command = f"{LIGHT_STRIP_CONTROL_HEADER}12{{}}"
+    _set_color_temp_command = f"{LIGHT_STRIP_CONTROL_HEADER}11{{}}"
+    _set_brightness_command = f"{LIGHT_STRIP_CONTROL_HEADER}14{{}}"
+    _get_basic_info_command = ["570003", "570f4A01"]
 
     @property
     def color_modes(self) -> set[ColorMode]:

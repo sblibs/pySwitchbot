@@ -47,6 +47,9 @@ DEVICE_GET_BASIC_SETTINGS_KEY = "570f4481"
 class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Evaporative Humidifier"""
 
+    _turn_on_command = COMMAND_TURN_ON
+    _turn_off_command = f"{COMMAND_HEADER}0f430100"
+
     def __init__(
         self,
         device: BLEDevice,
@@ -58,8 +61,6 @@ class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncrypted
     ) -> None:
         self._force_next_update = False
         super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-        self._turn_on_command: str = COMMAND_TURN_ON
-        self._turn_off_command: str = f"{COMMAND_HEADER}0f430100"
 
     @classmethod
     async def verify_encryption_key(

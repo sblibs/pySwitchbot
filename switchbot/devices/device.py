@@ -125,6 +125,9 @@ def _handle_timeout(fut: asyncio.Future[None]) -> None:
 class SwitchbotBaseDevice:
     """Base Representation of a Switchbot Device."""
 
+    _turn_on_command: str | None = None
+    _turn_off_command: str | None = None
+
     def __init__(
         self,
         device: BLEDevice,
@@ -157,8 +160,6 @@ class SwitchbotBaseDevice:
         self._notify_future: asyncio.Future[bytearray] | None = None
         self._last_full_update: float = -PASSIVE_POLL_INTERVAL
         self._timed_disconnect_task: asyncio.Task[None] | None = None
-        self._turn_on_command: str | None = None
-        self._turn_off_command: str | None = None
 
     @classmethod
     async def api_request(

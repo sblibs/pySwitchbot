@@ -23,14 +23,11 @@ CEILING_LIGHT_CONTROL_HEADER = "570F5401"
 class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot ceiling light."""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Switchbot bulb constructor."""
-        super().__init__(*args, **kwargs)
-        self._turn_on_command: str = f"{CEILING_LIGHT_CONTROL_HEADER}01FF01FFFF"
-        self._turn_off_command: str = f"{CEILING_LIGHT_CONTROL_HEADER}02FF01FFFF"
-        self._set_brightness_command: str = f"{CEILING_LIGHT_CONTROL_HEADER}01FF01{{}}"
-        self._set_color_temp_command: str = f"{CEILING_LIGHT_CONTROL_HEADER}01FF01{{}}"
-        self._get_basic_info_command: list[str] = ["5702", "570f5581"]
+    _turn_on_command = f"{CEILING_LIGHT_CONTROL_HEADER}01FF01FFFF"
+    _turn_off_command = f"{CEILING_LIGHT_CONTROL_HEADER}02FF01FFFF"
+    _set_brightness_command = f"{CEILING_LIGHT_CONTROL_HEADER}01FF01{{}}"
+    _set_color_temp_command = f"{CEILING_LIGHT_CONTROL_HEADER}01FF01{{}}"
+    _get_basic_info_command = ["5702", "570f5581"]
 
     @property
     def color_modes(self) -> set[ColorMode]:
