@@ -95,16 +95,9 @@ class SwitchbotBaseLight(SwitchbotDevice):
         assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
         hex_brightness = f"{brightness:02X}"
         self._check_function_support(COMMAND_SET_BRIGHTNESS)
-        if self._model == SwitchbotModel.CEILING_LIGHT:
-            color_temp = self._state.get("cw", DEFAULT_COLOR_TEMP)
-            hex_data = f"{hex_brightness}{color_temp:04X}"
-            result = await self._send_command(
-                COMMAND_SET_BRIGHTNESS[self._model].format(hex_data)
-            )
-        else:
-            result = await self._send_command(
-                COMMAND_SET_BRIGHTNESS[self._model].format(hex_brightness)
-            )
+        result = await self._send_command(
+            COMMAND_SET_BRIGHTNESS[self._model].format(hex_brightness)
+        )
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation

@@ -3,12 +3,14 @@ from __future__ import annotations
 from typing import Any
 
 from ..const import SwitchbotModel
-from ..const.const import COMMAND_DEVICE_GET_BASIC_INFO
+from ..const.const import COMMAND_DEVICE_GET_BASIC_INFO, COMMAND_SET_BRIGHTNESS
 from ..const.light import (
+    DEFAULT_COLOR_TEMP,
     CeilingLightColorMode,
     ColorMode,
 )
 from .base_light import SwitchbotSequenceBaseLight
+from .device import update_after_operation
 
 # Private mapping from device-specific color modes to original ColorMode enum
 _CEILING_LIGHT_COLOR_MODE_MAP = {
@@ -32,6 +34,19 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
         """Return the current color mode."""
         device_mode = CeilingLightColorMode(self._get_adv_value("color_mode") or 10)
         return _CEILING_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
+
+    @update_after_operation
+    async def set_brightness(self, brightness: int) -> bool:
+        """Set brightness."""
+        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
+        hex_brightness = f"{brightness:02X}"
+        self._check_function_support(COMMAND_SET_BRIGHTNESS)
+        color_temp = self._state.get("cw", DEFAULT_COLOR_TEMP)
+        hex_data = f"{hex_brightness}{color_temp:04X}"
+        result = await self._send_command(
+            COMMAND_SET_BRIGHTNESS[self._model].format(hex_data)
+        )
+        return self._check_command_result(result, 0, {1})
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
