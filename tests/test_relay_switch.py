@@ -4,6 +4,7 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotEncryptedDevice, SwitchbotModel
+from switchbot.const.const import COMMAND_TURN_OFF, COMMAND_TURN_ON
 from switchbot.devices import relay_switch
 from switchbot.devices.device import _merge_data as merge_data
 
@@ -326,7 +327,7 @@ async def test_turn_on(rawAdvData, model):
     """Test turn on command."""
     device = create_device_for_command_testing(rawAdvData, model)
     await device.turn_on()
-    device._send_command.assert_awaited_once_with(relay_switch.COMMAND_TURN_ON)
+    device._send_command.assert_awaited_once_with(COMMAND_TURN_ON[model])
     assert device.is_on() is True
 
 
@@ -339,7 +340,7 @@ async def test_turn_off(rawAdvData, model):
     """Test turn off command."""
     device = create_device_for_command_testing(rawAdvData, model, {"isOn": False})
     await device.turn_off()
-    device._send_command.assert_awaited_once_with(relay_switch.COMMAND_TURN_OFF)
+    device._send_command.assert_awaited_once_with(COMMAND_TURN_OFF[model])
     assert device.is_on() is False
 
 

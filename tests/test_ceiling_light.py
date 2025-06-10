@@ -5,14 +5,21 @@ from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
 from switchbot.const.light import ColorMode
+from switchbot.const.const import (
+    COMMAND_DEVICE_GET_BASIC_INFO,
+    COMMAND_SET_BRIGHTNESS,
+    COMMAND_SET_COLOR_TEMP,
+    COMMAND_TURN_OFF,
+    COMMAND_TURN_ON,
+)
 from switchbot.devices import ceiling_light
 
 from .test_adv_parser import generate_ble_device
 
 
-def create_device_for_command_testing(init_data: dict | None = None):
+def create_device_for_command_testing(init_data: dict | None = None, model: SwitchbotModel = SwitchbotModel.CEILING_LIGHT):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    device = ceiling_light.SwitchbotCeilingLight(ble_device)
+    device = ceiling_light.SwitchbotCeilingLight(ble_device, model=model)
     device.update_from_advertisement(make_advertisement_data(ble_device, init_data))
     device._send_command = AsyncMock()
     device._check_command_result = MagicMock()
@@ -77,9 +84,9 @@ async def test_get_basic_info_returns_none(basic_info, version_info):
     device = create_device_for_command_testing()
 
     async def mock_get_basic_info(arg):
-        if arg == ceiling_light.DEVICE_GET_BASIC_SETTINGS_KEY:
+        if arg == COMMAND_DEVICE_GET_BASIC_INFO[SwitchbotModel.CEILING_LIGHT][1]:
             return basic_info
-        if arg == ceiling_light.DEVICE_GET_VERSION_KEY:
+        if arg == COMMAND_DEVICE_GET_BASIC_INFO[SwitchbotModel.CEILING_LIGHT][0]:
             return version_info
         return None
 
@@ -120,9 +127,9 @@ async def test_get_basic_info(info_data, result):
     device = create_device_for_command_testing()
 
     async def mock_get_basic_info(args: str) -> list[int] | None:
-        if args == ceiling_light.DEVICE_GET_BASIC_SETTINGS_KEY:
+        if args == COMMAND_DEVICE_GET_BASIC_INFO[SwitchbotModel.CEILING_LIGHT][1]:
             return info_data["basic_info"]
-        if args == ceiling_light.DEVICE_GET_VERSION_KEY:
+        if args == COMMAND_DEVICE_GET_BASIC_INFO[SwitchbotModel.CEILING_LIGHT][0]:
             return info_data["version_info"]
         return None
 
@@ -143,7 +150,7 @@ async def test_set_color_temp():
 
     await device.set_color_temp(50, 3000)
 
-    device._send_command.assert_called_with(f"{ceiling_light.CW_BRIGHTNESS_KEY}320BB8")
+    device._send_command.assert_called_with(COMMAND_SET_COLOR_TEMP[SwitchbotModel.CEILING_LIGHT].format('320BB8'))
 
 
 @pytest.mark.asyncio
@@ -153,7 +160,7 @@ async def test_turn_on():
 
     await device.turn_on()
 
-    device._send_command.assert_called_with(ceiling_light.CEILING_LIGHT_ON_KEY)
+    device._send_command.assert_called_with(COMMAND_TURN_ON[SwitchbotModel.CEILING_LIGHT])
 
     assert device.is_on() is True
 
@@ -165,7 +172,7 @@ async def test_turn_off():
 
     await device.turn_off()
 
-    device._send_command.assert_called_with(ceiling_light.CEILING_LIGHT_OFF_KEY)
+    device._send_command.assert_called_with(COMMAND_TURN_OFF[SwitchbotModel.CEILING_LIGHT])
 
     assert device.is_on() is False
 
@@ -177,4 +184,4 @@ async def test_set_brightness():
 
     await device.set_brightness(75)
 
-    device._send_command.assert_called_with(f"{ceiling_light.BRIGHTNESS_KEY}4B0FA1")
+    device._send_command.assert_called_with(COMMAND_SET_BRIGHTNESS[SwitchbotModel.CEILING_LIGHT].format('4B0FA1'))

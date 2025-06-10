@@ -21,8 +21,6 @@ SWITCH2_ON_MASK = 0b01000000
 DOOR_OPEN_MASK = 0b00100000
 
 COMMAND_HEADER = "57"
-COMMAND_TURN_OFF = f"{COMMAND_HEADER}0f70010000"
-COMMAND_TURN_ON = f"{COMMAND_HEADER}0f70010100"
 COMMAND_TOGGLE = f"{COMMAND_HEADER}0f70010200"
 COMMAND_GET_VOLTAGE_AND_CURRENT = f"{COMMAND_HEADER}0f7106000000"
 
@@ -191,18 +189,6 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if self._model == SwitchbotModel.GARAGE_DOOR_OPENER:
             return common_data | garage_door_opener_data
         return common_data | user_data
-
-    @update_after_operation
-    async def turn_on(self) -> bool:
-        """Turn device on."""
-        result = await self._send_command(COMMAND_TURN_ON)
-        return self._check_command_result(result, 0, {1})
-
-    @update_after_operation
-    async def turn_off(self) -> bool:
-        """Turn device off."""
-        result = await self._send_command(COMMAND_TURN_OFF)
-        return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def async_toggle(self, **kwargs) -> bool:

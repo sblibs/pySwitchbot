@@ -34,6 +34,7 @@ from ..const import (
     SwitchbotAuthenticationError,
     SwitchbotModel,
 )
+from ..const.const import COMMAND_TURN_OFF, COMMAND_TURN_ON
 from ..discovery import GetSwitchbotDevices
 from ..helpers import create_background_task
 from ..models import SwitchBotAdvertisement
@@ -157,6 +158,7 @@ class SwitchbotBaseDevice:
         self._notify_future: asyncio.Future[bytearray] | None = None
         self._last_full_update: float = -PASSIVE_POLL_INTERVAL
         self._timed_disconnect_task: asyncio.Task[None] | None = None
+        self._model: SwitchbotModel | None = kwargs.get("model")
 
     @classmethod
     async def api_request(
@@ -694,6 +696,18 @@ class SwitchbotBaseDevice:
         time_since_last_full_update = time.monotonic() - self._last_full_update
         return not time_since_last_full_update < PASSIVE_POLL_INTERVAL
 
+    @update_after_operation
+    async def turn_on(self) -> bool:
+        """Turn device on."""
+        result = await self._send_command(COMMAND_TURN_ON[self._model])
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def turn_off(self) -> bool:
+        """Turn device off."""
+        result = await self._send_command(COMMAND_TURN_OFF[self._model])
+        return self._check_command_result(result, 0, {1})
+
 
 class SwitchbotDevice(SwitchbotBaseDevice):
     """
@@ -735,8 +749,8 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         self._encryption_key = bytearray.fromhex(encryption_key)
         self._iv: bytes | None = None
         self._cipher: bytes | None = None
-        self._model = model
         super().__init__(device, None, interface, **kwargs)
+        self._model = model
 
     # Old non-async method preserved for backwards compatibility
     @classmethod

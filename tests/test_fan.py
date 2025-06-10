@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bleak.backends.device import BLEDevice
@@ -10,11 +10,12 @@ from switchbot.devices import fan
 from .test_adv_parser import generate_ble_device
 
 
-def create_device_for_command_testing(init_data: dict | None = None):
+def create_device_for_command_testing(init_data: dict | None = None, model: SwitchbotModel = SwitchbotModel.CIRCULATOR_FAN):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    fan_device = fan.SwitchbotFan(ble_device)
+    fan_device = fan.SwitchbotFan(ble_device, model=model)
     fan_device.update_from_advertisement(make_advertisement_data(ble_device, init_data))
     fan_device._send_command = AsyncMock()
+    fan_device._check_command_result = MagicMock()
     fan_device.update = AsyncMock()
     return fan_device
 
@@ -128,7 +129,7 @@ async def test_set_preset_mode():
 
 
 @pytest.mark.asyncio
-async def test_set_set_percentage_with_speed_is_0():
+async def test_set_percentage_with_speed_is_0():
     fan_device = create_device_for_command_testing({"speed": 0, "isOn": False})
     await fan_device.turn_off()
     assert fan_device.get_current_percentage() == 0
@@ -136,7 +137,7 @@ async def test_set_set_percentage_with_speed_is_0():
 
 
 @pytest.mark.asyncio
-async def test_set_set_percentage():
+async def test_set_percentage():
     fan_device = create_device_for_command_testing({"speed": 80})
     await fan_device.set_percentage(80)
     assert fan_device.get_current_percentage() == 80
