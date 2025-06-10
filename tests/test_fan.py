@@ -10,7 +10,9 @@ from switchbot.devices import fan
 from .test_adv_parser import generate_ble_device
 
 
-def create_device_for_command_testing(init_data: dict | None = None, model: SwitchbotModel = SwitchbotModel.CIRCULATOR_FAN):
+def create_device_for_command_testing(
+    init_data: dict | None = None, model: SwitchbotModel = SwitchbotModel.CIRCULATOR_FAN
+):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     fan_device = fan.SwitchbotFan(ble_device, model=model)
     fan_device.update_from_advertisement(make_advertisement_data(ble_device, init_data))

@@ -6,8 +6,7 @@ COMMON_EFFECTS = {
         "570F490701000600009902006D0EFF0021",
         "570F490701000603009902006D0EFF0021",
     ],
-    "Halloween": [
-        "570F49070200053C04", "570F490701000300FF6A009E00ED00EA0F"],
+    "Halloween": ["570F49070200053C04", "570F490701000300FF6A009E00ED00EA0F"],
     "Sunset": [
         "570F49070200033C3C",
         "570F490701000900FF9000ED8C04DD5800",
@@ -95,28 +94,31 @@ CEILING_LIGHT_CONTROL_HEADER = "570F5401"
 COLOR_BULB_CONTROL_HEADER = "570F4701"
 LIGHT_STRIP_CONTROL_HEADER = "570F4901"
 COMMAND_SET_BRIGHTNESS = {
-    SwitchbotModel.CEILING_LIGHT: f"{CEILING_LIGHT_CONTROL_HEADER}01FF01{{}}", # brightness, color_temp
-    SwitchbotModel.COLOR_BULB: f"{COLOR_BULB_CONTROL_HEADER}14{{}}", # brightness
+    SwitchbotModel.CEILING_LIGHT: f"{CEILING_LIGHT_CONTROL_HEADER}01FF01{{}}",  # brightness, color_temp
+    SwitchbotModel.COLOR_BULB: f"{COLOR_BULB_CONTROL_HEADER}14{{}}",  # brightness
     SwitchbotModel.FLOOR_LAMP: f"{LIGHT_STRIP_CONTROL_HEADER}14{{}}",
     SwitchbotModel.LIGHT_STRIP: f"{LIGHT_STRIP_CONTROL_HEADER}14{{}}",
     SwitchbotModel.STRIP_LIGHT_3: f"{LIGHT_STRIP_CONTROL_HEADER}14{{}}",
 }
 COMMAND_SET_COLOR_TEMP = {
-    SwitchbotModel.CEILING_LIGHT: f"{CEILING_LIGHT_CONTROL_HEADER}01FF01{{}}", # brightness, color_temp
-    SwitchbotModel.COLOR_BULB: f"{COLOR_BULB_CONTROL_HEADER}13{{}}", # color_temp
+    SwitchbotModel.CEILING_LIGHT: f"{CEILING_LIGHT_CONTROL_HEADER}01FF01{{}}",  # brightness, color_temp
+    SwitchbotModel.COLOR_BULB: f"{COLOR_BULB_CONTROL_HEADER}13{{}}",  # color_temp
     SwitchbotModel.FLOOR_LAMP: f"{LIGHT_STRIP_CONTROL_HEADER}11{{}}",
     SwitchbotModel.STRIP_LIGHT_3: f"{LIGHT_STRIP_CONTROL_HEADER}11{{}}",
 }
 COMMAND_SET_RGB = {
-    SwitchbotModel.COLOR_BULB: f"{COLOR_BULB_CONTROL_HEADER}12{{}}", # brightness, red, green, blue
+    SwitchbotModel.COLOR_BULB: f"{COLOR_BULB_CONTROL_HEADER}12{{}}",  # brightness, red, green, blue
     SwitchbotModel.FLOOR_LAMP: f"{LIGHT_STRIP_CONTROL_HEADER}12{{}}",
     SwitchbotModel.LIGHT_STRIP: f"{LIGHT_STRIP_CONTROL_HEADER}12{{}}",
     SwitchbotModel.STRIP_LIGHT_3: f"{LIGHT_STRIP_CONTROL_HEADER}12{{}}",
 }
 COMMAND_DEVICE_GET_BASIC_INFO = {
-    SwitchbotModel.CEILING_LIGHT: ["5702", "570f5581"], # version info, basic info
+    SwitchbotModel.CEILING_LIGHT: ["5702", "570f5581"],  # version info, basic info
     SwitchbotModel.COLOR_BULB: ["570003", "570f4801"],
-    SwitchbotModel.LIGHT_STRIP: ["570003", "570f4A01"], # for light strip, floor lamp, and strip light 3
+    SwitchbotModel.LIGHT_STRIP: [
+        "570003",
+        "570f4A01",
+    ],  # for light strip, floor lamp, and strip light 3
 }
 COMMAND_TURN_ON = {
     SwitchbotModel.CEILING_LIGHT: f"{CEILING_LIGHT_CONTROL_HEADER}01FF01FFFF",
@@ -131,7 +133,6 @@ COMMAND_TURN_ON = {
     SwitchbotModel.RELAY_SWITCH_1: "570F70010100",
     SwitchbotModel.RELAY_SWITCH_1PM: "570F70010100",
     SwitchbotModel.GARAGE_DOOR_OPENER: "570F70010100",
-
 }
 COMMAND_TURN_OFF = {
     SwitchbotModel.CEILING_LIGHT: f"{CEILING_LIGHT_CONTROL_HEADER}02FF01FFFF",

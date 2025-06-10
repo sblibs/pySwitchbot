@@ -4,7 +4,6 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
-from switchbot.const.light import ColorMode
 from switchbot.const.const import (
     COMMAND_DEVICE_GET_BASIC_INFO,
     COMMAND_SET_BRIGHTNESS,
@@ -14,6 +13,7 @@ from switchbot.const.const import (
     COMMAND_TURN_ON,
     EFFECT_DICT,
 )
+from switchbot.const.light import ColorMode
 from switchbot.devices import light_strip
 from switchbot.devices.base_light import SwitchbotBaseLight
 from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperationError
@@ -21,7 +21,9 @@ from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperatio
 from .test_adv_parser import generate_ble_device
 
 
-def create_device_for_command_testing(init_data: dict | None = None, model: SwitchbotModel = SwitchbotModel.STRIP_LIGHT_3):
+def create_device_for_command_testing(
+    init_data: dict | None = None, model: SwitchbotModel = SwitchbotModel.STRIP_LIGHT_3
+):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device = light_strip.SwitchbotStripLight3(
         ble_device, "ff", "ffffffffffffffffffffffffffffffff", model=model
@@ -84,7 +86,9 @@ async def test_default_info():
     assert device.brightness == 30
     assert device.min_temp == 2700
     assert device.max_temp == 6500
-    assert device.get_effect_list == list(EFFECT_DICT[SwitchbotModel.STRIP_LIGHT_3].keys())
+    assert device.get_effect_list == list(
+        EFFECT_DICT[SwitchbotModel.STRIP_LIGHT_3].keys()
+    )
 
 
 @pytest.mark.asyncio
@@ -164,7 +168,9 @@ async def test_set_color_temp():
 
     await device.set_color_temp(50, 3000)
 
-    device._send_command.assert_called_with(COMMAND_SET_COLOR_TEMP[SwitchbotModel.STRIP_LIGHT_3].format('320BB8'))
+    device._send_command.assert_called_with(
+        COMMAND_SET_COLOR_TEMP[SwitchbotModel.STRIP_LIGHT_3].format("320BB8")
+    )
 
 
 @pytest.mark.asyncio
@@ -174,7 +180,9 @@ async def test_turn_on():
 
     await device.turn_on()
 
-    device._send_command.assert_called_with(COMMAND_TURN_ON[SwitchbotModel.STRIP_LIGHT_3])
+    device._send_command.assert_called_with(
+        COMMAND_TURN_ON[SwitchbotModel.STRIP_LIGHT_3]
+    )
 
     assert device.is_on() is True
 
@@ -186,7 +194,9 @@ async def test_turn_off():
 
     await device.turn_off()
 
-    device._send_command.assert_called_with(COMMAND_TURN_OFF[SwitchbotModel.STRIP_LIGHT_3])
+    device._send_command.assert_called_with(
+        COMMAND_TURN_OFF[SwitchbotModel.STRIP_LIGHT_3]
+    )
 
     assert device.is_on() is False
 
@@ -198,7 +208,9 @@ async def test_set_brightness():
 
     await device.set_brightness(75)
 
-    device._send_command.assert_called_with(COMMAND_SET_BRIGHTNESS[SwitchbotModel.STRIP_LIGHT_3].format('4B'))
+    device._send_command.assert_called_with(
+        COMMAND_SET_BRIGHTNESS[SwitchbotModel.STRIP_LIGHT_3].format("4B")
+    )
 
 
 @pytest.mark.asyncio
@@ -208,7 +220,9 @@ async def test_set_rgb():
 
     await device.set_rgb(100, 255, 128, 64)
 
-    device._send_command.assert_called_with(COMMAND_SET_RGB[SwitchbotModel.STRIP_LIGHT_3].format('64FF8040'))
+    device._send_command.assert_called_with(
+        COMMAND_SET_RGB[SwitchbotModel.STRIP_LIGHT_3].format("64FF8040")
+    )
 
 
 @pytest.mark.asyncio

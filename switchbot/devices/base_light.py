@@ -68,7 +68,11 @@ class SwitchbotBaseLight(SwitchbotDevice):
     @property
     def get_effect_list(self) -> list[str] | None:
         """Return the list of supported effects."""
-        return list(EFFECT_DICT[self._model].keys()) if self._model in EFFECT_DICT else None
+        return (
+            list(EFFECT_DICT[self._model].keys())
+            if self._model in EFFECT_DICT
+            else None
+        )
 
     def is_on(self) -> bool | None:
         """Return bulb state from cache."""
@@ -94,9 +98,13 @@ class SwitchbotBaseLight(SwitchbotDevice):
         if self._model == SwitchbotModel.CEILING_LIGHT:
             color_temp = self._state.get("cw", DEFAULT_COLOR_TEMP)
             hex_data = f"{hex_brightness}{color_temp:04X}"
-            result = await self._send_command(COMMAND_SET_BRIGHTNESS[self._model].format(hex_data))
+            result = await self._send_command(
+                COMMAND_SET_BRIGHTNESS[self._model].format(hex_data)
+            )
         else:
-            result = await self._send_command(COMMAND_SET_BRIGHTNESS[self._model].format(hex_brightness))
+            result = await self._send_command(
+                COMMAND_SET_BRIGHTNESS[self._model].format(hex_brightness)
+            )
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
@@ -106,7 +114,9 @@ class SwitchbotBaseLight(SwitchbotDevice):
         assert 2700 <= color_temp <= 6500, "Color Temp must be between 2700 and 6500"
         hex_data = f"{brightness:02X}{color_temp:04X}"
         self._check_function_support(COMMAND_SET_COLOR_TEMP)
-        result = await self._send_command(COMMAND_SET_COLOR_TEMP[self._model].format(hex_data))
+        result = await self._send_command(
+            COMMAND_SET_COLOR_TEMP[self._model].format(hex_data)
+        )
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
@@ -146,7 +156,9 @@ class SwitchbotBaseLight(SwitchbotDevice):
             final_result |= self._check_command_result(result, 0, {1})
         return final_result
 
-    async def _get_multi_commands_results(self, commands: list[str]) -> tuple[bytes, bytes] | None:
+    async def _get_multi_commands_results(
+        self, commands: list[str]
+    ) -> tuple[bytes, bytes] | None:
         """Check results after sending multiple commands."""
         if not (results := await self._get_basic_info_by_multi_commands(commands)):
             return None
@@ -160,7 +172,9 @@ class SwitchbotBaseLight(SwitchbotDevice):
         )
         return _version_info, _data
 
-    async def _get_basic_info_by_multi_commands(self, commands: list[str]) -> list[bytes] | None:
+    async def _get_basic_info_by_multi_commands(
+        self, commands: list[str]
+    ) -> list[bytes] | None:
         """Get device basic settings by sending multiple commands."""
         results = []
         for command in commands:

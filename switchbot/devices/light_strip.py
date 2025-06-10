@@ -37,7 +37,11 @@ class SwitchbotLightStrip(SwitchbotSequenceBaseLight):
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
-        if not (res := await self._get_multi_commands_results(COMMAND_DEVICE_GET_BASIC_INFO[SwitchbotModel.LIGHT_STRIP])):
+        if not (
+            res := await self._get_multi_commands_results(
+                COMMAND_DEVICE_GET_BASIC_INFO[SwitchbotModel.LIGHT_STRIP]
+            )
+        ):
             return None
 
         _version_info, _data = res
@@ -56,6 +60,7 @@ class SwitchbotLightStrip(SwitchbotSequenceBaseLight):
             "color_mode": _data[10] & 0b00001111,
             "firmware": _version_info[2] / 10.0,
         }
+
 
 class SwitchbotStripLight3(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     """Support for switchbot strip light3 and floor lamp."""
@@ -88,4 +93,3 @@ class SwitchbotStripLight3(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     def color_modes(self) -> set[ColorMode]:
         """Return the supported color modes."""
         return {ColorMode.RGB, ColorMode.COLOR_TEMP}
-

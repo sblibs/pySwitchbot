@@ -4,7 +4,6 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
-from switchbot.const.light import ColorMode
 from switchbot.const.const import (
     COMMAND_DEVICE_GET_BASIC_INFO,
     COMMAND_SET_BRIGHTNESS,
@@ -14,13 +13,16 @@ from switchbot.const.const import (
     COMMAND_TURN_ON,
     EFFECT_DICT,
 )
+from switchbot.const.light import ColorMode
 from switchbot.devices import bulb
 from switchbot.devices.device import SwitchbotOperationError
 
 from .test_adv_parser import generate_ble_device
 
 
-def create_device_for_command_testing(init_data: dict | None = None, model: SwitchbotModel = SwitchbotModel.COLOR_BULB):
+def create_device_for_command_testing(
+    init_data: dict | None = None, model: SwitchbotModel = SwitchbotModel.COLOR_BULB
+):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device = bulb.SwitchbotBulb(ble_device, model=model)
     device.update_from_advertisement(make_advertisement_data(ble_device, init_data))
@@ -159,7 +161,9 @@ async def test_set_color_temp():
 
     await device.set_color_temp(50, 3000)
 
-    device._send_command.assert_called_with(COMMAND_SET_COLOR_TEMP[SwitchbotModel.COLOR_BULB].format('320BB8'))
+    device._send_command.assert_called_with(
+        COMMAND_SET_COLOR_TEMP[SwitchbotModel.COLOR_BULB].format("320BB8")
+    )
 
 
 @pytest.mark.asyncio
@@ -193,7 +197,9 @@ async def test_set_brightness():
 
     await device.set_brightness(75)
 
-    device._send_command.assert_called_with(COMMAND_SET_BRIGHTNESS[SwitchbotModel.COLOR_BULB].format('4B'))
+    device._send_command.assert_called_with(
+        COMMAND_SET_BRIGHTNESS[SwitchbotModel.COLOR_BULB].format("4B")
+    )
 
 
 @pytest.mark.asyncio
@@ -203,7 +209,9 @@ async def test_set_rgb():
 
     await device.set_rgb(100, 255, 128, 64)
 
-    device._send_command.assert_called_with(COMMAND_SET_RGB[SwitchbotModel.COLOR_BULB].format('64FF8040'))
+    device._send_command.assert_called_with(
+        COMMAND_SET_RGB[SwitchbotModel.COLOR_BULB].format("64FF8040")
+    )
 
 
 @pytest.mark.asyncio
@@ -224,6 +232,8 @@ async def test_set_effect_with_valid_effect():
 
     await device.set_effect("Colorful")
 
-    device._send_command.assert_called_with(EFFECT_DICT[SwitchbotModel.COLOR_BULB]["Colorful"][0])
+    device._send_command.assert_called_with(
+        EFFECT_DICT[SwitchbotModel.COLOR_BULB]["Colorful"][0]
+    )
 
     assert device.get_effect() == "Colorful"

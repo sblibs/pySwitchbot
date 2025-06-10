@@ -32,7 +32,11 @@ class SwitchbotBulb(SwitchbotSequenceBaseLight):
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
-        if not (res := await self._get_multi_commands_results(COMMAND_DEVICE_GET_BASIC_INFO[SwitchbotModel.COLOR_BULB])):
+        if not (
+            res := await self._get_multi_commands_results(
+                COMMAND_DEVICE_GET_BASIC_INFO[SwitchbotModel.COLOR_BULB]
+            )
+        ):
             return None
         _version_info, _data = res
 

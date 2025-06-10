@@ -4,7 +4,6 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
-from switchbot.const.light import ColorMode
 from switchbot.const.const import (
     COMMAND_DEVICE_GET_BASIC_INFO,
     COMMAND_SET_BRIGHTNESS,
@@ -12,12 +11,15 @@ from switchbot.const.const import (
     COMMAND_TURN_OFF,
     COMMAND_TURN_ON,
 )
+from switchbot.const.light import ColorMode
 from switchbot.devices import ceiling_light
 
 from .test_adv_parser import generate_ble_device
 
 
-def create_device_for_command_testing(init_data: dict | None = None, model: SwitchbotModel = SwitchbotModel.CEILING_LIGHT):
+def create_device_for_command_testing(
+    init_data: dict | None = None, model: SwitchbotModel = SwitchbotModel.CEILING_LIGHT
+):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device = ceiling_light.SwitchbotCeilingLight(ble_device, model=model)
     device.update_from_advertisement(make_advertisement_data(ble_device, init_data))
@@ -73,7 +75,6 @@ async def test_default_info():
     assert device.min_temp == 2700
     assert device.max_temp == 6500
     assert device.get_effect_list is None
-
 
 
 @pytest.mark.asyncio
@@ -150,7 +151,9 @@ async def test_set_color_temp():
 
     await device.set_color_temp(50, 3000)
 
-    device._send_command.assert_called_with(COMMAND_SET_COLOR_TEMP[SwitchbotModel.CEILING_LIGHT].format('320BB8'))
+    device._send_command.assert_called_with(
+        COMMAND_SET_COLOR_TEMP[SwitchbotModel.CEILING_LIGHT].format("320BB8")
+    )
 
 
 @pytest.mark.asyncio
@@ -160,7 +163,9 @@ async def test_turn_on():
 
     await device.turn_on()
 
-    device._send_command.assert_called_with(COMMAND_TURN_ON[SwitchbotModel.CEILING_LIGHT])
+    device._send_command.assert_called_with(
+        COMMAND_TURN_ON[SwitchbotModel.CEILING_LIGHT]
+    )
 
     assert device.is_on() is True
 
@@ -172,7 +177,9 @@ async def test_turn_off():
 
     await device.turn_off()
 
-    device._send_command.assert_called_with(COMMAND_TURN_OFF[SwitchbotModel.CEILING_LIGHT])
+    device._send_command.assert_called_with(
+        COMMAND_TURN_OFF[SwitchbotModel.CEILING_LIGHT]
+    )
 
     assert device.is_on() is False
 
@@ -184,4 +191,6 @@ async def test_set_brightness():
 
     await device.set_brightness(75)
 
-    device._send_command.assert_called_with(COMMAND_SET_BRIGHTNESS[SwitchbotModel.CEILING_LIGHT].format('4B0FA1'))
+    device._send_command.assert_called_with(
+        COMMAND_SET_BRIGHTNESS[SwitchbotModel.CEILING_LIGHT].format("4B0FA1")
+    )
