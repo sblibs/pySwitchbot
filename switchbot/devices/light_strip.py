@@ -25,9 +25,9 @@ class SwitchbotLightStrip(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot light strip."""
 
     @property
-    def color_modes(self) -> set[StripLightColorMode]:
+    def color_modes(self) -> set[ColorMode]:
         """Return the supported color modes."""
-        return {StripLightColorMode.RGB}
+        return {ColorMode.RGB}
 
     @property
     def color_mode(self) -> ColorMode:
