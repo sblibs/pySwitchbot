@@ -4,14 +4,12 @@ import logging
 from abc import abstractmethod
 from typing import Any
 
-from ..const import SwitchbotModel
 from ..const.const import (
     COMMAND_SET_BRIGHTNESS,
     COMMAND_SET_COLOR_TEMP,
     COMMAND_SET_RGB,
     EFFECT_DICT,
 )
-from ..const.light import DEFAULT_COLOR_TEMP
 from ..helpers import create_background_task
 from ..models import SwitchBotAdvertisement
 from .device import SwitchbotDevice, SwitchbotOperationError, update_after_operation
