@@ -20,7 +20,7 @@ class SwitchbotBulb(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot bulb."""
 
     @property
-    def color_modes(self) -> set[BulbColorMode]:
+    def color_modes(self) -> set[ColorMode]:
         """Return the supported color modes."""
         return {ColorMode.RGB, ColorMode.COLOR_TEMP}
 
