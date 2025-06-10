@@ -334,5 +334,8 @@ async def test_exception_with_wrong_model():
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device = TestDevice(ble_device)
 
-    with pytest.raises(SwitchbotOperationError, match="Model unknown does not support this functionality"):
+    with pytest.raises(
+        SwitchbotOperationError,
+        match="Model unknown does not support this functionality",
+    ):
         await device.set_rgb(100, 255, 128, 64)
