@@ -14,19 +14,19 @@ _LOGGER = logging.getLogger(__name__)
 class SwitchbotBaseLight(SwitchbotDevice):
     """Representation of a Switchbot light."""
 
-    _effect_dict: dict[str, Any] = {}
-    _set_brightness_command: str | None = None
-    _set_color_temp_command: str | None = None
-    _set_rgb_command: str | None = None
+    _effect_dict: dict[str, list[str]] = {}
+    _set_brightness_command: str = ""
+    _set_color_temp_command: str = ""
+    _set_rgb_command: str = ""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Switchbot bulb constructor."""
+        """Switchbot base light constructor."""
         super().__init__(*args, **kwargs)
         self._state: dict[str, Any] = {}
 
     @property
     def on(self) -> bool | None:
-        """Return if bulb is on."""
+        """Return if light is on."""
         return self.is_on()
 
     @property
