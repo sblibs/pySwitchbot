@@ -111,7 +111,6 @@ class SwitchbotBaseLight(SwitchbotDevice):
     @update_after_operation
     async def set_effect(self, effect: str) -> bool:
         """Set effect."""
-        self._check_function_support(self._effect_dict)
         effect_template = self._effect_dict.get(effect)
         if not effect_template:
             raise SwitchbotOperationError(f"Effect {effect} not supported")
