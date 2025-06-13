@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from bleak.backends.device import BLEDevice
@@ -8,29 +7,19 @@ from bleak.backends.device import BLEDevice
 from ..const import SwitchbotModel
 from ..const.light import ColorMode, StripLightColorMode
 from .base_light import SwitchbotSequenceBaseLight
-from .device import (
-    REQ_HEADER,
-    SwitchbotEncryptedDevice,
-    SwitchbotOperationError,
-    update_after_operation,
-)
+from .device import SwitchbotEncryptedDevice
 
-STRIP_COMMMAND_HEADER = "4901"
-STRIP_REQUEST = f"{REQ_HEADER}4A01"
-
-STRIP_COMMAND = f"{REQ_HEADER}{STRIP_COMMMAND_HEADER}"
-# Strip keys
-STRIP_ON_KEY = f"{STRIP_COMMAND}01"
-STRIP_OFF_KEY = f"{STRIP_COMMAND}02"
-COLOR_TEMP_KEY = f"{STRIP_COMMAND}11"
-RGB_BRIGHTNESS_KEY = f"{STRIP_COMMAND}12"
-BRIGHTNESS_KEY = f"{STRIP_COMMAND}14"
-
-DEVICE_GET_VERSION_KEY = "570003"
-
-_LOGGER = logging.getLogger(__name__)
-
-EFFECT_DICT = {
+# Private mapping from device-specific color modes to original ColorMode enum
+_STRIP_LIGHT_COLOR_MODE_MAP = {
+    StripLightColorMode.RGB: ColorMode.RGB,
+    StripLightColorMode.SCENE: ColorMode.EFFECT,
+    StripLightColorMode.MUSIC: ColorMode.EFFECT,
+    StripLightColorMode.CONTROLLER: ColorMode.EFFECT,
+    StripLightColorMode.COLOR_TEMP: ColorMode.COLOR_TEMP,
+    StripLightColorMode.UNKNOWN: ColorMode.OFF,
+}
+LIGHT_STRIP_CONTROL_HEADER = "570F4901"
+COMMON_EFFECTS = {
     "Christmas": [
         "570F49070200033C01",
         "570F490701000600009902006D0EFF0021",
@@ -109,19 +98,17 @@ EFFECT_DICT = {
     ],
 }
 
-# Private mapping from device-specific color modes to original ColorMode enum
-_STRIP_LIGHT_COLOR_MODE_MAP = {
-    StripLightColorMode.RGB: ColorMode.RGB,
-    StripLightColorMode.SCENE: ColorMode.EFFECT,
-    StripLightColorMode.MUSIC: ColorMode.EFFECT,
-    StripLightColorMode.CONTROLLER: ColorMode.EFFECT,
-    StripLightColorMode.COLOR_TEMP: ColorMode.COLOR_TEMP,
-    StripLightColorMode.UNKNOWN: ColorMode.OFF,
-}
-
 
 class SwitchbotLightStrip(SwitchbotSequenceBaseLight):
     """Representation of a Switchbot light strip."""
+
+    _effect_dict = COMMON_EFFECTS
+    _turn_on_command = f"{LIGHT_STRIP_CONTROL_HEADER}01"
+    _turn_off_command = f"{LIGHT_STRIP_CONTROL_HEADER}02"
+    _set_rgb_command = f"{LIGHT_STRIP_CONTROL_HEADER}12{{}}"
+    _set_color_temp_command = f"{LIGHT_STRIP_CONTROL_HEADER}11{{}}"
+    _set_brightness_command = f"{LIGHT_STRIP_CONTROL_HEADER}14{{}}"
+    _get_basic_info_command = ["570003", "570f4A01"]
 
     @property
     def color_modes(self) -> set[ColorMode]:
@@ -134,71 +121,14 @@ class SwitchbotLightStrip(SwitchbotSequenceBaseLight):
         device_mode = StripLightColorMode(self._get_adv_value("color_mode") or 10)
         return _STRIP_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
 
-    @property
-    def get_effect_list(self) -> list[str]:
-        """Return the list of supported effects."""
-        return list(EFFECT_DICT.keys())
-
-    @update_after_operation
-    async def turn_on(self) -> bool:
-        """Turn device on."""
-        result = await self._send_command(STRIP_ON_KEY)
-        return self._check_command_result(result, 0, {1})
-
-    @update_after_operation
-    async def turn_off(self) -> bool:
-        """Turn device off."""
-        result = await self._send_command(STRIP_OFF_KEY)
-        return self._check_command_result(result, 0, {1})
-
-    @update_after_operation
-    async def set_brightness(self, brightness: int) -> bool:
-        """Set brightness."""
-        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
-        result = await self._send_command(f"{BRIGHTNESS_KEY}{brightness:02X}")
-        return self._check_command_result(result, 0, {1})
-
-    @update_after_operation
-    async def set_rgb(self, brightness: int, r: int, g: int, b: int) -> bool:
-        """Set rgb."""
-        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
-        assert 0 <= r <= 255, "r must be between 0 and 255"
-        assert 0 <= g <= 255, "g must be between 0 and 255"
-        assert 0 <= b <= 255, "b must be between 0 and 255"
-        result = await self._send_command(
-            f"{RGB_BRIGHTNESS_KEY}{brightness:02X}{r:02X}{g:02X}{b:02X}"
-        )
-        return self._check_command_result(result, 0, {1})
-
-    @update_after_operation
-    async def set_effect(self, effect: str) -> bool:
-        """Set effect."""
-        effect_template = EFFECT_DICT.get(effect)
-        if not effect_template:
-            raise SwitchbotOperationError(f"Effect {effect} not supported")
-        result = await self._send_multiple_commands(effect_template)
-        if result:
-            self._override_state({"effect": effect})
-        return result
-
-    async def get_basic_info(
-        self,
-        device_get_basic_info: str = STRIP_REQUEST,
-        device_get_version_info: str = DEVICE_GET_VERSION_KEY,
-    ) -> dict[str, Any] | None:
+    async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
-        if not (_data := await self._get_basic_info(device_get_basic_info)):
-            return None
-        if not (_version_info := await self._get_basic_info(device_get_version_info)):
+        if not (
+            res := await self._get_multi_commands_results(self._get_basic_info_command)
+        ):
             return None
 
-        _LOGGER.debug(
-            "data: %s, version info: %s, address: %s",
-            _data,
-            _version_info,
-            self._device.address,
-        )
-
+        _version_info, _data = res
         self._state["r"] = _data[3]
         self._state["g"] = _data[4]
         self._state["b"] = _data[5]
@@ -247,13 +177,3 @@ class SwitchbotStripLight3(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     def color_modes(self) -> set[ColorMode]:
         """Return the supported color modes."""
         return {ColorMode.RGB, ColorMode.COLOR_TEMP}
-
-    @update_after_operation
-    async def set_color_temp(self, brightness: int, color_temp: int) -> bool:
-        """Set color temp."""
-        assert 0 <= brightness <= 100
-        assert self.min_temp <= color_temp <= self.max_temp
-        result = await self._send_command(
-            f"{COLOR_TEMP_KEY}{brightness:02X}{color_temp:04X}"
-        )
-        return self._check_command_result(result, 0, {1})

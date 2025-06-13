@@ -16,8 +16,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 COMMAND_HEAD = "570f41"
-COMMAND_TURN_ON = f"{COMMAND_HEAD}0101"
-COMMAND_TURN_OFF = f"{COMMAND_HEAD}0102"
 COMMAND_START_OSCILLATION = f"{COMMAND_HEAD}020101ff"
 COMMAND_STOP_OSCILLATION = f"{COMMAND_HEAD}020102ff"
 COMMAND_SET_MODE = {
@@ -33,8 +31,8 @@ COMMAND_GET_BASIC_INFO = "570f428102"
 class SwitchbotFan(SwitchbotSequenceDevice):
     """Representation of a Switchbot Circulator Fan."""
 
-    def __init__(self, device, password=None, interface=0, **kwargs):
-        super().__init__(device, password, interface, **kwargs)
+    _turn_on_command = f"{COMMAND_HEAD}0101"
+    _turn_off_command = f"{COMMAND_HEAD}0102"
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
@@ -87,16 +85,6 @@ class SwitchbotFan(SwitchbotSequenceDevice):
         if oscillating:
             return await self._send_command(COMMAND_START_OSCILLATION)
         return await self._send_command(COMMAND_STOP_OSCILLATION)
-
-    @update_after_operation
-    async def turn_on(self) -> bool:
-        """Turn on the fan."""
-        return await self._send_command(COMMAND_TURN_ON)
-
-    @update_after_operation
-    async def turn_off(self) -> bool:
-        """Turn off the fan."""
-        return await self._send_command(COMMAND_TURN_OFF)
 
     def get_current_percentage(self) -> Any:
         """Return cached percentage."""

@@ -23,7 +23,6 @@ _LOGGER = logging.getLogger(__name__)
 COMMAND_HEADER = "57"
 COMMAND_GET_CK_IV = f"{COMMAND_HEADER}0f2103"
 COMMAND_TURN_ON = f"{COMMAND_HEADER}0f430101"
-COMMAND_TURN_OFF = f"{COMMAND_HEADER}0f430100"
 COMMAND_CHILD_LOCK_ON = f"{COMMAND_HEADER}0f430501"
 COMMAND_CHILD_LOCK_OFF = f"{COMMAND_HEADER}0f430500"
 COMMAND_AUTO_DRY_ON = f"{COMMAND_HEADER}0f430a01"
@@ -47,6 +46,9 @@ DEVICE_GET_BASIC_SETTINGS_KEY = "570f4481"
 
 class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Evaporative Humidifier"""
+
+    _turn_on_command = COMMAND_TURN_ON
+    _turn_off_command = f"{COMMAND_HEADER}0f430100"
 
     def __init__(
         self,
@@ -112,18 +114,6 @@ class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncrypted
             "filter_run_time": filter_run_time,
             "target_humidity": target_humidity,
         }
-
-    @update_after_operation
-    async def turn_on(self) -> bool:
-        """Turn device on."""
-        result = await self._send_command(COMMAND_TURN_ON)
-        return self._check_command_result(result, 0, {1})
-
-    @update_after_operation
-    async def turn_off(self) -> bool:
-        """Turn device off."""
-        result = await self._send_command(COMMAND_TURN_OFF)
-        return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def set_target_humidity(self, target_humidity: int) -> bool:

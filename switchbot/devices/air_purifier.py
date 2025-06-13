@@ -21,8 +21,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 COMMAND_HEAD = "570f4c"
-COMMAND_TURN_OFF = f"{COMMAND_HEAD}010000"
-COMMAND_TURN_ON = f"{COMMAND_HEAD}010100"
 COMMAND_SET_MODE = {
     AirPurifierMode.LEVEL_1.name.lower(): f"{COMMAND_HEAD}01010100",
     AirPurifierMode.LEVEL_2.name.lower(): f"{COMMAND_HEAD}01010132",
@@ -36,6 +34,9 @@ DEVICE_GET_BASIC_SETTINGS_KEY = "570f4d81"
 
 class SwitchbotAirPurifier(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Air Purifier."""
+
+    _turn_on_command = f"{COMMAND_HEAD}010100"
+    _turn_off_command = f"{COMMAND_HEAD}010000"
 
     def __init__(
         self,
@@ -107,18 +108,6 @@ class SwitchbotAirPurifier(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     async def set_preset_mode(self, preset_mode: str) -> bool:
         """Send command to set air purifier preset_mode."""
         result = await self._send_command(COMMAND_SET_MODE[preset_mode])
-        return self._check_command_result(result, 0, {1})
-
-    @update_after_operation
-    async def turn_on(self) -> bool:
-        """Turn on the air purifier."""
-        result = await self._send_command(COMMAND_TURN_ON)
-        return self._check_command_result(result, 0, {1})
-
-    @update_after_operation
-    async def turn_off(self) -> bool:
-        """Turn off the air purifier."""
-        result = await self._send_command(COMMAND_TURN_OFF)
         return self._check_command_result(result, 0, {1})
 
     def get_current_percentage(self) -> Any:

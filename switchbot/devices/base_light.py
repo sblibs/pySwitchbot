@@ -6,7 +6,7 @@ from typing import Any
 
 from ..helpers import create_background_task
 from ..models import SwitchBotAdvertisement
-from .device import SwitchbotDevice
+from .device import SwitchbotDevice, SwitchbotOperationError, update_after_operation
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -14,14 +14,19 @@ _LOGGER = logging.getLogger(__name__)
 class SwitchbotBaseLight(SwitchbotDevice):
     """Representation of a Switchbot light."""
 
+    _effect_dict: dict[str, list[str]] = {}
+    _set_brightness_command: str = ""
+    _set_color_temp_command: str = ""
+    _set_rgb_command: str = ""
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Switchbot bulb constructor."""
+        """Switchbot base light constructor."""
         super().__init__(*args, **kwargs)
         self._state: dict[str, Any] = {}
 
     @property
     def on(self) -> bool | None:
-        """Return if bulb is on."""
+        """Return if light is on."""
         return self.is_on()
 
     @property
@@ -60,7 +65,7 @@ class SwitchbotBaseLight(SwitchbotDevice):
     @property
     def get_effect_list(self) -> list[str] | None:
         """Return the list of supported effects."""
-        return None
+        return list(self._effect_dict.keys()) if self._effect_dict else None
 
     def is_on(self) -> bool | None:
         """Return bulb state from cache."""
@@ -70,25 +75,49 @@ class SwitchbotBaseLight(SwitchbotDevice):
         """Return the current effect."""
         return self._get_adv_value("effect")
 
-    @abstractmethod
-    async def turn_on(self) -> bool:
-        """Turn device on."""
-
-    @abstractmethod
-    async def turn_off(self) -> bool:
-        """Turn device off."""
-
-    @abstractmethod
+    @update_after_operation
     async def set_brightness(self, brightness: int) -> bool:
         """Set brightness."""
+        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
+        hex_brightness = f"{brightness:02X}"
+        self._check_function_support(self._set_brightness_command)
+        result = await self._send_command(
+            self._set_brightness_command.format(hex_brightness)
+        )
+        return self._check_command_result(result, 0, {1})
 
-    @abstractmethod
+    @update_after_operation
     async def set_color_temp(self, brightness: int, color_temp: int) -> bool:
         """Set color temp."""
+        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
+        assert 2700 <= color_temp <= 6500, "Color Temp must be between 2700 and 6500"
+        hex_data = f"{brightness:02X}{color_temp:04X}"
+        self._check_function_support(self._set_color_temp_command)
+        result = await self._send_command(self._set_color_temp_command.format(hex_data))
+        return self._check_command_result(result, 0, {1})
 
-    @abstractmethod
+    @update_after_operation
     async def set_rgb(self, brightness: int, r: int, g: int, b: int) -> bool:
         """Set rgb."""
+        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
+        assert 0 <= r <= 255, "r must be between 0 and 255"
+        assert 0 <= g <= 255, "g must be between 0 and 255"
+        assert 0 <= b <= 255, "b must be between 0 and 255"
+        self._check_function_support(self._set_rgb_command)
+        hex_data = f"{brightness:02X}{r:02X}{g:02X}{b:02X}"
+        result = await self._send_command(self._set_rgb_command.format(hex_data))
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def set_effect(self, effect: str) -> bool:
+        """Set effect."""
+        effect_template = self._effect_dict.get(effect)
+        if not effect_template:
+            raise SwitchbotOperationError(f"Effect {effect} not supported")
+        result = await self._send_multiple_commands(effect_template)
+        if result:
+            self._override_state({"effect": effect})
+        return result
 
     async def _send_multiple_commands(self, keys: list[str]) -> bool:
         """
@@ -102,6 +131,33 @@ class SwitchbotBaseLight(SwitchbotDevice):
             result = await self._send_command(key)
             final_result |= self._check_command_result(result, 0, {1})
         return final_result
+
+    async def _get_multi_commands_results(
+        self, commands: list[str]
+    ) -> tuple[bytes, bytes] | None:
+        """Check results after sending multiple commands."""
+        if not (results := await self._get_basic_info_by_multi_commands(commands)):
+            return None
+
+        _version_info, _data = results[0], results[1]
+        _LOGGER.debug(
+            "version info: %s, data: %s, address: %s",
+            _version_info,
+            _data,
+            self._device.address,
+        )
+        return _version_info, _data
+
+    async def _get_basic_info_by_multi_commands(
+        self, commands: list[str]
+    ) -> list[bytes] | None:
+        """Get device basic settings by sending multiple commands."""
+        results = []
+        for command in commands:
+            if not (result := await self._get_basic_info(command)):
+                return None
+            results.append(result)
+        return results
 
 
 class SwitchbotSequenceBaseLight(SwitchbotBaseLight):

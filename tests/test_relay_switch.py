@@ -326,7 +326,7 @@ async def test_turn_on(rawAdvData, model):
     """Test turn on command."""
     device = create_device_for_command_testing(rawAdvData, model)
     await device.turn_on()
-    device._send_command.assert_awaited_once_with(relay_switch.COMMAND_TURN_ON)
+    device._send_command.assert_awaited_once_with(device._turn_on_command)
     assert device.is_on() is True
 
 
@@ -339,7 +339,7 @@ async def test_turn_off(rawAdvData, model):
     """Test turn off command."""
     device = create_device_for_command_testing(rawAdvData, model, {"isOn": False})
     await device.turn_off()
-    device._send_command.assert_awaited_once_with(relay_switch.COMMAND_TURN_OFF)
+    device._send_command.assert_awaited_once_with(device._turn_off_command)
     assert device.is_on() is False
 
 

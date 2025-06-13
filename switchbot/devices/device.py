@@ -125,6 +125,9 @@ def _handle_timeout(fut: asyncio.Future[None]) -> None:
 class SwitchbotBaseDevice:
     """Base Representation of a Switchbot Device."""
 
+    _turn_on_command: str | None = None
+    _turn_off_command: str | None = None
+
     def __init__(
         self,
         device: BLEDevice,
@@ -694,6 +697,27 @@ class SwitchbotBaseDevice:
         time_since_last_full_update = time.monotonic() - self._last_full_update
         return not time_since_last_full_update < PASSIVE_POLL_INTERVAL
 
+    def _check_function_support(self, cmd: str | None = None) -> None:
+        """Check if the command is supported by the device model."""
+        if not cmd:
+            raise SwitchbotOperationError(
+                f"Current device {self._device.address} does not support this functionality"
+            )
+
+    @update_after_operation
+    async def turn_on(self) -> bool:
+        """Turn device on."""
+        self._check_function_support(self._turn_on_command)
+        result = await self._send_command(self._turn_on_command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def turn_off(self) -> bool:
+        """Turn device off."""
+        self._check_function_support(self._turn_off_command)
+        result = await self._send_command(self._turn_off_command)
+        return self._check_command_result(result, 0, {1})
+
 
 class SwitchbotDevice(SwitchbotBaseDevice):
     """
@@ -735,8 +759,8 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         self._encryption_key = bytearray.fromhex(encryption_key)
         self._iv: bytes | None = None
         self._cipher: bytes | None = None
-        self._model = model
         super().__init__(device, None, interface, **kwargs)
+        self._model = model
 
     # Old non-async method preserved for backwards compatibility
     @classmethod

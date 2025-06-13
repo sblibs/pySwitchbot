@@ -19,9 +19,6 @@ COMMAND_RETURN_DOCK = {
 class SwitchbotVacuum(SwitchbotSequenceDevice):
     """Representation of a Switchbot Vacuum."""
 
-    def __init__(self, device, password=None, interface=0, **kwargs):
-        super().__init__(device, password, interface, **kwargs)
-
     @update_after_operation
     async def clean_up(self, protocol_version: int) -> bool:
         """Send command to perform a spot clean-up."""
