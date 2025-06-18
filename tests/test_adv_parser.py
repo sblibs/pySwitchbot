@@ -2688,7 +2688,7 @@ def test_hub3_with_empty_data() -> None:
                 "sequence_number": 58,
                 "battery": 100,
                 "calibration": True,
-                "status": LockStatus.LOCKED,
+                "status": LockStatus.UNLOCKED,
                 "update_from_secondary_lock": False,
                 "door_open": False,
                 "door_open_from_secondary_lock": False,

@@ -16,8 +16,8 @@ COMMAND_HEADER = "57"
 COMMAND_LOCK_INFO = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0f4f8101",
     SwitchbotModel.LOCK_LITE: f"{COMMAND_HEADER}0f4f8101",
-    SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4f8102",
-    SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4f8102",
+    SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4f8104",
+    SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4f8107",
 }
 COMMAND_UNLOCK = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0f4e01011080",
@@ -143,12 +143,12 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         lock_raw_data = await self._get_lock_info()
         if not lock_raw_data:
             return None
-
+        _LOGGER.debug("lock_raw_data: %s, address: %s", lock_raw_data.hex(), self._device.address)
         basic_data = await self._get_basic_info()
         if not basic_data:
             return None
-
-        return self._parse_lock_data(lock_raw_data[1:]) | self._parse_basic_data(
+        _LOGGER.debug("basic_data: %s, address: %s", basic_data.hex(), self._device.address)
+        return self._parse_lock_data(lock_raw_data[1:], self._model) | self._parse_basic_data(
             basic_data
         )
 
@@ -215,7 +215,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             super()._notification_handler(_sender, data)
 
     def _update_lock_status(self, data: bytearray) -> None:
-        lock_data = self._parse_lock_data(self._decrypt(data[4:]))
+        lock_data = self._parse_lock_data(self._decrypt(data[4:]), self._model)
         if self._update_parsed_data(lock_data):
             # We leave notifications enabled in case
             # the lock is operated manually before we
@@ -224,11 +224,23 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             self._fire_callbacks()
 
     @staticmethod
-    def _parse_lock_data(data: bytes) -> dict[str, Any]:
+    def _parse_lock_data(data: bytes, model: SwitchbotModel) -> dict[str, Any]:
+
+        if model in [SwitchbotModel.LOCK, SwitchbotModel.LOCK_LITE]:
+            return {
+                "calibration": bool(data[0] & 0b10000000),
+                "status": LockStatus((data[0] & 0b01110000) >> 4),
+                "door_open": bool(data[0] & 0b00000100),
+                "unclosed_alarm": bool(data[1] & 0b00100000),
+                "unlocked_alarm": bool(data[1] & 0b00010000),
+                "auto_lock_paused": bool(data[1] & 0b00000001),
+        }
         return {
             "calibration": bool(data[0] & 0b10000000),
-            "status": LockStatus((data[0] & 0b01110000) >> 4),
-            "door_open": bool(data[0] & 0b00000100),
-            "unclosed_alarm": bool(data[1] & 0b00100000),
-            "unlocked_alarm": bool(data[1] & 0b00010000),
-        }
+            "status": LockStatus((data[0] & 0b01111000) >> 3),
+            "door_open": bool(data[1] & 0b00010000),
+            "unclosed_alarm": bool(data[6] & 0b10000000),
+            "unlocked_alarm": bool(data[6] & 0b01000000),
+            "auto_lock_paused": bool(data[1] & 0b00001000),
+            }
+

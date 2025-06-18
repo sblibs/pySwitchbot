@@ -37,10 +37,11 @@ def parse_common_data(mfr_data: bytes | None) -> dict[str, bool | int]:
     if mfr_data is None:
         return {}
 
+    _LOGGER.debug("mfr_data: %s", mfr_data.hex())
     return {
         "sequence_number": mfr_data[6],
         "calibration": bool(mfr_data[7] & 0b10000000),
-        "status": LockStatus((mfr_data[7] & 0b01111000) >> 4),
+        "status": LockStatus((mfr_data[7] & 0b01111000) >> 3),
         "update_from_secondary_lock": bool(mfr_data[8] & 0b11000000),
         "door_open_from_secondary_lock": bool(mfr_data[8] & 0b00100000),
         "door_open": bool(mfr_data[8] & 0b00010000),
