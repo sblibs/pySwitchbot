@@ -239,8 +239,8 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             "calibration": bool(data[0] & 0b10000000),
             "status": LockStatus((data[0] & 0b01111000) >> 3),
             "door_open": bool(data[1] & 0b00010000),
-            "unclosed_alarm": bool(data[6] & 0b10000000),
-            "unlocked_alarm": bool(data[6] & 0b01000000),
+            "unclosed_alarm": bool(data[5] & 0b10000000),
+            "unlocked_alarm": bool(data[5] & 0b01000000),
             "auto_lock_paused": bool(data[1] & 0b00001000),
             }
 
