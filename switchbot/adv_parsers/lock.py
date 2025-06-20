@@ -11,6 +11,20 @@ _LOGGER = logging.getLogger(__name__)
 
 def process_wolock(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | int]:
     """Support for lock and lock lite process data."""
+    common_data = process_locklite(data, mfr_data)
+    if not common_data:
+        return {}
+
+    common_data["door_open"] = bool(mfr_data[7] & 0b00000100)
+    common_data["unclosed_alarm"] = bool(mfr_data[8] & 0b00100000)
+    common_data["auto_lock_paused"] = bool(mfr_data[8] & 0b00000010)
+
+    return common_data
+
+def process_locklite(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int]:
+    """Support for lock lite process data."""
     if mfr_data is None:
         return {}
 
@@ -24,11 +38,8 @@ def process_wolock(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool
         "calibration": bool(mfr_data[7] & 0b10000000),
         "status": LockStatus((mfr_data[7] & 0b01110000) >> 4),
         "update_from_secondary_lock": bool(mfr_data[7] & 0b00001000),
-        "door_open": bool(mfr_data[7] & 0b00000100),
         "double_lock_mode": bool(mfr_data[8] & 0b10000000),
-        "unclosed_alarm": bool(mfr_data[8] & 0b00100000),
         "unlocked_alarm": bool(mfr_data[8] & 0b00010000),
-        "auto_lock_paused": bool(mfr_data[8] & 0b00000010),
         "night_latch": bool(mfr_data[9] & 0b00000001) if len(mfr_data) > 9 else False,
     }
 

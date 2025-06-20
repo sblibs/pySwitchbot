@@ -226,14 +226,19 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     @staticmethod
     def _parse_lock_data(data: bytes, model: SwitchbotModel) -> dict[str, Any]:
 
-        if model in [SwitchbotModel.LOCK, SwitchbotModel.LOCK_LITE]:
+        if model == SwitchbotModel.LOCK:
             return {
                 "calibration": bool(data[0] & 0b10000000),
                 "status": LockStatus((data[0] & 0b01110000) >> 4),
                 "door_open": bool(data[0] & 0b00000100),
                 "unclosed_alarm": bool(data[1] & 0b00100000),
                 "unlocked_alarm": bool(data[1] & 0b00010000),
-                "auto_lock_paused": bool(data[1] & 0b00000001),
+        }
+        if model == SwitchbotModel.LOCK_LITE:
+            return {
+                "calibration": bool(data[0] & 0b10000000),
+                "status": LockStatus((data[0] & 0b01110000) >> 4),
+                "unlocked_alarm": bool(data[1] & 0b00010000),
         }
         return {
             "calibration": bool(data[0] & 0b10000000),
@@ -241,6 +246,5 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             "door_open": bool(data[1] & 0b00010000),
             "unclosed_alarm": bool(data[5] & 0b10000000),
             "unlocked_alarm": bool(data[5] & 0b01000000),
-            "auto_lock_paused": bool(data[1] & 0b00001000),
             }
 
