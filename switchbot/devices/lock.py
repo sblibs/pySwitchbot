@@ -143,14 +143,18 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         lock_raw_data = await self._get_lock_info()
         if not lock_raw_data:
             return None
-        _LOGGER.debug("lock_raw_data: %s, address: %s", lock_raw_data.hex(), self._device.address)
+        _LOGGER.debug(
+            "lock_raw_data: %s, address: %s", lock_raw_data.hex(), self._device.address
+        )
         basic_data = await self._get_basic_info()
         if not basic_data:
             return None
-        _LOGGER.debug("basic_data: %s, address: %s", basic_data.hex(), self._device.address)
-        return self._parse_lock_data(lock_raw_data[1:], self._model) | self._parse_basic_data(
-            basic_data
+        _LOGGER.debug(
+            "basic_data: %s, address: %s", basic_data.hex(), self._device.address
         )
+        return self._parse_lock_data(
+            lock_raw_data[1:], self._model
+        ) | self._parse_basic_data(basic_data)
 
     def is_calibrated(self) -> Any:
         """Return True if lock is calibrated."""
@@ -225,7 +229,6 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     @staticmethod
     def _parse_lock_data(data: bytes, model: SwitchbotModel) -> dict[str, Any]:
-
         if model == SwitchbotModel.LOCK:
             return {
                 "calibration": bool(data[0] & 0b10000000),
@@ -233,18 +236,17 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                 "door_open": bool(data[0] & 0b00000100),
                 "unclosed_alarm": bool(data[1] & 0b00100000),
                 "unlocked_alarm": bool(data[1] & 0b00010000),
-        }
+            }
         if model == SwitchbotModel.LOCK_LITE:
             return {
                 "calibration": bool(data[0] & 0b10000000),
                 "status": LockStatus((data[0] & 0b01110000) >> 4),
                 "unlocked_alarm": bool(data[1] & 0b00010000),
-        }
+            }
         return {
             "calibration": bool(data[0] & 0b10000000),
             "status": LockStatus((data[0] & 0b01111000) >> 3),
             "door_open": bool(data[1] & 0b00010000),
             "unclosed_alarm": bool(data[5] & 0b10000000),
             "unlocked_alarm": bool(data[5] & 0b01000000),
-            }
-
+        }

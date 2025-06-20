@@ -21,6 +21,7 @@ def process_wolock(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool
 
     return common_data
 
+
 def process_locklite(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int]:
