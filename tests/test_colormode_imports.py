@@ -3,7 +3,7 @@
 
 def test_colormode_import_from_main_module():
     """Test that ColorMode can be imported from the main switchbot module."""
-    from switchbot import ColorMode
+    from switchbot import ColorMode  # noqa: PLC0415
 
     # Verify it's the enum we expect
     assert hasattr(ColorMode, "OFF")
@@ -20,7 +20,7 @@ def test_colormode_import_from_main_module():
 
 def test_colormode_import_from_device_module():
     """Test that ColorMode can be imported from switchbot.devices.device for backward compatibility."""
-    from switchbot.devices.device import ColorMode
+    from switchbot.devices.device import ColorMode  # noqa: PLC0415
 
     # Verify it's the enum we expect
     assert hasattr(ColorMode, "OFF")
@@ -37,7 +37,7 @@ def test_colormode_import_from_device_module():
 
 def test_colormode_import_from_const():
     """Test that ColorMode can be imported from switchbot.const."""
-    from switchbot.const import ColorMode
+    from switchbot.const import ColorMode  # noqa: PLC0415
 
     # Verify it's the enum we expect
     assert hasattr(ColorMode, "OFF")
@@ -54,7 +54,7 @@ def test_colormode_import_from_const():
 
 def test_colormode_import_from_const_light():
     """Test that ColorMode can be imported from switchbot.const.light."""
-    from switchbot.const.light import ColorMode
+    from switchbot.const.light import ColorMode  # noqa: PLC0415
 
     # Verify it's the enum we expect
     assert hasattr(ColorMode, "OFF")
@@ -71,10 +71,10 @@ def test_colormode_import_from_const_light():
 
 def test_all_colormode_imports_are_same_object():
     """Test that all ColorMode imports reference the same enum object."""
-    from switchbot import ColorMode as ColorMode1
-    from switchbot.const import ColorMode as ColorMode3
-    from switchbot.const.light import ColorMode as ColorMode4
-    from switchbot.devices.device import ColorMode as ColorMode2
+    from switchbot import ColorMode as ColorMode1  # noqa: PLC0415
+    from switchbot.const import ColorMode as ColorMode3  # noqa: PLC0415
+    from switchbot.const.light import ColorMode as ColorMode4  # noqa: PLC0415
+    from switchbot.devices.device import ColorMode as ColorMode2  # noqa: PLC0415
 
     # They should all be the exact same object
     assert ColorMode1 is ColorMode2
