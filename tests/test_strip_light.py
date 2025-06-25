@@ -77,7 +77,14 @@ async def test_default_info():
     assert device.brightness == 30
     assert device.min_temp == 2700
     assert device.max_temp == 6500
-    assert device.get_effect_list == list(device._effect_dict.keys())
+    # Check that effect list contains expected lowercase effect names
+    effect_list = device.get_effect_list
+    assert effect_list is not None
+    assert all(effect.islower() for effect in effect_list)
+    # Verify some known effects are present
+    assert "christmas" in effect_list
+    assert "halloween" in effect_list
+    assert "sunset" in effect_list
 
 
 @pytest.mark.asyncio
@@ -223,11 +230,43 @@ async def test_set_effect_with_valid_effect():
     device = create_device_for_command_testing()
     device._send_multiple_commands = AsyncMock()
 
-    await device.set_effect("Christmas")
+    await device.set_effect("christmas")
 
-    device._send_multiple_commands.assert_called_with(device._effect_dict["Christmas"])
+    device._send_multiple_commands.assert_called_with(device._effect_dict["christmas"])
 
-    assert device.get_effect() == "Christmas"
+    assert device.get_effect() == "christmas"
+
+
+def test_effect_list_contains_lowercase_names():
+    """Test that all effect names in get_effect_list are lowercase."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    device = light_strip.SwitchbotLightStrip(ble_device)
+    effect_list = device.get_effect_list
+
+    assert effect_list is not None, "Effect list should not be None"
+    # All effect names should be lowercase
+    for effect_name in effect_list:
+        assert effect_name.islower(), f"Effect name '{effect_name}' is not lowercase"
+    # Verify some known effects are present
+    assert "christmas" in effect_list
+    assert "halloween" in effect_list
+    assert "sunset" in effect_list
+
+
+@pytest.mark.asyncio
+async def test_set_effect_normalizes_case():
+    """Test that set_effect normalizes effect names to lowercase."""
+    device = create_device_for_command_testing()
+    device._send_multiple_commands = AsyncMock()
+
+    # Test various case combinations
+    test_cases = ["CHRISTMAS", "Christmas", "ChRiStMaS", "christmas"]
+
+    for test_effect in test_cases:
+        await device.set_effect(test_effect)
+        # Should always work regardless of case
+        device._send_multiple_commands.assert_called()
+        assert device.get_effect() == test_effect  # Stored as provided
 
 
 @pytest.mark.asyncio
