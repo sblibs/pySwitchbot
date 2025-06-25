@@ -239,12 +239,18 @@ async def test_set_effect_with_valid_effect():
 
 def test_effect_list_contains_lowercase_names():
     """Test that all effect names in get_effect_list are lowercase."""
-    device = create_device_for_command_testing()
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    device = light_strip.SwitchbotLightStrip(ble_device)
     effect_list = device.get_effect_list
 
     assert effect_list is not None, "Effect list should not be None"
+    # All effect names should be lowercase
     for effect_name in effect_list:
         assert effect_name.islower(), f"Effect name '{effect_name}' is not lowercase"
+    # Verify some known effects are present
+    assert "christmas" in effect_list
+    assert "halloween" in effect_list
+    assert "sunset" in effect_list
 
 
 @pytest.mark.asyncio
