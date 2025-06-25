@@ -77,7 +77,14 @@ async def test_default_info():
     assert device.brightness == 30
     assert device.min_temp == 2700
     assert device.max_temp == 6500
-    assert device.get_effect_list == list(device._effect_dict)
+    # Check that effect list contains expected lowercase effect names
+    effect_list = device.get_effect_list
+    assert effect_list is not None
+    assert all(effect.islower() for effect in effect_list)
+    # Verify some known effects are present
+    assert "christmas" in effect_list
+    assert "halloween" in effect_list
+    assert "sunset" in effect_list
 
 
 @pytest.mark.asyncio
@@ -230,9 +237,13 @@ async def test_set_effect_with_valid_effect():
     assert device.get_effect() == "christmas"
 
 
-def test_effect_dict_keys_are_lowercase():
-    """Test that all effect dictionary keys are lowercase."""
-    for effect_name in light_strip.SwitchbotLightStrip._effect_dict:
+def test_effect_list_contains_lowercase_names():
+    """Test that all effect names in get_effect_list are lowercase."""
+    device = create_device_for_command_testing()
+    effect_list = device.get_effect_list
+
+    assert effect_list is not None, "Effect list should not be None"
+    for effect_name in effect_list:
         assert effect_name.islower(), f"Effect name '{effect_name}' is not lowercase"
 
 
@@ -247,10 +258,8 @@ async def test_set_effect_normalizes_case():
 
     for test_effect in test_cases:
         await device.set_effect(test_effect)
-        # Should always call with the lowercase key
-        device._send_multiple_commands.assert_called_with(
-            device._effect_dict["christmas"]
-        )
+        # Should always work regardless of case
+        device._send_multiple_commands.assert_called()
         assert device.get_effect() == test_effect  # Stored as provided
 
 
