@@ -84,7 +84,8 @@ def make_advertisement_data(
     ("rawAdvData", "model"),
     [(b".\x00d", "."), (b"z\x00\x00", "z"), (b"3\x00\x00", "3")],
 )
-async def test_status_from_proceess_adv(rawAdvData, model, protocol_version=2):
+async def test_status_from_proceess_adv(rawAdvData: bytes, model: str) -> None:
+    protocol_version = 2
     device = create_device_for_command_testing(protocol_version, rawAdvData, model)
     assert device.get_soc_version() == "1.1.083"
     assert device.get_last_step() == 0
@@ -95,7 +96,8 @@ async def test_status_from_proceess_adv(rawAdvData, model, protocol_version=2):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(("rawAdvData", "model"), [(b"(\x00", "("), (b"}\x00", "}")])
-async def test_status_from_proceess_adv_k(rawAdvData, model, protocol_version=1):
+async def test_status_from_proceess_adv_k(rawAdvData: bytes, model: str) -> None:
+    protocol_version = 1
     device = create_device_for_command_testing(protocol_version, rawAdvData, model)
     assert device.get_dustbin_bound_status() is False
     assert device.get_dustbin_connnected_status() is False
