@@ -111,7 +111,7 @@ class SwitchbotBaseLight(SwitchbotDevice):
     @update_after_operation
     async def set_effect(self, effect: str) -> bool:
         """Set effect."""
-        effect_template = self._effect_dict.get(effect.capitalize())
+        effect_template = self._effect_dict.get(effect.lower())
         if not effect_template:
             raise SwitchbotOperationError(f"Effect {effect} not supported")
         result = await self._send_multiple_commands(effect_template)

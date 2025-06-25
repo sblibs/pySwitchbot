@@ -223,11 +223,35 @@ async def test_set_effect_with_valid_effect():
     device = create_device_for_command_testing()
     device._send_multiple_commands = AsyncMock()
 
-    await device.set_effect("Christmas")
+    await device.set_effect("christmas")
 
-    device._send_multiple_commands.assert_called_with(device._effect_dict["Christmas"])
+    device._send_multiple_commands.assert_called_with(device._effect_dict["christmas"])
 
-    assert device.get_effect() == "Christmas"
+    assert device.get_effect() == "christmas"
+
+
+def test_effect_dict_keys_are_lowercase():
+    """Test that all effect dictionary keys are lowercase."""
+    for effect_name in light_strip.SwitchbotLightStrip._effect_dict:
+        assert effect_name.islower(), f"Effect name '{effect_name}' is not lowercase"
+
+
+@pytest.mark.asyncio
+async def test_set_effect_normalizes_case():
+    """Test that set_effect normalizes effect names to lowercase."""
+    device = create_device_for_command_testing()
+    device._send_multiple_commands = AsyncMock()
+
+    # Test various case combinations
+    test_cases = ["CHRISTMAS", "Christmas", "ChRiStMaS", "christmas"]
+
+    for test_effect in test_cases:
+        await device.set_effect(test_effect)
+        # Should always call with the lowercase key
+        device._send_multiple_commands.assert_called_with(
+            device._effect_dict["christmas"]
+        )
+        assert device.get_effect() == test_effect  # Stored as provided
 
 
 @pytest.mark.asyncio

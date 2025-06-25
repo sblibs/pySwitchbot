@@ -217,8 +217,29 @@ async def test_set_effect_with_valid_effect():
     """Test setting a valid effect."""
     device = create_device_for_command_testing()
 
-    await device.set_effect("Colorful")
+    await device.set_effect("colorful")
 
-    device._send_command.assert_called_with(device._effect_dict["Colorful"][0])
+    device._send_command.assert_called_with(device._effect_dict["colorful"][0])
 
-    assert device.get_effect() == "Colorful"
+    assert device.get_effect() == "colorful"
+
+
+def test_effect_dict_keys_are_lowercase():
+    """Test that all effect dictionary keys are lowercase."""
+    for effect_name in bulb.SwitchbotBulb._effect_dict:
+        assert effect_name.islower(), f"Effect name '{effect_name}' is not lowercase"
+
+
+@pytest.mark.asyncio
+async def test_set_effect_normalizes_case():
+    """Test that set_effect normalizes effect names to lowercase."""
+    device = create_device_for_command_testing()
+
+    # Test various case combinations
+    test_cases = ["COLORFUL", "Colorful", "CoLoRfUl", "colorful"]
+
+    for test_effect in test_cases:
+        await device.set_effect(test_effect)
+        # Should always call with the lowercase key
+        device._send_command.assert_called_with(device._effect_dict["colorful"][0])
+        assert device.get_effect() == test_effect  # Stored as provided

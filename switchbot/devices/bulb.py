@@ -25,9 +25,9 @@ class SwitchbotBulb(SwitchbotSequenceBaseLight):
     _set_brightness_command = f"{COLOR_BULB_CONTROL_HEADER}14{{}}"
     _get_basic_info_command = ["570003", "570f4801"]
     _effect_dict = {
-        "Colorful": ["570F4701010300"],
-        "Flickering": ["570F4701010301"],
-        "Breathing": ["570F4701010302"],
+        "colorful": ["570F4701010300"],
+        "flickering": ["570F4701010301"],
+        "breathing": ["570F4701010302"],
     }
 
     @property
