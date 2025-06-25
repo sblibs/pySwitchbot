@@ -65,7 +65,7 @@ class SwitchbotBaseLight(SwitchbotDevice):
     @property
     def get_effect_list(self) -> list[str] | None:
         """Return the list of supported effects."""
-        return list(self._effect_dict.keys()) if self._effect_dict else None
+        return list(self._effect_dict) if self._effect_dict else None
 
     def is_on(self) -> bool | None:
         """Return bulb state from cache."""
@@ -111,7 +111,7 @@ class SwitchbotBaseLight(SwitchbotDevice):
     @update_after_operation
     async def set_effect(self, effect: str) -> bool:
         """Set effect."""
-        effect_template = self._effect_dict.get(effect)
+        effect_template = self._effect_dict.get(effect.lower())
         if not effect_template:
             raise SwitchbotOperationError(f"Effect {effect} not supported")
         result = await self._send_multiple_commands(effect_template)
