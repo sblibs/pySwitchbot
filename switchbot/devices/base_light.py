@@ -65,7 +65,7 @@ class SwitchbotBaseLight(SwitchbotDevice):
     @property
     def get_effect_list(self) -> list[str] | None:
         """Return the list of supported effects."""
-        return [x.lower() for x in self._effect_dict] if self._effect_dict else None
+        return list(self._effect_dict) if self._effect_dict else None
 
     def is_on(self) -> bool | None:
         """Return bulb state from cache."""
