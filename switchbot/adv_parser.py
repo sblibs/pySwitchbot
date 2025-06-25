@@ -25,7 +25,12 @@ from .adv_parsers.humidifier import process_evaporative_humidifier, process_wohu
 from .adv_parsers.keypad import process_wokeypad
 from .adv_parsers.leak import process_leak
 from .adv_parsers.light_strip import process_light, process_wostrip
-from .adv_parsers.lock import process_lock2, process_wolock, process_wolock_pro
+from .adv_parsers.lock import (
+    process_lock2,
+    process_locklite,
+    process_wolock,
+    process_wolock_pro,
+)
 from .adv_parsers.meter import process_wosensorth, process_wosensorth_c
 from .adv_parsers.motion import process_wopresence
 from .adv_parsers.plug import process_woplugmini
@@ -304,7 +309,7 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
     "-": {
         "modelName": SwitchbotModel.LOCK_LITE,
         "modelFriendlyName": "Lock Lite",
-        "func": process_wolock,
+        "func": process_locklite,
         "manufacturer_id": 2409,
     },
     b"\x00\x10\xa5\xb8": {
