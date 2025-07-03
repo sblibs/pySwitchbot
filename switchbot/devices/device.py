@@ -955,6 +955,12 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         if len(data) == 0:
             return b""
         if self._iv is None:
+            if self._expected_disconnect:
+                _LOGGER.debug(
+                    "%s: Cannot decrypt, IV is None during expected disconnect",
+                    self.name,
+                )
+                return b""
             raise RuntimeError("Cannot decrypt: IV is None")
         decryptor = self._get_cipher().decryptor()
         return decryptor.update(data) + decryptor.finalize()
