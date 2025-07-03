@@ -61,7 +61,7 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     _turn_on_command = f"{COMMAND_CONTROL}010100"
     _turn_off_command = f"{COMMAND_CONTROL}010000"
-    _press_command = f"{COMMAND_CONTROL}110329"   # for garage door opener toggle
+    _press_command = f"{COMMAND_CONTROL}110329"  # for garage door opener toggle
 
     def __init__(
         self,
