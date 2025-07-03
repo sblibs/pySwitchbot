@@ -452,6 +452,7 @@ def test_merge_data(old_data, new_data, expected_result):
     result = merge_data(old_data, new_data)
     assert result == expected_result
 
+
 @pytest.mark.asyncio
 async def test_press():
     """Test the press command for garage door opener."""
@@ -461,4 +462,3 @@ async def test_press():
 
     await device.press()
     device._send_command.assert_awaited_once_with(device._press_command)
-
