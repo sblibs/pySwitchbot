@@ -32,7 +32,11 @@ from .devices.bot import Switchbot
 from .devices.bulb import SwitchbotBulb
 from .devices.ceiling_light import SwitchbotCeilingLight
 from .devices.curtain import SwitchbotCurtain
-from .devices.device import SwitchbotDevice, SwitchbotEncryptedDevice
+from .devices.device import (
+    SwitchbotDevice,
+    SwitchbotEncryptedDevice,
+    SwitchbotOperationError,
+)
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
 from .devices.fan import SwitchbotFan
 from .devices.humidifier import SwitchbotHumidifier
@@ -78,6 +82,7 @@ __all__ = [
     "SwitchbotLock",
     "SwitchbotModel",
     "SwitchbotModel",
+    "SwitchbotOperationError",
     "SwitchbotPlugMini",
     "SwitchbotPlugMini",
     "SwitchbotRelaySwitch",
