@@ -451,3 +451,14 @@ def test_merge_data(old_data, new_data, expected_result):
     """Test merging of data dictionaries."""
     result = merge_data(old_data, new_data)
     assert result == expected_result
+
+@pytest.mark.asyncio
+async def test_press():
+    """Test the press command for garage door opener."""
+    device = create_device_for_command_testing(
+        b">\x00\x00\x00", SwitchbotModel.GARAGE_DOOR_OPENER
+    )
+
+    await device.press()
+    device._send_command.assert_awaited_once_with(device._press_command)
+
