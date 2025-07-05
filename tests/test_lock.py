@@ -1,3 +1,4 @@
+import logging
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -476,6 +477,34 @@ def test_notification_handler_not_enabled(model: str):
         device._notification_handler(0, data)
         mock_update.assert_not_called()
         mock_super.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        SwitchbotModel.LOCK,
+        SwitchbotModel.LOCK_LITE,
+        SwitchbotModel.LOCK_PRO,
+        SwitchbotModel.LOCK_ULTRA,
+    ],
+)
+def test_notification_handler_during_disconnect(
+    model: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test _notification_handler during expected disconnect."""
+    device = create_device_for_command_testing(model)
+    device._notifications_enabled = True
+    device._expected_disconnect = True
+    data = bytearray(b"\x0f\x00\x00\x00\x80\x00\x00\x00\x00\x00")
+    with (
+        patch.object(device, "_update_lock_status") as mock_update,
+        caplog.at_level(logging.DEBUG),
+    ):
+        device._notification_handler(0, data)
+        # Should not update lock status during disconnect
+        mock_update.assert_not_called()
+        # Should log debug message
+        assert "Ignoring lock notification during expected disconnect" in caplog.text
 
 
 @pytest.mark.parametrize(
