@@ -20,7 +20,7 @@ setup(
         "cryptography>=39.0.0",
         "pyOpenSSL>=23.0.0",
     ],
-    version="0.68.0",
+    version="0.68.1",
     description="A library to communicate with Switchbot",
     long_description=long_description,
     long_description_content_type="text/markdown",
