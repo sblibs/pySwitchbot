@@ -365,3 +365,22 @@ async def test_empty_data_encryption_decryption() -> None:
     # Test empty decryption
     decrypted = device._decrypt(bytearray())
     assert decrypted == b""
+
+
+@pytest.mark.asyncio
+async def test_decrypt_with_none_iv_during_disconnect() -> None:
+    """Test that decryption returns empty bytes when IV is None during expected disconnect."""
+    device = create_encrypted_device()
+
+    # Simulate disconnection in progress
+    device._expected_disconnect = True
+    device._iv = None
+
+    # Should return empty bytes instead of raising
+    result = device._decrypt(bytearray(b"encrypted_data"))
+    assert result == b""
+
+    # Verify it still raises when not disconnecting
+    device._expected_disconnect = False
+    with pytest.raises(RuntimeError, match="Cannot decrypt: IV is None"):
+        device._decrypt(bytearray(b"encrypted_data"))

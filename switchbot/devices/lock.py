@@ -214,6 +214,12 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     def _notification_handler(self, _sender: int, data: bytearray) -> None:
         if self._notifications_enabled and self._check_command_result(data, 0, {0xF}):
+            if self._expected_disconnect:
+                _LOGGER.debug(
+                    "%s: Ignoring lock notification during expected disconnect",
+                    self.name,
+                )
+                return
             self._update_lock_status(data)
         else:
             super()._notification_handler(_sender, data)
