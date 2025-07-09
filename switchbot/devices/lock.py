@@ -123,7 +123,6 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if status in ignore_statuses:
             return True
 
-        await self._enable_notifications()
         result = await self._send_command(command)
         status = self._check_command_result(result, 0, COMMAND_RESULT_EXPECTED_VALUES)
 
