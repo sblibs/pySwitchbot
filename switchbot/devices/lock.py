@@ -37,7 +37,12 @@ COMMAND_LOCK = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000000",
 }
-COMMAND_ENABLE_NOTIFICATIONS = f"{COMMAND_HEADER}0e01001e00008101"
+COMMAND_ENABLE_NOTIFICATIONS = {
+    SwitchbotModel.LOCK: f"{COMMAND_HEADER}0e01001e00008101",
+    SwitchbotModel.LOCK_LITE: f"{COMMAND_HEADER}0e01001e00008101",
+    SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0e01001e00008104",
+    SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0e01001e00008107",
+}
 COMMAND_DISABLE_NOTIFICATIONS = f"{COMMAND_HEADER}0e00"
 
 MOVING_STATUSES = {LockStatus.LOCKING, LockStatus.UNLOCKING}
@@ -123,6 +128,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if status in ignore_statuses:
             return True
 
+        await self._enable_notifications()
         result = await self._send_command(command)
         status = self._check_command_result(result, 0, COMMAND_RESULT_EXPECTED_VALUES)
 
@@ -196,12 +202,8 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         return _data
 
     async def _enable_notifications(self) -> bool:
-        if self._notifications_enabled:
-            return True
-        result = await self._send_command(COMMAND_ENABLE_NOTIFICATIONS)
-        if self._check_command_result(result, 0, COMMAND_RESULT_EXPECTED_VALUES):
-            self._notifications_enabled = True
-        return self._notifications_enabled
+        result = await self._send_command(COMMAND_ENABLE_NOTIFICATIONS[self._model])
+        return self._check_command_result(result, 0, COMMAND_RESULT_EXPECTED_VALUES)
 
     async def _disable_notifications(self) -> bool:
         if not self._notifications_enabled:
@@ -212,7 +214,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         return not self._notifications_enabled
 
     def _notification_handler(self, _sender: int, data: bytearray) -> None:
-        if self._notifications_enabled and self._check_command_result(data, 0, {0xF}):
+        if self._check_command_result(data, 0, {0xF}):
             if self._expected_disconnect:
                 _LOGGER.debug(
                     "%s: Ignoring lock notification during expected disconnect",
