@@ -453,6 +453,7 @@ def test_merge_data(old_data, new_data, expected_result):
     result = merge_data(old_data, new_data)
     assert result == expected_result
 
+
 @pytest.mark.asyncio
 async def test_garage_door_opener_open():
     """Test open the garage door."""
@@ -462,6 +463,7 @@ async def test_garage_door_opener_open():
 
     await device.open()
     device._send_command.assert_awaited_once_with(device._open_command)
+
 
 @pytest.mark.asyncio
 async def test_garage_door_opener_close():

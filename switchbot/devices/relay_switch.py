@@ -209,7 +209,6 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         return self._get_adv_value("door_open")
 
 
-
 class SwitchbotGarageDoorOpener(SwitchbotRelaySwitch):
     """Representation of a Switchbot garage door opener."""
 
