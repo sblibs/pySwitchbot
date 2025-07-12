@@ -474,3 +474,18 @@ async def test_garage_door_opener_close():
 
     await device.close()
     device._send_command.assert_awaited_once_with(device._close_command)
+
+@pytest.mark.parametrize(
+    "door_open",
+    [
+        True,
+        False,
+    ],
+)
+@pytest.mark.asyncio
+async def test_garage_door_opener_door_open(door_open):
+    """Test get garage door state."""
+    device = create_device_for_command_testing(
+        b">\x00\x00\x00", SwitchbotModel.GARAGE_DOOR_OPENER, {"door_open": door_open}
+    )
+    assert device.door_open() is door_open
