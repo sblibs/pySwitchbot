@@ -30,11 +30,12 @@ def create_device_for_command_testing(
 ):
     """Create a device for command testing."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    device_class = (
-        relay_switch.SwitchbotRelaySwitch2PM
-        if model == SwitchbotModel.RELAY_SWITCH_2PM
-        else relay_switch.SwitchbotRelaySwitch
-    )
+    if model == SwitchbotModel.GARAGE_DOOR_OPENER:
+        device_class = relay_switch.SwitchbotGarageDoorOpener
+    elif model == SwitchbotModel.RELAY_SWITCH_2PM:
+        device_class = relay_switch.SwitchbotRelaySwitch2PM
+    else:
+        device_class = relay_switch.SwitchbotRelaySwitch
     device = device_class(
         ble_device, "ff", "ffffffffffffffffffffffffffffffff", model=model
     )
@@ -452,13 +453,22 @@ def test_merge_data(old_data, new_data, expected_result):
     result = merge_data(old_data, new_data)
     assert result == expected_result
 
-
 @pytest.mark.asyncio
-async def test_press():
-    """Test the press command for garage door opener."""
+async def test_garage_door_opener_open():
+    """Test open the garage door."""
     device = create_device_for_command_testing(
         b">\x00\x00\x00", SwitchbotModel.GARAGE_DOOR_OPENER
     )
 
-    await device.press()
-    device._send_command.assert_awaited_once_with(device._press_command)
+    await device.open()
+    device._send_command.assert_awaited_once_with(device._open_command)
+
+@pytest.mark.asyncio
+async def test_garage_door_opener_close():
+    """Test close the garage door."""
+    device = create_device_for_command_testing(
+        b">\x00\x00\x00", SwitchbotModel.GARAGE_DOOR_OPENER
+    )
+
+    await device.close()
+    device._send_command.assert_awaited_once_with(device._close_command)
