@@ -475,6 +475,7 @@ async def test_garage_door_opener_close():
     await device.close()
     device._send_command.assert_awaited_once_with(device._close_command)
 
+
 @pytest.mark.parametrize(
     "door_open",
     [
