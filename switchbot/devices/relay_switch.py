@@ -214,6 +214,7 @@ class SwitchbotGarageDoorOpener(SwitchbotRelaySwitch):
 
     _open_command = f"{COMMAND_CONTROL}110129"
     _close_command = f"{COMMAND_CONTROL}110229"
+    _press_command = f"{COMMAND_CONTROL}110329"  # for garage door opener toggle
 
     def __init__(
         self,

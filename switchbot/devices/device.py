@@ -129,6 +129,7 @@ class SwitchbotBaseDevice:
     _turn_off_command: str | None = None
     _open_command: str | None = None
     _close_command: str | None = None
+    _press_command: str | None = None
 
     def __init__(
         self,
@@ -732,6 +733,13 @@ class SwitchbotBaseDevice:
         """Close the device."""
         self._check_function_support(self._close_command)
         result = await self._send_command(self._close_command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def press(self) -> bool:
+        """Press the device."""
+        self._check_function_support(self._press_command)
+        result = await self._send_command(self._press_command)
         return self._check_command_result(result, 0, {1})
 
 

@@ -490,3 +490,12 @@ async def test_garage_door_opener_door_open(door_open):
         b">\x00\x00\x00", SwitchbotModel.GARAGE_DOOR_OPENER, {"door_open": door_open}
     )
     assert device.door_open() is door_open
+
+@pytest.mark.asyncio
+async def test_press():
+    """Test the press command for garage door opener."""
+    device = create_device_for_command_testing(
+        b">\x00\x00\x00", SwitchbotModel.GARAGE_DOOR_OPENER
+    )
+    await device.press()
+    device._send_command.assert_awaited_once_with(device._press_command)
