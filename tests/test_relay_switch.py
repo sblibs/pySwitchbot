@@ -491,6 +491,7 @@ async def test_garage_door_opener_door_open(door_open):
     )
     assert device.door_open() is door_open
 
+
 @pytest.mark.asyncio
 async def test_press():
     """Test the press command for garage door opener."""
