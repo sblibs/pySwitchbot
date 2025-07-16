@@ -61,7 +61,6 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     _turn_on_command = f"{COMMAND_CONTROL}010100"
     _turn_off_command = f"{COMMAND_CONTROL}010000"
-    _press_command = f"{COMMAND_CONTROL}110329"  # for garage door opener toggle
 
     def __init__(
         self,
@@ -204,6 +203,29 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     def is_on(self) -> bool | None:
         """Return switch state from cache."""
         return self._get_adv_value("isOn")
+
+    def door_open(self) -> bool | None:
+        """Return garage door state from cache."""
+        return self._get_adv_value("door_open")
+
+
+class SwitchbotGarageDoorOpener(SwitchbotRelaySwitch):
+    """Representation of a Switchbot garage door opener."""
+
+    _open_command = f"{COMMAND_CONTROL}110129"
+    _close_command = f"{COMMAND_CONTROL}110229"
+    _press_command = f"{COMMAND_CONTROL}110329"  # for garage door opener toggle
+
+    def __init__(
+        self,
+        device: BLEDevice,
+        key_id: str,
+        encryption_key: str,
+        interface: int = 0,
+        model: SwitchbotModel = SwitchbotModel.GARAGE_DOOR_OPENER,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(device, key_id, encryption_key, interface, model, **kwargs)
 
 
 class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch):
