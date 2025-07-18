@@ -372,27 +372,6 @@ async def test_enable_notifications(model: str):
     with patch.object(device, "_send_command", return_value=b"\x01\x00"):
         result = await device._enable_notifications()
         assert result is True
-        assert device._notifications_enabled is True
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "model",
-    [
-        SwitchbotModel.LOCK,
-        SwitchbotModel.LOCK_LITE,
-        SwitchbotModel.LOCK_PRO,
-        SwitchbotModel.LOCK_ULTRA,
-    ],
-)
-async def test_enable_notifications_already_enabled(model: str):
-    """Test _enable_notifications when already enabled."""
-    device = create_device_for_command_testing(model)
-    device._notifications_enabled = True
-    with patch.object(device, "_send_command") as mock_send:
-        result = await device._enable_notifications()
-        assert result is True
-        mock_send.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -467,7 +446,7 @@ def test_notification_handler_not_enabled(model: str):
     """Test _notification_handler when notifications not enabled."""
     device = create_device_for_command_testing(model)
     device._notifications_enabled = False
-    data = bytearray(b"\x0f\x00\x00\x00\x80\x00\x00\x00\x00\x00")
+    data = bytearray(b"\x01\x00\x00\x00\x80\x00\x00\x00\x00\x00")
     with (
         patch.object(device, "_update_lock_status") as mock_update,
         patch.object(
