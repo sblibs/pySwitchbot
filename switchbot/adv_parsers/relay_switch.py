@@ -20,7 +20,7 @@ def process_relay_switch_common_data(
     }
 
 
-def process_relay_switch_1PM(
+def process_relay_switch_1pm(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, Any]:
     """Process Relay Switch 1PM services data."""
