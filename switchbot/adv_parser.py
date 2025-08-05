@@ -214,7 +214,7 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
     "<": {
         "modelName": SwitchbotModel.RELAY_SWITCH_1PM,
         "modelFriendlyName": "Relay Switch 1PM",
-        "func": process_relay_switch_1PM,
+        "func": process_relay_switch_1pm,
         "manufacturer_id": 2409,
     },
     ";": {
