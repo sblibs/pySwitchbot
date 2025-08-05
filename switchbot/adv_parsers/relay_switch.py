@@ -19,6 +19,7 @@ def process_relay_switch_common_data(
         "isOn": bool(mfr_data[7] & 0b10000000),
     }
 
+
 def process_relay_switch_1PM(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, Any]:
