@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..helpers import parse_power_data
+
 
 def process_relay_switch_common_data(
     data: bytes | None, mfr_data: bytes | None
@@ -16,6 +18,18 @@ def process_relay_switch_common_data(
         "sequence_number": mfr_data[6],
         "isOn": bool(mfr_data[7] & 0b10000000),
     }
+
+
+def process_relay_switch_1pm(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, Any]:
+    """Process Relay Switch 1PM services data."""
+    if mfr_data is None:
+        return {}
+
+    common_data = process_relay_switch_common_data(data, mfr_data)
+    common_data["power"] = parse_power_data(mfr_data, 10)
+    return common_data
 
 
 def process_garage_door_opener(
@@ -39,10 +53,13 @@ def process_relay_switch_2pm(
     return {
         1: {
             **process_relay_switch_common_data(data, mfr_data),
+            "power": parse_power_data(mfr_data, 10),
         },
         2: {
             "switchMode": True,  # for compatibility, useless
             "sequence_number": mfr_data[6],
             "isOn": bool(mfr_data[7] & 0b01000000),
+            "power": parse_power_data(mfr_data, 12),
         },
+        "sequence_number": mfr_data[6],
     }
