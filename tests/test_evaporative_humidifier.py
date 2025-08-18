@@ -250,6 +250,7 @@ async def test_set_target_humidity():
 async def test_set_mode(mode, command):
     """Test setting mode."""
     device = create_device_for_command_testing()
+    device._validate_water_level(mode)
     device.get_target_humidity = MagicMock(return_value=45)
 
     await device.set_mode(mode)
