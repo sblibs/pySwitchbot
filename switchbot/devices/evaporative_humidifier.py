@@ -149,8 +149,11 @@ class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncrypted
         result = await self._send_command(command)
         return self._check_command_result(result, 0, {1})
 
-    def _validate_water_level(self) -> None:
+    def _validate_water_level(self, mode: HumidifierMode | None = None) -> None:
         """Validate that the water level is not empty."""
+        if mode == HumidifierMode.DRYING_FILTER:
+            return
+
         if self.get_water_level() == HumidifierWaterLevel.EMPTY.name.lower():
             raise SwitchbotOperationError(
                 "Cannot perform operation when water tank is empty"
