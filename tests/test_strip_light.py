@@ -11,8 +11,8 @@ from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperatio
 
 from . import (
     FLOOR_LAMP_INFO,
-    RGBIC_FLOOR_LAMP_INFO,
-    RGBIC_STRIP_LIGHT_INFO,
+    RGBICWW_FLOOR_LAMP_INFO,
+    RGBICWW_STRIP_LIGHT_INFO,
     STRIP_LIGHT_3_INFO,
 )
 from .test_adv_parser import AdvTestCase, generate_ble_device
@@ -21,8 +21,8 @@ from .test_adv_parser import AdvTestCase, generate_ble_device
 @pytest.fixture(params=[
     (STRIP_LIGHT_3_INFO, light_strip.SwitchbotStripLight3),
     (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
-    (RGBIC_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
-    (RGBIC_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
+    (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
+    (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
 ])
 def device_case(request):
     return request.param
@@ -33,8 +33,8 @@ def expected_effects(device_case):
     EXPECTED = {
         SwitchbotModel.STRIP_LIGHT_3: ("christmas", "halloween", "sunset"),
         SwitchbotModel.FLOOR_LAMP: ("christmas", "halloween", "sunset"),
-        SwitchbotModel.RGBIC_STRIP_LIGHT: ("romance", "energy", "heartbeat"),
-        SwitchbotModel.RGBIC_FLOOR_LAMP: ("romance", "energy", "heartbeat"),
+        SwitchbotModel.RGBICWW_STRIP_LIGHT: ("romance", "energy", "heartbeat"),
+        SwitchbotModel.RGBICWW_FLOOR_LAMP: ("romance", "energy", "heartbeat"),
     }
     return EXPECTED[adv_info.modelName]
 

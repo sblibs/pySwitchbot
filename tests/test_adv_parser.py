@@ -3393,7 +3393,7 @@ def test_humidifer_with_empty_data() -> None:
            },
            b'\x00\x10\xd0\xb4',
            "Rgbic Floor Lamp",
-           SwitchbotModel.RGBIC_FLOOR_LAMP,
+           SwitchbotModel.RGBICWW_FLOOR_LAMP,
         ),
         AdvTestCase(
            b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00',
@@ -3409,7 +3409,7 @@ def test_humidifer_with_empty_data() -> None:
            },
            b'\x00\x10\xd0\xb3',
            "Rgbic Strip Light",
-           SwitchbotModel.RGBIC_STRIP_LIGHT,
+           SwitchbotModel.RGBICWW_STRIP_LIGHT,
         ),
     ],
 )
@@ -3592,7 +3592,7 @@ def test_adv_active(test_case: AdvTestCase) -> None:
            },
            b'\x00\x10\xd0\xb4',
            "Rgbic Floor Lamp",
-           SwitchbotModel.RGBIC_FLOOR_LAMP,
+           SwitchbotModel.RGBICWW_FLOOR_LAMP,
         ),
         AdvTestCase(
            b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00',
@@ -3608,7 +3608,7 @@ def test_adv_active(test_case: AdvTestCase) -> None:
            },
            b'\x00\x10\xd0\xb3',
            "Rgbic Strip Light",
-           SwitchbotModel.RGBIC_STRIP_LIGHT,
+           SwitchbotModel.RGBICWW_STRIP_LIGHT,
         ),
     ],
 )
@@ -3757,7 +3757,7 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
            {},
            b'\x00\x10\xd0\xb4',
            "Rgbic Floor Lamp",
-           SwitchbotModel.RGBIC_FLOOR_LAMP,
+           SwitchbotModel.RGBICWW_FLOOR_LAMP,
         ),
         AdvTestCase(
            None,
@@ -3765,7 +3765,7 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
            {},
            b'\x00\x10\xd0\xb3',
            "Rgbic Strip Light",
-           SwitchbotModel.RGBIC_STRIP_LIGHT,
+           SwitchbotModel.RGBICWW_STRIP_LIGHT,
         ),
     ],
 )

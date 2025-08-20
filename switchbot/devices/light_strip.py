@@ -18,7 +18,7 @@ _STRIP_LIGHT_COLOR_MODE_MAP = {
     StripLightColorMode.COLOR_TEMP: ColorMode.COLOR_TEMP,
     StripLightColorMode.UNKNOWN: ColorMode.OFF,
 }
-_RGBIC_STRIP_LIGHT_COLOR_MODE_MAP = {
+_RGBICWW_STRIP_LIGHT_COLOR_MODE_MAP = {
     RGBICStripLightColorMode.SEGMENTED: ColorMode.EFFECT,
     RGBICStripLightColorMode.RGB: ColorMode.RGB,
     RGBICStripLightColorMode.SCENE: ColorMode.EFFECT,
@@ -316,7 +316,7 @@ class SwitchbotRgbicLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         key_id: str,
         encryption_key: str,
         interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.RGBIC_STRIP_LIGHT,
+        model: SwitchbotModel = SwitchbotModel.RGBICWW_STRIP_LIGHT,
         **kwargs: Any,
     ) -> None:
         super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
@@ -327,7 +327,7 @@ class SwitchbotRgbicLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         device: BLEDevice,
         key_id: str,
         encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.RGBIC_STRIP_LIGHT,
+        model: SwitchbotModel = SwitchbotModel.RGBICWW_STRIP_LIGHT,
         **kwargs: Any,
     ) -> bool:
         return await super().verify_encryption_key(
@@ -343,4 +343,4 @@ class SwitchbotRgbicLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     def color_mode(self) -> ColorMode:
         """Return the current color mode."""
         device_mode = RGBICStripLightColorMode(self._get_adv_value("color_mode") or 10)
-        return _RGBIC_STRIP_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
+        return _RGBICWW_STRIP_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
