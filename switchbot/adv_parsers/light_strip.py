@@ -30,3 +30,14 @@ def process_light(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool 
     light_data = {"cw": struct.unpack(">H", mfr_data[16:18])[0]}
 
     return common_data | light_data
+
+
+def process_rgbic_light(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | int]:
+    """Support for RGBIC lights."""
+    common_data = process_wostrip(data, mfr_data)
+    if not common_data:
+        return {}
+
+    light_data = {"cw": struct.unpack(">H", mfr_data[10:12])[0]}
+
+    return common_data | light_data

@@ -94,6 +94,8 @@ class SwitchbotModel(StrEnum):
     STRIP_LIGHT_3 = "Strip Light 3"
     FLOOR_LAMP = "Floor Lamp"
     PLUG_MINI_EU = "Plug Mini (EU)"
+    RGBIC_STRIP_LIGHT = "Rgbic Strip Light"
+    RGBIC_FLOOR_LAMP = "Rgbic Floor Lamp"
 
 
 __all__ = [

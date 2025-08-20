@@ -24,7 +24,7 @@ from .adv_parsers.hubmini_matter import process_hubmini_matter
 from .adv_parsers.humidifier import process_evaporative_humidifier, process_wohumidifier
 from .adv_parsers.keypad import process_wokeypad
 from .adv_parsers.leak import process_leak
-from .adv_parsers.light_strip import process_light, process_wostrip
+from .adv_parsers.light_strip import process_light, process_rgbic_light, process_wostrip
 from .adv_parsers.lock import (
     process_lock2,
     process_locklite,
@@ -347,6 +347,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.PLUG_MINI_EU,
         "modelFriendlyName": "Plug Mini (EU)",
         "func": process_relay_switch_1pm,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x10\xd0\xb3": {
+        "modelName": SwitchbotModel.RGBIC_STRIP_LIGHT,
+        "modelFriendlyName": "Rgbic Strip Light",
+        "func": process_rgbic_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x10\xd0\xb4": {
+        "modelName": SwitchbotModel.RGBIC_FLOOR_LAMP,
+        "modelFriendlyName": "Rgbic Floor Lamp",
+        "func": process_rgbic_light,
         "manufacturer_id": 2409,
     },
 }
