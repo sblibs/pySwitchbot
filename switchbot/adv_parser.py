@@ -351,13 +351,13 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
     },
     b"\x00\x10\xd0\xb3": {
         "modelName": SwitchbotModel.RGBICWW_STRIP_LIGHT,
-        "modelFriendlyName": "Rgbic Strip Light",
+        "modelFriendlyName": "RGBICWW Strip Light",
         "func": process_rgbic_light,
         "manufacturer_id": 2409,
     },
     b"\x00\x10\xd0\xb4": {
         "modelName": SwitchbotModel.RGBICWW_FLOOR_LAMP,
-        "modelFriendlyName": "Rgbic Floor Lamp",
+        "modelFriendlyName": "RGBICWW Floor Lamp",
         "func": process_rgbic_light,
         "manufacturer_id": 2409,
     },
