@@ -3367,8 +3367,8 @@ def test_humidifer_with_empty_data() -> None:
             SwitchbotModel.COLOR_BULB,
         ),
         AdvTestCase(
-            b'\x94\xa9\x90T\x85^?\xa1\x00\x00\x04\xe6\x00\x00\x00\x00',
-            b'?\x00\x00\x00',
+            b"\x94\xa9\x90T\x85^?\xa1\x00\x00\x04\xe6\x00\x00\x00\x00",
+            b"?\x00\x00\x00",
             {
                 "isOn": True,
                 "power": 1254.0,
@@ -3534,7 +3534,7 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.COLOR_BULB,
         ),
         AdvTestCase(
-            b'\x94\xa9\x90T\x85^?\xa1\x00\x00\x04\xe6\x00\x00\x00\x00',
+            b"\x94\xa9\x90T\x85^?\xa1\x00\x00\x04\xe6\x00\x00\x00\x00",
             None,
             {
                 "isOn": True,
@@ -3676,7 +3676,7 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
         ),
         AdvTestCase(
             None,
-            b'?\x00\x00\x00',
+            b"?\x00\x00\x00",
             {
                 "isOn": True,
                 "power": 1254.0,
