@@ -37,7 +37,7 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
     @property
     def color_mode(self) -> ColorMode:
         """Return the current color mode."""
-        device_mode = CeilingLightColorMode(self._get_adv_value("color_mode") or 10)
+        device_mode = CeilingLightColorMode(value if (value := self._get_adv_value("color_mode")) is not None else 10)
         return _CEILING_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
 
     @update_after_operation
