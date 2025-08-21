@@ -49,7 +49,7 @@ FLOOR_LAMP_INFO = AdvTestCase(
 
 RGBICWW_STRIP_LIGHT_INFO = AdvTestCase(
     b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00',
-    b'\x00\x00\x00\x00\x10\xd0\xb3',
+    b"\x00\x00\x00\x00\x10\xd0\xb3",
     {
         "sequence_number": 12,
         "isOn": True,
@@ -59,14 +59,14 @@ RGBICWW_STRIP_LIGHT_INFO = AdvTestCase(
         "color_mode": 2,
         "cw": 4410,
     },
-    b'\x00\x10\xd0\xb3',
+    b"\x00\x10\xd0\xb3",
     "Rgbic Strip Light",
     SwitchbotModel.RGBICWW_STRIP_LIGHT,
 )
 
 RGBICWW_FLOOR_LAMP_INFO = AdvTestCase(
     b'\xdc\x06u\xa6\xfb\xb2y\x9e"\x00\x11\xb8\x00',
-    b'\x00\x00\x00\x00\x10\xd0\xb4',
+    b"\x00\x00\x00\x00\x10\xd0\xb4",
     {
         "sequence_number": 121,
         "isOn": True,
@@ -76,11 +76,7 @@ RGBICWW_FLOOR_LAMP_INFO = AdvTestCase(
         "color_mode": 2,
         "cw": 4536,
     },
-    b'\x00\x10\xd0\xb4',
+    b"\x00\x10\xd0\xb4",
     "Rgbic Floor Lamp",
     SwitchbotModel.RGBICWW_FLOOR_LAMP,
 )
-
-
-
-

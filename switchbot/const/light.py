@@ -41,4 +41,5 @@ class RGBICStripLightColorMode(Enum):
     EFFECT = 7
     UNKNOWN = 10
 
+
 DEFAULT_COLOR_TEMP = 4001

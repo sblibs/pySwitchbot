@@ -18,14 +18,17 @@ from . import (
 from .test_adv_parser import AdvTestCase, generate_ble_device
 
 
-@pytest.fixture(params=[
-    (STRIP_LIGHT_3_INFO, light_strip.SwitchbotStripLight3),
-    (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
-    (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
-    (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
-])
+@pytest.fixture(
+    params=[
+        (STRIP_LIGHT_3_INFO, light_strip.SwitchbotStripLight3),
+        (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
+        (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
+        (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
+    ]
+)
 def device_case(request):
     return request.param
+
 
 @pytest.fixture
 def expected_effects(device_case):
@@ -38,19 +41,19 @@ def expected_effects(device_case):
     }
     return EXPECTED[adv_info.modelName]
 
+
 def create_device_for_command_testing(
-        adv_info: AdvTestCase,
-        dev_cls: type[SwitchbotBaseLight],
-        init_data: dict | None = None
+    adv_info: AdvTestCase,
+    dev_cls: type[SwitchbotBaseLight],
+    init_data: dict | None = None,
 ):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device = dev_cls(
-        ble_device,
-        "ff",
-        "ffffffffffffffffffffffffffffffff",
-        model=adv_info.modelName
+        ble_device, "ff", "ffffffffffffffffffffffffffffffff", model=adv_info.modelName
     )
-    device.update_from_advertisement(make_advertisement_data(ble_device, adv_info, init_data))
+    device.update_from_advertisement(
+        make_advertisement_data(ble_device, adv_info, init_data)
+    )
     device._send_command = AsyncMock()
     device._check_command_result = MagicMock()
     device.update = AsyncMock()
@@ -58,9 +61,7 @@ def create_device_for_command_testing(
 
 
 def make_advertisement_data(
-        ble_device: BLEDevice,
-        adv_info: AdvTestCase,
-        init_data: dict | None = None
+    ble_device: BLEDevice, adv_info: AdvTestCase, init_data: dict | None = None
 ):
     """Set advertisement data with defaults."""
     if init_data is None:
@@ -111,6 +112,7 @@ async def test_default_info(device_case, expected_effects):
     # Verify some known effects are present
     for effect in expected_effects:
         assert effect in effect_list
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -273,6 +275,7 @@ async def test_set_effect_with_valid_effect(device_case):
 
     assert device.get_effect() == "christmas"
 
+
 @pytest.mark.asyncio
 async def test_effect_list_contains_lowercase_names(device_case, expected_effects):
     """Test that all effect names in get_effect_list are lowercase."""
@@ -287,7 +290,9 @@ async def test_effect_list_contains_lowercase_names(device_case, expected_effect
         assert effect_name.islower(), f"Effect name '{effect_name}' is not lowercase"
     # Verify some known effects are present
     for expected_effect in expected_effects:
-        assert expected_effect in effect_list, f"Expected effect '{expected_effect}' not found"
+        assert expected_effect in effect_list, (
+            f"Expected effect '{expected_effect}' not found"
+        )
 
 
 @pytest.mark.asyncio
@@ -322,8 +327,7 @@ async def test_verify_encryption_key(mock_parent_verify, device_case):
         device=ble_device,
         key_id=key_id,
         encryption_key=encryption_key,
-        model=adv_info.modelName
-
+        model=adv_info.modelName,
     )
 
     mock_parent_verify.assert_awaited_once_with(

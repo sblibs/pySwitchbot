@@ -32,7 +32,9 @@ def process_light(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool 
     return common_data | light_data
 
 
-def process_rgbic_light(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | int]:
+def process_rgbic_light(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int]:
     """Support for RGBIC lights."""
     common_data = process_wostrip(data, mfr_data)
     if not common_data:
