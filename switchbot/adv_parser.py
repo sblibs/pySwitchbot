@@ -343,6 +343,12 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_light,
         "manufacturer_id": 2409,
     },
+    "?": {
+        "modelName": SwitchbotModel.PLUG_MINI_EU,
+        "modelFriendlyName": "Plug Mini (EU)",
+        "func": process_relay_switch_1pm,
+        "manufacturer_id": 2409,
+    },
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {
