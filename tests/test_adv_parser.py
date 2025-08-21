@@ -3366,6 +3366,19 @@ def test_humidifer_with_empty_data() -> None:
             "Color Bulb",
             SwitchbotModel.COLOR_BULB,
         ),
+        AdvTestCase(
+            b'\x94\xa9\x90T\x85^?\xa1\x00\x00\x04\xe6\x00\x00\x00\x00',
+            b'?\x00\x00\x00',
+            {
+                "isOn": True,
+                "power": 1254.0,
+                "sequence_number": 63,
+                "switchMode": True,
+            },
+            "?",
+            "Plug Mini (EU)",
+            SwitchbotModel.PLUG_MINI_EU,
+        ),
     ],
 )
 def test_adv_active(test_case: AdvTestCase) -> None:
@@ -3520,6 +3533,19 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             "Color Bulb",
             SwitchbotModel.COLOR_BULB,
         ),
+        AdvTestCase(
+            b'\x94\xa9\x90T\x85^?\xa1\x00\x00\x04\xe6\x00\x00\x00\x00',
+            None,
+            {
+                "isOn": True,
+                "power": 1254.0,
+                "sequence_number": 63,
+                "switchMode": True,
+            },
+            "?",
+            "Plug Mini (EU)",
+            SwitchbotModel.PLUG_MINI_EU,
+        ),
     ],
 )
 def test_adv_passive(test_case: AdvTestCase) -> None:
@@ -3647,6 +3673,19 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
             "u",
             "Color Bulb",
             SwitchbotModel.COLOR_BULB,
+        ),
+        AdvTestCase(
+            None,
+            b'?\x00\x00\x00',
+            {
+                "isOn": True,
+                "power": 1254.0,
+                "sequence_number": 63,
+                "switchMode": True,
+            },
+            "?",
+            "Plug Mini (EU)",
+            SwitchbotModel.PLUG_MINI_EU,
         ),
     ],
 )

@@ -128,6 +128,7 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if self._model in (
             SwitchbotModel.RELAY_SWITCH_1PM,
             SwitchbotModel.RELAY_SWITCH_2PM,
+            SwitchbotModel.PLUG_MINI_EU,
         ):
             if channel is None:
                 adv_data["voltage"] = self._get_adv_value("voltage") or 0

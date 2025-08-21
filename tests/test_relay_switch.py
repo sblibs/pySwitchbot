@@ -13,6 +13,7 @@ common_params = [
     (b";\x00\x00\x00", SwitchbotModel.RELAY_SWITCH_1),
     (b"<\x00\x00\x00", SwitchbotModel.RELAY_SWITCH_1PM),
     (b">\x00\x00\x00", SwitchbotModel.GARAGE_DOOR_OPENER),
+    (b'?\x00\x00\x00', SwitchbotModel.PLUG_MINI_EU)
 ]
 
 
