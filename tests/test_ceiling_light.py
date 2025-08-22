@@ -184,6 +184,7 @@ async def test_set_brightness():
         device._set_brightness_command.format("4B0FA1")
     )
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("adv_value", "expected_color_mode"),
@@ -199,7 +200,5 @@ async def test_get_color_mode(adv_value, expected_color_mode):
     """Test getting color mode."""
     device = create_device_for_command_testing()
 
-    with patch.object(
-        device, "_get_adv_value", return_value=adv_value
-    ):
+    with patch.object(device, "_get_adv_value", return_value=adv_value):
         assert device.color_mode == expected_color_mode
