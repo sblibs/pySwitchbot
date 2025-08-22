@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from bleak.backends.device import BLEDevice
@@ -183,3 +183,23 @@ async def test_set_brightness():
     device._send_command.assert_called_with(
         device._set_brightness_command.format("4B0FA1")
     )
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("adv_value", "expected_color_mode"),
+    [
+        (0, ColorMode.COLOR_TEMP),
+        (1, ColorMode.COLOR_TEMP),
+        (4, ColorMode.EFFECT),
+        (10, ColorMode.OFF),
+        (None, ColorMode.OFF),
+    ],
+)
+async def test_get_color_mode(adv_value, expected_color_mode):
+    """Test getting color mode."""
+    device = create_device_for_command_testing()
+
+    with patch.object(
+        device, "_get_adv_value", return_value=adv_value
+    ):
+        assert device.color_mode == expected_color_mode
