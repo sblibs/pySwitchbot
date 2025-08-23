@@ -31,4 +31,15 @@ class CeilingLightColorMode(Enum):
     UNKNOWN = 10
 
 
+class RGBICStripLightColorMode(Enum):
+    SEGMENTED = 1
+    RGB = 2
+    SCENE = 3
+    MUSIC = 4
+    CONTROLLER = 5
+    COLOR_TEMP = 6
+    EFFECT = 7
+    UNKNOWN = 10
+
+
 DEFAULT_COLOR_TEMP = 4001

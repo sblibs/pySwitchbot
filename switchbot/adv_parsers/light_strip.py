@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import struct
+from ..helpers import _UNPACK_UINT16_BE
 
 
 def process_wostrip(
@@ -21,12 +21,21 @@ def process_wostrip(
     }
 
 
-def process_light(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | int]:
+def process_light(
+    data: bytes | None, mfr_data: bytes | None, cw_offset: int = 16
+) -> dict[str, bool | int]:
     """Support for strip light 3 and floor lamp."""
     common_data = process_wostrip(data, mfr_data)
     if not common_data:
         return {}
 
-    light_data = {"cw": struct.unpack(">H", mfr_data[16:18])[0]}
+    light_data = {"cw": _UNPACK_UINT16_BE(mfr_data, cw_offset)[0]}
 
     return common_data | light_data
+
+
+def process_rgbic_light(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int]:
+    """Support for RGBIC lights."""
+    return process_light(data, mfr_data, cw_offset=10)

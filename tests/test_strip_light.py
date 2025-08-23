@@ -9,24 +9,60 @@ from switchbot.devices import light_strip
 from switchbot.devices.base_light import SwitchbotBaseLight
 from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperationError
 
-from .test_adv_parser import generate_ble_device
+from . import (
+    FLOOR_LAMP_INFO,
+    RGBICWW_FLOOR_LAMP_INFO,
+    RGBICWW_STRIP_LIGHT_INFO,
+    STRIP_LIGHT_3_INFO,
+)
+from .test_adv_parser import AdvTestCase, generate_ble_device
+
+
+@pytest.fixture(
+    params=[
+        (STRIP_LIGHT_3_INFO, light_strip.SwitchbotStripLight3),
+        (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
+        (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
+        (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
+    ]
+)
+def device_case(request):
+    return request.param
+
+
+@pytest.fixture
+def expected_effects(device_case):
+    adv_info, dev_cls = device_case
+    EXPECTED = {
+        SwitchbotModel.STRIP_LIGHT_3: ("christmas", "halloween", "sunset"),
+        SwitchbotModel.FLOOR_LAMP: ("christmas", "halloween", "sunset"),
+        SwitchbotModel.RGBICWW_STRIP_LIGHT: ("romance", "energy", "heartbeat"),
+        SwitchbotModel.RGBICWW_FLOOR_LAMP: ("romance", "energy", "heartbeat"),
+    }
+    return EXPECTED[adv_info.modelName]
 
 
 def create_device_for_command_testing(
-    init_data: dict | None = None, model: SwitchbotModel = SwitchbotModel.STRIP_LIGHT_3
+    adv_info: AdvTestCase,
+    dev_cls: type[SwitchbotBaseLight],
+    init_data: dict | None = None,
 ):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    device = light_strip.SwitchbotStripLight3(
-        ble_device, "ff", "ffffffffffffffffffffffffffffffff", model=model
+    device = dev_cls(
+        ble_device, "ff", "ffffffffffffffffffffffffffffffff", model=adv_info.modelName
     )
-    device.update_from_advertisement(make_advertisement_data(ble_device, init_data))
+    device.update_from_advertisement(
+        make_advertisement_data(ble_device, adv_info, init_data)
+    )
     device._send_command = AsyncMock()
     device._check_command_result = MagicMock()
     device.update = AsyncMock()
     return device
 
 
-def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None):
+def make_advertisement_data(
+    ble_device: BLEDevice, adv_info: AdvTestCase, init_data: dict | None = None
+):
     """Set advertisement data with defaults."""
     if init_data is None:
         init_data = {}
@@ -34,21 +70,12 @@ def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None
     return SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
-            "rawAdvData": b"\x00\x00\x00\x00\x10\xd0\xb1",
-            "data": {
-                "sequence_number": 133,
-                "isOn": True,
-                "brightness": 30,
-                "delay": False,
-                "network_state": 2,
-                "color_mode": 2,
-                "cw": 4753,
-            }
-            | init_data,
+            "rawAdvData": adv_info.service_data,
+            "data": adv_info.data | init_data,
             "isEncrypted": False,
-            "model": b"\x00\x10\xd0\xb1",
-            "modelFriendlyName": "Strip Light 3",
-            "modelName": SwitchbotModel.STRIP_LIGHT_3,
+            "model": adv_info.model,
+            "modelFriendlyName": adv_info.modelFriendlyName,
+            "modelName": adv_info.modelName,
         },
         device=ble_device,
         rssi=-80,
@@ -57,9 +84,10 @@ def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None
 
 
 @pytest.mark.asyncio
-async def test_default_info():
+async def test_default_info(device_case, expected_effects):
     """Test default initialization of the strip light."""
-    device = create_device_for_command_testing()
+    adv_info, dev_cls = device_case
+    device = create_device_for_command_testing(adv_info, dev_cls)
 
     assert device.rgb is None
 
@@ -74,7 +102,7 @@ async def test_default_info():
     }
     assert device.rgb == (30, 0, 0)
     assert device.color_temp == 3200
-    assert device.brightness == 30
+    assert device.brightness == adv_info.data["brightness"]
     assert device.min_temp == 2700
     assert device.max_temp == 6500
     # Check that effect list contains expected lowercase effect names
@@ -82,17 +110,18 @@ async def test_default_info():
     assert effect_list is not None
     assert all(effect.islower() for effect in effect_list)
     # Verify some known effects are present
-    assert "christmas" in effect_list
-    assert "halloween" in effect_list
-    assert "sunset" in effect_list
+    for effect in expected_effects:
+        assert effect in effect_list
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("basic_info", "version_info"), [(True, False), (False, True), (False, False)]
 )
-async def test_get_basic_info_returns_none(basic_info, version_info):
-    device = create_device_for_command_testing()
+async def test_get_basic_info_returns_none(basic_info, version_info, device_case):
+    """Test that get_basic_info returns None if no data is available."""
+    adv_info, dev_cls = device_case
+    device = create_device_for_command_testing(adv_info, dev_cls)
 
     async def mock_get_basic_info(arg):
         if arg == device._get_basic_info_command[1]:
@@ -133,9 +162,10 @@ async def test_get_basic_info_returns_none(basic_info, version_info):
         ),
     ],
 )
-async def test_strip_light_get_basic_info(info_data, result):
+async def test_strip_light_get_basic_info(info_data, result, device_case):
     """Test getting basic info from the strip light."""
-    device = create_device_for_command_testing()
+    adv_info, dev_cls = device_case
+    device = create_device_for_command_testing(adv_info, dev_cls)
 
     async def mock_get_basic_info(args: str) -> list[int] | None:
         if args == device._get_basic_info_command[1]:
@@ -158,9 +188,10 @@ async def test_strip_light_get_basic_info(info_data, result):
 
 
 @pytest.mark.asyncio
-async def test_set_color_temp():
+async def test_set_color_temp(device_case):
     """Test setting color temperature."""
-    device = create_device_for_command_testing()
+    adv_info, dev_cls = device_case
+    device = create_device_for_command_testing(adv_info, dev_cls)
 
     await device.set_color_temp(50, 3000)
 
@@ -170,9 +201,11 @@ async def test_set_color_temp():
 
 
 @pytest.mark.asyncio
-async def test_turn_on():
+async def test_turn_on(device_case):
     """Test turning on the strip light."""
-    device = create_device_for_command_testing({"isOn": True})
+    init_data = {"isOn": True}
+    adv_info, dev_cls = device_case
+    device = create_device_for_command_testing(adv_info, dev_cls, init_data)
 
     await device.turn_on()
 
@@ -182,9 +215,11 @@ async def test_turn_on():
 
 
 @pytest.mark.asyncio
-async def test_turn_off():
+async def test_turn_off(device_case):
     """Test turning off the strip light."""
-    device = create_device_for_command_testing({"isOn": False})
+    init_data = {"isOn": False}
+    adv_info, dev_cls = device_case
+    device = create_device_for_command_testing(adv_info, dev_cls, init_data)
 
     await device.turn_off()
 
@@ -194,9 +229,10 @@ async def test_turn_off():
 
 
 @pytest.mark.asyncio
-async def test_set_brightness():
+async def test_set_brightness(device_case):
     """Test setting brightness."""
-    device = create_device_for_command_testing()
+    adv_info, dev_cls = device_case
+    device = create_device_for_command_testing(adv_info, dev_cls)
 
     await device.set_brightness(75)
 
@@ -204,9 +240,10 @@ async def test_set_brightness():
 
 
 @pytest.mark.asyncio
-async def test_set_rgb():
+async def test_set_rgb(device_case):
     """Test setting RGB values."""
-    device = create_device_for_command_testing()
+    adv_info, dev_cls = device_case
+    device = create_device_for_command_testing(adv_info, dev_cls)
 
     await device.set_rgb(100, 255, 128, 64)
 
@@ -214,9 +251,10 @@ async def test_set_rgb():
 
 
 @pytest.mark.asyncio
-async def test_set_effect_with_invalid_effect():
+async def test_set_effect_with_invalid_effect(device_case):
     """Test setting an invalid effect."""
-    device = create_device_for_command_testing()
+    adv_info, dev_cls = device_case
+    device = create_device_for_command_testing(adv_info, dev_cls)
 
     with pytest.raises(
         SwitchbotOperationError, match="Effect invalid_effect not supported"
@@ -225,9 +263,10 @@ async def test_set_effect_with_invalid_effect():
 
 
 @pytest.mark.asyncio
-async def test_set_effect_with_valid_effect():
+async def test_set_effect_with_valid_effect(device_case):
     """Test setting a valid effect."""
-    device = create_device_for_command_testing()
+    adv_info, dev_cls = device_case
+    device = create_device_for_command_testing(adv_info, dev_cls)
     device._send_multiple_commands = AsyncMock()
 
     await device.set_effect("christmas")
@@ -237,10 +276,12 @@ async def test_set_effect_with_valid_effect():
     assert device.get_effect() == "christmas"
 
 
-def test_effect_list_contains_lowercase_names():
+@pytest.mark.asyncio
+async def test_effect_list_contains_lowercase_names(device_case, expected_effects):
     """Test that all effect names in get_effect_list are lowercase."""
-    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    device = light_strip.SwitchbotLightStrip(ble_device)
+    adv_info, dev_cls = device_case
+    device = create_device_for_command_testing(adv_info, dev_cls)
+
     effect_list = device.get_effect_list
 
     assert effect_list is not None, "Effect list should not be None"
@@ -248,15 +289,17 @@ def test_effect_list_contains_lowercase_names():
     for effect_name in effect_list:
         assert effect_name.islower(), f"Effect name '{effect_name}' is not lowercase"
     # Verify some known effects are present
-    assert "christmas" in effect_list
-    assert "halloween" in effect_list
-    assert "sunset" in effect_list
+    for expected_effect in expected_effects:
+        assert expected_effect in effect_list, (
+            f"Expected effect '{expected_effect}' not found"
+        )
 
 
 @pytest.mark.asyncio
-async def test_set_effect_normalizes_case():
+async def test_set_effect_normalizes_case(device_case):
     """Test that set_effect normalizes effect names to lowercase."""
-    device = create_device_for_command_testing()
+    adv_info, dev_cls = device_case
+    device = create_device_for_command_testing(adv_info, dev_cls)
     device._send_multiple_commands = AsyncMock()
 
     # Test various case combinations
@@ -271,24 +314,27 @@ async def test_set_effect_normalizes_case():
 
 @pytest.mark.asyncio
 @patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)
-async def test_verify_encryption_key(mock_parent_verify):
+async def test_verify_encryption_key(mock_parent_verify, device_case):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     key_id = "ff"
     encryption_key = "ffffffffffffffffffffffffffffffff"
 
     mock_parent_verify.return_value = True
 
-    result = await light_strip.SwitchbotStripLight3.verify_encryption_key(
+    adv_info, dev_cls = device_case
+
+    result = await dev_cls.verify_encryption_key(
         device=ble_device,
         key_id=key_id,
         encryption_key=encryption_key,
+        model=adv_info.modelName,
     )
 
     mock_parent_verify.assert_awaited_once_with(
         ble_device,
         key_id,
         encryption_key,
-        SwitchbotModel.STRIP_LIGHT_3,
+        adv_info.modelName,
     )
 
     assert result is True
@@ -318,9 +364,10 @@ async def test_strip_light_supported_color_modes():
         (("command1", "command2"), [(b"\x01", True), (b"\x01", False)], True),
     ],
 )
-async def test_send_multiple_commands(commands, results, final_result):
+async def test_send_multiple_commands(commands, results, final_result, device_case):
     """Test sending multiple commands."""
-    device = create_device_for_command_testing()
+    adv_info, dev_cls = device_case
+    device = create_device_for_command_testing(adv_info, dev_cls)
 
     device._send_command = AsyncMock(side_effect=[r[0] for r in results])
 
