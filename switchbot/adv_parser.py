@@ -45,6 +45,7 @@ from .adv_parsers.roller_shade import process_worollershade
 from .adv_parsers.vacuum import process_vacuum, process_vacuum_k
 from .const import SwitchbotModel
 from .models import SwitchBotAdvertisement
+from .utils import format_mac_upper
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,6 +54,33 @@ SERVICE_DATA_ORDER = (
     "00000d00-0000-1000-8000-00805f9b34fb",
 )
 MFR_DATA_ORDER = (2409, 741, 89)
+
+MODEL_TO_MAC_CACHE: dict[str, SwitchbotModel] = {}
+
+# Mapping from API model names to SwitchbotModel enum values
+API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
+    "WoHand": SwitchbotModel.BOT,
+    "WoCurtain": SwitchbotModel.CURTAIN,
+    "WoHumi": SwitchbotModel.HUMIDIFIER,
+    "WoPlug": SwitchbotModel.PLUG_MINI,
+    "WoPlugUS": SwitchbotModel.PLUG_MINI,
+    "WoContact": SwitchbotModel.CONTACT_SENSOR,
+    "WoStrip": SwitchbotModel.LIGHT_STRIP,
+    "WoSensorTH": SwitchbotModel.METER,
+    "WoMeter": SwitchbotModel.METER,
+    "WoMeterPlus": SwitchbotModel.METER_PRO,
+    "WoPresence": SwitchbotModel.MOTION_SENSOR,
+    "WoBulb": SwitchbotModel.COLOR_BULB,
+    "WoCeiling": SwitchbotModel.CEILING_LIGHT,
+    "WoLock": SwitchbotModel.LOCK,
+    "WoBlindTilt": SwitchbotModel.BLIND_TILT,
+    "WoIOSensor": SwitchbotModel.IO_METER,  # Outdoor Meter
+    "WoButton": SwitchbotModel.REMOTE,  # Remote button
+    "WoLinkMini": SwitchbotModel.HUBMINI_MATTER,  # Hub Mini
+    "W1083002": SwitchbotModel.RELAY_SWITCH_1,  # Relay Switch 1
+    "W1079000": SwitchbotModel.METER_PRO,  # Meter Pro (another variant)
+    "W1102001": SwitchbotModel.STRIP_LIGHT_3,  # RGBWW Strip Light 3
+}
 
 
 class SwitchbotSupportedType(TypedDict):
@@ -383,6 +411,10 @@ def parse_advertisement_data(
     model: SwitchbotModel | None = None,
 ) -> SwitchBotAdvertisement | None:
     """Parse advertisement data."""
+    upper_mac = format_mac_upper(device.address)
+    if model is None and upper_mac in MODEL_TO_MAC_CACHE:
+        model = MODEL_TO_MAC_CACHE[upper_mac]
+
     service_data = advertisement_data.service_data
 
     _service_data = None

@@ -24,6 +24,7 @@ from bleak_retry_connector import (
 )
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
+from ..adv_parser import API_MODEL_TO_ENUM, MODEL_TO_MAC_CACHE
 from ..api_config import SWITCHBOT_APP_API_BASE_URL, SWITCHBOT_APP_CLIENT_ID
 from ..const import (
     DEFAULT_RETRY_COUNT,
@@ -37,6 +38,7 @@ from ..const import (
 from ..discovery import GetSwitchbotDevices
 from ..helpers import create_background_task
 from ..models import SwitchBotAdvertisement
+from ..utils import format_mac_upper
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1089,3 +1091,29 @@ class SwitchbotSequenceDevice(SwitchbotDevice):
         )
         if current_state != new_state:
             create_background_task(self.update())
+
+
+async def fetch_cloud_devices(
+    session: aiohttp.ClientSession,
+    username: str,
+    password: str,
+) -> None:
+    """Fetch devices from SwitchBot API and populate MODEL_TO_MAC_CACHE."""
+    # Get devices from the API
+    mac_to_model = await SwitchbotBaseDevice.get_devices(session, username, password)
+
+    # Populate the cache with formatted MAC addresses
+    for mac, model_name in mac_to_model.items():
+        # Format MAC to uppercase with colons
+        formatted_mac = format_mac_upper(mac)
+
+        # Map API model name to SwitchbotModel enum if possible
+        if model_name in API_MODEL_TO_ENUM:
+            MODEL_TO_MAC_CACHE[formatted_mac] = API_MODEL_TO_ENUM[model_name]
+        else:
+            # For unknown models, we could log or handle differently
+            _LOGGER.debug(
+                "Unknown model %s for device %s, not adding to cache",
+                model_name,
+                formatted_mac,
+            )
