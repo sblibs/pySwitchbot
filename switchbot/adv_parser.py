@@ -45,6 +45,7 @@ from .adv_parsers.roller_shade import process_worollershade
 from .adv_parsers.vacuum import process_vacuum, process_vacuum_k
 from .const import SwitchbotModel
 from .models import SwitchBotAdvertisement
+from .utils import format_mac_upper
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,6 +54,8 @@ SERVICE_DATA_ORDER = (
     "00000d00-0000-1000-8000-00805f9b34fb",
 )
 MFR_DATA_ORDER = (2409, 741, 89)
+
+_MODEL_TO_MAC_CACHE: dict[str, SwitchbotModel] = {}
 
 
 class SwitchbotSupportedType(TypedDict):
@@ -383,6 +386,10 @@ def parse_advertisement_data(
     model: SwitchbotModel | None = None,
 ) -> SwitchBotAdvertisement | None:
     """Parse advertisement data."""
+    upper_mac = format_mac_upper(device.address)
+    if model is None and upper_mac in _MODEL_TO_MAC_CACHE:
+        model = _MODEL_TO_MAC_CACHE[upper_mac]
+
     service_data = advertisement_data.service_data
 
     _service_data = None
@@ -470,3 +477,8 @@ def _parse_data(
             )
 
     return data
+
+
+def populate_model_to_mac_cache(mac: str, model: SwitchbotModel) -> None:
+    """Populate the model to MAC address cache."""
+    _MODEL_TO_MAC_CACHE[mac] = model

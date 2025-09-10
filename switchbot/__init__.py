@@ -36,6 +36,7 @@ from .devices.device import (
     SwitchbotDevice,
     SwitchbotEncryptedDevice,
     SwitchbotOperationError,
+    fetch_cloud_devices,
 )
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
 from .devices.fan import SwitchbotFan
@@ -104,6 +105,7 @@ __all__ = [
     "SwitchbotVacuum",
     "close_stale_connections",
     "close_stale_connections_by_address",
+    "fetch_cloud_devices",
     "get_device",
     "parse_advertisement_data",
 ]

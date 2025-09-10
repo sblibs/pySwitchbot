@@ -24,6 +24,7 @@ from bleak_retry_connector import (
 )
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
+from ..adv_parser import populate_model_to_mac_cache
 from ..api_config import SWITCHBOT_APP_API_BASE_URL, SWITCHBOT_APP_CLIENT_ID
 from ..const import (
     DEFAULT_RETRY_COUNT,
@@ -37,8 +38,42 @@ from ..const import (
 from ..discovery import GetSwitchbotDevices
 from ..helpers import create_background_task
 from ..models import SwitchBotAdvertisement
+from ..utils import format_mac_upper
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _extract_region(userinfo: dict[str, Any]) -> str:
+    """Extract region from user info, defaulting to 'us'."""
+    if "botRegion" in userinfo and userinfo["botRegion"] != "":
+        return userinfo["botRegion"]
+    return "us"
+
+
+# Mapping from API model names to SwitchbotModel enum values
+API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
+    "WoHand": SwitchbotModel.BOT,
+    "WoCurtain": SwitchbotModel.CURTAIN,
+    "WoHumi": SwitchbotModel.HUMIDIFIER,
+    "WoPlug": SwitchbotModel.PLUG_MINI,
+    "WoPlugUS": SwitchbotModel.PLUG_MINI,
+    "WoContact": SwitchbotModel.CONTACT_SENSOR,
+    "WoStrip": SwitchbotModel.LIGHT_STRIP,
+    "WoSensorTH": SwitchbotModel.METER,
+    "WoMeter": SwitchbotModel.METER,
+    "WoMeterPlus": SwitchbotModel.METER_PRO,
+    "WoPresence": SwitchbotModel.MOTION_SENSOR,
+    "WoBulb": SwitchbotModel.COLOR_BULB,
+    "WoCeiling": SwitchbotModel.CEILING_LIGHT,
+    "WoLock": SwitchbotModel.LOCK,
+    "WoBlindTilt": SwitchbotModel.BLIND_TILT,
+    "WoIOSensor": SwitchbotModel.IO_METER,  # Outdoor Meter
+    "WoButton": SwitchbotModel.REMOTE,  # Remote button
+    "WoLinkMini": SwitchbotModel.HUBMINI_MATTER,  # Hub Mini
+    "W1083002": SwitchbotModel.RELAY_SWITCH_1,  # Relay Switch 1
+    "W1079000": SwitchbotModel.METER_PRO,  # Meter Pro (another variant)
+    "W1102001": SwitchbotModel.STRIP_LIGHT_3,  # RGBWW Strip Light 3
+}
 
 REQ_HEADER = "570f"
 
@@ -163,6 +198,113 @@ class SwitchbotBaseDevice:
         self._notify_future: asyncio.Future[bytearray] | None = None
         self._last_full_update: float = -PASSIVE_POLL_INTERVAL
         self._timed_disconnect_task: asyncio.Task[None] | None = None
+
+    @classmethod
+    async def _async_get_user_info(
+        cls,
+        session: aiohttp.ClientSession,
+        auth_headers: dict[str, str],
+    ) -> dict[str, Any]:
+        try:
+            return await cls.api_request(
+                session, "account", "account/api/v1/user/userinfo", {}, auth_headers
+            )
+        except Exception as err:
+            raise SwitchbotAccountConnectionError(
+                f"Failed to retrieve SwitchBot Account user details: {err}"
+            ) from err
+
+    @classmethod
+    async def _get_auth_result(
+        cls,
+        session: aiohttp.ClientSession,
+        username: str,
+        password: str,
+    ) -> dict[str, Any]:
+        """Authenticate with SwitchBot API."""
+        try:
+            return await cls.api_request(
+                session,
+                "account",
+                "account/api/v1/user/login",
+                {
+                    "clientId": SWITCHBOT_APP_CLIENT_ID,
+                    "username": username,
+                    "password": password,
+                    "grantType": "password",
+                    "verifyCode": "",
+                },
+            )
+        except Exception as err:
+            raise SwitchbotAuthenticationError(f"Authentication failed: {err}") from err
+
+    @classmethod
+    async def get_devices(
+        cls,
+        session: aiohttp.ClientSession,
+        username: str,
+        password: str,
+    ) -> dict[str, SwitchbotModel]:
+        """Get devices from SwitchBot API and return formatted MAC to model mapping."""
+        try:
+            auth_result = await cls._get_auth_result(session, username, password)
+            auth_headers = {"authorization": auth_result["access_token"]}
+        except Exception as err:
+            raise SwitchbotAuthenticationError(f"Authentication failed: {err}") from err
+
+        userinfo = await cls._async_get_user_info(session, auth_headers)
+        region = _extract_region(userinfo)
+
+        try:
+            device_info = await cls.api_request(
+                session,
+                f"wonderlabs.{region}",
+                "wonder/device/v3/getdevice",
+                {
+                    "required_type": "All",
+                },
+                auth_headers,
+            )
+        except Exception as err:
+            raise SwitchbotAccountConnectionError(
+                f"Failed to retrieve devices from SwitchBot Account: {err}"
+            ) from err
+
+        items: list[dict[str, Any]] = device_info["Items"]
+        mac_to_model: dict[str, SwitchbotModel] = {}
+
+        for item in items:
+            if "device_mac" not in item:
+                continue
+
+            if (
+                "device_detail" not in item
+                or "device_type" not in item["device_detail"]
+            ):
+                continue
+
+            mac = item["device_mac"]
+            model_name = item["device_detail"]["device_type"]
+
+            # Format MAC to uppercase with colons
+            formatted_mac = format_mac_upper(mac)
+
+            # Map API model name to SwitchbotModel enum if possible
+            if model_name in API_MODEL_TO_ENUM:
+                model = API_MODEL_TO_ENUM[model_name]
+                mac_to_model[formatted_mac] = model
+                # Populate the cache
+                populate_model_to_mac_cache(formatted_mac, model)
+            else:
+                # Log the full item payload for unknown models
+                _LOGGER.debug(
+                    "Unknown model %s for device %s, full item: %s",
+                    model_name,
+                    formatted_mac,
+                    item,
+                )
+
+        return mac_to_model
 
     @classmethod
     async def api_request(
@@ -809,34 +951,13 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         device_mac = device_mac.replace(":", "").replace("-", "").upper()
 
         try:
-            auth_result = await cls.api_request(
-                session,
-                "account",
-                "account/api/v1/user/login",
-                {
-                    "clientId": SWITCHBOT_APP_CLIENT_ID,
-                    "username": username,
-                    "password": password,
-                    "grantType": "password",
-                    "verifyCode": "",
-                },
-            )
+            auth_result = await cls._get_auth_result(session, username, password)
             auth_headers = {"authorization": auth_result["access_token"]}
         except Exception as err:
             raise SwitchbotAuthenticationError(f"Authentication failed: {err}") from err
 
-        try:
-            userinfo = await cls.api_request(
-                session, "account", "account/api/v1/user/userinfo", {}, auth_headers
-            )
-            if "botRegion" in userinfo and userinfo["botRegion"] != "":
-                region = userinfo["botRegion"]
-            else:
-                region = "us"
-        except Exception as err:
-            raise SwitchbotAccountConnectionError(
-                f"Failed to retrieve SwitchBot Account user details: {err}"
-            ) from err
+        userinfo = await cls._async_get_user_info(session, auth_headers)
+        region = _extract_region(userinfo)
 
         try:
             device_info = await cls.api_request(
@@ -1023,3 +1144,13 @@ class SwitchbotSequenceDevice(SwitchbotDevice):
         )
         if current_state != new_state:
             create_background_task(self.update())
+
+
+async def fetch_cloud_devices(
+    session: aiohttp.ClientSession,
+    username: str,
+    password: str,
+) -> dict[str, SwitchbotModel]:
+    """Fetch devices from SwitchBot API and return MAC to model mapping."""
+    # Get devices from the API (which also populates the cache)
+    return await SwitchbotBaseDevice.get_devices(session, username, password)
