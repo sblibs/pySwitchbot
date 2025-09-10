@@ -165,6 +165,90 @@ class SwitchbotBaseDevice:
         self._timed_disconnect_task: asyncio.Task[None] | None = None
 
     @classmethod
+    async def _async_get_user_info(
+        cls,
+        session: aiohttp.ClientSession,
+        auth_headers: dict[str, str],
+    ) -> dict[str, Any]:
+        try:
+            return await cls.api_request(
+                session, "account", "account/api/v1/user/userinfo", {}, auth_headers
+            )
+        except Exception as err:
+            raise SwitchbotAccountConnectionError(
+                f"Failed to retrieve SwitchBot Account user details: {err}"
+            ) from err
+
+    @classmethod
+    async def _get_auth_result(
+        cls,
+        session: aiohttp.ClientSession,
+        username: str,
+        password: str,
+    ) -> dict[str, Any]:
+        """Authenticate with SwitchBot API."""
+        try:
+            return await cls.api_request(
+                session,
+                "account",
+                "account/api/v1/user/login",
+                {
+                    "clientId": SWITCHBOT_APP_CLIENT_ID,
+                    "username": username,
+                    "password": password,
+                    "grantType": "password",
+                    "verifyCode": "",
+                },
+            )
+        except Exception as err:
+            raise SwitchbotAuthenticationError(f"Authentication failed: {err}") from err
+
+    @classmethod
+    async def get_devices(
+        cls,
+        session: aiohttp.ClientSession,
+        username: str,
+        password: str,
+    ) -> dict[str, str]:
+        """Get devices from SwitchBot API."""
+        try:
+            auth_result = await cls._get_auth_result(session, username, password)
+            auth_headers = {"authorization": auth_result["access_token"]}
+        except Exception as err:
+            raise SwitchbotAuthenticationError(f"Authentication failed: {err}") from err
+
+        userinfo = await cls._async_get_user_info(session, auth_headers)
+        if "botRegion" in userinfo and userinfo["botRegion"] != "":
+            region = userinfo["botRegion"]
+        else:
+            region = "us"
+
+        try:
+            device_info = await cls.api_request(
+                session,
+                f"wonderlabs.{region}",
+                "wonder/device/v3/getdevice",
+                {
+                    "required_type": "All",
+                },
+                auth_headers,
+            )
+        except Exception as err:
+            raise SwitchbotAccountConnectionError(
+                f"Failed to retrieve devices from SwitchBot Account: {err}"
+            ) from err
+
+        items: list[dict[str, Any]] = device_info["Items"]
+        mac_to_model: dict[str, str] = {
+            item["device_mac"]: item["device_detail"]["device_type"]
+            for item in items
+            if "device_mac" in item
+            and "device_detail" in item
+            and "device_type" in item["device_detail"]
+        }
+        return mac_to_model
+
+    @classmethod
     async def api_request(
         cls,
         session: aiohttp.ClientSession,
@@ -809,34 +893,16 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         device_mac = device_mac.replace(":", "").replace("-", "").upper()
 
         try:
-            auth_result = await cls.api_request(
-                session,
-                "account",
-                "account/api/v1/user/login",
-                {
-                    "clientId": SWITCHBOT_APP_CLIENT_ID,
-                    "username": username,
-                    "password": password,
-                    "grantType": "password",
-                    "verifyCode": "",
-                },
-            )
+            auth_result = await cls._get_auth_result(session, username, password)
             auth_headers = {"authorization": auth_result["access_token"]}
         except Exception as err:
             raise SwitchbotAuthenticationError(f"Authentication failed: {err}") from err
 
-        try:
-            userinfo = await cls.api_request(
-                session, "account", "account/api/v1/user/userinfo", {}, auth_headers
-            )
-            if "botRegion" in userinfo and userinfo["botRegion"] != "":
-                region = userinfo["botRegion"]
-            else:
-                region = "us"
-        except Exception as err:
-            raise SwitchbotAccountConnectionError(
-                f"Failed to retrieve SwitchBot Account user details: {err}"
-            ) from err
+        userinfo = await cls._async_get_user_info(session, auth_headers)
+        if "botRegion" in userinfo and userinfo["botRegion"] != "":
+            region = userinfo["botRegion"]
+        else:
+            region = "us"
 
         try:
             device_info = await cls.api_request(
