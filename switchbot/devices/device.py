@@ -42,6 +42,14 @@ from ..utils import format_mac_upper
 
 _LOGGER = logging.getLogger(__name__)
 
+
+def _extract_region(userinfo: dict[str, Any]) -> str:
+    """Extract region from user info, defaulting to 'us'."""
+    if "botRegion" in userinfo and userinfo["botRegion"] != "":
+        return userinfo["botRegion"]
+    return "us"
+
+
 # Mapping from API model names to SwitchbotModel enum values
 API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "WoHand": SwitchbotModel.BOT,
@@ -245,10 +253,7 @@ class SwitchbotBaseDevice:
             raise SwitchbotAuthenticationError(f"Authentication failed: {err}") from err
 
         userinfo = await cls._async_get_user_info(session, auth_headers)
-        if "botRegion" in userinfo and userinfo["botRegion"] != "":
-            region = userinfo["botRegion"]
-        else:
-            region = "us"
+        region = _extract_region(userinfo)
 
         try:
             device_info = await cls.api_request(
@@ -952,10 +957,7 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
             raise SwitchbotAuthenticationError(f"Authentication failed: {err}") from err
 
         userinfo = await cls._async_get_user_info(session, auth_headers)
-        if "botRegion" in userinfo and userinfo["botRegion"] != "":
-            region = userinfo["botRegion"]
-        else:
-            region = "us"
+        region = _extract_region(userinfo)
 
         try:
             device_info = await cls.api_request(

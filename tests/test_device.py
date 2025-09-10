@@ -16,7 +16,7 @@ from switchbot.const import (
     SwitchbotAuthenticationError,
     SwitchbotModel,
 )
-from switchbot.devices.device import SwitchbotBaseDevice
+from switchbot.devices.device import SwitchbotBaseDevice, _extract_region
 
 
 @pytest.fixture
@@ -360,3 +360,20 @@ async def test_populate_model_to_mac_cache() -> None:
 
     # Clear cache after test
     _MODEL_TO_MAC_CACHE.clear()
+
+
+def test_extract_region() -> None:
+    """Test the _extract_region helper function."""
+    # Test with botRegion present and not empty
+    assert _extract_region({"botRegion": "eu", "country": "de"}) == "eu"
+    assert _extract_region({"botRegion": "us", "country": "us"}) == "us"
+    assert _extract_region({"botRegion": "jp", "country": "jp"}) == "jp"
+
+    # Test with botRegion empty string
+    assert _extract_region({"botRegion": "", "country": "de"}) == "us"
+
+    # Test with botRegion missing
+    assert _extract_region({"country": "de"}) == "us"
+
+    # Test with empty dict
+    assert _extract_region({}) == "us"
