@@ -8,7 +8,11 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
 from switchbot import HumidifierMode, SwitchbotModel
-from switchbot.adv_parser import parse_advertisement_data
+from switchbot.adv_parser import (
+    _MODEL_TO_MAC_CACHE,
+    parse_advertisement_data,
+    populate_model_to_mac_cache,
+)
 from switchbot.const.lock import LockStatus
 from switchbot.models import SwitchBotAdvertisement
 
@@ -3790,3 +3794,73 @@ def test_adv_with_empty_data(test_case: AdvTestCase) -> None:
         rssi=-97,
         active=True,
     )
+
+
+def test_parse_advertisement_with_mac_cache() -> None:
+    """Test that populating the MAC cache helps identify unknown passive devices."""
+    # Clear the cache to ensure clean test
+    _MODEL_TO_MAC_CACHE.clear()
+
+    # Create a passive lock device with manufacturer data only (no service data)
+    # This would normally not be identifiable without the cache
+    mac_address = "C1:64:B8:7D:06:05"
+    ble_device = generate_ble_device(mac_address, "WoLock")
+
+    # Lock passive advertisement with manufacturer data
+    # This is real data from a WoLock device in passive mode
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b"\xc1d\xb8}\x06\x05\x00\x00\x00\x00\x00"},
+        service_data={},
+        rssi=-70,
+    )
+
+    # First attempt: Without cache, parser cannot identify the device model
+    result_without_cache = parse_advertisement_data(ble_device, adv_data)
+    assert result_without_cache is None, "Should not decode without model hint"
+
+    # Now populate the cache with the device's MAC and model
+    populate_model_to_mac_cache(mac_address, SwitchbotModel.LOCK)
+
+    # Second attempt: With cache, parser can now identify and decode the device
+    result_with_cache = parse_advertisement_data(ble_device, adv_data)
+    assert result_with_cache is not None, "Should decode with MAC cache"
+    assert result_with_cache.data["modelName"] == SwitchbotModel.LOCK
+    assert result_with_cache.data["modelFriendlyName"] == "Lock"
+    assert result_with_cache.active is False  # Passive advertisement
+
+    # Clean up
+    _MODEL_TO_MAC_CACHE.clear()
+
+
+def test_parse_advertisement_with_mac_cache_curtain() -> None:
+    """Test MAC cache with a passive curtain device."""
+    # Clear the cache
+    _MODEL_TO_MAC_CACHE.clear()
+
+    # Create a passive curtain device
+    mac_address = "CC:F4:C4:F9:AC:6C"
+    ble_device = generate_ble_device(mac_address, None)
+
+    # Curtain passive advertisement with only manufacturer data
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b"\xccOLG\x00c\x00\x00\x11\x00\x00"},
+        service_data={},
+        rssi=-85,
+    )
+
+    # Without cache, cannot identify
+    result_without_cache = parse_advertisement_data(ble_device, adv_data)
+    assert result_without_cache is None
+
+    # Populate cache
+    populate_model_to_mac_cache(mac_address, SwitchbotModel.CURTAIN)
+
+    # With cache, can identify and parse
+    result_with_cache = parse_advertisement_data(ble_device, adv_data)
+    assert result_with_cache is not None
+    assert result_with_cache.data["modelName"] == SwitchbotModel.CURTAIN
+    assert result_with_cache.data["modelFriendlyName"] == "Curtain"
+    assert result_with_cache.active is False
+
+    # Clean up
+    _MODEL_TO_MAC_CACHE.clear()
