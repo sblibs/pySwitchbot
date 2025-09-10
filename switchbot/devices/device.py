@@ -24,7 +24,7 @@ from bleak_retry_connector import (
 )
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-from ..adv_parser import API_MODEL_TO_ENUM, MODEL_TO_MAC_CACHE
+from ..adv_parser import populate_model_to_mac_cache
 from ..api_config import SWITCHBOT_APP_API_BASE_URL, SWITCHBOT_APP_CLIENT_ID
 from ..const import (
     DEFAULT_RETRY_COUNT,
@@ -41,6 +41,31 @@ from ..models import SwitchBotAdvertisement
 from ..utils import format_mac_upper
 
 _LOGGER = logging.getLogger(__name__)
+
+# Mapping from API model names to SwitchbotModel enum values
+API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
+    "WoHand": SwitchbotModel.BOT,
+    "WoCurtain": SwitchbotModel.CURTAIN,
+    "WoHumi": SwitchbotModel.HUMIDIFIER,
+    "WoPlug": SwitchbotModel.PLUG_MINI,
+    "WoPlugUS": SwitchbotModel.PLUG_MINI,
+    "WoContact": SwitchbotModel.CONTACT_SENSOR,
+    "WoStrip": SwitchbotModel.LIGHT_STRIP,
+    "WoSensorTH": SwitchbotModel.METER,
+    "WoMeter": SwitchbotModel.METER,
+    "WoMeterPlus": SwitchbotModel.METER_PRO,
+    "WoPresence": SwitchbotModel.MOTION_SENSOR,
+    "WoBulb": SwitchbotModel.COLOR_BULB,
+    "WoCeiling": SwitchbotModel.CEILING_LIGHT,
+    "WoLock": SwitchbotModel.LOCK,
+    "WoBlindTilt": SwitchbotModel.BLIND_TILT,
+    "WoIOSensor": SwitchbotModel.IO_METER,  # Outdoor Meter
+    "WoButton": SwitchbotModel.REMOTE,  # Remote button
+    "WoLinkMini": SwitchbotModel.HUBMINI_MATTER,  # Hub Mini
+    "W1083002": SwitchbotModel.RELAY_SWITCH_1,  # Relay Switch 1
+    "W1079000": SwitchbotModel.METER_PRO,  # Meter Pro (another variant)
+    "W1102001": SwitchbotModel.STRIP_LIGHT_3,  # RGBWW Strip Light 3
+}
 
 REQ_HEADER = "570f"
 
@@ -211,8 +236,8 @@ class SwitchbotBaseDevice:
         session: aiohttp.ClientSession,
         username: str,
         password: str,
-    ) -> dict[str, str]:
-        """Get devices from SwitchBot API."""
+    ) -> dict[str, SwitchbotModel]:
+        """Get devices from SwitchBot API and return formatted MAC to model mapping."""
         try:
             auth_result = await cls._get_auth_result(session, username, password)
             auth_headers = {"authorization": auth_result["access_token"]}
@@ -241,13 +266,39 @@ class SwitchbotBaseDevice:
             ) from err
 
         items: list[dict[str, Any]] = device_info["Items"]
-        mac_to_model: dict[str, str] = {
-            item["device_mac"]: item["device_detail"]["device_type"]
-            for item in items
-            if "device_mac" in item
-            and "device_detail" in item
-            and "device_type" in item["device_detail"]
-        }
+        mac_to_model: dict[str, SwitchbotModel] = {}
+
+        for item in items:
+            if "device_mac" not in item:
+                continue
+
+            if (
+                "device_detail" not in item
+                or "device_type" not in item["device_detail"]
+            ):
+                continue
+
+            mac = item["device_mac"]
+            model_name = item["device_detail"]["device_type"]
+
+            # Format MAC to uppercase with colons
+            formatted_mac = format_mac_upper(mac)
+
+            # Map API model name to SwitchbotModel enum if possible
+            if model_name in API_MODEL_TO_ENUM:
+                model = API_MODEL_TO_ENUM[model_name]
+                mac_to_model[formatted_mac] = model
+                # Populate the cache
+                populate_model_to_mac_cache(formatted_mac, model)
+            else:
+                # Log the full item payload for unknown models
+                _LOGGER.debug(
+                    "Unknown model %s for device %s, full item: %s",
+                    model_name,
+                    formatted_mac,
+                    item,
+                )
+
         return mac_to_model
 
     @classmethod
@@ -1097,23 +1148,7 @@ async def fetch_cloud_devices(
     session: aiohttp.ClientSession,
     username: str,
     password: str,
-) -> None:
-    """Fetch devices from SwitchBot API and populate MODEL_TO_MAC_CACHE."""
-    # Get devices from the API
-    mac_to_model = await SwitchbotBaseDevice.get_devices(session, username, password)
-
-    # Populate the cache with formatted MAC addresses
-    for mac, model_name in mac_to_model.items():
-        # Format MAC to uppercase with colons
-        formatted_mac = format_mac_upper(mac)
-
-        # Map API model name to SwitchbotModel enum if possible
-        if model_name in API_MODEL_TO_ENUM:
-            MODEL_TO_MAC_CACHE[formatted_mac] = API_MODEL_TO_ENUM[model_name]
-        else:
-            # For unknown models, we could log or handle differently
-            _LOGGER.debug(
-                "Unknown model %s for device %s, not adding to cache",
-                model_name,
-                formatted_mac,
-            )
+) -> dict[str, SwitchbotModel]:
+    """Fetch devices from SwitchBot API and return MAC to model mapping."""
+    # Get devices from the API (which also populates the cache)
+    return await SwitchbotBaseDevice.get_devices(session, username, password)
