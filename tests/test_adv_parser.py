@@ -3415,6 +3415,21 @@ def test_humidifer_with_empty_data() -> None:
             "RGBICWW Strip Light",
             SwitchbotModel.RGBICWW_STRIP_LIGHT,
         ),
+        AdvTestCase(
+            b'\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15',
+            b'\x00\x00M\x00\x10\xfb\xa8',
+            {
+                'battery': 77,
+                'mqtt_connected': True,
+                'sequence_number': 11,
+                'soc_version': '1.1.102',
+                'step': 6,
+                'work_status': 21,
+            },
+            b"\x00\x10\xfb\xa8",
+            "K11+ Vacuum",
+            SwitchbotModel.K11_VACUUM,
+        ),
     ],
 )
 def test_adv_active(test_case: AdvTestCase) -> None:
@@ -3614,6 +3629,21 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             "RGBICWW Strip Light",
             SwitchbotModel.RGBICWW_STRIP_LIGHT,
         ),
+        AdvTestCase(
+            b'\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15',
+            None,
+            {
+                'battery': 77,
+                'mqtt_connected': True,
+                'sequence_number': 11,
+                'soc_version': '1.1.102',
+                'step': 6,
+                'work_status': 21,
+            },
+            b"\x00\x10\xfb\xa8",
+            "K11+ Vacuum",
+            SwitchbotModel.K11_VACUUM,
+        ),
     ],
 )
 def test_adv_passive(test_case: AdvTestCase) -> None:
@@ -3770,6 +3800,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
             b"\x00\x10\xd0\xb3",
             "RGBICWW Strip Light",
             SwitchbotModel.RGBICWW_STRIP_LIGHT,
+        ),
+        AdvTestCase(
+            None,
+            b'\x00\x00M\x00\x10\xfb\xa8',
+            {},
+            b"\x00\x10\xfb\xa8",
+            "K11+ Vacuum",
+            SwitchbotModel.K11_VACUUM,
         ),
     ],
 )
