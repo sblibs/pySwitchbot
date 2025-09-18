@@ -15,7 +15,7 @@ common_params = [
     (b"3\x00\x00", ".", 2),
     (b"(\x00", "(", 1),
     (b"}\x00", "(", 1),
-    (b'\x00\x00M\x00\x10\xfb\xa8', b"\x00\x10\xfb\xa8", 2)
+    (b"\x00\x00M\x00\x10\xfb\xa8", b"\x00\x10\xfb\xa8", 2),
 ]
 
 
@@ -83,7 +83,12 @@ def make_advertisement_data(
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("rawAdvData", "model"),
-    [(b".\x00d", "."), (b"z\x00\x00", "z"), (b"3\x00\x00", "3"), (b'\x00\x00M\x00\x10\xfb\xa8', b"\x00\x10\xfb\xa8")],
+    [
+        (b".\x00d", "."),
+        (b"z\x00\x00", "z"),
+        (b"3\x00\x00", "3"),
+        (b"\x00\x00M\x00\x10\xfb\xa8", b"\x00\x10\xfb\xa8"),
+    ],
 )
 async def test_status_from_proceess_adv(rawAdvData: bytes, model: str) -> None:
     protocol_version = 2
