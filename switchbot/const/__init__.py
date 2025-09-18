@@ -96,6 +96,7 @@ class SwitchbotModel(StrEnum):
     PLUG_MINI_EU = "Plug Mini (EU)"
     RGBICWW_STRIP_LIGHT = "RGBICWW Strip Light"
     RGBICWW_FLOOR_LAMP = "RGBICWW Floor Lamp"
+    K11_VACUUM = "K11+ Vacuum"
 
 
 __all__ = [

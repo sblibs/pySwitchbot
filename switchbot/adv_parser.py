@@ -364,6 +364,12 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_rgbic_light,
         "manufacturer_id": 2409,
     },
+    b"\x00\x10\xfb\xa8": {
+        "modelName": SwitchbotModel.K11_VACUUM,
+        "modelFriendlyName": "K11+ Vacuum",
+        "func": process_vacuum,
+        "manufacturer_id": 2409,
+    },
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {
