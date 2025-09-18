@@ -32,7 +32,7 @@ def device_case(request):
 
 @pytest.fixture
 def expected_effects(device_case):
-    adv_info, dev_cls = device_case
+    adv_info, _dev_cls = device_case
     EXPECTED = {
         SwitchbotModel.STRIP_LIGHT_3: ("christmas", "halloween", "sunset"),
         SwitchbotModel.FLOOR_LAMP: ("christmas", "halloween", "sunset"),
