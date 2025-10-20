@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ..enum import StrEnum
 from .air_purifier import AirPurifierMode
+from .climate import ClimateMode, SmartThermostatRadiatorMode
 from .evaporative_humidifier import (
     HumidifierAction,
     HumidifierMode,
@@ -98,6 +99,7 @@ class SwitchbotModel(StrEnum):
     RGBICWW_FLOOR_LAMP = "RGBICWW Floor Lamp"
     K11_VACUUM = "K11+ Vacuum"
     CLIMATE_PANEL = "Climate Panel"
+    SMART_THERMOSTAT_RADIATOR = "Smart Thermostat Radiator"
 
 
 __all__ = [
@@ -107,12 +109,14 @@ __all__ = [
     "AirPurifierMode",
     "BulbColorMode",
     "CeilingLightColorMode",
+    "ClimateMode",
     "ColorMode",
     "FanMode",
     "HumidifierAction",
     "HumidifierMode",
     "HumidifierWaterLevel",
     "LockStatus",
+    "SmartThermostatRadiatorMode",
     "StripLightColorMode",
     "SwitchbotAccountConnectionError",
     "SwitchbotApiError",

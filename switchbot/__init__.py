@@ -13,6 +13,7 @@ from .const import (
     AirPurifierMode,
     BulbColorMode,
     CeilingLightColorMode,
+    ClimateMode,
     ColorMode,
     FanMode,
     HumidifierAction,
@@ -54,6 +55,7 @@ from .devices.relay_switch import (
     SwitchbotRelaySwitch2PM,
 )
 from .devices.roller_shade import SwitchbotRollerShade
+from .devices.smart_thermostat_radiator import SwitchbotSmartThermostatRadiator
 from .devices.vacuum import SwitchbotVacuum
 from .discovery import GetSwitchbotDevices
 from .models import SwitchBotAdvertisement
@@ -62,6 +64,7 @@ __all__ = [
     "AirPurifierMode",
     "BulbColorMode",
     "CeilingLightColorMode",
+    "ClimateMode",
     "ColorMode",
     "FanMode",
     "GetSwitchbotDevices",
@@ -99,6 +102,7 @@ __all__ = [
     "SwitchbotRelaySwitch2PM",
     "SwitchbotRgbicLight",
     "SwitchbotRollerShade",
+    "SwitchbotSmartThermostatRadiator",
     "SwitchbotStripLight3",
     "SwitchbotSupportedType",
     "SwitchbotSupportedType",
