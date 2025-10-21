@@ -6,33 +6,31 @@ from typing import Any
 from bleak.backends.device import BLEDevice
 
 from ..const import SwitchbotModel
-from ..models import SwitchBotAdvertisement
-from .base_cover import CONTROL_SOURCE, SwitchbotBaseCover
+from ..const.climate import ClimateAction, ClimateMode, SmartThermostatRadiatorMode
 from .device import (
-    REQ_HEADER,
     SwitchbotEncryptedDevice,
     SwitchbotSequenceDevice,
     update_after_operation,
 )
-from ..const.climate import SmartThermostatRadiatorMode, ClimateMode
-from .base_cliamte import SwitchbotBaseClimate
 
 _LOGGER = logging.getLogger(__name__)
 
 DEVICE_GET_BASIC_SETTINGS_KEY = "5702"
 
-_SMART_THERMOSTAT_RADIATOR_MODE_MAP = {
-    SmartThermostatRadiatorMode.AUTO: ClimateMode.HEAT,
-    SmartThermostatRadiatorMode.MANUAL: ClimateMode.HEAT,
-    SmartThermostatRadiatorMode.OFF: ClimateMode.OFF,
-    SmartThermostatRadiatorMode.ECONOMIC: ClimateMode.HEAT,
-    SmartThermostatRadiatorMode.COMFORT: ClimateMode.HEAT,
-    SmartThermostatRadiatorMode.FAST_HEAT: ClimateMode.HEAT,
+_modes = ["manual", "comfort", "economic", "fast_heating", "schedule"]
+SMART_THERMOSTAT_TO_HA_HVAC_MODE = {"off": ClimateMode.OFF, **dict.fromkeys(_modes, ClimateMode.HEAT)}
+
+COMMAND_SET_MODE = {
+    mode.name.lower(): f"570F7800{index:02X}"
+    for index, mode in enumerate(SmartThermostatRadiatorMode)
 }
+COMMAND_SET_TEMP = "570301{}ffffffff"
 
-
-class SwitchbotSmartThermostatRadiator(SwitchbotBaseClimate, SwitchbotEncryptedDevice):
+class SwitchbotSmartThermostatRadiator(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Smart Thermostat Radiator."""
+
+    _turn_off_command = "570100"
+    _turn_on_command = "570101"
 
     def __init__(
         self,
@@ -59,6 +57,26 @@ class SwitchbotSmartThermostatRadiator(SwitchbotBaseClimate, SwitchbotEncryptedD
         )
 
     @property
+    def min_temperature(self) -> float:
+        """Return the minimum target temperature."""
+        return 5.0
+
+    @property
+    def max_temperature(self) -> float:
+        """Return the maximum target temperature."""
+        return 35.0
+
+    @property
+    def preset_modes(self) -> list[str]:
+        """Return the supported preset modes."""
+        return SmartThermostatRadiatorMode.get_modes()
+
+    @property
+    def preset_mode(self) -> str | None:
+        """Return the current preset mode."""
+        return self.get_current_mode()
+
+    @property
     def hvac_modes(self) -> set[ClimateMode]:
         """Return the supported hvac modes."""
         return {ClimateMode.HEAT, ClimateMode.OFF}
@@ -66,7 +84,12 @@ class SwitchbotSmartThermostatRadiator(SwitchbotBaseClimate, SwitchbotEncryptedD
     @property
     def hvac_mode(self) -> ClimateMode | None:
         """Return the current hvac mode."""
-        return _SMART_THERMOSTAT_RADIATOR_MODE_MAP.get(self.get_current_mode(), ClimateMode.OFF)
+        return SMART_THERMOSTAT_TO_HA_HVAC_MODE.get(self.preset_mode, ClimateMode.OFF)
+
+    @property
+    def hvac_action(self) -> ClimateAction | None:
+        """Return current action."""
+        return self.get_action()
 
     @property
     def current_temperature(self) -> float | None:
@@ -77,6 +100,30 @@ class SwitchbotSmartThermostatRadiator(SwitchbotBaseClimate, SwitchbotEncryptedD
     def target_temperature(self) -> float | None:
         """Return the target temperature."""
         return self.get_target_temperature()
+
+    @update_after_operation
+    async def set_hvac_mode(self, hvac_mode: ClimateMode) -> None:
+        """Set the hvac mode."""
+        if hvac_mode == ClimateMode.OFF:
+            return await self.turn_off()
+        return await self.set_preset_mode("comfort")
+
+    @update_after_operation
+    async def set_preset_mode(self, preset_mode: str) -> bool:
+        """Send command to set thermostat preset_mode."""
+        return await self._send_command(COMMAND_SET_MODE[preset_mode])
+
+    @update_after_operation
+    async def set_target_temperature(self, temperature: float) -> bool:
+        """Send command to set target temperature."""
+        if self.preset_mode != SmartThermostatRadiatorMode.MANUAL.name.lower():
+            raise RuntimeError("Can only set temperature in MANUAL mode. Please change mode first.")
+
+        temp_value = int(temperature * 10)
+        cmd = COMMAND_SET_TEMP.format(f"{temp_value:04X}")
+
+        _LOGGER.debug("Setting temperature %.1f°C in mode %s → cmd=%s", temperature, self.preset_mode, cmd)
+        return await self._send_command(cmd)
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
@@ -138,3 +185,9 @@ class SwitchbotSmartThermostatRadiator(SwitchbotBaseClimate, SwitchbotEncryptedD
     def get_target_temperature(self) -> float | None:
         """Return the target temperature."""
         return self._get_adv_value("target_temperature")
+
+    def get_action(self) -> ClimateAction:
+        """Return current action from cache."""
+        if not self.is_on():
+            return ClimateAction.OFF
+        return ClimateAction.HEATING

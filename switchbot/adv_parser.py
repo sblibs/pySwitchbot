@@ -378,7 +378,7 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_climate_panel,
         "manufacturer_id": 2409,
     },
-    b"\x00 d\x00\x116@": {
+    b"\x00\x116@": {
         "modelName": SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
         "modelFriendlyName": "Smart Thermostat Radiator",
         "func": process_smart_thermostat_radiator,

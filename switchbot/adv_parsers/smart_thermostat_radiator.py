@@ -1,8 +1,7 @@
 """Smart Thermostat Radiator"""
 import logging
 
-from ..const.smart_thermostat_radiator import SmartThermostatRadiatorMode
-from ..helpers import celsius_to_fahrenheit
+from ..const.climate import SmartThermostatRadiatorMode
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,12 +21,10 @@ def process_smart_thermostat_radiator(data: bytes | None, mfr_data: bytes | None
     local_sign = 1 if (temp_data[1] & 0x80) else -1
     local_int = temp_data[1] & 0x7F
     local_temp =  local_sign * (local_int + (local_decimal / 10))
-    local_temp_f = round(celsius_to_fahrenheit(local_temp), 1)
 
     target_sign = 1 if (temp_data[2] & 0x80) else -1
     target_int = temp_data[2] & 0x7F
     target_temp =  target_sign * (target_int + (target_decimal / 10))
-    target_temp_f = round(celsius_to_fahrenheit(target_temp), 1)
 
     last_mode = SmartThermostatRadiatorMode.get_mode_name((mfr_data[11] >> 4) & 0x0F)
     mode = SmartThermostatRadiatorMode.get_mode_name(mfr_data[11] & 0x07)
