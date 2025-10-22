@@ -3448,6 +3448,26 @@ def test_humidifer_with_empty_data() -> None:
             "Climate Panel",
             SwitchbotModel.CLIMATE_PANEL,
         ),
+        AdvTestCase(
+            b'\xb0\xe9\xfe\xa2T|6\xe4\x00\x9c\xa3A\x00',
+            b'\x00 d\x00\x116@',
+            {
+                "battery": 100,
+                "door_open": False,
+                "fault_code": 0,
+                "isOn": True,
+                "last_mode": "comfort",
+                "mode": "manual",
+                "sequence_number": 54,
+                "need_update_temp": False,
+                "restarted": False,
+                "target_temperature": 35.0,
+                "temperature": 28.0,
+            },
+            b'\x00\x116@',
+            "Smart Thermostat Radiator",
+            SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
+        ),
     ],
 )
 def test_adv_active(test_case: AdvTestCase) -> None:
@@ -3680,6 +3700,26 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             "Climate Panel",
             SwitchbotModel.CLIMATE_PANEL,
         ),
+        AdvTestCase(
+            b'\xb0\xe9\xfe\xa2T|6\xe4\x00\x9c\xa3A\x00',
+            None,
+            {
+                "battery": 100,
+                "door_open": False,
+                "fault_code": 0,
+                "isOn": True,
+                "last_mode": "comfort",
+                "mode": "manual",
+                "sequence_number": 54,
+                "need_update_temp": False,
+                "restarted": False,
+                "target_temperature": 35.0,
+                "temperature": 28.0,
+            },
+            b'\x00\x116@',
+            "Smart Thermostat Radiator",
+            SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
+        ),
     ],
 )
 def test_adv_passive(test_case: AdvTestCase) -> None:
@@ -3852,6 +3892,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
             b"\x00\x10\xf3\xd8",
             "Climate Panel",
             SwitchbotModel.CLIMATE_PANEL,
+        ),
+        AdvTestCase(
+            None,
+            b'\x00 d\x00\x116@',
+            {},
+            b'\x00\x116@',
+            "Smart Thermostat Radiator",
+            SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
         ),
     ],
 )

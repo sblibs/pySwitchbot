@@ -6,9 +6,11 @@ from typing import Any
 from bleak.backends.device import BLEDevice
 
 from ..const import SwitchbotModel
-from ..const.climate import ClimateAction, ClimateMode, SmartThermostatRadiatorMode
+from ..const.climate import ClimateAction, ClimateMode
+from ..const.climate import SmartThermostatRadiatorMode as STRMode
 from .device import (
     SwitchbotEncryptedDevice,
+    SwitchbotOperationError,
     SwitchbotSequenceDevice,
     update_after_operation,
 )
@@ -17,14 +19,28 @@ _LOGGER = logging.getLogger(__name__)
 
 DEVICE_GET_BASIC_SETTINGS_KEY = "5702"
 
-_modes = ["manual", "comfort", "economic", "fast_heating", "schedule"]
+_modes = STRMode.get_valid_modes()
 SMART_THERMOSTAT_TO_HA_HVAC_MODE = {"off": ClimateMode.OFF, **dict.fromkeys(_modes, ClimateMode.HEAT)}
 
 COMMAND_SET_MODE = {
-    mode.name.lower(): f"570F7800{index:02X}"
-    for index, mode in enumerate(SmartThermostatRadiatorMode)
+    mode.lname: f"570F7800{index:02X}"
+    for index, mode in enumerate(STRMode)
 }
-COMMAND_SET_TEMP = "570301{}ffffffff"
+
+# fast heating default use max temperature
+COMMAND_SET_TEMP = {
+    STRMode.MANUAL.lname: "570F7801{temp:04X}",
+    STRMode.ECONOMIC.lname: "570F7802{temp:02X}",
+    STRMode.COMFORT.lname: "570F7803{temp:02X}",
+    STRMode.SCHEDULE.lname: "570F7806{temp:04X}",
+}
+
+MODE_TEMP_RANGE = {
+    STRMode.ECONOMIC.lname: (10.0, 20.0),
+    STRMode.COMFORT.lname: (10.0, 25.0),
+}
+
+DEFAULT_TEMP_RANGE = (5.0, 35.0)
 
 class SwitchbotSmartThermostatRadiator(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Smart Thermostat Radiator."""
@@ -59,17 +75,17 @@ class SwitchbotSmartThermostatRadiator(SwitchbotSequenceDevice, SwitchbotEncrypt
     @property
     def min_temperature(self) -> float:
         """Return the minimum target temperature."""
-        return 5.0
+        return MODE_TEMP_RANGE.get(self.preset_mode, DEFAULT_TEMP_RANGE)[0]
 
     @property
     def max_temperature(self) -> float:
         """Return the maximum target temperature."""
-        return 35.0
+        return MODE_TEMP_RANGE.get(self.preset_mode, DEFAULT_TEMP_RANGE)[1]
 
     @property
     def preset_modes(self) -> list[str]:
         """Return the supported preset modes."""
-        return SmartThermostatRadiatorMode.get_modes()
+        return STRMode.get_modes()
 
     @property
     def preset_mode(self) -> str | None:
@@ -116,11 +132,13 @@ class SwitchbotSmartThermostatRadiator(SwitchbotSequenceDevice, SwitchbotEncrypt
     @update_after_operation
     async def set_target_temperature(self, temperature: float) -> bool:
         """Send command to set target temperature."""
-        if self.preset_mode != SmartThermostatRadiatorMode.MANUAL.name.lower():
-            raise RuntimeError("Can only set temperature in MANUAL mode. Please change mode first.")
+        if self.preset_mode == STRMode.OFF.lname:
+            raise SwitchbotOperationError("Cannot set temperature when mode is OFF.")
+        if self.preset_mode == STRMode.FAST_HEATING.lname:
+            raise SwitchbotOperationError("Fast Heating mode defaults to max temperature.")
 
         temp_value = int(temperature * 10)
-        cmd = COMMAND_SET_TEMP.format(f"{temp_value:04X}")
+        cmd = COMMAND_SET_TEMP[self.preset_mode].format(temp=temp_value)
 
         _LOGGER.debug("Setting temperature %.1f°C in mode %s → cmd=%s", temperature, self.preset_mode, cmd)
         return await self._send_command(cmd)
@@ -134,8 +152,8 @@ class SwitchbotSmartThermostatRadiator(SwitchbotSequenceDevice, SwitchbotEncrypt
         battery = _data[1]
         firmware = _data[2] / 10.0
         hardware = _data[3]
-        last_mode = SmartThermostatRadiatorMode.get_mode_name((_data[4] >> 3) & 0x07)
-        mode = SmartThermostatRadiatorMode.get_mode_name(_data[4] & 0x07)
+        last_mode = STRMode.get_mode_name((_data[4] >> 3) & 0x07)
+        mode = STRMode.get_mode_name(_data[4] & 0x07)
         temp_raw_value = _data[5] << 8 | _data[6]
         temp_sign = 1 if temp_raw_value >> 15 else -1
         temperature = temp_sign * (temp_raw_value & 0x7FFF) / 10.0
