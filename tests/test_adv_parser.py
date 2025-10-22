@@ -3430,6 +3430,24 @@ def test_humidifer_with_empty_data() -> None:
             "K11+ Vacuum",
             SwitchbotModel.K11_VACUUM,
         ),
+        AdvTestCase(
+            b'\xb0\xe9\xfe\x8e\x98Oi_\x06\x9a,\x00\x00\x00\x00\xe4\x00\x08\x04\x00\x01\x00\x00',
+            b'\x00 _\x00\x10\xf3\xd8@',
+            {
+                "battery": 95,
+                'humidity': 44,
+                "sequence_number": 105,
+                'humidity_alarm': 0,
+                'isOn': False,
+                'is_light': False,
+                'motion_detected': True,
+                'temp_alarm': 0,
+                'temperature': 26.6,
+            },
+            b"\x00\x10\xf3\xd8",
+            "Climate Panel",
+            SwitchbotModel.CLIMATE_PANEL,
+        ),
     ],
 )
 def test_adv_active(test_case: AdvTestCase) -> None:
@@ -3644,6 +3662,24 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             "K11+ Vacuum",
             SwitchbotModel.K11_VACUUM,
         ),
+        AdvTestCase(
+            b'\xb0\xe9\xfe\x8e\x98Oi_\x06\x9a,\x00\x00\x00\x00\xe4\x00\x08\x04\x00\x01\x00\x00',
+            None,
+            {
+                "battery": 95,
+                'humidity': 44,
+                "sequence_number": 105,
+                'humidity_alarm': 0,
+                'isOn': False,
+                'is_light': False,
+                'motion_detected': True,
+                'temp_alarm': 0,
+                'temperature': 26.6,
+            },
+            b"\x00\x10\xf3\xd8",
+            "Climate Panel",
+            SwitchbotModel.CLIMATE_PANEL,
+        ),
     ],
 )
 def test_adv_passive(test_case: AdvTestCase) -> None:
@@ -3808,6 +3844,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
             b"\x00\x10\xfb\xa8",
             "K11+ Vacuum",
             SwitchbotModel.K11_VACUUM,
+        ),
+        AdvTestCase(
+            None,
+            b'\x00 _\x00\x10\xf3\xd8@',
+            {},
+            b"\x00\x10\xf3\xd8",
+            "Climate Panel",
+            SwitchbotModel.CLIMATE_PANEL,
         ),
     ],
 )
