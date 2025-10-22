@@ -1,6 +1,5 @@
 """Advertisement data parser for climate panel devices."""
 
-
 import logging
 
 _LOGGER = logging.getLogger(__name__)
@@ -27,7 +26,7 @@ def process_climate_panel(
     humidity = mfr_data[10] & 0x7F
 
     pir_state = bool(mfr_data[15] & 0x80)
-    is_light = (((mfr_data[15] >> 2) & 0x03) == 0x10)
+    is_light = ((mfr_data[15] >> 2) & 0x03) == 0x10
 
     result = {
         "sequence_number": seq_number,
@@ -41,5 +40,7 @@ def process_climate_panel(
         "is_light": is_light,
     }
 
-    _LOGGER.debug("Processed climate panel mfr data: %s, result: %s", mfr_data.hex(), result)
+    _LOGGER.debug(
+        "Processed climate panel mfr data: %s, result: %s", mfr_data.hex(), result
+    )
     return result

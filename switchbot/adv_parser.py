@@ -371,12 +371,12 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_vacuum,
         "manufacturer_id": 2409,
     },
-    b'\x00\x10\xf3\xd8': {
+    b"\x00\x10\xf3\xd8": {
         "modelName": SwitchbotModel.CLIMATE_PANEL,
         "modelFriendlyName": "Climate Panel",
         "func": process_climate_panel,
         "manufacturer_id": 2409,
-    }
+    },
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {
