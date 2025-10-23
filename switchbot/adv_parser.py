@@ -15,6 +15,7 @@ from .adv_parsers.blind_tilt import process_woblindtilt
 from .adv_parsers.bot import process_wohand
 from .adv_parsers.bulb import process_color_bulb
 from .adv_parsers.ceiling_light import process_woceiling
+from .adv_parsers.climate_panel import process_climate_panel
 from .adv_parsers.contact import process_wocontact
 from .adv_parsers.curtain import process_wocurtain
 from .adv_parsers.fan import process_fan
@@ -370,6 +371,12 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_vacuum,
         "manufacturer_id": 2409,
     },
+    b"\x00\x10\xf3\xd8": {
+        "modelName": SwitchbotModel.CLIMATE_PANEL,
+        "modelFriendlyName": "Climate Panel",
+        "func": process_climate_panel,
+        "manufacturer_id": 2409,
+    },
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {
@@ -452,12 +459,12 @@ def _parse_data(
             if model_data.get("manufacturer_data_length") == len(_mfr_data):
                 _model = model_chr
                 break
-    if (
-        _service_data
-        and len(_service_data) > 5
-        and _service_data[-4:] in SUPPORTED_TYPES
-    ):
-        _model = _service_data[-4:]
+
+    if _service_data and len(_service_data) > 5:
+        for s in (_service_data[-4:], _service_data[-5:-1]):
+            if s in SUPPORTED_TYPES:
+                _model = s
+                break
 
     if not _model:
         return None
