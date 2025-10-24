@@ -43,6 +43,7 @@ from .adv_parsers.relay_switch import (
 )
 from .adv_parsers.remote import process_woremote
 from .adv_parsers.roller_shade import process_worollershade
+from .adv_parsers.smart_thermostat_radiator import process_smart_thermostat_radiator
 from .adv_parsers.vacuum import process_vacuum, process_vacuum_k
 from .const import SwitchbotModel
 from .models import SwitchBotAdvertisement
@@ -375,6 +376,12 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.CLIMATE_PANEL,
         "modelFriendlyName": "Climate Panel",
         "func": process_climate_panel,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x116@": {
+        "modelName": SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
+        "modelFriendlyName": "Smart Thermostat Radiator",
+        "func": process_smart_thermostat_radiator,
         "manufacturer_id": 2409,
     },
 }
