@@ -20,11 +20,13 @@ _LOGGER = logging.getLogger(__name__)
 DEVICE_GET_BASIC_SETTINGS_KEY = "5702"
 
 _modes = STRMode.get_valid_modes()
-SMART_THERMOSTAT_TO_HA_HVAC_MODE = {"off": ClimateMode.OFF, **dict.fromkeys(_modes, ClimateMode.HEAT)}
+SMART_THERMOSTAT_TO_HA_HVAC_MODE = {
+    "off": ClimateMode.OFF,
+    **dict.fromkeys(_modes, ClimateMode.HEAT),
+}
 
 COMMAND_SET_MODE = {
-    mode.lname: f"570F7800{index:02X}"
-    for index, mode in enumerate(STRMode)
+    mode.lname: f"570F7800{index:02X}" for index, mode in enumerate(STRMode)
 }
 
 # fast heating default use max temperature
@@ -42,7 +44,10 @@ MODE_TEMP_RANGE = {
 
 DEFAULT_TEMP_RANGE = (5.0, 35.0)
 
-class SwitchbotSmartThermostatRadiator(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
+
+class SwitchbotSmartThermostatRadiator(
+    SwitchbotSequenceDevice, SwitchbotEncryptedDevice
+):
     """Representation of a Switchbot Smart Thermostat Radiator."""
 
     _turn_off_command = "570100"
@@ -135,12 +140,19 @@ class SwitchbotSmartThermostatRadiator(SwitchbotSequenceDevice, SwitchbotEncrypt
         if self.preset_mode == STRMode.OFF.lname:
             raise SwitchbotOperationError("Cannot set temperature when mode is OFF.")
         if self.preset_mode == STRMode.FAST_HEATING.lname:
-            raise SwitchbotOperationError("Fast Heating mode defaults to max temperature.")
+            raise SwitchbotOperationError(
+                "Fast Heating mode defaults to max temperature."
+            )
 
         temp_value = int(temperature * 10)
         cmd = COMMAND_SET_TEMP[self.preset_mode].format(temp=temp_value)
 
-        _LOGGER.debug("Setting temperature %.1f°C in mode %s → cmd=%s", temperature, self.preset_mode, cmd)
+        _LOGGER.debug(
+            "Setting temperature %.1f°C in mode %s → cmd=%s",
+            temperature,
+            self.preset_mode,
+            cmd,
+        )
         return await self._send_command(cmd)
 
     async def get_basic_info(self) -> dict[str, Any] | None:

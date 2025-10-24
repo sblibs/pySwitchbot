@@ -14,12 +14,14 @@ class ClimateMode(Enum):
     DRY = 5
     FAN_ONLY = 6
 
+
 class ClimateAction(Enum):
     """Climate Actions."""
 
     OFF = 0
     IDLE = 1
     HEATING = 2
+
 
 class SmartThermostatRadiatorMode(Enum):
     """Smart Thermostat Radiator Modes."""

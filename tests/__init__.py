@@ -83,8 +83,8 @@ RGBICWW_FLOOR_LAMP_INFO = AdvTestCase(
 
 
 SMART_THERMOSTAT_RADIATOR_INFO = AdvTestCase(
-    b'\xb0\xe9\xfe\xa2T|6\xe4\x00\x9c\xa3A\x00',
-    b'\x00 d\x00\x116@',
+    b"\xb0\xe9\xfe\xa2T|6\xe4\x00\x9c\xa3A\x00",
+    b"\x00 d\x00\x116@",
     {
         "battery": 100,
         "door_open": False,
@@ -98,7 +98,7 @@ SMART_THERMOSTAT_RADIATOR_INFO = AdvTestCase(
         "target_temperature": 35.0,
         "temperature": 28.0,
     },
-    b'\x00\x116@',
+    b"\x00\x116@",
     "Smart Thermostat Radiator",
     SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
 )

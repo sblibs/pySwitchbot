@@ -1,11 +1,15 @@
 """Smart Thermostat Radiator"""
+
 import logging
 
 from ..const.climate import SmartThermostatRadiatorMode
 
 _LOGGER = logging.getLogger(__name__)
 
-def process_smart_thermostat_radiator(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | int | str]:
+
+def process_smart_thermostat_radiator(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int | str]:
     """Process Smart Thermostat Radiator data."""
     if mfr_data is None:
         return {}
@@ -14,17 +18,17 @@ def process_smart_thermostat_radiator(data: bytes | None, mfr_data: bytes | None
     _isOn = bool(mfr_data[7] & 0b10000000)
     _battery = mfr_data[7] & 0b01111111
 
-    temp_data =  mfr_data[8:11]
+    temp_data = mfr_data[8:11]
     target_decimal = (temp_data[0] >> 4) & 0x0F
-    local_decimal = temp_data[0] & 0x0F 
+    local_decimal = temp_data[0] & 0x0F
 
     local_sign = 1 if (temp_data[1] & 0x80) else -1
     local_int = temp_data[1] & 0x7F
-    local_temp =  local_sign * (local_int + (local_decimal / 10))
+    local_temp = local_sign * (local_int + (local_decimal / 10))
 
     target_sign = 1 if (temp_data[2] & 0x80) else -1
     target_int = temp_data[2] & 0x7F
-    target_temp =  target_sign * (target_int + (target_decimal / 10))
+    target_temp = target_sign * (target_int + (target_decimal / 10))
 
     last_mode = SmartThermostatRadiatorMode.get_mode_name((mfr_data[11] >> 4) & 0x0F)
     mode = SmartThermostatRadiatorMode.get_mode_name(mfr_data[11] & 0x07)
@@ -34,7 +38,7 @@ def process_smart_thermostat_radiator(data: bytes | None, mfr_data: bytes | None
     fault_code = (mfr_data[12] >> 1) & 0x07
     door_open = bool(mfr_data[12] & 0x01)
 
-    result =  {
+    result = {
         "sequence_number": _seq_num,
         "isOn": _isOn,
         "battery": _battery,
@@ -48,5 +52,7 @@ def process_smart_thermostat_radiator(data: bytes | None, mfr_data: bytes | None
         "door_open": door_open,
     }
 
-    _LOGGER.debug("Smart Thermostat Radiator mfr data: %s, result: %s", mfr_data.hex(), result)
+    _LOGGER.debug(
+        "Smart Thermostat Radiator mfr data: %s, result: %s", mfr_data.hex(), result
+    )
     return result

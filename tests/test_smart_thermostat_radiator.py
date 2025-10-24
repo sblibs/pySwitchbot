@@ -33,6 +33,7 @@ def create_device_for_command_testing(
     device.update = AsyncMock()
     return device
 
+
 def make_advertisement_data(
     ble_device: BLEDevice, adv_info: AdvTestCase, init_data: dict | None = None
 ):
@@ -49,11 +50,13 @@ def make_advertisement_data(
             "model": adv_info.model,
             "modelFriendlyName": adv_info.modelFriendlyName,
             "modelName": adv_info.modelName,
-        } | init_data,
+        }
+        | init_data,
         device=ble_device,
         rssi=-80,
         active=True,
     )
+
 
 @pytest.mark.asyncio
 async def test_default_info() -> None:
@@ -70,18 +73,21 @@ async def test_default_info() -> None:
     assert device.current_temperature == 28.0
     assert device.door_open() is False
 
+
 @pytest.mark.asyncio
 async def test_default_info_with_off_mode() -> None:
-    device = create_device_for_command_testing(SMART_THERMOSTAT_RADIATOR_INFO, {"mode": STRMode.OFF.lname, "isOn": False})
+    device = create_device_for_command_testing(
+        SMART_THERMOSTAT_RADIATOR_INFO, {"mode": STRMode.OFF.lname, "isOn": False}
+    )
     assert device.hvac_action == ClimateAction.OFF
 
 
 @pytest.mark.parametrize(
-        ("mode", "expected_command"),
-        [
-            (ClimateMode.OFF, "570100"),
-            (ClimateMode.HEAT, COMMAND_SET_MODE[STRMode.COMFORT.lname]),
-        ]
+    ("mode", "expected_command"),
+    [
+        (ClimateMode.OFF, "570100"),
+        (ClimateMode.HEAT, COMMAND_SET_MODE[STRMode.COMFORT.lname]),
+    ],
 )
 @pytest.mark.asyncio
 async def test_set_hvac_mode_commands(mode, expected_command) -> None:
@@ -90,16 +96,17 @@ async def test_set_hvac_mode_commands(mode, expected_command) -> None:
     await device.set_hvac_mode(mode)
     device._send_command.assert_awaited_with(expected_command)
 
+
 @pytest.mark.parametrize(
-        ("preset_mode", "expected_command"),
-        [
-            (STRMode.SCHEDULE.lname, COMMAND_SET_MODE[STRMode.SCHEDULE.lname]),
-            (STRMode.MANUAL.lname, COMMAND_SET_MODE[STRMode.MANUAL.lname]),
-            (STRMode.OFF.lname, COMMAND_SET_MODE[STRMode.OFF.lname]),
-            (STRMode.ECONOMIC.lname, COMMAND_SET_MODE[STRMode.ECONOMIC.lname]),
-            (STRMode.COMFORT.lname, COMMAND_SET_MODE[STRMode.COMFORT.lname]),
-            (STRMode.FAST_HEATING.lname, COMMAND_SET_MODE[STRMode.FAST_HEATING.lname]),
-        ]
+    ("preset_mode", "expected_command"),
+    [
+        (STRMode.SCHEDULE.lname, COMMAND_SET_MODE[STRMode.SCHEDULE.lname]),
+        (STRMode.MANUAL.lname, COMMAND_SET_MODE[STRMode.MANUAL.lname]),
+        (STRMode.OFF.lname, COMMAND_SET_MODE[STRMode.OFF.lname]),
+        (STRMode.ECONOMIC.lname, COMMAND_SET_MODE[STRMode.ECONOMIC.lname]),
+        (STRMode.COMFORT.lname, COMMAND_SET_MODE[STRMode.COMFORT.lname]),
+        (STRMode.FAST_HEATING.lname, COMMAND_SET_MODE[STRMode.FAST_HEATING.lname]),
+    ],
 )
 @pytest.mark.asyncio
 async def test_set_preset_mode_commands(preset_mode, expected_command) -> None:
@@ -108,12 +115,16 @@ async def test_set_preset_mode_commands(preset_mode, expected_command) -> None:
     await device.set_preset_mode(preset_mode)
     device._send_command.assert_awaited_with(expected_command)
 
+
 @pytest.mark.asyncio
 async def test_set_target_temperature_command() -> None:
     device = create_device_for_command_testing(SMART_THERMOSTAT_RADIATOR_INFO)
 
     await device.set_target_temperature(22.5)
-    device._send_command.assert_awaited_with(COMMAND_SET_TEMP[STRMode.MANUAL.lname].format(temp=225))
+    device._send_command.assert_awaited_with(
+        COMMAND_SET_TEMP[STRMode.MANUAL.lname].format(temp=225)
+    )
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -124,10 +135,13 @@ async def test_set_target_temperature_command() -> None:
     ],
 )
 async def test_set_target_temperature_with_invalid_mode(mode, match) -> None:
-    device = create_device_for_command_testing(SMART_THERMOSTAT_RADIATOR_INFO, {"mode": mode})
+    device = create_device_for_command_testing(
+        SMART_THERMOSTAT_RADIATOR_INFO, {"mode": mode}
+    )
 
     with pytest.raises(SwitchbotOperationError, match=match):
         await device.set_target_temperature(22.5)
+
 
 @pytest.mark.asyncio
 async def test_get_basic_info_none() -> None:
@@ -136,19 +150,48 @@ async def test_get_basic_info_none() -> None:
 
     assert await device.get_basic_info() is None
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("basic_info", "result"),
     [
         (
-            b'\x01d\x08>\x14\x80\xe6\x00(\x82\xbe\x00T\x00\x82\x00\x00',
-            [100, 0.8, 62, "off", "comfort", 23.0, 4.0, 13.0, 19.0, 0, False, 13.0, False],
+            b"\x01d\x08>\x14\x80\xe6\x00(\x82\xbe\x00T\x00\x82\x00\x00",
+            [
+                100,
+                0.8,
+                62,
+                "off",
+                "comfort",
+                23.0,
+                4.0,
+                13.0,
+                19.0,
+                0,
+                False,
+                13.0,
+                False,
+            ],
         ),
         (
-            b'\x01d\x08>#\x80\xf0\x00(\x82\xbe\x00T\x00\x82\x00\x00',
-            [100, 0.8, 62, "comfort", "economic", 24.0, 4.0, 13.0, 19.0, 0, False, 13.0, False],
-        )
-    ]
+            b"\x01d\x08>#\x80\xf0\x00(\x82\xbe\x00T\x00\x82\x00\x00",
+            [
+                100,
+                0.8,
+                62,
+                "comfort",
+                "economic",
+                24.0,
+                4.0,
+                13.0,
+                19.0,
+                0,
+                False,
+                13.0,
+                False,
+            ],
+        ),
+    ],
 )
 async def test_get_basic_info_parsing(basic_info, result) -> None:
     device = create_device_for_command_testing(SMART_THERMOSTAT_RADIATOR_INFO)
@@ -168,6 +211,7 @@ async def test_get_basic_info_parsing(basic_info, result) -> None:
     assert info["child_lock"] == result[10]
     assert info["target_temp"] == result[11]
     assert info["door_open"] == result[12]
+
 
 @pytest.mark.asyncio
 @patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)

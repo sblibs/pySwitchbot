@@ -383,7 +383,7 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelFriendlyName": "Smart Thermostat Radiator",
         "func": process_smart_thermostat_radiator,
         "manufacturer_id": 2409,
-    }
+    },
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {
