@@ -29,9 +29,9 @@ class SmartThermostatRadiatorMode(Enum):
     SCHEDULE = 0
     MANUAL = 1
     OFF = 2
-    ECONOMIC = 3
+    ECO = 3
     COMFORT = 4
-    FAST_HEATING = 5
+    BOOST = 5
 
     @property
     def lname(self) -> str:

@@ -32,13 +32,13 @@ COMMAND_SET_MODE = {
 # fast heating default use max temperature
 COMMAND_SET_TEMP = {
     STRMode.MANUAL.lname: "570F7801{temp:04X}",
-    STRMode.ECONOMIC.lname: "570F7802{temp:02X}",
+    STRMode.ECO.lname: "570F7802{temp:02X}",
     STRMode.COMFORT.lname: "570F7803{temp:02X}",
     STRMode.SCHEDULE.lname: "570F7806{temp:04X}",
 }
 
 MODE_TEMP_RANGE = {
-    STRMode.ECONOMIC.lname: (10.0, 20.0),
+    STRMode.ECO.lname: (10.0, 20.0),
     STRMode.COMFORT.lname: (10.0, 25.0),
 }
 
@@ -139,9 +139,9 @@ class SwitchbotSmartThermostatRadiator(
         """Send command to set target temperature."""
         if self.preset_mode == STRMode.OFF.lname:
             raise SwitchbotOperationError("Cannot set temperature when mode is OFF.")
-        if self.preset_mode == STRMode.FAST_HEATING.lname:
+        if self.preset_mode == STRMode.BOOST.lname:
             raise SwitchbotOperationError(
-                "Fast Heating mode defaults to max temperature."
+                "Boost mode defaults to max temperature."
             )
 
         temp_value = int(temperature * 10)
