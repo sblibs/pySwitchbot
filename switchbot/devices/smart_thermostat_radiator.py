@@ -140,9 +140,7 @@ class SwitchbotSmartThermostatRadiator(
         if self.preset_mode == STRMode.OFF.lname:
             raise SwitchbotOperationError("Cannot set temperature when mode is OFF.")
         if self.preset_mode == STRMode.BOOST.lname:
-            raise SwitchbotOperationError(
-                "Boost mode defaults to max temperature."
-            )
+            raise SwitchbotOperationError("Boost mode defaults to max temperature.")
 
         temp_value = int(temperature * 10)
         cmd = COMMAND_SET_TEMP[self.preset_mode].format(temp=temp_value)
