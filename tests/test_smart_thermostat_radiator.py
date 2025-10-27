@@ -103,9 +103,9 @@ async def test_set_hvac_mode_commands(mode, expected_command) -> None:
         (STRMode.SCHEDULE.lname, COMMAND_SET_MODE[STRMode.SCHEDULE.lname]),
         (STRMode.MANUAL.lname, COMMAND_SET_MODE[STRMode.MANUAL.lname]),
         (STRMode.OFF.lname, COMMAND_SET_MODE[STRMode.OFF.lname]),
-        (STRMode.ECONOMIC.lname, COMMAND_SET_MODE[STRMode.ECONOMIC.lname]),
+        (STRMode.ECO.lname, COMMAND_SET_MODE[STRMode.ECO.lname]),
         (STRMode.COMFORT.lname, COMMAND_SET_MODE[STRMode.COMFORT.lname]),
-        (STRMode.FAST_HEATING.lname, COMMAND_SET_MODE[STRMode.FAST_HEATING.lname]),
+        (STRMode.BOOST.lname, COMMAND_SET_MODE[STRMode.BOOST.lname]),
     ],
 )
 @pytest.mark.asyncio
@@ -131,7 +131,7 @@ async def test_set_target_temperature_command() -> None:
     ("mode", "match"),
     [
         (STRMode.OFF.lname, "Cannot set temperature when mode is OFF."),
-        (STRMode.FAST_HEATING.lname, "Fast Heating mode defaults to max temperature."),
+        (STRMode.BOOST.lname, "Boost mode defaults to max temperature."),
     ],
 )
 async def test_set_target_temperature_with_invalid_mode(mode, match) -> None:
@@ -180,7 +180,7 @@ async def test_get_basic_info_none() -> None:
                 0.8,
                 62,
                 "comfort",
-                "economic",
+                "eco",
                 24.0,
                 4.0,
                 13.0,
