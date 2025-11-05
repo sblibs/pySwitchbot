@@ -3709,7 +3709,7 @@ def test_adv_active(test_case: AdvTestCase) -> None:
                 "sequence_number": 105,
                 "humidity_alarm": 0,
                 "isOn": False,
-                "is_light": False,
+                "is_light": True,
                 "motion_detected": True,
                 "temp_alarm": 0,
                 "temperature": 26.6,
