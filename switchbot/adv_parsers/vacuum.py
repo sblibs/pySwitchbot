@@ -7,6 +7,7 @@ import struct
 
 _LOGGER = logging.getLogger(__name__)
 
+
 def process_vacuum(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int | str]:
@@ -69,4 +70,3 @@ def process_vacuum_k(
     _LOGGER.debug("Processed Vacuum K data: %s, result: %s", data, result)
 
     return result
-
