@@ -74,6 +74,7 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "W1079000": SwitchbotModel.METER_PRO,  # Meter Pro (another variant)
     "W1102001": SwitchbotModel.STRIP_LIGHT_3,  # RGBWW Strip Light 3
     "W1106000": SwitchbotModel.S20_VACUUM,
+    "W1101000": SwitchbotModel.PRESENCE_SENSOR,
 }
 
 REQ_HEADER = "570f"

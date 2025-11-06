@@ -35,6 +35,7 @@ from .adv_parsers.lock import (
 from .adv_parsers.meter import process_wosensorth, process_wosensorth_c
 from .adv_parsers.motion import process_wopresence
 from .adv_parsers.plug import process_woplugmini
+from .adv_parsers.presence_sensor import process_presence_sensor
 from .adv_parsers.relay_switch import (
     process_garage_door_opener,
     process_relay_switch_1pm,
@@ -388,6 +389,12 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.S20_VACUUM,
         "modelFriendlyName": "S20 Vacuum",
         "func": process_vacuum,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x10\xcc\xc8": {
+        "modelName": SwitchbotModel.PRESENCE_SENSOR,
+        "modelFriendlyName": "Presence Sensor",
+        "func": process_presence_sensor,
         "manufacturer_id": 2409,
     },
 }
