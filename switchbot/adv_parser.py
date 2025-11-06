@@ -384,6 +384,12 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_smart_thermostat_radiator,
         "manufacturer_id": 2409,
     },
+    b"\x00\x10\xe0P": {
+        "modelName": SwitchbotModel.S20_VACUUM,
+        "modelFriendlyName": "S20 Vacuum",
+        "func": process_vacuum,
+        "manufacturer_id": 2409,
+    },
 }
 
 _SWITCHBOT_MODEL_TO_CHAR = {

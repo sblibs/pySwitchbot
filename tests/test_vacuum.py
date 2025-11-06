@@ -16,6 +16,7 @@ common_params = [
     (b"(\x00", "(", 1),
     (b"}\x00", "(", 1),
     (b"\x00\x00M\x00\x10\xfb\xa8", b"\x00\x10\xfb\xa8", 2),
+    (b"\x00\x00d\x00\x10\xe0P", b"\x00\x10\xe0P", 2),
 ]
 
 
@@ -88,6 +89,7 @@ def make_advertisement_data(
         (b"z\x00\x00", "z"),
         (b"3\x00\x00", "3"),
         (b"\x00\x00M\x00\x10\xfb\xa8", b"\x00\x10\xfb\xa8"),
+        (b"\x00\x00d\x00\x10\xe0P", b"\x00\x10\xe0P"),
     ],
 )
 async def test_status_from_proceess_adv(rawAdvData: bytes, model: str) -> None:

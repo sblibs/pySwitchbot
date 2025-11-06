@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 import struct
 
+_LOGGER = logging.getLogger(__name__)
 
 def process_vacuum(
     data: bytes | None, mfr_data: bytes | None
@@ -20,7 +22,7 @@ def process_vacuum(
     _battery = mfr_data[12]
     _work_status = mfr_data[13] & 0b00111111
 
-    return {
+    result = {
         "sequence_number": _seq_num,
         "soc_version": _soc_version,
         "step": _step,
@@ -28,6 +30,10 @@ def process_vacuum(
         "battery": _battery,
         "work_status": _work_status,
     }
+
+    _LOGGER.debug("Processed Vacuum data: %s, result: %s", data, result)
+
+    return result
 
 
 def get_device_fw_version(version_bytes: bytes) -> str | None:
@@ -51,7 +57,7 @@ def process_vacuum_k(
     _work_status = (mfr_data[7] & 0b00010000) >> 4
     _battery = mfr_data[8] & 0b01111111
 
-    return {
+    result = {
         "sequence_number": _seq_num,
         "dustbin_bound": _dustbin_bound,
         "dusbin_connected": _dusbin_connected,
@@ -59,3 +65,8 @@ def process_vacuum_k(
         "work_status": _work_status,
         "battery": _battery,
     }
+
+    _LOGGER.debug("Processed Vacuum K data: %s, result: %s", data, result)
+
+    return result
+
