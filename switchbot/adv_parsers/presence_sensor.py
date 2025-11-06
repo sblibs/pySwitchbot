@@ -1,6 +1,7 @@
 """Advertisement data parser for presence sensor devices."""
 
 import logging
+
 from ..const.presence_sensor import BATTERY_LEVEL_MAP
 
 _LOGGER = logging.getLogger(__name__)
