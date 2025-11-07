@@ -26,7 +26,7 @@ def process_climate_panel(
     humidity = mfr_data[10] & 0x7F
 
     pir_state = bool(mfr_data[15] & 0x80)
-    is_light = ((mfr_data[15] >> 2) & 0x03) == 0x10
+    is_light = ((mfr_data[15] >> 1) & 0x03) == 0x02
 
     result = {
         "sequence_number": seq_number,
