@@ -3486,6 +3486,21 @@ def test_humidifer_with_empty_data() -> None:
             "Smart Thermostat Radiator",
             SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
         ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\xc3\x1a!:\x01\x11\x1e\x00\x00d\x03",
+            b"\x00\x00d\x00\x10\xe0P",
+            {
+                "battery": 100,
+                "mqtt_connected": False,
+                "sequence_number": 58,
+                "soc_version": "1.1.030",
+                "step": 0,
+                "work_status": 3,
+            },
+            b"\x00\x10\xe0P",
+            "S20 Vacuum",
+            SwitchbotModel.S20_VACUUM,
+        ),
     ],
 )
 def test_adv_active(test_case: AdvTestCase) -> None:
@@ -3738,6 +3753,21 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             "Smart Thermostat Radiator",
             SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
         ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\xc3\x1a!:\x01\x11\x1e\x00\x00d\x03",
+            None,
+            {
+                "battery": 100,
+                "mqtt_connected": False,
+                "sequence_number": 58,
+                "soc_version": "1.1.030",
+                "step": 0,
+                "work_status": 3,
+            },
+            b"\x00\x10\xe0P",
+            "S20 Vacuum",
+            SwitchbotModel.S20_VACUUM,
+        ),
     ],
 )
 def test_adv_passive(test_case: AdvTestCase) -> None:
@@ -3918,6 +3948,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
             b"\x00\x116@",
             "Smart Thermostat Radiator",
             SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x00d\x00\x10\xe0P",
+            {},
+            b"\x00\x10\xe0P",
+            "S20 Vacuum",
+            SwitchbotModel.S20_VACUUM,
         ),
     ],
 )

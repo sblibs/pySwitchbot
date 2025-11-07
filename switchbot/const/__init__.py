@@ -100,6 +100,7 @@ class SwitchbotModel(StrEnum):
     K11_VACUUM = "K11+ Vacuum"
     CLIMATE_PANEL = "Climate Panel"
     SMART_THERMOSTAT_RADIATOR = "Smart Thermostat Radiator"
+    S20_VACUUM = "S20 Vacuum"
 
 
 __all__ = [
