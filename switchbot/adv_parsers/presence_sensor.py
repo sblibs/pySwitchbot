@@ -1,5 +1,7 @@
 """Advertisement data parser for presence sensor devices."""
 
+from __future__ import annotations
+
 import logging
 
 from ..const.presence_sensor import BATTERY_LEVEL_MAP
