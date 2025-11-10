@@ -3501,6 +3501,23 @@ def test_humidifer_with_empty_data() -> None:
             "S20 Vacuum",
             SwitchbotModel.S20_VACUUM,
         ),
+        AdvTestCase(
+            b"\xb0\xe9\xfelf\xaa\x06\xcc\x04V\x00\x8c",
+            b"\x00 d\x00\x10\xcc\xc8",
+            {
+                "adaptive_state": True,
+                "battery": 100,
+                "battery_range": ">=60%",
+                "led_state": True,
+                "lightLevel": 12,
+                "motion_detected": True,
+                "sequence_number": 6,
+                "trigger_flag": 0,
+            },
+            b"\x00\x10\xcc\xc8",
+            "Presence Sensor",
+            SwitchbotModel.PRESENCE_SENSOR,
+        ),
     ],
 )
 def test_adv_active(test_case: AdvTestCase) -> None:
@@ -3768,6 +3785,22 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             "S20 Vacuum",
             SwitchbotModel.S20_VACUUM,
         ),
+        AdvTestCase(
+            b"\xb0\xe9\xfelf\xaa\x06\xcc\x04V\x00\x8c",
+            None,
+            {
+                "adaptive_state": True,
+                "battery_range": ">=60%",
+                "led_state": True,
+                "lightLevel": 12,
+                "motion_detected": True,
+                "sequence_number": 6,
+                "trigger_flag": 0,
+            },
+            b"\x00\x10\xcc\xc8",
+            "Presence Sensor",
+            SwitchbotModel.PRESENCE_SENSOR,
+        ),
     ],
 )
 def test_adv_passive(test_case: AdvTestCase) -> None:
@@ -3956,6 +3989,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
             b"\x00\x10\xe0P",
             "S20 Vacuum",
             SwitchbotModel.S20_VACUUM,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00 d\x00\x10\xcc\xc8",
+            {},
+            b"\x00\x10\xcc\xc8",
+            "Presence Sensor",
+            SwitchbotModel.PRESENCE_SENSOR,
         ),
     ],
 )
