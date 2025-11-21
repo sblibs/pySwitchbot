@@ -54,7 +54,7 @@ def _extract_region(userinfo: dict[str, Any]) -> str:
 API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "WoHand": SwitchbotModel.BOT,
     "WoCurtain": SwitchbotModel.CURTAIN,
-    "WoCurtain3": SwitchbotModel.CURTAIN, # Curtain3
+    "WoCurtain3": SwitchbotModel.CURTAIN,  # Curtain3
     "WoHumi": SwitchbotModel.HUMIDIFIER,
     "WoHumi2": SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
     "WoPlug": SwitchbotModel.PLUG_MINI,
@@ -66,7 +66,7 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "WoPresence": SwitchbotModel.MOTION_SENSOR,
     "WoBulb": SwitchbotModel.COLOR_BULB,
     "WoCeiling": SwitchbotModel.CEILING_LIGHT,
-    "WoCeilingPro": SwitchbotModel.CEILING_LIGHT, # Ceiling Light Pro
+    "WoCeilingPro": SwitchbotModel.CEILING_LIGHT,  # Ceiling Light Pro
     "WoLock": SwitchbotModel.LOCK,
     "WoLockPro": SwitchbotModel.LOCK_PRO,
     "WoLockLite": SwitchbotModel.LOCK_LITE,

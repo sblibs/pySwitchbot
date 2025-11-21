@@ -79,7 +79,7 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_wocontact,
         "manufacturer_id": 2409,
     },
-    "D":{
+    "D": {
         "modelName": SwitchbotModel.CONTACT_SENSOR,
         "modelFriendlyName": "Contact Sensor",
         "func": process_wocontact,
@@ -719,7 +719,9 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
     },
 }
 
-_SWITCHBOT_MODEL_TO_CHAR: defaultdict[SwitchbotModel, list[str | bytes]] = defaultdict(list)
+_SWITCHBOT_MODEL_TO_CHAR: defaultdict[SwitchbotModel, list[str | bytes]] = defaultdict(
+    list
+)
 for model_chr, model_data in SUPPORTED_TYPES.items():
     _SWITCHBOT_MODEL_TO_CHAR[model_data["modelName"]].append(model_chr)
 
@@ -792,11 +794,15 @@ def _find_model_from_service_data(_service_data: bytes) -> str | bytes | None:
 
     return None
 
-def _find_model_from_switchbot_model(_switchbot_model: SwitchbotModel) -> str | bytes | None:
+
+def _find_model_from_switchbot_model(
+    _switchbot_model: SwitchbotModel,
+) -> str | bytes | None:
     """Find model from switchbot model."""
     if _switchbot_model in _SWITCHBOT_MODEL_TO_CHAR:
         return _SWITCHBOT_MODEL_TO_CHAR[_switchbot_model][0]
     return None
+
 
 def _find_model_from_manufacturer_data(
     _mfr_id: int, _mfr_data: bytes | None
@@ -811,6 +817,7 @@ def _find_model_from_manufacturer_data(
             return model_chr
     return None
 
+
 def _find_model_from_service_data_suffix(_service_data: bytes) -> str | bytes | None:
     """Find model from service data suffix."""
     if len(_service_data) <= 5:
@@ -821,10 +828,9 @@ def _find_model_from_service_data_suffix(_service_data: bytes) -> str | bytes | 
             return s
     return None
 
+
 def build_advertisement_data(
-    _model: str | bytes,
-    _service_data: bytes | None,
-    _mfr_data: bytes | None
+    _model: str | bytes, _service_data: bytes | None, _mfr_data: bytes | None
 ) -> dict[str, Any]:
     """Build advertisement data dictionary."""
     _isEncrypted = bool(_service_data[0] & 0b10000000) if _service_data else False
