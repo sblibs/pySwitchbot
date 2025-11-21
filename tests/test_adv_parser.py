@@ -4135,5 +4135,4 @@ def test_with_special_manufacturer_data_length() -> None:
         rssi=-97,
     )
     result = parse_advertisement_data(ble_device, adv_data)
-    print(result)
     assert result.data["modelName"] == SwitchbotModel.HUMIDIFIER
