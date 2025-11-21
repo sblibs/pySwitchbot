@@ -119,8 +119,8 @@ def test_parse_advertisement_data_curtain_passive():
                 "deviceChain": 1,
             },
             "isEncrypted": False,
-            "model": "c",
-            "modelFriendlyName": "Curtain",
+            "model": "{",
+            "modelFriendlyName": "Curtain 3",
             "modelName": SwitchbotModel.CURTAIN,
         },
         device=ble_device,
@@ -151,8 +151,8 @@ def test_parse_advertisement_data_curtain_passive_12_bytes():
                 "deviceChain": 1,
             },
             "isEncrypted": False,
-            "model": "c",
-            "modelFriendlyName": "Curtain",
+            "model": "{",
+            "modelFriendlyName": "Curtain 3",
             "modelName": SwitchbotModel.CURTAIN,
         },
         device=ble_device,
@@ -422,8 +422,8 @@ def test_parse_advertisement_data_curtain3_passive():
                 "deviceChain": 1,
             },
             "isEncrypted": False,
-            "model": "c",
-            "modelFriendlyName": "Curtain",
+            "model": "{",
+            "modelFriendlyName": "Curtain 3",
             "modelName": SwitchbotModel.CURTAIN,
         },
         device=ble_device,
@@ -901,8 +901,8 @@ def test_wosensor_passive_only():
                 "temperature": 24.6,
             },
             "isEncrypted": False,
-            "model": "T",
-            "modelFriendlyName": "Meter",
+            "model": "i",
+            "modelFriendlyName": "Meter Plus",
             "modelName": SwitchbotModel.METER,
             "rawAdvData": None,
         },
@@ -2508,7 +2508,7 @@ def test_air_purifier_passive() -> None:
                 "sequence_number": 161,
             },
             "isEncrypted": False,
-            "model": "+",
+            "model": "*",
             "modelFriendlyName": "Air Purifier",
             "modelName": SwitchbotModel.AIR_PURIFIER,
         },
@@ -4086,7 +4086,7 @@ def test_parse_advertisement_with_mac_cache_curtain() -> None:
     result_with_cache = parse_advertisement_data(ble_device, adv_data)
     assert result_with_cache is not None
     assert result_with_cache.data["modelName"] == SwitchbotModel.CURTAIN
-    assert result_with_cache.data["modelFriendlyName"] == "Curtain"
+    assert result_with_cache.data["modelFriendlyName"] == "Curtain 3"
     assert result_with_cache.active is False
 
     # Clean up
