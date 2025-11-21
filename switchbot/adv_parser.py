@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections import defaultdict
 from collections.abc import Callable
 from functools import lru_cache
 from typing import Any, TypedDict
@@ -78,6 +79,12 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_wocontact,
         "manufacturer_id": 2409,
     },
+    "D": {
+        "modelName": SwitchbotModel.CONTACT_SENSOR,
+        "modelFriendlyName": "Contact Sensor",
+        "func": process_wocontact,
+        "manufacturer_id": 2409,
+    },
     "H": {
         "modelName": SwitchbotModel.BOT,
         "modelFriendlyName": "Bot",
@@ -90,7 +97,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_wopresence,
         "manufacturer_id": 2409,
     },
+    "S": {
+        "modelName": SwitchbotModel.MOTION_SENSOR,
+        "modelFriendlyName": "Motion Sensor",
+        "func": process_wopresence,
+        "manufacturer_id": 2409,
+    },
     "r": {
+        "modelName": SwitchbotModel.LIGHT_STRIP,
+        "modelFriendlyName": "Light Strip",
+        "func": process_wostrip,
+        "manufacturer_id": 2409,
+    },
+    "R": {
         "modelName": SwitchbotModel.LIGHT_STRIP,
         "modelFriendlyName": "Light Strip",
         "func": process_wostrip,
@@ -102,7 +121,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_wocurtain,
         "manufacturer_id": 2409,
     },
+    "[": {
+        "modelName": SwitchbotModel.CURTAIN,
+        "modelFriendlyName": "Curtain 3",
+        "func": process_wocurtain,
+        "manufacturer_id": 2409,
+    },
     "c": {
+        "modelName": SwitchbotModel.CURTAIN,
+        "modelFriendlyName": "Curtain",
+        "func": process_wocurtain,
+        "manufacturer_id": 2409,
+    },
+    "C": {
         "modelName": SwitchbotModel.CURTAIN,
         "modelFriendlyName": "Curtain",
         "func": process_wocurtain,
@@ -114,7 +145,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_wosensorth,
         "manufacturer_id": 2409,
     },
+    "W": {
+        "modelName": SwitchbotModel.IO_METER,
+        "modelFriendlyName": "Indoor/Outdoor Meter",
+        "func": process_wosensorth,
+        "manufacturer_id": 2409,
+    },
     "i": {
+        "modelName": SwitchbotModel.METER,
+        "modelFriendlyName": "Meter Plus",
+        "func": process_wosensorth,
+        "manufacturer_id": 2409,
+    },
+    "I": {
         "modelName": SwitchbotModel.METER,
         "modelFriendlyName": "Meter Plus",
         "func": process_wosensorth,
@@ -126,7 +169,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_wosensorth,
         "manufacturer_id": 2409,
     },
+    "t": {
+        "modelName": SwitchbotModel.METER,
+        "modelFriendlyName": "Meter",
+        "func": process_wosensorth,
+        "manufacturer_id": 2409,
+    },
     "4": {
+        "modelName": SwitchbotModel.METER_PRO,
+        "modelFriendlyName": "Meter Pro",
+        "func": process_wosensorth,
+        "manufacturer_id": 2409,
+    },
+    b"\x14": {
         "modelName": SwitchbotModel.METER_PRO,
         "modelFriendlyName": "Meter Pro",
         "func": process_wosensorth,
@@ -138,7 +193,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_wosensorth_c,
         "manufacturer_id": 2409,
     },
+    b"\x15": {
+        "modelName": SwitchbotModel.METER_PRO_C,
+        "modelFriendlyName": "Meter Pro CO2",
+        "func": process_wosensorth_c,
+        "manufacturer_id": 2409,
+    },
     "v": {
+        "modelName": SwitchbotModel.HUB2,
+        "modelFriendlyName": "Hub 2",
+        "func": process_wohub2,
+        "manufacturer_id": 2409,
+    },
+    "V": {
         "modelName": SwitchbotModel.HUB2,
         "modelFriendlyName": "Hub 2",
         "func": process_wohub2,
@@ -150,7 +217,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_woplugmini,
         "manufacturer_id": 2409,
     },
+    "G": {
+        "modelName": SwitchbotModel.PLUG_MINI,
+        "modelFriendlyName": "Plug Mini",
+        "func": process_woplugmini,
+        "manufacturer_id": 2409,
+    },
     "j": {
+        "modelName": SwitchbotModel.PLUG_MINI,
+        "modelFriendlyName": "Plug Mini (JP)",
+        "func": process_woplugmini,
+        "manufacturer_id": 2409,
+    },
+    "J": {
         "modelName": SwitchbotModel.PLUG_MINI,
         "modelFriendlyName": "Plug Mini (JP)",
         "func": process_woplugmini,
@@ -162,13 +241,31 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_color_bulb,
         "manufacturer_id": 2409,
     },
+    "U": {
+        "modelName": SwitchbotModel.COLOR_BULB,
+        "modelFriendlyName": "Color Bulb",
+        "func": process_color_bulb,
+        "manufacturer_id": 2409,
+    },
     "q": {
         "modelName": SwitchbotModel.CEILING_LIGHT,
         "modelFriendlyName": "Ceiling Light",
         "func": process_woceiling,
         "manufacturer_id": 2409,
     },
+    "Q": {
+        "modelName": SwitchbotModel.CEILING_LIGHT,
+        "modelFriendlyName": "Ceiling Light",
+        "func": process_woceiling,
+        "manufacturer_id": 2409,
+    },
     "n": {
+        "modelName": SwitchbotModel.CEILING_LIGHT,
+        "modelFriendlyName": "Ceiling Light Pro",
+        "func": process_woceiling,
+        "manufacturer_id": 2409,
+    },
+    "N": {
         "modelName": SwitchbotModel.CEILING_LIGHT,
         "modelFriendlyName": "Ceiling Light Pro",
         "func": process_woceiling,
@@ -181,7 +278,20 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "manufacturer_id": 741,
         "manufacturer_data_length": 6,
     },
+    "E": {
+        "modelName": SwitchbotModel.HUMIDIFIER,
+        "modelFriendlyName": "Humidifier",
+        "func": process_wohumidifier,
+        "manufacturer_id": 741,
+        "manufacturer_data_length": 6,
+    },
     "#": {
+        "modelName": SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
+        "modelFriendlyName": "Evaporative Humidifier",
+        "func": process_evaporative_humidifier,
+        "manufacturer_id": 2409,
+    },
+    b"\x03": {
         "modelName": SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
         "modelFriendlyName": "Evaporative Humidifier",
         "func": process_evaporative_humidifier,
@@ -193,7 +303,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_wolock,
         "manufacturer_id": 2409,
     },
+    "O": {
+        "modelName": SwitchbotModel.LOCK,
+        "modelFriendlyName": "Lock",
+        "func": process_wolock,
+        "manufacturer_id": 2409,
+    },
     "$": {
+        "modelName": SwitchbotModel.LOCK_PRO,
+        "modelFriendlyName": "Lock Pro",
+        "func": process_wolock_pro,
+        "manufacturer_id": 2409,
+    },
+    b"\x04": {
         "modelName": SwitchbotModel.LOCK_PRO,
         "modelFriendlyName": "Lock Pro",
         "func": process_wolock_pro,
@@ -205,7 +327,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_woblindtilt,
         "manufacturer_id": 2409,
     },
+    "X": {
+        "modelName": SwitchbotModel.BLIND_TILT,
+        "modelFriendlyName": "Blind Tilt",
+        "func": process_woblindtilt,
+        "manufacturer_id": 2409,
+    },
     "&": {
+        "modelName": SwitchbotModel.LEAK,
+        "modelFriendlyName": "Leak Detector",
+        "func": process_leak,
+        "manufacturer_id": 2409,
+    },
+    b"\x06": {
         "modelName": SwitchbotModel.LEAK,
         "modelFriendlyName": "Leak Detector",
         "func": process_leak,
@@ -217,7 +351,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_wokeypad,
         "manufacturer_id": 2409,
     },
+    "Y": {
+        "modelName": SwitchbotModel.KEYPAD,
+        "modelFriendlyName": "Keypad",
+        "func": process_wokeypad,
+        "manufacturer_id": 2409,
+    },
     "<": {
+        "modelName": SwitchbotModel.RELAY_SWITCH_1PM,
+        "modelFriendlyName": "Relay Switch 1PM",
+        "func": process_relay_switch_1pm,
+        "manufacturer_id": 2409,
+    },
+    b"\x1c": {
         "modelName": SwitchbotModel.RELAY_SWITCH_1PM,
         "modelFriendlyName": "Relay Switch 1PM",
         "func": process_relay_switch_1pm,
@@ -229,7 +375,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_relay_switch_common_data,
         "manufacturer_id": 2409,
     },
+    b"\x1b": {
+        "modelName": SwitchbotModel.RELAY_SWITCH_1,
+        "modelFriendlyName": "Relay Switch 1",
+        "func": process_relay_switch_common_data,
+        "manufacturer_id": 2409,
+    },
     "b": {
+        "modelName": SwitchbotModel.REMOTE,
+        "modelFriendlyName": "Remote",
+        "func": process_woremote,
+        "manufacturer_id": 89,
+    },
+    "B": {
         "modelName": SwitchbotModel.REMOTE,
         "modelFriendlyName": "Remote",
         "func": process_woremote,
@@ -241,7 +399,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_worollershade,
         "manufacturer_id": 2409,
     },
+    b"\x0c": {
+        "modelName": SwitchbotModel.ROLLER_SHADE,
+        "modelFriendlyName": "Roller Shade",
+        "func": process_worollershade,
+        "manufacturer_id": 2409,
+    },
     "%": {
+        "modelName": SwitchbotModel.HUBMINI_MATTER,
+        "modelFriendlyName": "HubMini Matter",
+        "func": process_hubmini_matter,
+        "manufacturer_id": 2409,
+    },
+    b"\x05": {
         "modelName": SwitchbotModel.HUBMINI_MATTER,
         "modelFriendlyName": "HubMini Matter",
         "func": process_hubmini_matter,
@@ -253,7 +423,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_fan,
         "manufacturer_id": 2409,
     },
+    "^": {
+        "modelName": SwitchbotModel.CIRCULATOR_FAN,
+        "modelFriendlyName": "Circulator Fan",
+        "func": process_fan,
+        "manufacturer_id": 2409,
+    },
     ".": {
+        "modelName": SwitchbotModel.K20_VACUUM,
+        "modelFriendlyName": "K20 Vacuum",
+        "func": process_vacuum,
+        "manufacturer_id": 2409,
+    },
+    b"\x0f": {
         "modelName": SwitchbotModel.K20_VACUUM,
         "modelFriendlyName": "K20 Vacuum",
         "func": process_vacuum,
@@ -265,7 +447,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_vacuum,
         "manufacturer_id": 2409,
     },
+    "Z": {
+        "modelName": SwitchbotModel.S10_VACUUM,
+        "modelFriendlyName": "S10 Vacuum",
+        "func": process_vacuum,
+        "manufacturer_id": 2409,
+    },
     "3": {
+        "modelName": SwitchbotModel.K10_PRO_COMBO_VACUUM,
+        "modelFriendlyName": "K10+ Pro Combo Vacuum",
+        "func": process_vacuum,
+        "manufacturer_id": 2409,
+    },
+    b"\x13": {
         "modelName": SwitchbotModel.K10_PRO_COMBO_VACUUM,
         "modelFriendlyName": "K10+ Pro Combo Vacuum",
         "func": process_vacuum,
@@ -277,7 +471,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_vacuum_k,
         "manufacturer_id": 2409,
     },
+    "]": {
+        "modelName": SwitchbotModel.K10_VACUUM,
+        "modelFriendlyName": "K10+ Vacuum",
+        "func": process_vacuum_k,
+        "manufacturer_id": 2409,
+    },
     "(": {
+        "modelName": SwitchbotModel.K10_PRO_VACUUM,
+        "modelFriendlyName": "K10+ Pro Vacuum",
+        "func": process_vacuum_k,
+        "manufacturer_id": 2409,
+    },
+    b"\x08": {
         "modelName": SwitchbotModel.K10_PRO_VACUUM,
         "modelFriendlyName": "K10+ Pro Vacuum",
         "func": process_vacuum_k,
@@ -289,7 +495,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_air_purifier,
         "manufacturer_id": 2409,
     },
+    b"\x0a": {
+        "modelName": SwitchbotModel.AIR_PURIFIER,
+        "modelFriendlyName": "Air Purifier",
+        "func": process_air_purifier,
+        "manufacturer_id": 2409,
+    },
     "+": {
+        "modelName": SwitchbotModel.AIR_PURIFIER,
+        "modelFriendlyName": "Air Purifier",
+        "func": process_air_purifier,
+        "manufacturer_id": 2409,
+    },
+    b"\x0b": {
         "modelName": SwitchbotModel.AIR_PURIFIER,
         "modelFriendlyName": "Air Purifier",
         "func": process_air_purifier,
@@ -301,7 +519,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_air_purifier,
         "manufacturer_id": 2409,
     },
+    b"\x17": {
+        "modelName": SwitchbotModel.AIR_PURIFIER_TABLE,
+        "modelFriendlyName": "Air Purifier Table",
+        "func": process_air_purifier,
+        "manufacturer_id": 2409,
+    },
     "8": {
+        "modelName": SwitchbotModel.AIR_PURIFIER_TABLE,
+        "modelFriendlyName": "Air Purifier Table",
+        "func": process_air_purifier,
+        "manufacturer_id": 2409,
+    },
+    b"\x18": {
         "modelName": SwitchbotModel.AIR_PURIFIER_TABLE,
         "modelFriendlyName": "Air Purifier Table",
         "func": process_air_purifier,
@@ -313,7 +543,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_hub3,
         "manufacturer_id": 2409,
     },
+    b"\x01\x10\xb9\x40": {
+        "modelName": SwitchbotModel.HUB3,
+        "modelFriendlyName": "Hub3",
+        "func": process_hub3,
+        "manufacturer_id": 2409,
+    },
     "-": {
+        "modelName": SwitchbotModel.LOCK_LITE,
+        "modelFriendlyName": "Lock Lite",
+        "func": process_locklite,
+        "manufacturer_id": 2409,
+    },
+    b"\x0d": {
         "modelName": SwitchbotModel.LOCK_LITE,
         "modelFriendlyName": "Lock Lite",
         "func": process_locklite,
@@ -325,7 +567,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_lock2,
         "manufacturer_id": 2409,
     },
+    b"\x01\x10\xa5\xb8": {
+        "modelName": SwitchbotModel.LOCK_ULTRA,
+        "modelFriendlyName": "Lock Ultra",
+        "func": process_lock2,
+        "manufacturer_id": 2409,
+    },
     ">": {
+        "modelName": SwitchbotModel.GARAGE_DOOR_OPENER,
+        "modelFriendlyName": "Garage Door Opener",
+        "func": process_garage_door_opener,
+        "manufacturer_id": 2409,
+    },
+    b"\x1e": {
         "modelName": SwitchbotModel.GARAGE_DOOR_OPENER,
         "modelFriendlyName": "Garage Door Opener",
         "func": process_garage_door_opener,
@@ -337,7 +591,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_relay_switch_2pm,
         "manufacturer_id": 2409,
     },
+    b"\x1d": {
+        "modelName": SwitchbotModel.RELAY_SWITCH_2PM,
+        "modelFriendlyName": "Relay Switch 2PM",
+        "func": process_relay_switch_2pm,
+        "manufacturer_id": 2409,
+    },
     b"\x00\x10\xd0\xb0": {
+        "modelName": SwitchbotModel.FLOOR_LAMP,
+        "modelFriendlyName": "Floor Lamp",
+        "func": process_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x10\xd0\xb0": {
         "modelName": SwitchbotModel.FLOOR_LAMP,
         "modelFriendlyName": "Floor Lamp",
         "func": process_light,
@@ -349,7 +615,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_light,
         "manufacturer_id": 2409,
     },
+    b"\x01\x10\xd0\xb1": {
+        "modelName": SwitchbotModel.STRIP_LIGHT_3,
+        "modelFriendlyName": "Strip Light 3",
+        "func": process_light,
+        "manufacturer_id": 2409,
+    },
     "?": {
+        "modelName": SwitchbotModel.PLUG_MINI_EU,
+        "modelFriendlyName": "Plug Mini (EU)",
+        "func": process_relay_switch_1pm,
+        "manufacturer_id": 2409,
+    },
+    b"\x1f": {
         "modelName": SwitchbotModel.PLUG_MINI_EU,
         "modelFriendlyName": "Plug Mini (EU)",
         "func": process_relay_switch_1pm,
@@ -361,7 +639,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_rgbic_light,
         "manufacturer_id": 2409,
     },
+    b"\x01\x10\xd0\xb3": {
+        "modelName": SwitchbotModel.RGBICWW_STRIP_LIGHT,
+        "modelFriendlyName": "RGBICWW Strip Light",
+        "func": process_rgbic_light,
+        "manufacturer_id": 2409,
+    },
     b"\x00\x10\xd0\xb4": {
+        "modelName": SwitchbotModel.RGBICWW_FLOOR_LAMP,
+        "modelFriendlyName": "RGBICWW Floor Lamp",
+        "func": process_rgbic_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x10\xd0\xb4": {
         "modelName": SwitchbotModel.RGBICWW_FLOOR_LAMP,
         "modelFriendlyName": "RGBICWW Floor Lamp",
         "func": process_rgbic_light,
@@ -373,7 +663,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_vacuum,
         "manufacturer_id": 2409,
     },
+    b"\x01\x10\xfb\xa8": {
+        "modelName": SwitchbotModel.K11_VACUUM,
+        "modelFriendlyName": "K11+ Vacuum",
+        "func": process_vacuum,
+        "manufacturer_id": 2409,
+    },
     b"\x00\x10\xf3\xd8": {
+        "modelName": SwitchbotModel.CLIMATE_PANEL,
+        "modelFriendlyName": "Climate Panel",
+        "func": process_climate_panel,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x10\xf3\xd8": {
         "modelName": SwitchbotModel.CLIMATE_PANEL,
         "modelFriendlyName": "Climate Panel",
         "func": process_climate_panel,
@@ -385,7 +687,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_smart_thermostat_radiator,
         "manufacturer_id": 2409,
     },
+    b"\x01\x116@": {
+        "modelName": SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
+        "modelFriendlyName": "Smart Thermostat Radiator",
+        "func": process_smart_thermostat_radiator,
+        "manufacturer_id": 2409,
+    },
     b"\x00\x10\xe0P": {
+        "modelName": SwitchbotModel.S20_VACUUM,
+        "modelFriendlyName": "S20 Vacuum",
+        "func": process_vacuum,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x10\xe0P": {
         "modelName": SwitchbotModel.S20_VACUUM,
         "modelFriendlyName": "S20 Vacuum",
         "func": process_vacuum,
@@ -397,12 +711,19 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_presence_sensor,
         "manufacturer_id": 2409,
     },
+    b"\x01\x10\xcc\xc8": {
+        "modelName": SwitchbotModel.PRESENCE_SENSOR,
+        "modelFriendlyName": "Presence Sensor",
+        "func": process_presence_sensor,
+        "manufacturer_id": 2409,
+    },
 }
 
-_SWITCHBOT_MODEL_TO_CHAR = {
-    model_data["modelName"]: model_chr
-    for model_chr, model_data in SUPPORTED_TYPES.items()
-}
+_SWITCHBOT_MODEL_TO_CHAR: defaultdict[SwitchbotModel, list[str | bytes]] = defaultdict(
+    list
+)
+for model_chr, model_data in SUPPORTED_TYPES.items():
+    _SWITCHBOT_MODEL_TO_CHAR[model_data["modelName"]].append(model_chr)
 
 MODELS_BY_MANUFACTURER_DATA: dict[int, list[tuple[str, SwitchbotSupportedType]]] = {
     mfr_id: [] for mfr_id in MFR_DATA_ORDER
@@ -461,34 +782,57 @@ def parse_advertisement_data(
     )
 
 
-@lru_cache(maxsize=128)
-def _parse_data(
-    _service_data: bytes | None,
-    _mfr_data: bytes | None,
-    _mfr_id: int | None = None,
-    _switchbot_model: SwitchbotModel | None = None,
-) -> dict[str, Any] | None:
-    """Parse advertisement data."""
-    _model = chr(_service_data[0] & 0b01111111) if _service_data else None
+def _find_model_from_service_data(_service_data: bytes) -> str | bytes | None:
+    """Find model from service data."""
+    char_model = chr(_service_data[0] & 0b01111111)
+    if char_model in SUPPORTED_TYPES:
+        return char_model
 
-    if _switchbot_model and _switchbot_model in _SWITCHBOT_MODEL_TO_CHAR:
-        _model = _SWITCHBOT_MODEL_TO_CHAR[_switchbot_model]
+    byte_model = bytes([_service_data[0] & 0b01111111])
+    if byte_model in SUPPORTED_TYPES:
+        return byte_model
 
-    if not _model and _mfr_id and _mfr_id in MODELS_BY_MANUFACTURER_DATA:
-        for model_chr, model_data in MODELS_BY_MANUFACTURER_DATA[_mfr_id]:
-            if model_data.get("manufacturer_data_length") == len(_mfr_data):
-                _model = model_chr
-                break
+    return None
 
-    if _service_data and len(_service_data) > 5:
-        for s in (_service_data[-4:], _service_data[-5:-1]):
-            if s in SUPPORTED_TYPES:
-                _model = s
-                break
 
-    if not _model:
+def _find_model_from_switchbot_model(
+    _switchbot_model: SwitchbotModel,
+) -> str | bytes | None:
+    """Find model from switchbot model."""
+    if _switchbot_model in _SWITCHBOT_MODEL_TO_CHAR:
+        return _SWITCHBOT_MODEL_TO_CHAR[_switchbot_model][0]
+    return None
+
+
+def _find_model_from_manufacturer_data(
+    _mfr_id: int, _mfr_data: bytes | None
+) -> str | bytes | None:
+    """Find model from manufacturer data."""
+    if _mfr_id not in MODELS_BY_MANUFACTURER_DATA or _mfr_data is None:
         return None
 
+    for model_chr, model_data in MODELS_BY_MANUFACTURER_DATA[_mfr_id]:
+        expected_length = model_data.get("manufacturer_data_length")
+        if expected_length is not None and expected_length == len(_mfr_data):
+            return model_chr
+    return None
+
+
+def _find_model_from_service_data_suffix(_service_data: bytes) -> str | bytes | None:
+    """Find model from service data suffix."""
+    if len(_service_data) <= 5:
+        return None
+
+    for s in (_service_data[-4:], _service_data[-5:-1]):
+        if s in SUPPORTED_TYPES:
+            return s
+    return None
+
+
+def build_advertisement_data(
+    _model: str | bytes, _service_data: bytes | None, _mfr_data: bytes | None
+) -> dict[str, Any]:
+    """Build advertisement data dictionary."""
     _isEncrypted = bool(_service_data[0] & 0b10000000) if _service_data else False
     data = {
         "rawAdvData": _service_data,
@@ -510,6 +854,34 @@ def _parse_data(
             )
 
     return data
+
+
+@lru_cache(maxsize=128)
+def _parse_data(
+    _service_data: bytes | None,
+    _mfr_data: bytes | None,
+    _mfr_id: int | None = None,
+    _switchbot_model: SwitchbotModel | None = None,
+) -> dict[str, Any] | None:
+    """Parse advertisement data."""
+    _model = None
+
+    if _service_data:
+        _model = _find_model_from_service_data(_service_data)
+
+    if not _model and _switchbot_model:
+        _model = _find_model_from_switchbot_model(_switchbot_model)
+
+    if not _model and _mfr_id:
+        _model = _find_model_from_manufacturer_data(_mfr_id, _mfr_data)
+
+    if not _model and _service_data:
+        _model = _find_model_from_service_data_suffix(_service_data)
+
+    if not _model:
+        return None
+
+    return build_advertisement_data(_model, _service_data, _mfr_data)
 
 
 def populate_model_to_mac_cache(mac: str, model: SwitchbotModel) -> None:
