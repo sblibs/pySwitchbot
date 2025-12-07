@@ -3508,6 +3508,7 @@ def test_humidifer_with_empty_data() -> None:
                 "adaptive_state": True,
                 "battery": 100,
                 "battery_range": ">=60%",
+                "duration": 1110,
                 "led_state": True,
                 "lightLevel": 12,
                 "motion_detected": True,
@@ -3805,6 +3806,7 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             {
                 "adaptive_state": True,
                 "battery_range": ">=60%",
+                "duration": 1110,
                 "led_state": True,
                 "lightLevel": 12,
                 "motion_detected": True,
