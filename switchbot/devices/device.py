@@ -225,7 +225,6 @@ class SwitchbotBaseDevice:
         self._write_char: BleakGATTCharacteristic | None = None
         self._disconnect_timer: asyncio.TimerHandle | None = None
         self._expected_disconnect = False
-        self.loop = asyncio.get_event_loop()
         self._callbacks: list[Callable[[], None]] = []
         self._notify_future: asyncio.Future[bytearray] | None = None
         self._last_full_update: float = -PASSIVE_POLL_INTERVAL
@@ -547,7 +546,7 @@ class SwitchbotBaseDevice:
         """Reset disconnect timer."""
         self._cancel_disconnect_timer()
         self._expected_disconnect = False
-        self._disconnect_timer = self.loop.call_later(
+        self._disconnect_timer = asyncio.get_running_loop().call_later(
             DISCONNECT_DELAY, self._disconnect_from_timer
         )
 
@@ -680,15 +679,16 @@ class SwitchbotBaseDevice:
         assert self._client is not None
         assert self._read_char is not None
         assert self._write_char is not None
-        self._notify_future = self.loop.create_future()
+        loop = asyncio.get_running_loop()
+        self._notify_future = loop.create_future()
         client = self._client
 
         _LOGGER.debug("%s: Sending command: %s", self.name, key)
         await client.write_gatt_char(self._write_char, command, False)
 
         timeout = 5
-        timeout_handle = self.loop.call_at(
-            self.loop.time() + timeout, _handle_timeout, self._notify_future
+        timeout_handle = loop.call_at(
+            loop.time() + timeout, _handle_timeout, self._notify_future
         )
         timeout_expired = False
         try:
