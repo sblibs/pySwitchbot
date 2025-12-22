@@ -102,6 +102,7 @@ class SwitchbotModel(StrEnum):
     SMART_THERMOSTAT_RADIATOR = "Smart Thermostat Radiator"
     S20_VACUUM = "S20 Vacuum"
     PRESENCE_SENSOR = "Presence Sensor"
+    ART_FRAME = "Art Frame"
 
 
 __all__ = [
