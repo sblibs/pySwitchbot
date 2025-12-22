@@ -3547,7 +3547,7 @@ def test_humidifer_with_empty_data() -> None:
             b"\x01\x11>\x10",
             "Art Frame",
             SwitchbotModel.ART_FRAME,
-        )
+        ),
     ],
 )
 def test_adv_active(test_case: AdvTestCase) -> None:
@@ -3846,7 +3846,7 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             b"\x00\x11>\x10",
             "Art Frame",
             SwitchbotModel.ART_FRAME,
-        )
+        ),
     ],
 )
 def test_adv_passive(test_case: AdvTestCase) -> None:

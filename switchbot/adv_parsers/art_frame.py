@@ -32,5 +32,4 @@ def process_art_frame(
 
     _LOGGER.debug("Art Frame mfr data: %s, result: %s", mfr_data.hex(), result)
 
-
     return result

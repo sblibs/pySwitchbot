@@ -4,10 +4,8 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement
-from switchbot.const.climate import ClimateAction, ClimateMode
-from switchbot.const.climate import SmartThermostatRadiatorMode as STRMode
-from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperationError
-from switchbot.devices.art_frame import SwitchbotArtFrame, COMMAND_SET_IMAGE
+from switchbot.devices.art_frame import COMMAND_SET_IMAGE, SwitchbotArtFrame
+from switchbot.devices.device import SwitchbotEncryptedDevice
 
 from . import ART_FRAME_INFO
 from .test_adv_parser import AdvTestCase, generate_ble_device
@@ -61,7 +59,9 @@ async def test_get_basic_info_none() -> None:
 
     assert await device.get_basic_info() is None
 
-    with pytest.raises(RuntimeError, match=r"Failed to retrieve basic info for current image index."):
+    with pytest.raises(
+        RuntimeError, match=r"Failed to retrieve basic info for current image index."
+    ):
         await device._get_current_image_idx()
 
 
@@ -107,13 +107,17 @@ async def test_get_basic_info_parsing(basic_info, result) -> None:
     assert device.get_total_images() == result[8]
     assert device.get_current_image_idx() == result[7]
 
+
 @pytest.mark.asyncio
 async def test_set_image_with_invalid_idx() -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
 
-    with patch.object(device, "get_all_images_idx", return_value=[1]), \
-        pytest.raises(RuntimeError, match=r"No images available to select from."):
+    with (
+        patch.object(device, "get_all_images_idx", return_value=[1]),
+        pytest.raises(RuntimeError, match=r"No images available to select from."),
+    ):
         device._select_image_idx(1)
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -127,10 +131,14 @@ async def test_set_image_with_invalid_idx() -> None:
 async def test_next_image(current_idx, all_images_idx, expected_cmd) -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
 
-    with patch.object(device, "get_current_image_idx", return_value=current_idx), \
-         patch.object(device, "get_all_images_idx", return_value=all_images_idx):
+    with (
+        patch.object(device, "get_current_image_idx", return_value=current_idx),
+        patch.object(device, "get_all_images_idx", return_value=all_images_idx),
+    ):
         await device.next_image()
-        device._send_command.assert_awaited_with(COMMAND_SET_IMAGE.format(f'{int(expected_cmd):02X}'))
+        device._send_command.assert_awaited_with(
+            COMMAND_SET_IMAGE.format(f"{int(expected_cmd):02X}")
+        )
 
 
 @pytest.mark.asyncio
@@ -145,28 +153,41 @@ async def test_next_image(current_idx, all_images_idx, expected_cmd) -> None:
 async def test_prev_image(current_idx, all_images_idx, expected_cmd) -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
 
-    with patch.object(device, "get_current_image_idx", return_value=current_idx), \
-         patch.object(device, "get_all_images_idx", return_value=all_images_idx):
+    with (
+        patch.object(device, "get_current_image_idx", return_value=current_idx),
+        patch.object(device, "get_all_images_idx", return_value=all_images_idx),
+    ):
         await device.prev_image()
-        device._send_command.assert_awaited_with(COMMAND_SET_IMAGE.format(f'{int(expected_cmd):02X}'))
+        device._send_command.assert_awaited_with(
+            COMMAND_SET_IMAGE.format(f"{int(expected_cmd):02X}")
+        )
+
 
 @pytest.mark.asyncio
 async def test_set_image_with_invalid_index() -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
 
-    with patch.object(device, "get_total_images", return_value=3), \
-        patch.object(device, "get_all_images_idx", return_value=[1, 2, 3]), \
-        pytest.raises(ValueError, match=r"Image index 5 is out of range. Total images: 3."):
-            await device.set_image(5)
+    with (
+        patch.object(device, "get_total_images", return_value=3),
+        patch.object(device, "get_all_images_idx", return_value=[1, 2, 3]),
+        pytest.raises(
+            ValueError, match=r"Image index 5 is out of range. Total images: 3."
+        ),
+    ):
+        await device.set_image(5)
+
 
 @pytest.mark.asyncio
 async def test_set_image_with_valid_index() -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
 
-    with patch.object(device, "get_total_images", return_value=3), \
-        patch.object(device, "get_all_images_idx", return_value=[10, 20, 30]):
-            await device.set_image(1)
-            device._send_command.assert_awaited_with(COMMAND_SET_IMAGE.format('14'))
+    with (
+        patch.object(device, "get_total_images", return_value=3),
+        patch.object(device, "get_all_images_idx", return_value=[10, 20, 30]),
+    ):
+        await device.set_image(1)
+        device._send_command.assert_awaited_with(COMMAND_SET_IMAGE.format("14"))
+
 
 @pytest.mark.asyncio
 @patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)

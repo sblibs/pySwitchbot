@@ -16,6 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 
 COMMAND_SET_IMAGE = "570F7A02{}"
 
+
 class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Art Frame."""
 
@@ -43,7 +44,6 @@ class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         return await super().verify_encryption_key(
             device, key_id, encryption_key, model, **kwargs
         )
-
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
@@ -85,14 +85,15 @@ class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if not all_images_idx or len(all_images_idx) <= 1:
             raise RuntimeError("No images available to select from.")
 
-        new_position = (all_images_idx.index(current_idx) + offset) % len(all_images_idx)
+        new_position = (all_images_idx.index(current_idx) + offset) % len(
+            all_images_idx
+        )
         return all_images_idx[new_position]
 
     async def _get_current_image_idx(self) -> None:
         """Validate the current image index."""
         if not await self.get_basic_info():
             raise RuntimeError("Failed to retrieve basic info for current image index.")
-
 
     @update_after_operation
     async def next_image(self) -> None:
