@@ -119,8 +119,8 @@ def test_parse_advertisement_data_curtain_passive():
                 "deviceChain": 1,
             },
             "isEncrypted": False,
-            "model": "c",
-            "modelFriendlyName": "Curtain",
+            "model": "{",
+            "modelFriendlyName": "Curtain 3",
             "modelName": SwitchbotModel.CURTAIN,
         },
         device=ble_device,
@@ -151,8 +151,8 @@ def test_parse_advertisement_data_curtain_passive_12_bytes():
                 "deviceChain": 1,
             },
             "isEncrypted": False,
-            "model": "c",
-            "modelFriendlyName": "Curtain",
+            "model": "{",
+            "modelFriendlyName": "Curtain 3",
             "modelName": SwitchbotModel.CURTAIN,
         },
         device=ble_device,
@@ -422,8 +422,8 @@ def test_parse_advertisement_data_curtain3_passive():
                 "deviceChain": 1,
             },
             "isEncrypted": False,
-            "model": "c",
-            "modelFriendlyName": "Curtain",
+            "model": "{",
+            "modelFriendlyName": "Curtain 3",
             "modelName": SwitchbotModel.CURTAIN,
         },
         device=ble_device,
@@ -901,8 +901,8 @@ def test_wosensor_passive_only():
                 "temperature": 24.6,
             },
             "isEncrypted": False,
-            "model": "T",
-            "modelFriendlyName": "Meter",
+            "model": "i",
+            "modelFriendlyName": "Meter Plus",
             "modelName": SwitchbotModel.METER,
             "rawAdvData": None,
         },
@@ -2508,7 +2508,7 @@ def test_air_purifier_passive() -> None:
                 "sequence_number": 161,
             },
             "isEncrypted": False,
-            "model": "+",
+            "model": "*",
             "modelFriendlyName": "Air Purifier",
             "modelName": SwitchbotModel.AIR_PURIFIER,
         },
@@ -3518,6 +3518,20 @@ def test_humidifer_with_empty_data() -> None:
             "Presence Sensor",
             SwitchbotModel.PRESENCE_SENSOR,
         ),
+        AdvTestCase(
+            b"\xb0\xe9\xfeR\xdd\x84\x06d\x08\x97,\x00\x05",
+            b"\x14\x00d",
+            {
+                "battery": 100,
+                "fahrenheit": False,
+                "humidity": 44,
+                "temp": {"c": 23.8, "f": 74.84},
+                "temperature": 23.8,
+            },
+            b"\x14",
+            "Meter Pro",
+            SwitchbotModel.METER_PRO,
+        ),
     ],
 )
 def test_adv_active(test_case: AdvTestCase) -> None:
@@ -4086,8 +4100,43 @@ def test_parse_advertisement_with_mac_cache_curtain() -> None:
     result_with_cache = parse_advertisement_data(ble_device, adv_data)
     assert result_with_cache is not None
     assert result_with_cache.data["modelName"] == SwitchbotModel.CURTAIN
-    assert result_with_cache.data["modelFriendlyName"] == "Curtain"
+    assert result_with_cache.data["modelFriendlyName"] == "Curtain 3"
     assert result_with_cache.active is False
 
     # Clean up
     _MODEL_TO_MAC_CACHE.clear()
+
+
+@pytest.mark.parametrize(
+    ("manufacturer_data", "service_data", "model"),
+    [
+        (b"\xff\xff\xff\xff", b"\xff\xff\xff\xff", None),
+        (b"\xff\xff\xff\xff", b"\xff\xff\xff\xff", "F"),
+        (b"\xff\xff\xff\xff\xff\xff\xff", b"\xff\xff\xff\xff\xff\xff\xff\xff", None),
+        (None, None, None),
+    ],
+)
+def test_with_invalid_advertisement(manufacturer_data, service_data, model) -> None:
+    """Test with invalid advertisement data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: manufacturer_data},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": service_data},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data, model)
+    assert result is None
+
+
+def test_with_special_manufacturer_data_length() -> None:
+    """Test with special manufacturer data length."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={741: b"\xacg\xb2\xcd\xfa\xbe"},
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\xff\x80\x00\xf9\x80Bc\x00"
+        },
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result.data["modelName"] == SwitchbotModel.HUMIDIFIER

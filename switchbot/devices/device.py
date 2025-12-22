@@ -54,27 +54,56 @@ def _extract_region(userinfo: dict[str, Any]) -> str:
 API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "WoHand": SwitchbotModel.BOT,
     "WoCurtain": SwitchbotModel.CURTAIN,
+    "WoCurtain3": SwitchbotModel.CURTAIN,  # Curtain3
     "WoHumi": SwitchbotModel.HUMIDIFIER,
+    "WoHumi2": SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
     "WoPlug": SwitchbotModel.PLUG_MINI,
     "WoPlugUS": SwitchbotModel.PLUG_MINI,
     "WoContact": SwitchbotModel.CONTACT_SENSOR,
     "WoStrip": SwitchbotModel.LIGHT_STRIP,
-    "WoSensorTH": SwitchbotModel.METER,
     "WoMeter": SwitchbotModel.METER,
-    "WoMeterPlus": SwitchbotModel.METER_PRO,
+    "WoMeterPlus": SwitchbotModel.METER,  # Meter Plus
     "WoPresence": SwitchbotModel.MOTION_SENSOR,
     "WoBulb": SwitchbotModel.COLOR_BULB,
     "WoCeiling": SwitchbotModel.CEILING_LIGHT,
+    "WoCeilingPro": SwitchbotModel.CEILING_LIGHT,  # Ceiling Light Pro
     "WoLock": SwitchbotModel.LOCK,
+    "WoLockPro": SwitchbotModel.LOCK_PRO,
+    "WoLockLite": SwitchbotModel.LOCK_LITE,
     "WoBlindTilt": SwitchbotModel.BLIND_TILT,
     "WoIOSensor": SwitchbotModel.IO_METER,  # Outdoor Meter
     "WoButton": SwitchbotModel.REMOTE,  # Remote button
     "WoLinkMini": SwitchbotModel.HUBMINI_MATTER,  # Hub Mini
+    "WoFan2": SwitchbotModel.CIRCULATOR_FAN,
+    "WoHub2": SwitchbotModel.HUB2,
+    "WoRollerShade": SwitchbotModel.ROLLER_SHADE,
+    "WoAirPurifierJP": SwitchbotModel.AIR_PURIFIER,
+    "WoAirPurifierUS": SwitchbotModel.AIR_PURIFIER,
+    "WoAirPurifierJPPro": SwitchbotModel.AIR_PURIFIER_TABLE,
+    "WoAirPurifierUSPro": SwitchbotModel.AIR_PURIFIER_TABLE,
+    "WoSweeperMini": SwitchbotModel.K10_VACUUM,
+    "WoSweeperMiniPro": SwitchbotModel.K10_PRO_VACUUM,
+    "91AgWZ1n": SwitchbotModel.K10_PRO_COMBO_VACUUM,
+    "W1113000": SwitchbotModel.K11_VACUUM,
+    "sH5cQeLF": SwitchbotModel.K20_VACUUM,
+    "WoSweeperOrigin": SwitchbotModel.S10_VACUUM,
+    "W1106000": SwitchbotModel.S20_VACUUM,
+    "W1083000": SwitchbotModel.RELAY_SWITCH_1PM,
+    "W1083001": SwitchbotModel.RELAY_SWITCH_2PM,
     "W1083002": SwitchbotModel.RELAY_SWITCH_1,  # Relay Switch 1
     "W1079000": SwitchbotModel.METER_PRO,  # Meter Pro (another variant)
-    "W1102001": SwitchbotModel.STRIP_LIGHT_3,  # RGBWW Strip Light 3
-    "W1106000": SwitchbotModel.S20_VACUUM,
+    "W1079001": SwitchbotModel.METER_PRO_C,
     "W1101000": SwitchbotModel.PRESENCE_SENSOR,
+    "W1091000": SwitchbotModel.LOCK_ULTRA,
+    "W1096000": SwitchbotModel.HUB3,
+    "W1083003": SwitchbotModel.GARAGE_DOOR_OPENER,
+    "W1102000": SwitchbotModel.FLOOR_LAMP,
+    "W1102001": SwitchbotModel.STRIP_LIGHT_3,
+    "W1102003": SwitchbotModel.RGBICWW_STRIP_LIGHT,
+    "W1102004": SwitchbotModel.RGBICWW_FLOOR_LAMP,
+    "W1104000": SwitchbotModel.PLUG_MINI_EU,
+    "W1128000": SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
+    "W1111000": SwitchbotModel.CLIMATE_PANEL,
 }
 
 REQ_HEADER = "570f"
