@@ -14,7 +14,7 @@ from .test_adv_parser import AdvTestCase, generate_ble_device
 def create_device_for_command_testing(
     adv_info: AdvTestCase,
     init_data: dict | None = None,
-):
+) -> SwitchbotArtFrame:
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device = SwitchbotArtFrame(
         ble_device, "ff", "ffffffffffffffffffffffffffffffff", model=adv_info.modelName
@@ -30,7 +30,7 @@ def create_device_for_command_testing(
 
 def make_advertisement_data(
     ble_device: BLEDevice, adv_info: AdvTestCase, init_data: dict | None = None
-):
+) -> SwitchBotAdvertisement:
     """Set advertisement data with defaults."""
     if init_data is None:
         init_data = {}
@@ -86,7 +86,7 @@ async def test_get_basic_info_none() -> None:
         ),
     ],
 )
-async def test_get_basic_info_parsing(basic_info, result) -> None:
+async def test_get_basic_info_parsing(basic_info: str, result: list[bool | int | float | list[int]]) -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
     device._get_basic_info = AsyncMock(return_value=basic_info)
 
@@ -128,7 +128,7 @@ async def test_set_image_with_invalid_idx() -> None:
         (1, [1, 100, 150], "100"),
     ],
 )
-async def test_next_image(current_idx, all_images_idx, expected_cmd) -> None:
+async def test_next_image(current_idx: int, all_images_idx: list[int], expected_cmd: str) -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
 
     with (
@@ -150,7 +150,7 @@ async def test_next_image(current_idx, all_images_idx, expected_cmd) -> None:
         (1, [1, 100, 150], "150"),
     ],
 )
-async def test_prev_image(current_idx, all_images_idx, expected_cmd) -> None:
+async def test_prev_image(current_idx: int, all_images_idx: list[int], expected_cmd: str) -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
 
     with (
@@ -191,7 +191,7 @@ async def test_set_image_with_valid_index() -> None:
 
 @pytest.mark.asyncio
 @patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)
-async def test_verify_encryption_key(mock_parent_verify):
+async def test_verify_encryption_key(mock_parent_verify: AsyncMock) -> None:
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     key_id = "ff"
     encryption_key = "ffffffffffffffffffffffffffffffff"

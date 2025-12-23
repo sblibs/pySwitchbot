@@ -96,7 +96,7 @@ class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             raise RuntimeError("Failed to retrieve basic info for current image index.")
 
     @update_after_operation
-    async def next_image(self) -> None:
+    async def next_image(self) -> bool:
         """Display the next image."""
         await self._get_current_image_idx()
         idx = self._select_image_idx(1)
@@ -104,7 +104,7 @@ class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
-    async def prev_image(self) -> None:
+    async def prev_image(self) -> bool:
         """Display the previous image."""
         await self._get_current_image_idx()
         idx = self._select_image_idx(-1)
@@ -112,7 +112,7 @@ class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
-    async def set_image(self, index: int) -> None:
+    async def set_image(self, index: int) -> bool:
         """Set the image by index."""
         await self._get_current_image_idx()
         total_images = self.get_total_images()
