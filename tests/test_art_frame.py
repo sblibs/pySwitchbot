@@ -86,7 +86,9 @@ async def test_get_basic_info_none() -> None:
         ),
     ],
 )
-async def test_get_basic_info_parsing(basic_info: str, result: list[bool | int | float | list[int]]) -> None:
+async def test_get_basic_info_parsing(
+    basic_info: str, result: list[bool | int | float | list[int]]
+) -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
     device._get_basic_info = AsyncMock(return_value=basic_info)
 
@@ -128,7 +130,9 @@ async def test_set_image_with_invalid_idx() -> None:
         (1, [1, 100, 150], "100"),
     ],
 )
-async def test_next_image(current_idx: int, all_images_idx: list[int], expected_cmd: str) -> None:
+async def test_next_image(
+    current_idx: int, all_images_idx: list[int], expected_cmd: str
+) -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
 
     with (
@@ -150,7 +154,9 @@ async def test_next_image(current_idx: int, all_images_idx: list[int], expected_
         (1, [1, 100, 150], "150"),
     ],
 )
-async def test_prev_image(current_idx: int, all_images_idx: list[int], expected_cmd: str) -> None:
+async def test_prev_image(
+    current_idx: int, all_images_idx: list[int], expected_cmd: str
+) -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
 
     with (
