@@ -62,7 +62,7 @@ async def test_get_basic_info_none() -> None:
     with pytest.raises(
         RuntimeError, match=r"Failed to retrieve basic info for current image index."
     ):
-        await device._get_current_image_idx()
+        await device._get_current_image_index()
 
 
 @pytest.mark.asyncio
@@ -100,30 +100,30 @@ async def test_get_basic_info_parsing(
     assert info["display_size"] == result[4]
     assert info["display_mode"] == result[5]
     assert info["last_network_status"] == result[6]
-    assert info["current_image_idx"] == result[7]
+    assert info["current_image_index"] == result[7]
     assert info["total_num_of_images"] == result[8]
-    assert info["all_images_idx"] == result[9]
+    assert info["all_images_index"] == result[9]
 
     device._update_parsed_data(info)
-    assert device.get_all_images_idx() == result[9]
+    assert device.get_all_images_index() == result[9]
     assert device.get_total_images() == result[8]
-    assert device.get_current_image_idx() == result[7]
+    assert device.get_current_image_index() == result[7]
 
 
 @pytest.mark.asyncio
-async def test_set_image_with_invalid_idx() -> None:
+async def test_select_image_with_single_image() -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
 
     with (
-        patch.object(device, "get_all_images_idx", return_value=[1]),
+        patch.object(device, "get_all_images_index", return_value=[1]),
         pytest.raises(RuntimeError, match=r"No images available to select from."),
     ):
-        device._select_image_idx(1)
+        device._select_image_index(1)
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("current_idx", "all_images_idx", "expected_cmd"),
+    ("current_index", "all_images_index", "expected_cmd"),
     [
         (100, [1, 100, 150], "150"),
         (150, [1, 100, 150], "1"),
@@ -131,13 +131,13 @@ async def test_set_image_with_invalid_idx() -> None:
     ],
 )
 async def test_next_image(
-    current_idx: int, all_images_idx: list[int], expected_cmd: str
+    current_index: int, all_images_index: list[int], expected_cmd: str
 ) -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
 
     with (
-        patch.object(device, "get_current_image_idx", return_value=current_idx),
-        patch.object(device, "get_all_images_idx", return_value=all_images_idx),
+        patch.object(device, "get_current_image_index", return_value=current_index),
+        patch.object(device, "get_all_images_index", return_value=all_images_index),
     ):
         await device.next_image()
         device._send_command.assert_awaited_with(
@@ -147,7 +147,7 @@ async def test_next_image(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("current_idx", "all_images_idx", "expected_cmd"),
+    ("current_index", "all_images_index", "expected_cmd"),
     [
         (100, [1, 100, 150], "1"),
         (150, [1, 100, 150], "100"),
@@ -155,13 +155,13 @@ async def test_next_image(
     ],
 )
 async def test_prev_image(
-    current_idx: int, all_images_idx: list[int], expected_cmd: str
+    current_index: int, all_images_index: list[int], expected_cmd: str
 ) -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
 
     with (
-        patch.object(device, "get_current_image_idx", return_value=current_idx),
-        patch.object(device, "get_all_images_idx", return_value=all_images_idx),
+        patch.object(device, "get_current_image_index", return_value=current_index),
+        patch.object(device, "get_all_images_index", return_value=all_images_index),
     ):
         await device.prev_image()
         device._send_command.assert_awaited_with(
@@ -175,7 +175,7 @@ async def test_set_image_with_invalid_index() -> None:
 
     with (
         patch.object(device, "get_total_images", return_value=3),
-        patch.object(device, "get_all_images_idx", return_value=[1, 2, 3]),
+        patch.object(device, "get_all_images_index", return_value=[1, 2, 3]),
         pytest.raises(
             ValueError, match=r"Image index 5 is out of range. Total images: 3."
         ),
@@ -189,7 +189,7 @@ async def test_set_image_with_valid_index() -> None:
 
     with (
         patch.object(device, "get_total_images", return_value=3),
-        patch.object(device, "get_all_images_idx", return_value=[10, 20, 30]),
+        patch.object(device, "get_all_images_index", return_value=[10, 20, 30]),
     ):
         await device.set_image(1)
         device._send_command.assert_awaited_with(COMMAND_SET_IMAGE.format("14"))

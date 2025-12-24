@@ -58,9 +58,9 @@ class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         display_size = (_data[4] >> 4) & 0x0F
         display_mode = (_data[4] >> 3) & 0x01
         last_network_status = (_data[4] >> 2) & 0x01
-        current_image_idx = _data[5]
+        current_image_index = _data[5]
         total_num_of_images = _data[6]
-        all_images_idx = [_data[x] for x in range(7, 7 + total_num_of_images)]
+        all_images_index = [_data[x] for x in range(7, 7 + total_num_of_images)]
 
         basic_info = {
             "battery_charging": battery_charging,
@@ -70,27 +70,27 @@ class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             "display_size": display_size,
             "display_mode": display_mode,
             "last_network_status": last_network_status,
-            "current_image_idx": current_image_idx,
+            "current_image_index": current_image_index,
             "total_num_of_images": total_num_of_images,
-            "all_images_idx": all_images_idx,
+            "all_images_index": all_images_index,
         }
         _LOGGER.debug("Art Frame %s basic info: %s", self._device.address, basic_info)
         return basic_info
 
-    def _select_image_idx(self, offset: int) -> int:
+    def _select_image_index(self, offset: int) -> int:
         """Select the image index based on the current index and offset."""
-        current_idx = self.get_current_image_idx()
-        all_images_idx = self.get_all_images_idx()
+        current_index = self.get_current_image_index()
+        all_images_index = self.get_all_images_index()
 
-        if not all_images_idx or len(all_images_idx) <= 1:
+        if not all_images_index or len(all_images_index) <= 1:
             raise RuntimeError("No images available to select from.")
 
-        new_position = (all_images_idx.index(current_idx) + offset) % len(
-            all_images_idx
+        new_position = (all_images_index.index(current_index) + offset) % len(
+            all_images_index
         )
-        return all_images_idx[new_position]
+        return all_images_index[new_position]
 
-    async def _get_current_image_idx(self) -> None:
+    async def _get_current_image_index(self) -> None:
         """Validate the current image index."""
         if not await self.get_basic_info():
             raise RuntimeError("Failed to retrieve basic info for current image index.")
@@ -98,23 +98,23 @@ class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     @update_after_operation
     async def next_image(self) -> bool:
         """Display the next image."""
-        await self._get_current_image_idx()
-        idx = self._select_image_idx(1)
+        await self._get_current_image_index()
+        idx = self._select_image_index(1)
         result = await self._send_command(COMMAND_SET_IMAGE.format(f"{idx:02X}"))
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def prev_image(self) -> bool:
         """Display the previous image."""
-        await self._get_current_image_idx()
-        idx = self._select_image_idx(-1)
+        await self._get_current_image_index()
+        idx = self._select_image_index(-1)
         result = await self._send_command(COMMAND_SET_IMAGE.format(f"{idx:02X}"))
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def set_image(self, index: int) -> bool:
         """Set the image by index."""
-        await self._get_current_image_idx()
+        await self._get_current_image_index()
         total_images = self.get_total_images()
 
         if index < 0 or index >= total_images:
@@ -122,18 +122,18 @@ class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                 f"Image index {index} is out of range. Total images: {total_images}."
             )
 
-        all_images_idx = self.get_all_images_idx()
-        img_idx = all_images_idx[index]
-        result = await self._send_command(COMMAND_SET_IMAGE.format(f"{img_idx:02X}"))
+        all_images_index = self.get_all_images_index()
+        img_index = all_images_index[index]
+        result = await self._send_command(COMMAND_SET_IMAGE.format(f"{img_index:02X}"))
         return self._check_command_result(result, 0, {1})
 
-    def get_all_images_idx(self) -> list[int] | None:
+    def get_all_images_index(self) -> list[int] | None:
         """Return cached list of all image indexes."""
-        return self._get_adv_value("all_images_idx")
+        return self._get_adv_value("all_images_index")
 
-    def get_current_image_idx(self) -> int | None:
+    def get_current_image_index(self) -> int | None:
         """Return cached current image index."""
-        return self._get_adv_value("current_image_idx")
+        return self._get_adv_value("current_image_index")
 
     def get_total_images(self) -> int | None:
         """Return cached total number of images."""
