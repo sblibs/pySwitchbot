@@ -29,6 +29,7 @@ from .const import (
     SwitchbotModel,
 )
 from .devices.air_purifier import SwitchbotAirPurifier
+from .devices.art_frame import SwitchbotArtFrame
 from .devices.base_light import SwitchbotBaseLight
 from .devices.blind_tilt import SwitchbotBlindTilt
 from .devices.bot import Switchbot
@@ -83,6 +84,7 @@ __all__ = [
     "SwitchbotAccountConnectionError",
     "SwitchbotAirPurifier",
     "SwitchbotApiError",
+    "SwitchbotArtFrame",
     "SwitchbotAuthenticationError",
     "SwitchbotBaseLight",
     "SwitchbotBlindTilt",

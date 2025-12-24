@@ -3533,6 +3533,22 @@ def test_humidifer_with_empty_data() -> None:
             "Meter Pro",
             SwitchbotModel.METER_PRO,
         ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\xe2\xfa8\x157\x03\x08",
+            b"\x00\x007\x01\x11>\x10",
+            {
+                "battery": 55,
+                "battery_charging": False,
+                "display_mode": 1,
+                "display_size": 0,
+                "image_index": 3,
+                "last_network_status": 0,
+                "sequence_number": 21,
+            },
+            b"\x01\x11>\x10",
+            "Art Frame",
+            SwitchbotModel.ART_FRAME,
+        ),
     ],
 )
 def test_adv_active(test_case: AdvTestCase) -> None:
@@ -3817,6 +3833,22 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             "Presence Sensor",
             SwitchbotModel.PRESENCE_SENSOR,
         ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\xe2\xfa8\x157\x03\x08",
+            None,
+            {
+                "battery": 55,
+                "battery_charging": False,
+                "display_mode": 1,
+                "display_size": 0,
+                "image_index": 3,
+                "last_network_status": 0,
+                "sequence_number": 21,
+            },
+            b"\x00\x11>\x10",
+            "Art Frame",
+            SwitchbotModel.ART_FRAME,
+        ),
     ],
 )
 def test_adv_passive(test_case: AdvTestCase) -> None:
@@ -4013,6 +4045,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
             b"\x00\x10\xcc\xc8",
             "Presence Sensor",
             SwitchbotModel.PRESENCE_SENSOR,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x007\x01\x11>\x10",
+            {},
+            b"\x01\x11>\x10",
+            "Art Frame",
+            SwitchbotModel.ART_FRAME,
         ),
     ],
 )

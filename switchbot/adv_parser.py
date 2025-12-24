@@ -12,6 +12,7 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
 from .adv_parsers.air_purifier import process_air_purifier
+from .adv_parsers.art_frame import process_art_frame
 from .adv_parsers.blind_tilt import process_woblindtilt
 from .adv_parsers.bot import process_wohand
 from .adv_parsers.bulb import process_color_bulb
@@ -715,6 +716,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.PRESENCE_SENSOR,
         "modelFriendlyName": "Presence Sensor",
         "func": process_presence_sensor,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x11>\x10": {
+        "modelName": SwitchbotModel.ART_FRAME,
+        "modelFriendlyName": "Art Frame",
+        "func": process_art_frame,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11>\x10": {
+        "modelName": SwitchbotModel.ART_FRAME,
+        "modelFriendlyName": "Art Frame",
+        "func": process_art_frame,
         "manufacturer_id": 2409,
     },
 }
