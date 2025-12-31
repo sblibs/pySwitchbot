@@ -17,6 +17,8 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
     COMMAND_GET_TIME_OFFSET = "570f690506"
     MAX_TIME_OFFSET = 1 << 24 - 1
 
+    COMMAND_GET_DEVICE_DATETIME = "570f6901"
+
     async def get_time_offset(self) -> int:
         """
         Get the current display time offset from the device.
@@ -59,6 +61,45 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         result = await self._send_command(payload)
 
         self._validate_result('set_time_offset', result)
+
+    async def get_datetime(self) -> dict:
+        """
+        Get the current device time and settings as it is displayed. Contains
+        a time offset, if any was applied (see COMMAND_TIME_OFFSET).
+        Doesn't include the current time zone.
+
+        Returns:
+            dict: Dictionary containing:
+                - 12h_mode (bool): True if 12h mode, False if 24h mode.
+                - year (int)
+                - month (int)
+                - day (int)
+                - hour (int)
+                - minute (int)
+                - second (int)
+        """
+        # Response Format: 13 bytes, where
+        # - byte 0: "01" (success)
+        # * bytes 1-4: temperature, ignored here.
+        # * byte 5: time display format:
+        #   * "80" - 12h (am/pm)
+        #   * "00" - 24h
+        # * bytes 6-12: yyyy-MM-dd-hh-mm-ss
+        # Example: 01-e4-02-94-23-00-07-e9-0c-1e -08-37-01 contains
+        # "year 2025, 30 December, 08:55:01, displayed in 24h format".
+        result = await self._send_command(self.COMMAND_GET_DEVICE_DATETIME)
+        result = self._validate_result(
+            'get_datetime', result, min_length=13)
+        return {
+            # Whether the time is displayed in 12h(am/pm) or 24h mode.
+            "12h_mode": result[5] == 0x80,
+            "year": (result[6] << 8) + result[7],
+            "month": result[8],
+            "day": result[9],
+            "hour": result[10],
+            "minute": result[11],
+            "second": result[12],
+        }
 
     def _validate_result(self, op_name: str, result: bytes | None, min_length: int | None = None) -> bytes:
         if not self._check_command_result(result, 0, {1}):
