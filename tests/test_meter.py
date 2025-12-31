@@ -197,3 +197,27 @@ class TestSwitchbotMeterProCO2:
         expected_min = "2d"
         expected_payload = expected_header + expected_utc + expected_ts + expected_min
         device._send_command.assert_called_with(expected_payload)
+
+    @pytest.mark.asyncio
+    async def test_set_time_display_format_12h(self):
+        device = self.create_device()
+        device._send_command.return_value = bytes.fromhex("01")
+
+        await device.set_time_display_format(is_12h_mode=True)
+        device._send_command.assert_called_with("570f68050580")
+
+    @pytest.mark.asyncio
+    async def test_set_time_display_format_24h(self):
+        device = self.create_device()
+        device._send_command.return_value = bytes.fromhex("01")
+
+        await device.set_time_display_format(is_12h_mode=False)
+        device._send_command.assert_called_with("570f68050500")
+
+    @pytest.mark.asyncio
+    async def test_set_time_display_format_failure(self):
+        device = self.create_device()
+        device._send_command.return_value = bytes.fromhex("00")
+
+        with pytest.raises(SwitchbotOperationError):
+            await device.set_time_display_format(is_12h_mode=True)

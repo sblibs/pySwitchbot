@@ -21,6 +21,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
 
     COMMAND_GET_DEVICE_DATETIME = "570f6901"
     COMMAND_SET_DEVICE_DATETIME = "57000503"
+    COMMAND_SET_DISPLAY_FORMAT = "570f680505"
 
     async def get_time_offset(self) -> int:
         """
@@ -140,6 +141,21 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
 
         result = await self._send_command(payload)
         self._validate_result('set_datetime', result)
+
+    async def set_time_display_format(self, is_12h_mode: bool = False):
+        """
+        Set the time display format on the device: 12h(AM/PM) or 24h.
+
+        Args:
+            is_12h_mode (bool): True for 12h (AM/PM) mode, False for 24h mode.
+        """
+        # Command code: 57 0f 68 05 05
+        # Payload byte 5: 80 for 12h, 00 for 24h
+        mode_byte = "80" if is_12h_mode else "00"
+
+        payload = self.COMMAND_SET_DISPLAY_FORMAT + mode_byte
+        result = await self._send_command(payload)
+        self._validate_result('set_time_display_format', result)
 
     def _validate_result(self, op_name: str, result: bytes | None, min_length: int | None = None) -> bytes:
         if not self._check_command_result(result, 0, {1}):
