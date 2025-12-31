@@ -1,16 +1,17 @@
+from datetime import datetime
 from unittest.mock import AsyncMock
 
 import pytest
 from bleak.backends.device import BLEDevice
 
-from datetime import datetime
 from switchbot import SwitchbotOperationError
-from switchbot.devices.meter import SwitchbotMeterProCO2, MAX_TIME_OFFSET
+from switchbot.devices.meter import MAX_TIME_OFFSET, SwitchbotMeterProCO2
 
 
 def create_device():
-    ble_device = BLEDevice(address="aa:bb:cc:dd:ee:ff",
-                           name="any", details={"rssi": -80})
+    ble_device = BLEDevice(
+        address="aa:bb:cc:dd:ee:ff", name="any", details={"rssi": -80}
+    )
     device = SwitchbotMeterProCO2(ble_device)
     device._send_command = AsyncMock()
     return device

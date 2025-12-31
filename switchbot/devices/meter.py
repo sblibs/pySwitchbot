@@ -2,7 +2,6 @@ from datetime import datetime
 
 from .device import SwitchbotDevice, SwitchbotOperationError
 
-
 """
 Command code to set the displayed time offse, which happens whenever you
 manually set the device display time in the Switchbot app.
@@ -30,6 +29,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
 
         Returns:
             int: The time offset in seconds. Max 24 bits.
+
         """
         # Response Format: 5 bytes, where
         # - byte 0: "01" (success)
@@ -37,8 +37,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         # - bytes 2-4: int24, number of seconds to offset.
         # Example response: 01-80-00-10-00 -> subtract 4096 seconds.
         result = await self._send_command(COMMAND_GET_TIME_OFFSET)
-        result = self._validate_result(
-            'get_time_offset', result, min_length=5)
+        result = self._validate_result("get_time_offset", result, min_length=5)
 
         is_negative = result[1] == 0x80
         offset = (result[2] << 16) + (result[3] << 8) + result[4]
@@ -51,6 +50,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
 
         Args:
             offset_seconds (int): 2^24 maximum, can be negative.
+
         """
         abs_offset = abs(offset_seconds)
         if abs_offset > MAX_TIME_OFFSET:
@@ -61,11 +61,10 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         sign_byte = "80" if offset_seconds < 0 else "00"
 
         # Example: 57-0f-68-05-06-80-00-10-00 -> subtract 4096 seconds.
-        payload = COMMAND_SET_TIME_OFFSET + \
-            sign_byte + f"{abs_offset:06x}"
+        payload = COMMAND_SET_TIME_OFFSET + sign_byte + f"{abs_offset:06x}"
         result = await self._send_command(payload)
 
-        self._validate_result('set_time_offset', result)
+        self._validate_result("set_time_offset", result)
 
     async def get_datetime(self) -> dict:
         """
@@ -82,6 +81,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
                 - hour (int)
                 - minute (int)
                 - second (int)
+
         """
         # Response Format: 13 bytes, where
         # - byte 0: "01" (success)
@@ -93,8 +93,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         # Example: 01-e4-02-94-23-00-07-e9-0c-1e -08-37-01 contains
         # "year 2025, 30 December, 08:55:01, displayed in 24h format".
         result = await self._send_command(COMMAND_GET_DEVICE_DATETIME)
-        result = self._validate_result(
-            'get_datetime', result, min_length=13)
+        result = self._validate_result("get_datetime", result, min_length=13)
         return {
             # Whether the time is displayed in 12h(am/pm) or 24h mode.
             "12h_mode": result[5] == 0x80,
@@ -113,8 +112,8 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
 
         Args:
             dt (datetime): datetime object with timezone information.
-        """
 
+        """
         utc_offset = dt.utcoffset()
         if utc_offset is None:
             # Fallback to the local timezone.
@@ -141,7 +140,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         )
 
         result = await self._send_command(payload)
-        self._validate_result('set_datetime', result)
+        self._validate_result("set_datetime", result)
 
     async def set_time_display_format(self, is_12h_mode: bool = False):
         """
@@ -149,6 +148,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
 
         Args:
             is_12h_mode (bool): True for 12h (AM/PM) mode, False for 24h mode.
+
         """
         # Command code: 57 0f 68 05 05
         # Payload byte 5: 80 for 12h, 00 for 24h
@@ -156,16 +156,18 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
 
         payload = COMMAND_SET_DISPLAY_FORMAT + mode_byte
         result = await self._send_command(payload)
-        self._validate_result('set_time_display_format', result)
+        self._validate_result("set_time_display_format", result)
 
-    def _validate_result(self, op_name: str, result: bytes | None, min_length: int | None = None) -> bytes:
+    def _validate_result(
+        self, op_name: str, result: bytes | None, min_length: int | None = None
+    ) -> bytes:
         if not self._check_command_result(result, 0, {1}):
             raise SwitchbotOperationError(
-                f"{self.name}: Unexpected response code for {op_name} (result={result.hex() if result else "None"} rssi={self.rssi})"
+                f"{self.name}: Unexpected response code for {op_name} (result={result.hex() if result else 'None'} rssi={self.rssi})"
             )
         assert result is not None
         if min_length is not None and len(result) < min_length:
             raise SwitchbotOperationError(
-                f"{self.name}: Unexpected response len for {op_name}, wanted at least {min_length} (result={result.hex() if result else "None"} rssi={self.rssi})"
+                f"{self.name}: Unexpected response len for {op_name}, wanted at least {min_length} (result={result.hex() if result else 'None'} rssi={self.rssi})"
             )
         return result
