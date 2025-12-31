@@ -3,25 +3,26 @@ from datetime import datetime
 from .device import SwitchbotDevice, SwitchbotOperationError
 
 
+"""
+Command code to set the displayed time offse, which happens whenever you
+manually set the device display time in the Switchbot app.
+
+The displayed time is calculated as the internal device time (usually comes
+from the factory settings or set by the Switchbot app upon syncing)
++ offset. The offset is provided in seconds and can be
+positive or negative.
+"""
+COMMAND_SET_TIME_OFFSET = "570f680506"
+COMMAND_GET_TIME_OFFSET = "570f690506"
+MAX_TIME_OFFSET = 1 << 24 - 1
+
+COMMAND_GET_DEVICE_DATETIME = "570f6901"
+COMMAND_SET_DEVICE_DATETIME = "57000503"
+COMMAND_SET_DISPLAY_FORMAT = "570f680505"
+
+
 class SwitchbotMeterProCO2(SwitchbotDevice):
     """API to control Switchbot Meter Pro CO2."""
-
-    """
-    Command code to set the displayed time offse, which happens whenever you
-    manually set the device display time in the Switchbot app.
-
-    The displayed time is calculated as the internal device time (usually comes
-    from the factory settings or set by the Switchbot app upon syncing)
-    + offset. The offset is provided in seconds and can be
-    positive or negative.
-    """
-    COMMAND_SET_TIME_OFFSET = "570f680506"
-    COMMAND_GET_TIME_OFFSET = "570f690506"
-    MAX_TIME_OFFSET = 1 << 24 - 1
-
-    COMMAND_GET_DEVICE_DATETIME = "570f6901"
-    COMMAND_SET_DEVICE_DATETIME = "57000503"
-    COMMAND_SET_DISPLAY_FORMAT = "570f680505"
 
     async def get_time_offset(self) -> int:
         """
@@ -35,7 +36,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         # - byte 1: "00" (plus offset) or "80" (minus offset)
         # - bytes 2-4: int24, number of seconds to offset.
         # Example response: 01-80-00-10-00 -> subtract 4096 seconds.
-        result = await self._send_command(self.COMMAND_GET_TIME_OFFSET)
+        result = await self._send_command(COMMAND_GET_TIME_OFFSET)
         result = self._validate_result(
             'get_time_offset', result, min_length=5)
 
@@ -52,15 +53,15 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             offset_seconds (int): 2^24 maximum, can be negative.
         """
         abs_offset = abs(offset_seconds)
-        if abs_offset > self.MAX_TIME_OFFSET:
+        if abs_offset > MAX_TIME_OFFSET:
             raise SwitchbotOperationError(
-                f"{self.name}: Requested to set_time_offset of {offset_seconds} seconds, allowed +-{self.MAX_TIME_OFFSET} max."
+                f"{self.name}: Requested to set_time_offset of {offset_seconds} seconds, allowed +-{MAX_TIME_OFFSET} max."
             )
 
         sign_byte = "80" if offset_seconds < 0 else "00"
 
         # Example: 57-0f-68-05-06-80-00-10-00 -> subtract 4096 seconds.
-        payload = self.COMMAND_SET_TIME_OFFSET + \
+        payload = COMMAND_SET_TIME_OFFSET + \
             sign_byte + f"{abs_offset:06x}"
         result = await self._send_command(payload)
 
@@ -91,7 +92,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         # * bytes 6-12: yyyy-MM-dd-hh-mm-ss
         # Example: 01-e4-02-94-23-00-07-e9-0c-1e -08-37-01 contains
         # "year 2025, 30 December, 08:55:01, displayed in 24h format".
-        result = await self._send_command(self.COMMAND_GET_DEVICE_DATETIME)
+        result = await self._send_command(COMMAND_GET_DEVICE_DATETIME)
         result = self._validate_result(
             'get_datetime', result, min_length=13)
         return {
@@ -133,7 +134,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         utc_byte = utc_offset_hours + 12
 
         payload = (
-            self.COMMAND_SET_DEVICE_DATETIME
+            COMMAND_SET_DEVICE_DATETIME
             + f"{utc_byte:02x}"
             + f"{timestamp:016x}"
             + f"{utc_offset_minutes:02x}"
@@ -153,7 +154,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         # Payload byte 5: 80 for 12h, 00 for 24h
         mode_byte = "80" if is_12h_mode else "00"
 
-        payload = self.COMMAND_SET_DISPLAY_FORMAT + mode_byte
+        payload = COMMAND_SET_DISPLAY_FORMAT + mode_byte
         result = await self._send_command(payload)
         self._validate_result('set_time_display_format', result)
 
