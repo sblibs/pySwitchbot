@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from .device import SwitchbotDevice, SwitchbotOperationError
 
 
@@ -18,6 +20,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
     MAX_TIME_OFFSET = 1 << 24 - 1
 
     COMMAND_GET_DEVICE_DATETIME = "570f6901"
+    COMMAND_SET_DEVICE_DATETIME = "57000503"
 
     async def get_time_offset(self) -> int:
         """
@@ -100,6 +103,43 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             "minute": result[11],
             "second": result[12],
         }
+
+    async def set_datetime(self, dt: datetime):
+        """
+        Set the device internal time and timezone. Similar to how the
+        Switchbot app does it upon syncing with the device.
+
+        Args:
+            dt (datetime): datetime object with timezone information.
+        """
+
+        utc_offset = dt.utcoffset()
+        if utc_offset is None:
+            # Fallback to the local timezone.
+            utc_offset = datetime.now().astimezone().utcoffset()
+        utc_offset_hours, utc_offset_minutes = 0, 0
+        if utc_offset is not None:
+            total_minutes = int(utc_offset.total_seconds() // 60)
+            # UTC-04:30 tz is represented as -5hrs +30min
+            utc_offset_hours, utc_offset_minutes = divmod(total_minutes, 60)
+
+        # The device doesn't automatically add offset minutes, it expects them
+        # to come as a part of the timestamp.
+        timestamp = int(dt.timestamp()) + utc_offset_minutes * 60
+
+        # The timezone is encoded as 1 byte, where 00 stands for UTC-12.
+        # TZ with minute offset gets floor()ed: 4:30 yields 4, -4:30 yields -5.
+        utc_byte = utc_offset_hours + 12
+
+        payload = (
+            self.COMMAND_SET_DEVICE_DATETIME
+            + f"{utc_byte:02x}"
+            + f"{timestamp:016x}"
+            + f"{utc_offset_minutes:02x}"
+        )
+
+        result = await self._send_command(payload)
+        self._validate_result('set_datetime', result)
 
     def _validate_result(self, op_name: str, result: bytes | None, min_length: int | None = None) -> bytes:
         if not self._check_command_result(result, 0, {1}):

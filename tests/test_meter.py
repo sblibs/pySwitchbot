@@ -152,3 +152,48 @@ class TestSwitchbotMeterProCO2:
 
         with pytest.raises(SwitchbotOperationError):
             await device.get_datetime()
+
+    @pytest.mark.asyncio
+    async def test_set_datetime_iso_utc(self):
+        device = self.create_device()
+        device._send_command.return_value = bytes.fromhex("01")
+
+        # "2024-03-01T00:00:00+00:00" -> Timestamp 1709251200. Offset 0.
+        await device.set_datetime(datetime.fromisoformat("2024-03-01T00:00:00+00:00"))
+
+        expected_header = "57000503"
+        expected_utc = "0c"
+        expected_ts = "0000000065e11a80"
+        expected_min = "00"
+
+        expected_payload = expected_header + expected_utc + expected_ts + expected_min
+        device._send_command.assert_called_with(expected_payload)
+
+    @pytest.mark.asyncio
+    async def test_set_datetime_iso_offset(self):
+        device = self.create_device()
+        device._send_command.return_value = bytes.fromhex("01")
+
+        # "2024-03-01T01:00:00+01:00" -> Timestamp 1709251200. Offset +1h.
+        await device.set_datetime(datetime.fromisoformat("2024-03-01T01:00:00+01:00"))
+
+        expected_header = "57000503"
+        expected_utc = "0d"
+        expected_ts = "0000000065e11a80"
+        expected_min = "00"
+        expected_payload = expected_header + expected_utc + expected_ts + expected_min
+        device._send_command.assert_called_with(expected_payload)
+
+    @pytest.mark.asyncio
+    async def test_set_datetime_iso_irregular(self):
+        device = self.create_device()
+        device._send_command.return_value = bytes.fromhex("01")
+
+        await device.set_datetime(datetime.fromisoformat("2024-03-01T05:30:00+05:45"))
+
+        expected_header = "57000503"
+        expected_utc = "11"
+        expected_ts = "0000000065e12188"
+        expected_min = "2d"
+        expected_payload = expected_header + expected_utc + expected_ts + expected_min
+        device._send_command.assert_called_with(expected_payload)
