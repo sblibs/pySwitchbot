@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from .device import SwitchbotDevice, SwitchbotOperationError
 
 COMMAND_SET_TIME_OFFSET = "570f680506"
@@ -35,9 +36,9 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
 
     async def set_time_offset(self, offset_seconds: int):
         """
-        Set the display time offset on the device. This is what happens when 
-        you adjust display time in the Switchbot app. The displayed time is 
-        calculated as the internal device time (usually comes from the factory 
+        Set the display time offset on the device. This is what happens when
+        you adjust display time in the Switchbot app. The displayed time is
+        calculated as the internal device time (usually comes from the factory
         settings or set by the Switchbot app upon syncing) + offset. The offset
         is provided in seconds and can be positive or negative.
 
