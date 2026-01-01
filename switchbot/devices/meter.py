@@ -55,11 +55,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         sign_byte = "80" if offset_seconds < 0 else "00"
 
         # Example: 57-0f-68-05-06-80-00-10-00 -> subtract 4096 seconds.
-        payload = (
-            COMMAND_SET_TIME_OFFSET
-            + sign_byte
-            + f"{abs_offset:06x}"
-        )
+        payload = COMMAND_SET_TIME_OFFSET + sign_byte + f"{abs_offset:06x}"
         result = await self._send_command(payload)
         self._validate_result("set_time_offset", result)
 
