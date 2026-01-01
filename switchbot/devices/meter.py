@@ -55,9 +55,12 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         sign_byte = "80" if offset_seconds < 0 else "00"
 
         # Example: 57-0f-68-05-06-80-00-10-00 -> subtract 4096 seconds.
-        payload = COMMAND_SET_TIME_OFFSET + sign_byte + f"{abs_offset:06x}"
+        payload = (
+            COMMAND_SET_TIME_OFFSET
+            + sign_byte
+            + f"{abs_offset:06x}"
+        )
         result = await self._send_command(payload)
-
         self._validate_result("set_time_offset", result)
 
     async def get_datetime(self) -> dict:
@@ -79,18 +82,18 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         """
         # Response Format: 13 bytes, where
         # - byte 0: "01" (success)
-        # * bytes 1-4: temperature, ignored here.
-        # * byte 5: time display format:
-        #   * "80" - 12h (am/pm)
-        #   * "00" - 24h
-        # * bytes 6-12: yyyy-MM-dd-hh-mm-ss
-        # Example: 01-e4-02-94-23-00-07-e9-0c-1e -08-37-01 contains
+        # - bytes 1-4: temperature, ignored here.
+        # - byte 5: time display format:
+        #   - "80" - 12h (am/pm)
+        #   - "00" - 24h
+        # - bytes 6-12: yyyy-MM-dd-hh-mm-ss
+        # Example: 01-e4-02-94-23-00-07-e9-0c-1e-08-37-01 contains
         # "year 2025, 30 December, 08:55:01, displayed in 24h format".
         result = await self._send_command(COMMAND_GET_DEVICE_DATETIME)
         result = self._validate_result("get_datetime", result, min_length=13)
         return {
             # Whether the time is displayed in 12h(am/pm) or 24h mode.
-            "12h_mode": result[5] == 0x80,
+            "12h_mode": bool(result[5] & 0b10000000),
             "year": (result[6] << 8) + result[7],
             "month": result[8],
             "day": result[9],
@@ -144,8 +147,6 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             is_12h_mode (bool): True for 12h (AM/PM) mode, False for 24h mode.
 
         """
-        # Command code: 57 0f 68 05 05
-        # Payload byte 5: 80 for 12h, 00 for 24h
         mode_byte = "80" if is_12h_mode else "00"
 
         payload = COMMAND_SET_DISPLAY_FORMAT + mode_byte
