@@ -1,6 +1,6 @@
 from datetime import datetime
-
 from .device import SwitchbotDevice, SwitchbotOperationError
+from ..helpers import parse_uint24_be
 
 COMMAND_SET_TIME_OFFSET = "570f680506"
 COMMAND_GET_TIME_OFFSET = "570f690506"
@@ -30,8 +30,8 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         result = await self._send_command(COMMAND_GET_TIME_OFFSET)
         result = self._validate_result("get_time_offset", result, min_length=5)
 
-        is_negative = result[1] == 0x80
-        offset = (result[2] << 16) + (result[3] << 8) + result[4]
+        is_negative = bool(result[1] & 0b10000000)
+        offset = parse_uint24_be(result, 2)
         return -offset if is_negative else offset
 
     async def set_time_offset(self, offset_seconds: int):
