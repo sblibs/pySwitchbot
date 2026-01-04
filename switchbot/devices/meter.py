@@ -1,6 +1,7 @@
 from datetime import datetime
-from .device import SwitchbotDevice, SwitchbotOperationError
+
 from ..helpers import parse_uint24_be
+from .device import SwitchbotDevice, SwitchbotOperationError
 
 COMMAND_SET_TIME_OFFSET = "570f680506"
 COMMAND_GET_TIME_OFFSET = "570f690506"
