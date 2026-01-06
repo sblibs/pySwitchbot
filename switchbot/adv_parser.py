@@ -26,6 +26,7 @@ from .adv_parsers.hub3 import process_hub3
 from .adv_parsers.hubmini_matter import process_hubmini_matter
 from .adv_parsers.humidifier import process_evaporative_humidifier, process_wohumidifier
 from .adv_parsers.keypad import process_wokeypad
+from .adv_parsers.keypad_vision import process_keypad_vision, process_keypad_vision_pro
 from .adv_parsers.leak import process_leak
 from .adv_parsers.light_strip import process_light, process_rgbic_light, process_wostrip
 from .adv_parsers.lock import (
@@ -728,6 +729,30 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.ART_FRAME,
         "modelFriendlyName": "Art Frame",
         "func": process_art_frame,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x11\x03x": {
+        "modelName": SwitchbotModel.KEYPAD_VISION,
+        "modelFriendlyName": "Keypad Vision",
+        "func": process_keypad_vision,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\x03x": {
+        "modelName": SwitchbotModel.KEYPAD_VISION,
+        "modelFriendlyName": "Keypad Vision",
+        "func": process_keypad_vision,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x11Q\x98": {
+        "modelName": SwitchbotModel.KEYPAD_VISION_PRO,
+        "modelFriendlyName": "Keypad Vision Pro",
+        "func": process_keypad_vision_pro,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11Q\x98": {
+        "modelName": SwitchbotModel.KEYPAD_VISION_PRO,
+        "modelFriendlyName": "Keypad Vision Pro",
+        "func": process_keypad_vision_pro,
         "manufacturer_id": 2409,
     },
 }
