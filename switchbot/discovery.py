@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
+from collections.abc import Awaitable, Callable
 
 import bleak
 from bleak.backends.device import BLEDevice
@@ -20,10 +22,27 @@ CONNECT_LOCK = asyncio.Lock()
 class GetSwitchbotDevices:
     """Scan for all Switchbot devices and return by type."""
 
-    def __init__(self, interface: int = 0) -> None:
+    def __init__(
+        self,
+        interface: int = 0,
+        callback: Callable[[SwitchBotAdvertisement], None]
+        | Callable[[SwitchBotAdvertisement], Awaitable[None]]
+        | None = None,
+    ) -> None:
         """Get switchbot devices class constructor."""
         self._interface = f"hci{interface}"
         self._adv_data: dict[str, SwitchBotAdvertisement] = {}
+        self._callback = callback
+        self._background_tasks: set[asyncio.Task] = set()
+
+    def _handle_async_callback_result(self, task: asyncio.Task) -> None:
+        self._background_tasks.discard(task)
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            _LOGGER.exception("Error in async discovery callback")
 
     def detection_callback(
         self,
@@ -34,6 +53,16 @@ class GetSwitchbotDevices:
         discovery = parse_advertisement_data(device, advertisement_data)
         if discovery:
             self._adv_data[discovery.address] = discovery
+            if self._callback:
+                try:
+                    if inspect.iscoroutinefunction(self._callback):
+                        task = asyncio.create_task(self._callback(discovery))
+                        self._background_tasks.add(task)
+                        task.add_done_callback(self._handle_async_callback_result)
+                    else:
+                        self._callback(discovery)
+                except Exception:  # pragma: no cover
+                    _LOGGER.exception("Error in discovery callback")
 
     async def discover(
         self, retry: int = DEFAULT_RETRY_COUNT, scan_timeout: int = DEFAULT_SCAN_TIMEOUT
