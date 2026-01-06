@@ -58,13 +58,14 @@ def make_advertisement_data(
         active=True,
     )
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("adv_info"),
     [
         (KEYPAD_VISION_INFO),
         (KEYPAD_VISION_PRO_INFO),
-    ]
+    ],
 )
 async def test_get_basic_info_none(adv_info: AdvTestCase) -> None:
     """Test getting basic info returns None when no data."""
@@ -74,23 +75,26 @@ async def test_get_basic_info_none(adv_info: AdvTestCase) -> None:
     info = await device.get_basic_info()
     assert info is None
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("adv_info", "basic_info", "result"),
     [
         (
             KEYPAD_VISION_INFO,
-            b'\x01_\x18\x16\x01\x02\x00\n\x01\x02\x03\x05\x02\x00\x01\x00',
+            b"\x01_\x18\x16\x01\x02\x00\n\x01\x02\x03\x05\x02\x00\x01\x00",
             [95, 2.4, 22, 1, True, True, True, 5, True, False],
         ),
         (
             KEYPAD_VISION_PRO_INFO,
-            b'\x01_\x0b\x18\x01\x02\x00\n\x01\x02\x03\x05\x02\x00\x03\x00',
+            b"\x01_\x0b\x18\x01\x02\x00\n\x01\x02\x03\x05\x02\x00\x03\x00",
             [95, 1.1, 24, 1, True, True, True, 5, True, True],
-        )
-    ]
+        ),
+    ],
 )
-async def test_get_basic_info(adv_info: AdvTestCase, basic_info: bytes, result: dict) -> None:
+async def test_get_basic_info(
+    adv_info: AdvTestCase, basic_info: bytes, result: dict
+) -> None:
     """Test getting basic info from Keypad Vision devices."""
     device = create_device_for_command_testing(adv_info)
     device._get_basic_info = AsyncMock(return_value=basic_info)
@@ -107,13 +111,14 @@ async def test_get_basic_info(adv_info: AdvTestCase, basic_info: bytes, result: 
     assert info["prompt_tone_enabled"] == result[8]
     assert info["battery_charging"] == result[9]
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "adv_info",
     [
         KEYPAD_VISION_INFO,
         KEYPAD_VISION_PRO_INFO,
-    ]
+    ],
 )
 async def test_add_invalid_password(adv_info: AdvTestCase) -> None:
     """Test adding an invalid password raises ValueError."""
@@ -125,13 +130,14 @@ async def test_add_invalid_password(adv_info: AdvTestCase) -> None:
         with pytest.raises(ValueError, match=r"Password must be 6-12 digits."):
             await device.add_password(password)
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "adv_info",
     [
         KEYPAD_VISION_INFO,
         KEYPAD_VISION_PRO_INFO,
-    ]
+    ],
 )
 @pytest.mark.parametrize(
     ("password", "expected_payload"),
@@ -143,10 +149,12 @@ async def test_add_invalid_password(adv_info: AdvTestCase) -> None:
         (
             "123456789012",
             ["570F52020220FF000C0102030405060708", "570F5202022109000102"],
-        )
+        ),
     ],
 )
-async def test_add_password(adv_info: AdvTestCase, password: str, expected_payload: list[str]) -> None:
+async def test_add_password(
+    adv_info: AdvTestCase, password: str, expected_payload: list[str]
+) -> None:
     """Test adding a valid password sends correct command."""
     device = create_device_for_command_testing(adv_info)
 
@@ -154,13 +162,14 @@ async def test_add_password(adv_info: AdvTestCase, password: str, expected_paylo
 
     device._send_multiple_commands.assert_awaited_once_with(expected_payload)
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "adv_info",
     [
         KEYPAD_VISION_INFO,
         KEYPAD_VISION_PRO_INFO,
-    ]
+    ],
 )
 async def test_get_password_count_no_response(adv_info: AdvTestCase) -> None:
     """Test getting password count returns None when no response."""
@@ -179,12 +188,14 @@ async def test_get_password_count_for_keypad_vision_pro() -> None:
     """Test getting password count for Keypad Vision Pro."""
     device = create_device_for_command_testing(KEYPAD_VISION_PRO_INFO)
 
-    device._send_command.return_value = bytes([0x01, 0x05, 0x02, 0x03, 0x00, 0x02, 0x01, 0x00])
+    device._send_command.return_value = bytes(
+        [0x01, 0x05, 0x02, 0x03, 0x00, 0x02, 0x01, 0x00]
+    )
 
     result = await device.get_password_count()
     device._send_command.assert_awaited_once_with(COMMAND_GET_PASSWORD_COUNT)
 
-    assert  result == {
+    assert result == {
         "pin": 5,
         "nfc": 2,
         "fingerprint": 3,
@@ -205,7 +216,7 @@ async def test_get_password_count_for_keypad_vision() -> None:
     result = await device.get_password_count()
     device._send_command.assert_awaited_once_with(COMMAND_GET_PASSWORD_COUNT)
 
-    assert  result == {
+    assert result == {
         "pin": 3,
         "nfc": 2,
         "fingerprint": 1,
@@ -220,10 +231,12 @@ async def test_get_password_count_for_keypad_vision() -> None:
     [
         KEYPAD_VISION_INFO,
         KEYPAD_VISION_PRO_INFO,
-    ]
+    ],
 )
 @patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)
-async def test_verify_encryption_key(mock_parent_verify: AsyncMock, adv_info: AdvTestCase):
+async def test_verify_encryption_key(
+    mock_parent_verify: AsyncMock, adv_info: AdvTestCase
+):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     key_id = "ff"
     encryption_key = "ffffffffffffffffffffffffffffffff"

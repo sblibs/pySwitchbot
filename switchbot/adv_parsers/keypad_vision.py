@@ -4,9 +4,8 @@ import logging
 
 _LOGGER = logging.getLogger(__name__)
 
-def process_common_mfr_data(
-    mfr_data: bytes | None
-) -> dict[str, bool | int]:
+
+def process_common_mfr_data(mfr_data: bytes | None) -> dict[str, bool | int]:
     """Process common Keypad Vision (Pro) manufacturer data."""
     if mfr_data is None:
         return {}
@@ -21,7 +20,6 @@ def process_common_mfr_data(
     high_temperature = bool(mfr_data[8] & 0b01000000)
     doorbell = bool(mfr_data[12] & 0b00001000)
 
-
     return {
         "sequence_number": _seq_num,
         "battery_charging": battery_charging,
@@ -35,9 +33,6 @@ def process_common_mfr_data(
     }
 
 
-
-
-
 def process_keypad_vision(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int | str]:
@@ -49,15 +44,16 @@ def process_keypad_vision(
 
     pir_triggered_level = mfr_data[13] & 0x03
 
-    result.update({
-        "pir_triggered_level": pir_triggered_level,
-    })
-
-    _LOGGER.debug(
-        "Keypad Vision mfr data: %s, result: %s", mfr_data.hex(), result
+    result.update(
+        {
+            "pir_triggered_level": pir_triggered_level,
+        }
     )
 
+    _LOGGER.debug("Keypad Vision mfr data: %s, result: %s", mfr_data.hex(), result)
+
     return result
+
 
 def process_keypad_vision_pro(
     data: bytes | None, mfr_data: bytes | None
@@ -71,13 +67,13 @@ def process_keypad_vision_pro(
     radar_triggered_level = mfr_data[13] & 0x03
     radar_triggered_distance = (mfr_data[13] >> 2) & 0x03
 
-    result.update({
-        "radar_triggered_level": radar_triggered_level,
-        "radar_triggered_distance": radar_triggered_distance,
-    })
-
-    _LOGGER.debug(
-        "Keypad Vision Pro mfr data: %s, result: %s", mfr_data.hex(), result
+    result.update(
+        {
+            "radar_triggered_level": radar_triggered_level,
+            "radar_triggered_distance": radar_triggered_distance,
+        }
     )
+
+    _LOGGER.debug("Keypad Vision Pro mfr data: %s, result: %s", mfr_data.hex(), result)
 
     return result

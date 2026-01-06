@@ -14,6 +14,7 @@ COMMAND_GET_PASSWORD_COUNT = "570F530100"
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Keypad Vision (Pro) device."""
 
@@ -53,14 +54,14 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         support_fingerprint = _data[4]
         lock_button_enabled = bool(_data[5] != 1)
         tamper_alarm_enabled = bool(_data[9])
-        backlight_enabled =  bool(_data[10] != 1)
+        backlight_enabled = bool(_data[10] != 1)
         backlight_level = _data[11]
         prompt_tone_enabled = bool(_data[12] != 1)
 
         if self._model == SwitchbotModel.KEYPAD_VISION:
             battery_charging = bool((_data[14] & 0x06) >> 1)
         else:
-            battery_charging = bool((_data[14] & 0x0e) >> 1)
+            battery_charging = bool((_data[14] & 0x0E) >> 1)
 
         result = {
             "battery": battery,
@@ -105,8 +106,7 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         max_payload = 11
 
         chunks = [
-            payload[i : i + max_payload]
-            for i in range(0, len(payload), max_payload)
+            payload[i : i + max_payload] for i in range(0, len(payload), max_payload)
         ]
         total = len(chunks)
         cmds: list[str] = []
@@ -121,7 +121,9 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
             cmds.append(cmd.hex().upper())
 
-        _LOGGER.debug("device: %s add password commands: %s", self._device.address, cmds)
+        _LOGGER.debug(
+            "device: %s add password commands: %s", self._device.address, cmds
+        )
 
         return cmds
 
@@ -154,10 +156,12 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if self._model == SwitchbotModel.KEYPAD_VISION_PRO:
             face = _data[6]
             palm_vein = _data[7]
-            result.update({
-                "face": face,
-                "palm_vein": palm_vein,
-            })
+            result.update(
+                {
+                    "face": face,
+                    "palm_vein": palm_vein,
+                }
+            )
 
         _LOGGER.debug(" %s password count: %s", self._model, result)
         return result

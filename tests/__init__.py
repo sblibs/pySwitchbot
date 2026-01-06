@@ -121,7 +121,7 @@ ART_FRAME_INFO = AdvTestCase(
     SwitchbotModel.ART_FRAME,
 )
 
-KEYPAD_VISION_INFO =  AdvTestCase(
+KEYPAD_VISION_INFO = AdvTestCase(
     b"\xb0\xe9\xfe\xe5\x04\x1e\xac\xdf\x00\x00\x00\x00\x00\x02",
     b"\x00\x00_\x01\x11\x03x",
     {
@@ -157,7 +157,7 @@ KEYPAD_VISION_PRO_INFO = AdvTestCase(
         "sequence_number": 43,
         "tamper_alarm": False,
     },
-    b'\x01\x11Q\x98',
+    b"\x01\x11Q\x98",
     "Keypad Vision Pro",
     SwitchbotModel.KEYPAD_VISION_PRO,
 )
