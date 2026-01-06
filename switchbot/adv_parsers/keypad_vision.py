@@ -10,7 +10,7 @@ def process_common_mfr_data(mfr_data: bytes | None) -> dict[str, bool | int]:
     if mfr_data is None:
         return {}
 
-    _seq_num = mfr_data[6]
+    sequence_number = mfr_data[6]
     battery_charging = bool(mfr_data[7] & 0b10000000)
     battery = mfr_data[7] & 0b01111111
     lockout_alarm = bool(mfr_data[8] & 0b00000001)
@@ -21,7 +21,7 @@ def process_common_mfr_data(mfr_data: bytes | None) -> dict[str, bool | int]:
     doorbell = bool(mfr_data[12] & 0b00001000)
 
     return {
-        "sequence_number": _seq_num,
+        "sequence_number": sequence_number,
         "battery_charging": battery_charging,
         "battery": battery,
         "lockout_alarm": lockout_alarm,
