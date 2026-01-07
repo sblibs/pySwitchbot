@@ -26,7 +26,7 @@ def create_device_for_command_testing(
     )
 
     device._send_command = AsyncMock()
-    device._send_multiple_commands = AsyncMock()
+    device._send_command_sequence = AsyncMock()
     device._check_command_result = MagicMock()
     device.update = AsyncMock()
     device.update_from_advertisement(
@@ -160,7 +160,7 @@ async def test_add_password(
 
     await device.add_password(password)
 
-    device._send_multiple_commands.assert_awaited_once_with(expected_payload)
+    device._send_command_sequence.assert_awaited_once_with(expected_payload)
 
 
 @pytest.mark.asyncio

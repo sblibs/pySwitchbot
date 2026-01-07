@@ -131,7 +131,7 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         """Add a password to the Keypad Vision (Pro)."""
         self._check_password_rules(password)
         cmds = self._build_add_password_cmd(password)
-        return await self._send_multiple_commands(cmds)
+        return await self._send_command_sequence(cmds)
 
     async def get_password_count(self) -> dict[str, int] | None:
         """Get the number of passwords stored in the Keypad Vision (Pro)."""
