@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
 import pytest
@@ -16,7 +16,13 @@ from switchbot.const import (
     SwitchbotAuthenticationError,
     SwitchbotModel,
 )
-from switchbot.devices.device import SwitchbotBaseDevice, _extract_region
+from switchbot.devices.device import (
+    SwitchbotBaseDevice,
+    SwitchbotDevice,
+    _extract_region,
+)
+
+from .test_adv_parser import generate_ble_device
 
 
 @pytest.fixture
@@ -377,3 +383,34 @@ def test_extract_region() -> None:
 
     # Test with empty dict
     assert _extract_region({}) == "us"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("commands", "results", "final_result"),
+    [
+        # All fail -> False
+        (("command1", "command2"), [(b"\x01", False), (None, False)], False),
+        # First fails -> False (short-circuits, second not called)
+        (("command1", "command2"), [(b"\x01", False)], False),
+        # First succeeds, second fails -> False
+        (("command1", "command2"), [(b"\x01", True), (b"\x01", False)], False),
+        # All succeed -> True
+        (("command1", "command2"), [(b"\x01", True), (b"\x01", True)], True),
+    ],
+)
+async def test_send_command_sequence(
+    commands: tuple[str, ...],
+    results: list[tuple[bytes | None, bool]],
+    final_result: bool,
+) -> None:
+    """Test sending command sequence where all must succeed."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    device = SwitchbotDevice(ble_device)
+
+    device._send_command = AsyncMock(side_effect=[r[0] for r in results])
+    device._check_command_result = MagicMock(side_effect=[r[1] for r in results])
+
+    result = await device._send_command_sequence(list(commands))
+
+    assert result is final_result
