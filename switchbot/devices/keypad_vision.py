@@ -76,7 +76,7 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             "battery_charging": battery_charging,
         }
 
-        _LOGGER.debug(" %s basic info: %s", self._model, result)
+        _LOGGER.debug("%s basic info: %s", self._model, result)
         return result
 
     def _check_password_rules(self, password: str) -> None:
@@ -163,5 +163,5 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                 }
             )
 
-        _LOGGER.debug(" %s password count: %s", self._model, result)
+        _LOGGER.debug("%s password count: %s", self._model, result)
         return result

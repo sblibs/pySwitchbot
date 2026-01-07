@@ -1041,10 +1041,10 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         Since we current have no way to tell which command the device
         needs we send both.
         """
-        final_result = False
+        final_result = True
         for key in keys:
             result = await self._send_command(key)
-            final_result |= self._check_command_result(result, 0, {1})
+            final_result &= self._check_command_result(result, 0, {1})
         return final_result
 
     async def _send_command(

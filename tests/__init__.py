@@ -136,7 +136,7 @@ KEYPAD_VISION_INFO = AdvTestCase(
         "sequence_number": 172,
         "tamper_alarm": False,
     },
-    b"\x00\x11\x03x",
+    b"\x01\x11\x03x",
     "Keypad Vision",
     SwitchbotModel.KEYPAD_VISION,
 )
