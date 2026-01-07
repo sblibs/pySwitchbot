@@ -1,6 +1,6 @@
 """Test keypad vision series device parsing and functionality."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from bleak.backends.device import BLEDevice
@@ -27,7 +27,6 @@ def create_device_for_command_testing(
 
     device._send_command = AsyncMock()
     device._send_command_sequence = AsyncMock()
-    device._check_command_result = MagicMock()
     device.update = AsyncMock()
     device.update_from_advertisement(
         make_advertisement_data(ble_device, adv_info, init_data)
