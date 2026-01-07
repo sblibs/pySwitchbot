@@ -5,7 +5,7 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchbotOperationError
-from switchbot.devices.meter import MAX_TIME_OFFSET, SwitchbotMeterProCO2
+from switchbot.devices.meter_pro import MAX_TIME_OFFSET, SwitchbotMeterProCO2
 
 
 def create_device():
