@@ -120,3 +120,44 @@ ART_FRAME_INFO = AdvTestCase(
     "Art Frame",
     SwitchbotModel.ART_FRAME,
 )
+
+KEYPAD_VISION_INFO = AdvTestCase(
+    b"\xb0\xe9\xfe\xe5\x04\x1e\xac\xdf\x00\x00\x00\x00\x00\x02",
+    b"\x00\x00_\x01\x11\x03x",
+    {
+        "battery": 95,
+        "battery_charging": True,
+        "doorbell": False,
+        "duress_alarm": False,
+        "high_temperature": False,
+        "lockout_alarm": False,
+        "low_temperature": False,
+        "pir_triggered_level": 2,
+        "sequence_number": 172,
+        "tamper_alarm": False,
+    },
+    b"\x01\x11\x03x",
+    "Keypad Vision",
+    SwitchbotModel.KEYPAD_VISION,
+)
+
+KEYPAD_VISION_PRO_INFO = AdvTestCase(
+    b"\xb0\xe9\xfe\xde\xb6\x8c+`\x00\x00\x00\x00\x00\x002",
+    b"\x00\x00`\x01\x11Q\x98",
+    {
+        "battery": 96,
+        "battery_charging": False,
+        "doorbell": False,
+        "duress_alarm": False,
+        "high_temperature": False,
+        "lockout_alarm": False,
+        "low_temperature": False,
+        "radar_triggered_distance": 0,
+        "radar_triggered_level": 0,
+        "sequence_number": 43,
+        "tamper_alarm": False,
+    },
+    b"\x01\x11Q\x98",
+    "Keypad Vision Pro",
+    SwitchbotModel.KEYPAD_VISION_PRO,
+)

@@ -931,6 +931,32 @@ class SwitchbotDevice(SwitchbotBaseDevice):
         super().update_from_advertisement(advertisement)
         self._set_advertisement_data(advertisement)
 
+    async def _send_multiple_commands(self, keys: list[str]) -> bool:
+        """
+        Send multiple commands to device.
+
+        Returns True if any command succeeds. Used when we don't know
+        which command the device needs, so we send multiple and consider
+        it successful if any one works.
+        """
+        final_result = False
+        for key in keys:
+            result = await self._send_command(key)
+            final_result |= self._check_command_result(result, 0, {1})
+        return final_result
+
+    async def _send_command_sequence(self, keys: list[str]) -> bool:
+        """
+        Send a sequence of commands to device where all must succeed.
+
+        Returns True only if all commands succeed.
+        """
+        for key in keys:
+            result = await self._send_command(key)
+            if not self._check_command_result(result, 0, {1}):
+                return False
+        return True
+
 
 class SwitchbotEncryptedDevice(SwitchbotDevice):
     """A Switchbot device that uses encryption."""
