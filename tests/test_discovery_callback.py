@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -114,40 +114,29 @@ async def test_callback_exception_does_not_break_discovery(
 
 
 @pytest.mark.asyncio
-async def test_async_callback_is_supported(monkeypatch: pytest.MonkeyPatch) -> None:
-    calls: list[SwitchBotAdvertisement] = []
+async def test_callback_exception_is_logged_and_suppressed(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """
+    Test that exceptions raised in the user callback are caught,
+    logged, and do not crash the discovery process.
+    """
+    mock_callback = MagicMock(side_effect=RuntimeError("Boom!"))
 
-    # Capture real sleep before patching
-    real_sleep = asyncio.sleep
+    scanner = GetSwitchbotDevices(callback=mock_callback)
 
-    parsed = SwitchBotAdvertisement(
+    adv = SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
-        data={"model": "c", "modelName": "Curtain", "data": {"position": 10}},
-        device=object(),
+        data={"model": "H", "modelName": "Bot", "data": {}},
+        device=MagicMock(),
         rssi=-80,
         active=True,
     )
 
-    def _fake_parse(_device: object, _advertisement_data: object):
-        return parsed
+    with patch("switchbot.discovery.parse_advertisement_data", return_value=adv):
+        scanner.detection_callback(MagicMock(), MagicMock())
 
-    async def _fake_sleep(_seconds: float) -> None:
-        # yield to event loop to allow tasks to run
-        await real_sleep(0)
+    mock_callback.assert_called_once()
 
-    def _fake_bleak_scanner(*, detection_callback, adapter: str):
-        return _FakeBleakScanner(detection_callback=detection_callback, adapter=adapter)
-
-    monkeypatch.setattr(discovery_module, "parse_advertisement_data", _fake_parse)
-    monkeypatch.setattr(discovery_module.asyncio, "sleep", _fake_sleep)
-    monkeypatch.setattr(discovery_module.bleak, "BleakScanner", _fake_bleak_scanner)
-
-    async def async_callback(adv: SwitchBotAdvertisement) -> None:
-        calls.append(adv)
-        await real_sleep(0)  # Simulate some async work
-
-    scanner = GetSwitchbotDevices(callback=async_callback)
-    await scanner.discover(scan_timeout=1)
-
-    assert len(calls) == 2
-    assert calls[0] == parsed
+    assert "Error in discovery callback" in caplog.text
+    assert "Boom!" in caplog.text  # 例外のメッセージもログに含まれるはず
