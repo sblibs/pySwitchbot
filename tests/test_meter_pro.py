@@ -17,25 +17,23 @@ def create_device():
 
 
 @pytest.mark.asyncio
-async def test_get_time_offset_positive():
+@pytest.mark.parametrize(
+    (
+        "device_response",
+        "expected_offset",
+    ),
+    [
+        ("0100101bc9", 1055689),  # 01 (success) 00 (plus offset) 10 1b c9 (1055689)
+        ("0180101bc9", -1055689),  # 01 (success) 80 (minus offset) 10 1b c9 (1055689)
+    ],
+)
+async def test_get_time_offset(device_response: str, expected_offset: int):
     device = create_device()
-    # Mock response: 01 (success) 00 (plus offset) 10 1b c9 (1055689 seconds)
-    device._send_command.return_value = bytes.fromhex("0100101bc9")
+    device._send_command.return_value = bytes.fromhex(device_response)
 
     offset = await device.get_time_offset()
     device._send_command.assert_called_with("570f690506")
-    assert offset == 1055689
-
-
-@pytest.mark.asyncio
-async def test_get_time_offset_negative():
-    device = create_device()
-    # Mock response: 01 (success) 80 (minus offset) 10 1b c9 (1055689 seconds)
-    device._send_command.return_value = bytes.fromhex("0180101bc9")
-
-    offset = await device.get_time_offset()
-    device._send_command.assert_called_with("570f690506")
-    assert offset == -1055689
+    assert offset == expected_offset
 
 
 @pytest.mark.asyncio
@@ -60,21 +58,23 @@ async def test_get_time_offset_wrong_response():
 
 
 @pytest.mark.asyncio
-async def test_set_time_offset_positive():
+@pytest.mark.parametrize(
+    (
+        "offset_sec",
+        "expected_payload",
+    ),
+    [
+        (1055689, "00101bc9"),  # "00" for positive offset, 101bc9 for 1055689
+        (-4096, "80001000"),  # "80" for negative offset, 001000 for 4097
+        (0, "80000000"),
+    ],
+)
+async def test_set_time_offset(offset_sec: int, expected_payload: str):
     device = create_device()
     device._send_command.return_value = bytes.fromhex("01")
 
-    await device.set_time_offset(1055689)
-    device._send_command.assert_called_with("570f68050600101bc9")
-
-
-@pytest.mark.asyncio
-async def test_set_time_offset_negative():
-    device = create_device()
-    device._send_command.return_value = bytes.fromhex("01")
-
-    await device.set_time_offset(-4096)
-    device._send_command.assert_called_with("570f68050680001000")
+    await device.set_time_offset(offset_sec)
+    device._send_command.assert_called_with("570f680506" + expected_payload)
 
 
 @pytest.mark.asyncio
@@ -173,33 +173,19 @@ async def test_get_datetime_wrong_response():
         "expected_min",
     ),
     [
-        (1709251200, 0, 0, "0000000065e11a80", "0c", "00"),  # 2024-03-01T00:00:00+00:00
-        (1709251200, 1, 0, "0000000065e11a80", "0d", "00"),  # 2024-03-01T00:00:00+01:00
-        (
-            1709251200,
-            5,
-            45,
-            "0000000065e1250c",
-            "11",
-            "2d",
-        ),  # 2024-03-01T00:00:00+05:45
-        (
-            1709251200,
-            -6,
-            15,
-            "0000000065e11e04",
-            "06",
-            "0f",
-        ),  # 2024-03-01T00:00:00-05:45
+        (1709251200, 0, 0, "65e11a80", "0c", "00"),  # 2024-03-01T00:00:00+00:00
+        (1709251200, 1, 0, "65e11a80", "0d", "00"),  # 2024-03-01T00:00:00+01:00
+        (1709251200, 5, 45, "65e1250c", "11", "2d"),  # 2024-03-01T00:00:00+05:45
+        (1709251200, -6, 15, "65e11e04", "06", "0f"),  # 2024-03-01T00:00:00-05:45
     ],
 )
-async def test_set_datetime_iso(  # noqa: PLR0913
-    timestamp,
-    utc_offset_hours,
-    utc_offset_minutes,
-    expected_utc,
-    expected_ts,
-    expected_min,
+async def test_set_datetime(  # noqa: PLR0913
+    timestamp: int,
+    utc_offset_hours: int,
+    utc_offset_minutes: int,
+    expected_ts: str,
+    expected_utc: str,
+    expected_min: str,
 ):
     device = create_device()
     device._send_command.return_value = bytes.fromhex("01")
@@ -210,42 +196,47 @@ async def test_set_datetime_iso(  # noqa: PLR0913
         utc_offset_minutes=utc_offset_minutes,
     )
 
+    expected_ts = expected_ts.zfill(16)
     expected_payload = "57000503" + expected_utc + expected_ts + expected_min
     device._send_command.assert_called_with(expected_payload)
 
 
 @pytest.mark.asyncio
-async def test_set_datetime_invalid_utc_offset_hours():
+@pytest.mark.parametrize(
+    "bad_hour",
+    [-13, 15],
+)
+async def test_set_datetime_invalid_utc_offset_hours(bad_hour: int):
     device = create_device()
-    # Hours outside allowed range should raise
-    for bad_hour in (-13, 15):
-        with pytest.raises(SwitchbotOperationError):
-            await device.set_datetime(1709251200, utc_offset_hours=bad_hour)
-
-
-@pytest.mark.asyncio
-async def test_set_datetime_invalid_utc_offset_minutes():
-    device = create_device()
-    # Minutes outside allowed range should raise
-    for bad_min in (-1, 61):
-        with pytest.raises(SwitchbotOperationError):
-            await device.set_datetime(1709251200, utc_offset_minutes=bad_min)
+    with pytest.raises(SwitchbotOperationError):
+        await device.set_datetime(1709251200, utc_offset_hours=bad_hour)
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("is_12h_mode", "expected_cmd"),
+    "bad_min",
+    [-1, 61],
+)
+async def test_set_datetime_invalid_utc_offset_minutes(bad_min: int):
+    device = create_device()
+    with pytest.raises(SwitchbotOperationError):
+        await device.set_datetime(1709251200, utc_offset_minutes=bad_min)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("is_12h_mode", "expected_payload"),
     [
-        (True, "570f68050580"),
-        (False, "570f68050500"),
+        (True, "80"),
+        (False, "00"),
     ],
 )
-async def test_set_time_display_format(is_12h_mode, expected_cmd):
+async def test_set_time_display_format(is_12h_mode: bool, expected_payload: str):
     device = create_device()
     device._send_command.return_value = bytes.fromhex("01")
 
     await device.set_time_display_format(is_12h_mode=is_12h_mode)
-    device._send_command.assert_called_with(expected_cmd)
+    device._send_command.assert_called_with("570f680505" + expected_payload)
 
 
 @pytest.mark.asyncio

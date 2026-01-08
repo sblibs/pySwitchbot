@@ -51,7 +51,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
                 f"{self.name}: Requested to set_time_offset of {offset_seconds} seconds, allowed +-{MAX_TIME_OFFSET} max."
             )
 
-        sign_byte = "80" if offset_seconds < 0 else "00"
+        sign_byte = "80" if offset_seconds <= 0 else "00"
 
         # Example: 57-0f-68-05-06-80-00-10-00 -> subtract 4096 seconds.
         payload = COMMAND_SET_TIME_OFFSET + sign_byte + f"{abs_offset:06x}"
@@ -109,17 +109,14 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         Args:
             timestamp (int): Unix timestamp in seconds.
             utc_offset_hours (int): UTC offset in hours, floor()'ed,
-                                    within [-12; 14] range.
-                                    Examples: -5 for UTC-05:00,
-                                    -6 for UTC-05:30, 5 for UTC+05:00,
-                                    5 for UTC+5:30.
+                within [-12; 14] range.
+                Examples: -5 for UTC-05:00, -6 for UTC-05:30,
+                5 for UTC+05:00, 5 for UTC+5:30.
             utc_offset_minutes (int): UTC offset minutes component, always
-                                      positive complement to utc_offset_hours.
-                                      Examples: 45 for UTC+05:45, 15 for UTC-5:45.
+                positive, complements utc_offset_hours.
+                Examples: 45 for UTC+05:45, 15 for UTC-5:45.
 
         """
-        # The device doesn't automatically add offset minutes, it expects them
-        # to come as a part of the timestamp.
         if not (-12 <= utc_offset_hours <= 14):
             raise SwitchbotOperationError(
                 f"{self.name}: utc_offset_hours must be between -12 and +14 inclusive, got {utc_offset_hours}"
@@ -128,6 +125,9 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             raise SwitchbotOperationError(
                 f"{self.name}: utc_offset_minutes must be between 0 and 60 inclusive, got {utc_offset_minutes}"
             )
+
+        # The device doesn't automatically add offset minutes, it expects them
+        # to come as a part of the timestamp.
         adjusted_timestamp = timestamp + utc_offset_minutes * 60
 
         # The timezone is encoded as 1 byte, where 00 stands for UTC-12.
