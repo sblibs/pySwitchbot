@@ -1,11 +1,9 @@
-from datetime import datetime
-
 from ..helpers import parse_uint24_be
 from .device import SwitchbotDevice, SwitchbotOperationError
 
 COMMAND_SET_TIME_OFFSET = "570f680506"
 COMMAND_GET_TIME_OFFSET = "570f690506"
-MAX_TIME_OFFSET = 1 << 24 - 1
+MAX_TIME_OFFSET = (1 << 24) - 1
 
 COMMAND_GET_DEVICE_DATETIME = "570f6901"
 COMMAND_SET_DEVICE_DATETIME = "57000503"
@@ -35,7 +33,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         offset = parse_uint24_be(result, 2)
         return -offset if is_negative else offset
 
-    async def set_time_offset(self, offset_seconds: int):
+    async def set_time_offset(self, offset_seconds: int) -> None:
         """
         Set the display time offset on the device. This is what happens when
         you adjust display time in the Switchbot app. The displayed time is
@@ -99,28 +97,38 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             "second": result[12],
         }
 
-    async def set_datetime(self, dt: datetime):
+    async def set_datetime(
+        self, timestamp: int, utc_offset_hours: int = 0, utc_offset_minutes: int = 0
+    ) -> None:
         """
         Set the device internal time and timezone. Similar to how the
         Switchbot app does it upon syncing with the device.
+        Pay attention to calculating UTC offset hours and minutes, see
+        examples below.
 
         Args:
-            dt (datetime): datetime object with timezone information.
+            timestamp (int): Unix timestamp in seconds.
+            utc_offset_hours (int): UTC offset in hours, floor()'ed,
+                                    within [-12; 14] range.
+                                    Examples: -5 for UTC-05:00,
+                                    -6 for UTC-05:30, 5 for UTC+05:00,
+                                    5 for UTC+5:30.
+            utc_offset_minutes (int): UTC offset minutes component, always
+                                      positive complement to utc_offset_hours.
+                                      Examples: 45 for UTC+05:45, 15 for UTC-5:45.
 
         """
-        utc_offset = dt.utcoffset()
-        if utc_offset is None:
-            # Fallback to the local timezone.
-            utc_offset = datetime.now().astimezone().utcoffset()
-        utc_offset_hours, utc_offset_minutes = 0, 0
-        if utc_offset is not None:
-            total_minutes = int(utc_offset.total_seconds() // 60)
-            # UTC-04:30 tz is represented as -5hrs +30min
-            utc_offset_hours, utc_offset_minutes = divmod(total_minutes, 60)
-
         # The device doesn't automatically add offset minutes, it expects them
         # to come as a part of the timestamp.
-        timestamp = int(dt.timestamp()) + utc_offset_minutes * 60
+        if not (-12 <= utc_offset_hours <= 14):
+            raise SwitchbotOperationError(
+                f"{self.name}: utc_offset_hours must be between -12 and +14 inclusive, got {utc_offset_hours}"
+            )
+        if not (0 <= utc_offset_minutes <= 60):
+            raise SwitchbotOperationError(
+                f"{self.name}: utc_offset_minutes must be between 0 and 60 inclusive, got {utc_offset_minutes}"
+            )
+        adjusted_timestamp = timestamp + utc_offset_minutes * 60
 
         # The timezone is encoded as 1 byte, where 00 stands for UTC-12.
         # TZ with minute offset gets floor()ed: 4:30 yields 4, -4:30 yields -5.
@@ -129,14 +137,14 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         payload = (
             COMMAND_SET_DEVICE_DATETIME
             + f"{utc_byte:02x}"
-            + f"{timestamp:016x}"
+            + f"{adjusted_timestamp:016x}"
             + f"{utc_offset_minutes:02x}"
         )
 
         result = await self._send_command(payload)
         self._validate_result("set_datetime", result)
 
-    async def set_time_display_format(self, is_12h_mode: bool = False):
+    async def set_time_display_format(self, is_12h_mode: bool = False) -> None:
         """
         Set the time display format on the device: 12h(AM/PM) or 24h.
 
