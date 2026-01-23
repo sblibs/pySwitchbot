@@ -245,6 +245,7 @@ async def test_resolve_encryption_mode_missing() -> None:
     with pytest.raises(ValueError, match="Encryption mode byte is missing"):
         device._resolve_encryption_mode(None)
 
+
 @pytest.mark.asyncio
 async def test_resolve_encryption_mode_conflict() -> None:
     """Test that conflicting encryption modes raise error."""
@@ -270,15 +271,22 @@ async def test_increment_gcm_iv() -> None:
     assert device._iv == b"\x00" * 11 + b"\x02"
     assert device._cipher is None
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("initial_iv", "expected_exception", "expected_message"),
     [
         (None, RuntimeError, "Cannot increment GCM IV: IV is None"),
-        (b"\x00" * 10, RuntimeError, "Cannot increment GCM IV: IV length is not 12 bytes"),
+        (
+            b"\x00" * 10,
+            RuntimeError,
+            "Cannot increment GCM IV: IV length is not 12 bytes",
+        ),
     ],
 )
-async def test_increment_gcm_iv_invalid(initial_iv, expected_exception, expected_message) -> None:
+async def test_increment_gcm_iv_invalid(
+    initial_iv, expected_exception, expected_message
+) -> None:
     """Test GCM IV increment with invalid IV states."""
     device = create_encrypted_device()
     device._encryption_mode = AESMode.GCM
@@ -286,6 +294,7 @@ async def test_increment_gcm_iv_invalid(initial_iv, expected_exception, expected
 
     with pytest.raises(expected_exception, match=expected_message):
         device._increment_gcm_iv()
+
 
 @pytest.mark.asyncio
 async def test_gcm_encrypt_decrypt_without_finalize() -> None:
