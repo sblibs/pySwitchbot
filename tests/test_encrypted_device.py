@@ -227,6 +227,7 @@ async def test_ensure_encryption_initialized_sets_gcm_mode() -> None:
             assert device._encryption_mode == AESMode.GCM
             assert device._iv == gcm_iv
 
+
 @pytest.mark.asyncio
 async def test_device_with_gcm_mode() -> None:
     """Test that device initializes correctly in GCM mode and increments GCM IV."""
