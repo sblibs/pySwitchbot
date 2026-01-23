@@ -8,6 +8,7 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import replace
+from enum import IntEnum
 from typing import Any, TypeVar, cast
 from uuid import UUID
 
@@ -140,6 +141,21 @@ class CharacteristicMissingError(Exception):
 
 class SwitchbotOperationError(Exception):
     """Raised when an operation fails."""
+
+
+class AESMode(IntEnum):
+    """Supported AES modes for encrypted devices."""
+
+    CTR = 0
+    GCM = 1
+
+
+def _normalize_encryption_mode(mode: int) -> AESMode:
+    """Normalize encryption mode to AESMode (only 0/1 allowed)."""
+    try:
+        return AESMode(mode)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Unsupported encryption mode: {mode}") from exc
 
 
 def _sb_uuid(comms_type: str = "service") -> UUID | str:
@@ -982,7 +998,8 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         self._key_id = key_id
         self._encryption_key = bytearray.fromhex(encryption_key)
         self._iv: bytes | None = None
-        self._cipher: bytes | None = None
+        self._cipher: Cipher | None = None
+        self._encryption_mode: AESMode | None = None
         super().__init__(device, None, interface, **kwargs)
         self._model = model
 
@@ -1081,9 +1098,8 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
                 _LOGGER.error("Failed to initialize encryption")
                 return None
 
-            encrypted = (
-                key[:2] + self._key_id + self._iv[0:2].hex() + self._encrypt(key[2:])
-            )
+            ciphertext_hex, header_hex = self._encrypt(key[2:])
+            encrypted = key[:2] + self._key_id + header_hex + ciphertext_hex
             command = bytearray.fromhex(self._commandkey(encrypted))
             _LOGGER.debug("%s: Scheduling command %s", self.name, command.hex())
             max_attempts = retry + 1
@@ -1093,7 +1109,10 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
             )
             if result is None:
                 return None
-            return result[:1] + self._decrypt(result[4:])
+            decrypted = self._decrypt(result[4:])
+            if self._encryption_mode == AESMode.GCM:
+                self._increment_gcm_iv()
+            return result[:1] + decrypted
 
     async def _ensure_encryption_initialized(self) -> bool:
         """Ensure encryption is initialized, must be called with operation lock held."""
@@ -1117,7 +1136,13 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
             return False
 
         if ok := self._check_command_result(result, 0, {1}):
-            self._iv = result[4:]
+            _LOGGER.debug("%s: Encryption init response: %s", self.name, result.hex())
+            mode_byte = result[2] if len(result) > 2 else None
+            self._resolve_encryption_mode(mode_byte)
+            if self._encryption_mode == AESMode.GCM:
+                self._iv = result[4:-4]
+            else:
+                self._iv = result[4:]
             self._cipher = None  # Reset cipher when IV changes
             _LOGGER.debug("%s: Encryption initialized successfully", self.name)
 
@@ -1133,18 +1158,28 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         if self._cipher is None:
             if self._iv is None:
                 raise RuntimeError("Cannot create cipher: IV is None")
-            self._cipher = Cipher(
-                algorithms.AES128(self._encryption_key), modes.CTR(self._iv)
-            )
+            if self._encryption_mode == AESMode.GCM:
+                self._cipher = Cipher(
+                    algorithms.AES128(self._encryption_key), modes.GCM(self._iv)
+                )
+            else:
+                self._cipher = Cipher(
+                    algorithms.AES128(self._encryption_key), modes.CTR(self._iv)
+                )
         return self._cipher
 
-    def _encrypt(self, data: str) -> str:
+    def _encrypt(self, data: str) -> tuple[str, str]:
         if len(data) == 0:
-            return ""
+            return "", ""
         if self._iv is None:
             raise RuntimeError("Cannot encrypt: IV is None")
         encryptor = self._get_cipher().encryptor()
-        return (encryptor.update(bytearray.fromhex(data)) + encryptor.finalize()).hex()
+        ciphertext = encryptor.update(bytearray.fromhex(data)) + encryptor.finalize()
+        if self._encryption_mode == AESMode.GCM:
+            header_hex = encryptor.tag[:2].hex()
+        else:
+            header_hex = self._iv[0:2].hex()
+        return ciphertext.hex(), header_hex
 
     def _decrypt(self, data: bytearray) -> bytes:
         if len(data) == 0:
@@ -1157,8 +1192,42 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
                 )
                 return b""
             raise RuntimeError("Cannot decrypt: IV is None")
+        if self._encryption_mode == AESMode.GCM:
+            decryptor = Cipher(
+                algorithms.AES128(self._encryption_key),
+                modes.GCM(self._iv, b"\x00" * 16),
+            ).decryptor()
+            return decryptor.update(data)
         decryptor = self._get_cipher().decryptor()
         return decryptor.update(data) + decryptor.finalize()
+
+    def _increment_gcm_iv(self) -> None:
+        if self._iv is None:
+            return
+        if len(self._iv) != 12:
+            _LOGGER.debug(
+                "%s: GCM IV length unexpected (%s), skipping increment",
+                self.name,
+                len(self._iv),
+            )
+            return
+        iv_int = int.from_bytes(self._iv, "big") + 1
+        self._iv = iv_int.to_bytes(12, "big")
+        self._cipher = None
+
+    def _resolve_encryption_mode(self, mode_byte: int | None) -> None:
+        """Resolve encryption mode from device response when available."""
+        if mode_byte is None:
+            raise ValueError("Encryption mode byte is missing")
+        detected_mode = _normalize_encryption_mode(mode_byte)
+        if self._encryption_mode is not None and self._encryption_mode != detected_mode:
+            _LOGGER.debug(
+                "%s: Encryption mode mismatch (requested=%s, device=%s), using device mode",
+                self.name,
+                self._encryption_mode,
+                detected_mode,
+            )
+        self._encryption_mode = detected_mode
 
 
 class SwitchbotDeviceOverrideStateDuringConnection(SwitchbotBaseDevice):
