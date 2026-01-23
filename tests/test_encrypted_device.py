@@ -227,6 +227,29 @@ async def test_ensure_encryption_initialized_sets_gcm_mode() -> None:
             assert device._encryption_mode == AESMode.GCM
             assert device._iv == gcm_iv
 
+@pytest.mark.asyncio
+async def test_device_with_gcm_mode() -> None:
+    """Test that device initializes correctly in GCM mode and increments GCM IV."""
+    device = create_encrypted_device()
+    device._encryption_mode = AESMode.GCM
+    device._iv = b"\x01" * 12
+
+    with (
+        patch.object(device, "_ensure_encryption_initialized") as mock_ensure,
+        patch.object(device, "_send_command_locked_with_retry") as mock_send,
+        patch.object(device, "_decrypt") as mock_decrypt,
+        patch.object(device, "_encrypt") as mock_encrypt,
+        patch.object(device, "_increment_gcm_iv") as mock_inc_iv,
+    ):
+        mock_ensure.return_value = True
+        mock_encrypt.return_value = ("10203040", "abcd")
+        mock_send.return_value = b"\x01\x00\x00\x00\x10\x20\x30\x40"
+        mock_decrypt.return_value = b"\x10\x20\x30\x40"
+
+        await device._send_command("570200")
+
+        mock_inc_iv.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_resolve_encryption_mode_invalid() -> None:
