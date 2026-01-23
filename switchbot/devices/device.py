@@ -1203,14 +1203,9 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
 
     def _increment_gcm_iv(self) -> None:
         if self._iv is None:
-            return
+            raise RuntimeError("Cannot increment GCM IV: IV is None")
         if len(self._iv) != 12:
-            _LOGGER.debug(
-                "%s: GCM IV length unexpected (%s), skipping increment",
-                self.name,
-                len(self._iv),
-            )
-            return
+            raise RuntimeError("Cannot increment GCM IV: IV length is not 12 bytes")
         iv_int = int.from_bytes(self._iv, "big") + 1
         self._iv = iv_int.to_bytes(12, "big")
         self._cipher = None
@@ -1221,11 +1216,8 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
             raise ValueError("Encryption mode byte is missing")
         detected_mode = _normalize_encryption_mode(mode_byte)
         if self._encryption_mode is not None and self._encryption_mode != detected_mode:
-            _LOGGER.debug(
-                "%s: Encryption mode mismatch (requested=%s, device=%s), using device mode",
-                self.name,
-                self._encryption_mode,
-                detected_mode,
+            raise ValueError(
+                f"Conflicting encryption modes detected: {self._encryption_mode.name} vs {detected_mode.name}"
             )
         self._encryption_mode = detected_mode
 
