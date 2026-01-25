@@ -40,7 +40,7 @@ class GetSwitchbotDevices:
         discovery = parse_advertisement_data(device, advertisement_data)
         if discovery:
             self._adv_data[discovery.address] = discovery
-            if self._callback:
+            if self._callback is not None:
                 try:
                     self._callback(discovery)
                 except Exception:

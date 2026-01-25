@@ -139,4 +139,4 @@ async def test_callback_exception_is_logged_and_suppressed(
     mock_callback.assert_called_once()
 
     assert "Error in discovery callback" in caplog.text
-    assert "Boom!" in caplog.text  # 例外のメッセージもログに含まれるはず
+    assert "Boom!" in caplog.text  # Exception message should also be in the log
