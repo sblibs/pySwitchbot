@@ -215,7 +215,7 @@ async def test_set_datetime_invalid_utc_offset_hours(bad_hour: int):
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "bad_min",
-    [-1, 61],
+    [-1, 60],
 )
 async def test_set_datetime_invalid_utc_offset_minutes(bad_min: int):
     device = create_device()

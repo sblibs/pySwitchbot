@@ -121,9 +121,9 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             raise SwitchbotOperationError(
                 f"{self.name}: utc_offset_hours must be between -12 and +14 inclusive, got {utc_offset_hours}"
             )
-        if not (0 <= utc_offset_minutes <= 60):
+        if not (0 <= utc_offset_minutes < 60):
             raise SwitchbotOperationError(
-                f"{self.name}: utc_offset_minutes must be between 0 and 60 inclusive, got {utc_offset_minutes}"
+                f"{self.name}: utc_offset_minutes must be between 0 and 59 inclusive, got {utc_offset_minutes}"
             )
 
         # The device doesn't automatically add offset minutes, it expects them
