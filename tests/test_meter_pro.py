@@ -248,6 +248,7 @@ async def test_set_time_display_format_failure():
     with pytest.raises(SwitchbotOperationError):
         await device.set_time_display_format(is_12h_mode=True)
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("show_battery", "expected_payload"),
@@ -285,12 +286,15 @@ async def test_set_co2_thresholds():
         (14, 37.5, 30, 70, "a546508e1e"),
     ],
 )
-async def test_set_comfortlevel(cold: float, hot: float, dry: int, wet: int, expected_payload: str):
+async def test_set_comfortlevel(
+    cold: float, hot: float, dry: int, wet: int, expected_payload: str
+):
     device = create_device()
     device._send_command.return_value = bytes.fromhex("01")
 
     await device.set_comfortlevel(cold, hot, dry, wet)
     device._send_command.assert_called_with("570f68020188" + expected_payload)
+
 
 # todo: test_set_alert_temperature_humidity
 # todo: test_set_alert_co2

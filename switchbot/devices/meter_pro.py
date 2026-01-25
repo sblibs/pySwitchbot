@@ -1,11 +1,9 @@
 from typing import Any
-from bleak import BLEDevice
 
-from .. import SwitchbotModel
 from ..helpers import parse_uint24_be
 from .device import SwitchbotDevice, SwitchbotOperationError
 
-SETTINGS_HEADER = f"570f68"
+SETTINGS_HEADER = "570f68"
 COMMAND_SHOW_BATTERY_LEVEL = f"{SETTINGS_HEADER}070108"
 COMMAND_DATE_FORMAT = f"{SETTINGS_HEADER}070107"
 
@@ -19,7 +17,7 @@ COMMAND_BUTTON_FUNCTION = f"{SETTINGS_HEADER}070106"
 COMMAND_CALIBRATE_CO2_SENSOR = f"{SETTINGS_HEADER}0b02"
 
 COMMAND_ALERT_SOUND = f"{SETTINGS_HEADER}0204"
-COMMAND_ALERT_TEMPERATURE_HUMIDITY = f"570f44"
+COMMAND_ALERT_TEMPERATURE_HUMIDITY = "570f44"
 COMMAND_ALERT_CO2 = f"{SETTINGS_HEADER}020301"
 
 COMMAND_SET_TIME_OFFSET = f"{SETTINGS_HEADER}0506"
@@ -30,8 +28,10 @@ COMMAND_GET_DEVICE_DATETIME = "570f6901"
 COMMAND_SET_DEVICE_DATETIME = "57000503"
 COMMAND_SET_DISPLAY_FORMAT = f"{SETTINGS_HEADER}0505"
 
+
 class SwitchbotMeterProCO2(SwitchbotDevice):
-    """API to control Switchbot Meter Pro CO2.
+    """
+    API to control Switchbot Meter Pro CO2.
 
     The assumptions that the original app has for each value are noted at the respective method.
     Which of them are actually required by the device is unknown.
@@ -180,12 +180,13 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         self._validate_result("set_time_display_format", result)
 
     async def show_battery_level(self, show_battery: bool):
-        """ Show or hide battery level on the display."""
+        """Show or hide battery level on the display."""
         show_battery_byte = "01" if show_battery else "00"
         await self._send_command(COMMAND_SHOW_BATTERY_LEVEL + show_battery_byte)
 
     async def set_co2_thresholds(self, lower: int, upper: int):
-        """ Sets the thresholds to define Air Quality for depiction on display as follows:
+        """
+        Sets the thresholds to define Air Quality for depiction on display as follows:
         co2 < lower => Good (Green)
         lower < co2 < upper => Moderate (Orange)
         upper < co2 => Poor (Red)
@@ -196,10 +197,13 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         """
         if lower >= upper:
             raise ValueError("Lower should be smaller than upper")
-        await self._send_command(COMMAND_CO2_THRESHOLDS + f'{lower:04x}' + f'{upper:04x}')
+        await self._send_command(
+            COMMAND_CO2_THRESHOLDS + f"{lower:04x}" + f"{upper:04x}"
+        )
 
     async def set_comfortlevel(self, cold: float, hot: float, dry: int, wet: int):
-        """ Sets the Thresholds for comfortable temperature (in C) and humidity to display comfort-level.
+        """
+        Sets the Thresholds for comfortable temperature (in C) and humidity to display comfort-level.
         The supported values in the original App are as following:
           Temperature is -20C to 80C in 0.5C steps
           Humidity is 1% to 99% in 1% steps
@@ -213,14 +217,37 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         cold_byte = self._encode_temperature(int(cold))
         hot_byte = self._encode_temperature(int(hot))
 
-        await self._send_command(COMMAND_COMFORTLEVEL + hot_byte + f'{wet:02x}' + point_five + cold_byte + f'{dry:02x}')
+        await self._send_command(
+            COMMAND_COMFORTLEVEL
+            + hot_byte
+            + f"{wet:02x}"
+            + point_five
+            + cold_byte
+            + f"{dry:02x}"
+        )
 
-    async def set_alert_temperature_humidity(self,
-             temperature_alert: bool = False, temperature_low: float = -20.0, temperature_high: float = 80.0, temperature_reverse: bool = False,
-             humidity_alert: bool = False, humidity_low: int = 1, humidity_high: int = 99, humidity_reverse: bool = False,
-             absolute_humidity_alert: bool = False, absolute_humidity_low: float = 0.00, absolute_humidity_high: float = 99.99, absolute_humidity_reverse: bool = False,
-             dewpoint_alert: bool = False, dewpoint_low: float = -60.0, dewpoint_high: float = 60.0, dewpoint_reverse: bool = False,
-             vpd_alert: bool = False, vpd_low: float = 0.00, vpd_high: float = 10.00, vpd_reverse: bool = False
+    async def set_alert_temperature_humidity(
+        self,
+        temperature_alert: bool = False,
+        temperature_low: float = -20.0,
+        temperature_high: float = 80.0,
+        temperature_reverse: bool = False,
+        humidity_alert: bool = False,
+        humidity_low: int = 1,
+        humidity_high: int = 99,
+        humidity_reverse: bool = False,
+        absolute_humidity_alert: bool = False,
+        absolute_humidity_low: float = 0.00,
+        absolute_humidity_high: float = 99.99,
+        absolute_humidity_reverse: bool = False,
+        dewpoint_alert: bool = False,
+        dewpoint_low: float = -60.0,
+        dewpoint_high: float = 60.0,
+        dewpoint_reverse: bool = False,
+        vpd_alert: bool = False,
+        vpd_low: float = 0.00,
+        vpd_high: float = 10.00,
+        vpd_reverse: bool = False,
     ):
         """
         Sets Temperature- and Humidity- related alerts.
@@ -258,14 +285,16 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             if dewpoint_reverse:
                 mode_abshumid_dewpoint_vpd += 0x10
             else:
-                mode_abshumid_dewpoint_vpd += 0x0c
+                mode_abshumid_dewpoint_vpd += 0x0C
         if vpd_alert:
             if vpd_reverse:
                 mode_abshumid_dewpoint_vpd += 0x80
             else:
                 mode_abshumid_dewpoint_vpd += 0x60
 
-        temperature_point_five = self._get_point_five_byte(temperature_low, temperature_high)
+        temperature_point_five = self._get_point_five_byte(
+            temperature_low, temperature_high
+        )
         temperature_low_byte = self._encode_temperature(int(temperature_low))
         temperature_high_byte = self._encode_temperature(int(temperature_high))
 
@@ -273,64 +302,96 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         dewpoint_low_byte = self._encode_temperature(int(dewpoint_low))
         dewpoint_high_byte = self._encode_temperature(int(dewpoint_high))
 
-        absolute_humidity_low_bytes = f'{int(absolute_humidity_low):02x}' + f'{int(absolute_humidity_low * 100 % 100):02x}'
-        absolute_humidity_high_bytes = f'{int(absolute_humidity_high):02x}' + f'{int(absolute_humidity_high * 100 % 100):02x}'
+        absolute_humidity_low_bytes = (
+            f"{int(absolute_humidity_low):02x}"
+            + f"{int(absolute_humidity_low * 100 % 100):02x}"
+        )
+        absolute_humidity_high_bytes = (
+            f"{int(absolute_humidity_high):02x}"
+            + f"{int(absolute_humidity_high * 100 % 100):02x}"
+        )
 
-        vpd_bytes = (f'{int(vpd_high * 100 % 100):02x}'
-                     + f'{int(vpd_low * 100 % 100):02x}'
-                     + f'{int(vpd_high):01x}') + f'{int(vpd_low):01x}'
+        vpd_bytes = (
+            f"{int(vpd_high * 100 % 100):02x}"
+            + f"{int(vpd_low * 100 % 100):02x}"
+            + f"{int(vpd_high):01x}"
+        ) + f"{int(vpd_low):01x}"
 
-        await self._send_command(COMMAND_ALERT_TEMPERATURE_HUMIDITY
-                                    + f'{mode_temp_humid:02x}' + temperature_high_byte + f'{humidity_high:02x}' + temperature_point_five + temperature_low_byte + f'{humidity_low:02x}'
-                                    + dewpoint_high_byte + dewpoint_point_five + dewpoint_low_byte
-                                    + vpd_bytes
-                                    + f'{mode_abshumid_dewpoint_vpd:02x}' + absolute_humidity_high_bytes + absolute_humidity_low_bytes)
+        await self._send_command(
+            COMMAND_ALERT_TEMPERATURE_HUMIDITY
+            + f"{mode_temp_humid:02x}"
+            + temperature_high_byte
+            + f"{humidity_high:02x}"
+            + temperature_point_five
+            + temperature_low_byte
+            + f"{humidity_low:02x}"
+            + dewpoint_high_byte
+            + dewpoint_point_five
+            + dewpoint_low_byte
+            + vpd_bytes
+            + f"{mode_abshumid_dewpoint_vpd:02x}"
+            + absolute_humidity_high_bytes
+            + absolute_humidity_low_bytes
+        )
 
     async def set_alert_co2(self, on: bool, co2_low: int, co2_high: max, reverse: bool):
-        """ Sets the CO2-Alert.
-         on: Turn CO2-Alert on or off
-         lower and upper: The provided range (between 400ppm and 2000ppm in 100ppm steps)
-         reverse: If False: Alert if measured value is outside of provided range.
-                  If True: Alert if measured value is inside of provided range.
-         """
+        """
+        Sets the CO2-Alert.
+        on: Turn CO2-Alert on or off
+        lower and upper: The provided range (between 400ppm and 2000ppm in 100ppm steps)
+        reverse: If False: Alert if measured value is outside of provided range.
+                 If True: Alert if measured value is inside of provided range.
+        """
         if co2_high < co2_low:
-            raise ValueError("Upper value should bigger than the lower value. Do you want to use reverse instead?")
+            raise ValueError(
+                "Upper value should bigger than the lower value. Do you want to use reverse instead?"
+            )
 
-        mode = 0x00 if not on else (
-            0x04 if reverse else 0x03
+        mode = 0x00 if not on else (0x04 if reverse else 0x03)
+        await self._send_command(
+            COMMAND_ALERT_CO2 + f"{mode:02x}" + f"{co2_high:04x}" + f"{co2_low:04x}"
         )
-        await self._send_command(COMMAND_ALERT_CO2 + f'{mode:02x}' + f'{co2_high:04x}' + f'{co2_low:04x}')
 
     async def set_temperature_update_interval(self, minutes: int):
-        """ Sets the interval in which temperature and humidity are measured in battery powered mode.
-         Original App assumes minutes in {5, 10, 30}
-         """
+        """
+        Sets the interval in which temperature and humidity are measured in battery powered mode.
+        Original App assumes minutes in {5, 10, 30}
+        """
         seconds = minutes * 60
-        await self._send_command(COMMAND_TEMPERATURE_UPDATE_INTERVAL + f'{seconds:04x}')
+        await self._send_command(COMMAND_TEMPERATURE_UPDATE_INTERVAL + f"{seconds:04x}")
 
     async def set_co2_update_interval(self, minutes: int):
-        """ Sets the interval in which co2 levels are measured in battery powered mode.
-         Original App assumes minutes in {5, 10, 30}
-         """
+        """
+        Sets the interval in which co2 levels are measured in battery powered mode.
+        Original App assumes minutes in {5, 10, 30}
+        """
         seconds = minutes * 60
-        await self._send_command(COMMAND_CO2_UPDATE_INTERVAL + f'{seconds:04x}')
+        await self._send_command(COMMAND_CO2_UPDATE_INTERVAL + f"{seconds:04x}")
 
     async def set_button_function(self, change_unit: bool, change_data_source: bool):
-        """ Sets the function of te top button:
+        """
+        Sets the function of te top button:
         Default (both options false): Only update data
         changeUnit: switch between ℃ and ℉
         changeDataSource: switch between display of indoor and outdoor temperature
-         """
-        change_unit_byte = '00' if change_unit else '01'  # yes, it has to be reversed like this!
-        change_data_source_byte = '01' if change_data_source else '00'  # yes, it has to be reversed like this!
-        await self._send_command(COMMAND_BUTTON_FUNCTION + change_unit_byte + change_data_source_byte)
+        """
+        change_unit_byte = (
+            "00" if change_unit else "01"
+        )  # yes, it has to be reversed like this!
+        change_data_source_byte = (
+            "01" if change_data_source else "00"
+        )  # yes, it has to be reversed like this!
+        await self._send_command(
+            COMMAND_BUTTON_FUNCTION + change_unit_byte + change_data_source_byte
+        )
 
     async def force_new_co2_measurement(self):
-        """ Requests a new CO2 measurement, regardless of update interval """
+        """Requests a new CO2 measurement, regardless of update interval"""
         await self._send_command(COMMAND_FORCE_NEW_CO2_Measurement)
 
     async def calibrate_co2_sensor(self):
-        """ Calibrate CO2-Sensor.
+        """
+        Calibrate CO2-Sensor.
         Place your device in a well-ventilated area for 1 minute before calling this.
         After calling this the calibration runs for about 5 minutes.
         Keep the device still during this process.
@@ -344,8 +405,8 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         If soundOn is True the device additionally beeps.
         The volume is expected to be in {2,3,4} (2: low, 3: medium, 4: high)
         """
-        sound_on_byte = '02' if sound_on else '01'
-        await self._send_command(COMMAND_ALERT_SOUND + f'{volume:02x}' + sound_on_byte)
+        sound_on_byte = "02" if sound_on else "01"
+        await self._send_command(COMMAND_ALERT_SOUND + f"{volume:02x}" + sound_on_byte)
 
     def _validate_result(
         self, op_name: str, result: bytes | None, min_length: int | None = None
@@ -362,13 +423,13 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         return result
 
     def _get_point_five_byte(self, cold: float, hot: float):
-        """ This byte represents if either of the temperatures has a .5 decimalplace """
+        """This byte represents if either of the temperatures has a .5 decimalplace"""
         point_five = 0x00
         if int(cold * 10) % 10 == 5:
             point_five += 0x05
         if int(hot * 10) % 10 == 5:
             point_five += 0x50
-        return f'{point_five:02x}'
+        return f"{point_five:02x}"
 
     def _encode_temperature(self, temp: int):
         # The encoding for a negative temperature is the value as hex
@@ -377,4 +438,4 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             temp += 128
         else:
             temp *= -1
-        return f'{temp:02x}'
+        return f"{temp:02x}"
