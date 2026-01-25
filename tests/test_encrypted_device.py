@@ -438,6 +438,7 @@ async def test_execute_disconnect_clears_encryption_state() -> None:
     device = create_encrypted_device()
     device._iv = b"\x12\x34\x56\x78\x9a\xbc\xde\xf0\x12\x34\x56\x78\x9a\xbc\xde\xf0"
     device._cipher = None  # type: ignore[assignment]
+    device._encryption_mode = AESMode.CTR
 
     # Mock client
     mock_client = AsyncMock()
@@ -448,6 +449,7 @@ async def test_execute_disconnect_clears_encryption_state() -> None:
 
     assert device._iv is None
     assert device._cipher is None
+    assert device._encryption_mode is None
     mock_disconnect.assert_called_once()
 
 
