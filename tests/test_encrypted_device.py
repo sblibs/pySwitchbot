@@ -229,6 +229,42 @@ async def test_ensure_encryption_initialized_sets_gcm_mode() -> None:
 
 
 @pytest.mark.asyncio
+async def test_ensure_encryption_initialized_invalid_iv_length_gcm() -> None:
+    """Test that invalid IV length for GCM mode returns False."""
+    device = create_encrypted_device()
+
+    # GCM expects 12 bytes IV, but response has wrong length (only 8 bytes after trimming)
+    response = b"\x01\x00\x01\x00" + b"\x01" * 8 + b"\x00\x00\x00\x00"
+
+    async with device._operation_lock:
+        with patch.object(device, "_send_command_locked_with_retry") as mock_send:
+            mock_send.return_value = response
+
+            result = await device._ensure_encryption_initialized()
+
+            assert result is False
+            assert device._iv is None
+
+
+@pytest.mark.asyncio
+async def test_ensure_encryption_initialized_invalid_iv_length_ctr() -> None:
+    """Test that invalid IV length for CTR mode returns False."""
+    device = create_encrypted_device()
+
+    # CTR expects 16 bytes IV, but response has only 8 bytes
+    response = b"\x01\x00\x00\x00" + b"\x01" * 8
+
+    async with device._operation_lock:
+        with patch.object(device, "_send_command_locked_with_retry") as mock_send:
+            mock_send.return_value = response
+
+            result = await device._ensure_encryption_initialized()
+
+            assert result is False
+            assert device._iv is None
+
+
+@pytest.mark.asyncio
 async def test_device_with_gcm_mode() -> None:
     """Test that device initializes correctly in GCM mode and increments GCM IV."""
     device = create_encrypted_device()

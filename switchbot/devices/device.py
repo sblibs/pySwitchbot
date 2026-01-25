@@ -1140,9 +1140,21 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
             mode_byte = result[2] if len(result) > 2 else None
             self._resolve_encryption_mode(mode_byte)
             if self._encryption_mode == AESMode.GCM:
-                self._iv = result[4:-4]
+                iv = result[4:-4]
+                expected_iv_len = 12
             else:
-                self._iv = result[4:]
+                iv = result[4:]
+                expected_iv_len = 16
+            if len(iv) != expected_iv_len:
+                _LOGGER.error(
+                    "%s: Invalid IV length %d for mode %s (expected %d)",
+                    self.name,
+                    len(iv),
+                    self._encryption_mode.name,
+                    expected_iv_len,
+                )
+                return False
+            self._iv = iv
             self._cipher = None  # Reset cipher when IV changes
             _LOGGER.debug("%s: Encryption initialized successfully", self.name)
 
@@ -1177,6 +1189,8 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         ciphertext = encryptor.update(bytearray.fromhex(data)) + encryptor.finalize()
         if self._encryption_mode == AESMode.GCM:
             header_hex = encryptor.tag[:2].hex()
+            # GCM cipher is single-use; clear it so _get_cipher() creates a fresh one
+            self._cipher = None
         else:
             header_hex = self._iv[0:2].hex()
         return ciphertext.hex(), header_hex
@@ -1202,6 +1216,7 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         return decryptor.update(data) + decryptor.finalize()
 
     def _increment_gcm_iv(self) -> None:
+        """Increment GCM IV by 1 (big-endian). Called after each encrypted command."""
         if self._iv is None:
             raise RuntimeError("Cannot increment GCM IV: IV is None")
         if len(self._iv) != 12:
