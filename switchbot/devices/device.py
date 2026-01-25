@@ -1161,9 +1161,16 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         return ok
 
     async def _execute_disconnect(self) -> None:
+        """
+        Reset encryption state and disconnect.
+
+        Clears IV, cipher, and encryption mode so they can be
+        re-detected on the next connection (e.g., after firmware update).
+        """
         async with self._connect_lock:
             self._iv = None
             self._cipher = None
+            self._encryption_mode = None
             await self._execute_disconnect_with_lock()
 
     def _get_cipher(self) -> Cipher:
