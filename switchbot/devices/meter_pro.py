@@ -54,7 +54,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         sign_byte = "80" if offset_seconds <= 0 else "00"
 
         # Example: 57-0f-68-05-06-80-00-10-00 -> subtract 4096 seconds.
-        payload = COMMAND_SET_TIME_OFFSET + sign_byte + f"{abs_offset:06x}"
+        payload = f"{COMMAND_SET_TIME_OFFSET}{sign_byte}{abs_offset:06x}"
         result = await self._send_command(payload)
         self._validate_result("set_time_offset", result)
 
@@ -135,10 +135,8 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         utc_byte = utc_offset_hours + 12
 
         payload = (
-            COMMAND_SET_DEVICE_DATETIME
-            + f"{utc_byte:02x}"
-            + f"{adjusted_timestamp:016x}"
-            + f"{utc_offset_minutes:02x}"
+            f"{COMMAND_SET_DEVICE_DATETIME}{utc_byte:02x}"
+            f"{adjusted_timestamp:016x}{utc_offset_minutes:02x}"
         )
 
         result = await self._send_command(payload)
@@ -153,8 +151,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
 
         """
         mode_byte = "80" if is_12h_mode else "00"
-
-        payload = COMMAND_SET_DISPLAY_FORMAT + mode_byte
+        payload = f"{COMMAND_SET_DISPLAY_FORMAT}{mode_byte}"
         result = await self._send_command(payload)
         self._validate_result("set_time_display_format", result)
 
