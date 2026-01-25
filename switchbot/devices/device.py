@@ -1214,6 +1214,9 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
                 return b""
             raise RuntimeError("Cannot decrypt: IV is None")
         if self._encryption_mode == AESMode.GCM:
+            # Firmware only returns a 2-byte partial tag which can't be used for
+            # verification. Use a dummy 16-byte tag and skip finalize() since
+            # authentication is handled by the firmware.
             decryptor = Cipher(
                 algorithms.AES128(self._encryption_key),
                 modes.GCM(self._iv, b"\x00" * 16),
