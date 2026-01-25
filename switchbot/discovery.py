@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 
 import bleak
 from bleak.backends.device import BLEDevice
@@ -20,10 +21,15 @@ CONNECT_LOCK = asyncio.Lock()
 class GetSwitchbotDevices:
     """Scan for all Switchbot devices and return by type."""
 
-    def __init__(self, interface: int = 0) -> None:
+    def __init__(
+        self,
+        interface: int = 0,
+        callback: Callable[[SwitchBotAdvertisement], None] | None = None,
+    ) -> None:
         """Get switchbot devices class constructor."""
         self._interface = f"hci{interface}"
         self._adv_data: dict[str, SwitchBotAdvertisement] = {}
+        self._callback = callback
 
     def detection_callback(
         self,
@@ -34,6 +40,11 @@ class GetSwitchbotDevices:
         discovery = parse_advertisement_data(device, advertisement_data)
         if discovery:
             self._adv_data[discovery.address] = discovery
+            if self._callback is not None:
+                try:
+                    self._callback(discovery)
+                except Exception:
+                    _LOGGER.exception("Error in discovery callback")
 
     async def discover(
         self, retry: int = DEFAULT_RETRY_COUNT, scan_timeout: int = DEFAULT_SCAN_TIMEOUT
