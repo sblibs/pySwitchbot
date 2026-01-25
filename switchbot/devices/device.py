@@ -1245,6 +1245,7 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
                 f"Conflicting encryption modes detected: {self._encryption_mode.name} vs {detected_mode.name}"
             )
         self._encryption_mode = detected_mode
+        _LOGGER.debug("%s: Detected encryption mode: %s", self.name, detected_mode.name)
 
 
 class SwitchbotDeviceOverrideStateDuringConnection(SwitchbotBaseDevice):
