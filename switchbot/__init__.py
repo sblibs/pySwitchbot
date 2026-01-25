@@ -45,12 +45,14 @@ from .devices.device import (
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
 from .devices.fan import SwitchbotFan
 from .devices.humidifier import SwitchbotHumidifier
+from .devices.keypad_vision import SwitchbotKeypadVision
 from .devices.light_strip import (
     SwitchbotLightStrip,
     SwitchbotRgbicLight,
     SwitchbotStripLight3,
 )
 from .devices.lock import SwitchbotLock
+from .devices.meter_pro import SwitchbotMeterProCO2
 from .devices.plug import SwitchbotPlugMini
 from .devices.relay_switch import (
     SwitchbotGarageDoorOpener,
@@ -97,8 +99,10 @@ __all__ = [
     "SwitchbotFan",
     "SwitchbotGarageDoorOpener",
     "SwitchbotHumidifier",
+    "SwitchbotKeypadVision",
     "SwitchbotLightStrip",
     "SwitchbotLock",
+    "SwitchbotMeterProCO2",
     "SwitchbotModel",
     "SwitchbotModel",
     "SwitchbotOperationError",
