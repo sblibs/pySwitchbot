@@ -63,7 +63,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
     async def get_datetime(self) -> dict[str, Any]:
         """
         Get the current device time and settings as it is displayed. Contains
-        a time offset, if any was applied (see COMMAND_TIME_OFFSET).
+        a time offset, if any was applied (see set_time_offset).
         Doesn't include the current time zone.
 
         Returns:

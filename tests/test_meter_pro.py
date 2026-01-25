@@ -50,7 +50,7 @@ async def test_get_time_offset_failure():
 @pytest.mark.asyncio
 async def test_get_time_offset_wrong_response():
     device = create_device()
-    # Invalid 1st byte
+    # Response too short (only status byte returned)
     device._send_command.return_value = bytes.fromhex("01")
 
     with pytest.raises(SwitchbotOperationError):
