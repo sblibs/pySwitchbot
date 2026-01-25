@@ -1,3 +1,5 @@
+from typing import Any
+
 from ..helpers import parse_uint24_be
 from .device import SwitchbotDevice, SwitchbotOperationError
 
@@ -58,7 +60,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         result = await self._send_command(payload)
         self._validate_result("set_time_offset", result)
 
-    async def get_datetime(self) -> dict:
+    async def get_datetime(self) -> dict[str, Any]:
         """
         Get the current device time and settings as it is displayed. Contains
         a time offset, if any was applied (see COMMAND_TIME_OFFSET).
