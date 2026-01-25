@@ -53,7 +53,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
                 f"{self.name}: Requested to set_time_offset of {offset_seconds} seconds, allowed +-{MAX_TIME_OFFSET} max."
             )
 
-        sign_byte = "80" if offset_seconds <= 0 else "00"
+        sign_byte = "80" if offset_seconds < 0 else "00"
 
         # Example: 57-0f-68-05-06-80-00-10-00 -> subtract 4096 seconds.
         payload = f"{COMMAND_SET_TIME_OFFSET}{sign_byte}{abs_offset:06x}"

@@ -65,8 +65,9 @@ async def test_get_time_offset_wrong_response():
     ),
     [
         (1055689, "00101bc9"),  # "00" for positive offset, 101bc9 for 1055689
-        (-4096, "80001000"),  # "80" for negative offset, 001000 for 4097
-        (0, "80000000"),
+        (-4096, "80001000"),  # "80" for negative offset, 001000 for 4096
+        (0, "00000000"),
+        (-0, "00000000"),  # -0 == 0 in Python
     ],
 )
 async def test_set_time_offset(offset_sec: int, expected_payload: str):
