@@ -2734,7 +2734,7 @@ def test_hub3_with_empty_data() -> None:
             SwitchbotModel.LOCK_ULTRA,
         ),
         AdvTestCase(
-            b"\xB0\xE9\xFE\x6F\xC9\xA6\x0A\x00\x00\x2E\x00\x0C\x00\x00\x00\x00",
+            b"\xb0\xe9\xfe\x6f\xc9\xa6\x0a\x00\x00\x2e\x00\x0c\x00\x00\x00\x00",
             b"\x00\x80.\x00\x11i\x08",
             {
                 "sequence_number": 10,
@@ -2751,8 +2751,8 @@ def test_hub3_with_empty_data() -> None:
             SwitchbotModel.LOCK_VISION,
         ),
         AdvTestCase(
-            b'\xb0\xe9\xfe\xe6\x1aq\x03\x00\x003\x00\x0c\x00\x00\x00\x00',
-            b'\x00\x803\x00\x11i\t',
+            b"\xb0\xe9\xfe\xe6\x1aq\x03\x00\x003\x00\x0c\x00\x00\x00\x00",
+            b"\x00\x803\x00\x11i\t",
             {
                 "sequence_number": 3,
                 "battery": 51,
@@ -2774,7 +2774,7 @@ def test_hub3_with_empty_data() -> None:
             b"\x00\x11\x69\x09",
             "Lock Vision Pro",
             SwitchbotModel.LOCK_VISION_PRO,
-        )
+        ),
     ],
 )
 def test_lock_active(test_case: AdvTestCase) -> None:
@@ -2894,7 +2894,7 @@ def test_lock_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.LOCK_ULTRA,
         ),
         AdvTestCase(
-            b"\xB0\xE9\xFE\x6F\xC9\xA6\x04\x00\x00\x2E\x00\x0C\x00\x00\x00\x00",
+            b"\xb0\xe9\xfe\x6f\xc9\xa6\x04\x00\x00\x2e\x00\x0c\x00\x00\x00\x00",
             b"\x00\x80.\x01\x11i\x08",
             {
                 "sequence_number": 4,
@@ -2911,8 +2911,8 @@ def test_lock_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.LOCK_VISION,
         ),
         AdvTestCase(
-            b'\xb0\xe9\xfe\xe6\x1aq\x04\x00\x003\x00\x0c\x00\x00\x00\x00',
-            b'\x00\x803\x01\x11i\t',
+            b"\xb0\xe9\xfe\xe6\x1aq\x04\x00\x003\x00\x0c\x00\x00\x00\x00",
+            b"\x00\x803\x01\x11i\t",
             {
                 "sequence_number": 4,
                 "battery": 51,
@@ -2934,7 +2934,7 @@ def test_lock_active(test_case: AdvTestCase) -> None:
             b"\x00\x11\x69\x09",
             "Lock Vision Pro",
             SwitchbotModel.LOCK_VISION_PRO,
-        )
+        ),
     ],
 )
 def test_lock_passive(test_case: AdvTestCase) -> None:
@@ -2998,7 +2998,7 @@ def test_lock_passive(test_case: AdvTestCase) -> None:
         ),
         AdvTestCase(
             None,
-            b"\x00\x80\x2E\x00\x11\x69\x08",
+            b"\x00\x80\x2e\x00\x11\x69\x08",
             {},
             b"\x00\x11\x69\x08",
             "Lock Vision",
@@ -3006,12 +3006,12 @@ def test_lock_passive(test_case: AdvTestCase) -> None:
         ),
         AdvTestCase(
             None,
-            b'\x00\x803\x00\x11i\t',
+            b"\x00\x803\x00\x11i\t",
             {},
             b"\x00\x11\x69\x09",
             "Lock Vision Pro",
             SwitchbotModel.LOCK_VISION_PRO,
-        )
+        ),
     ],
 )
 def test_lock_with_empty_data(test_case: AdvTestCase) -> None:
