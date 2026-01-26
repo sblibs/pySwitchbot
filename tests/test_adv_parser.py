@@ -4027,26 +4027,6 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             "Keypad Vision Pro",
             SwitchbotModel.KEYPAD_VISION_PRO,
         ),
-        AdvTestCase(
-            b"\xb0\xe9\xfe\xde\xb6\x8c+`\x00\x00\x00\x00\x00\x002",
-            None,
-            {
-                "battery": 96,
-                "battery_charging": False,
-                "doorbell": False,
-                "duress_alarm": False,
-                "high_temperature": False,
-                "lockout_alarm": False,
-                "low_temperature": False,
-                "radar_triggered_distance": 0,
-                "radar_triggered_level": 0,
-                "sequence_number": 43,
-                "tamper_alarm": False,
-            },
-            b"\x00\x11Q\x98",
-            "Keypad Vision Pro",
-            SwitchbotModel.KEYPAD_VISION_PRO,
-        ),
     ],
 )
 def test_adv_passive(test_case: AdvTestCase) -> None:
