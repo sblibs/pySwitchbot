@@ -34,6 +34,7 @@ from .adv_parsers.lock import (
     process_locklite,
     process_wolock,
     process_wolock_pro,
+    process_lockvision,
 )
 from .adv_parsers.meter import process_wosensorth, process_wosensorth_c
 from .adv_parsers.motion import process_wopresence
@@ -753,6 +754,30 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.KEYPAD_VISION_PRO,
         "modelFriendlyName": "Keypad Vision Pro",
         "func": process_keypad_vision_pro,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x11\x69\x09": {
+        "modelName": SwitchbotModel.LOCK_VISION_PRO,
+        "modelFriendlyName": "Lock Vision Pro",
+        "func": process_lockvision,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\x69\x09": {
+        "modelName": SwitchbotModel.LOCK_VISION_PRO,
+        "modelFriendlyName": "Lock Vision Pro",
+        "func": process_lockvision,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x11\x69\x08": {
+        "modelName": SwitchbotModel.LOCK_VISION,
+        "modelFriendlyName": "Lock Vision",
+        "func": process_locklite,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\x69\x08": {
+        "modelName": SwitchbotModel.LOCK_VISION,
+        "modelFriendlyName": "Lock Vision",
+        "func": process_locklite,
         "manufacturer_id": 2409,
     },
 }
