@@ -32,9 +32,9 @@ from .adv_parsers.light_strip import process_light, process_rgbic_light, process
 from .adv_parsers.lock import (
     process_lock2,
     process_locklite,
+    process_lockvision,
     process_wolock,
     process_wolock_pro,
-    process_lockvision,
 )
 from .adv_parsers.meter import process_wosensorth, process_wosensorth_c
 from .adv_parsers.motion import process_wopresence

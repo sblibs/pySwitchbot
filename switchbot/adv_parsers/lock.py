@@ -98,7 +98,9 @@ def process_lock2(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool 
     return common_data | lock2_data
 
 
-def process_lockvision(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | int]:
+def process_lockvision(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int]:
     """Support for lockvision process data."""
     common_data = parse_common_data(mfr_data)
     if not common_data:
