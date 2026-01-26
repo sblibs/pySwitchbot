@@ -24,6 +24,8 @@ def create_device_for_command_testing(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 def test_lock_init(model: str):
@@ -54,6 +56,8 @@ def test_lock_init_with_invalid_model(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 async def test_verify_encryption_key(model: str):
@@ -75,6 +79,8 @@ async def test_verify_encryption_key(model: str):
         (SwitchbotModel.LOCK_LITE, b"W\x0fN\x01\x01\x10\x81"),
         (SwitchbotModel.LOCK_PRO, b"W\x0fN\x01\x01\x10\x85"),
         (SwitchbotModel.LOCK_ULTRA, b"W\x0fN\x01\x01\x10\x86"),
+        (SwitchbotModel.LOCK_VISION, b"W\x0fN\x01\x01\x00\x80"),
+        (SwitchbotModel.LOCK_VISION_PRO, b"W\x0fN\x01\x01\x00\x80"),
     ],
 )
 async def test_lock(model: str, command: bytes):
@@ -98,6 +104,8 @@ async def test_lock(model: str, command: bytes):
         (SwitchbotModel.LOCK_LITE, b"W\x0fN\x01\x01\x10\x81"),
         (SwitchbotModel.LOCK_PRO, b"W\x0fN\x01\x01\x10\x84"),
         (SwitchbotModel.LOCK_ULTRA, b"W\x0fN\x01\x01\x10\x83"),
+        (SwitchbotModel.LOCK_VISION, b"W\x0fN\x01\x01\x00\x80"),
+        (SwitchbotModel.LOCK_VISION_PRO, b"W\x0fN\x01\x01\x00\x80"),
     ],
 )
 async def test_unlock(model: str, command: bytes):
@@ -121,6 +129,8 @@ async def test_unlock(model: str, command: bytes):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 async def test_unlock_without_unlatch(model: str):
@@ -144,6 +154,8 @@ async def test_unlock_without_unlatch(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 async def test_get_basic_info(model: str):
@@ -171,6 +183,8 @@ async def test_get_basic_info(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 async def test_get_basic_info_no_lock_data(model: str):
@@ -189,6 +203,8 @@ async def test_get_basic_info_no_lock_data(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 async def test_get_basic_info_no_basic_data(model: str):
@@ -219,6 +235,8 @@ def test_parse_basic_data():
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 def test_is_calibrated(model: str):
@@ -235,6 +253,8 @@ def test_is_calibrated(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 def test_get_lock_status(model: str):
@@ -250,6 +270,8 @@ def test_get_lock_status(model: str):
         SwitchbotModel.LOCK,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 def test_is_door_open(model: str):
@@ -265,6 +287,8 @@ def test_is_door_open(model: str):
         SwitchbotModel.LOCK,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 def test_is_unclosed_alarm_on(model: str):
@@ -281,6 +305,8 @@ def test_is_unclosed_alarm_on(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 def test_is_unlocked_alarm_on(model: str):
@@ -310,6 +336,8 @@ def test_is_auto_lock_paused(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 def test_is_night_latch_enabled(model: str):
@@ -327,6 +355,8 @@ def test_is_night_latch_enabled(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 async def test_get_lock_info(model: str):
@@ -346,6 +376,8 @@ async def test_get_lock_info(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 async def test_get_lock_info_failure(model: str):
@@ -364,6 +396,8 @@ async def test_get_lock_info_failure(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 async def test_enable_notifications(model: str):
@@ -382,6 +416,8 @@ async def test_enable_notifications(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 async def test_disable_notifications(model: str):
@@ -402,6 +438,8 @@ async def test_disable_notifications(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 async def test_disable_notifications_already_disabled(model: str):
@@ -421,6 +459,8 @@ async def test_disable_notifications_already_disabled(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 def test_notification_handler(model: str):
@@ -440,6 +480,8 @@ def test_notification_handler(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 def test_notification_handler_not_enabled(model: str):
@@ -465,6 +507,8 @@ def test_notification_handler_not_enabled(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 def test_notification_handler_during_disconnect(
@@ -493,6 +537,8 @@ def test_notification_handler_during_disconnect(
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 def test_update_lock_status(model: str):
@@ -551,6 +597,26 @@ def test_update_lock_status(model: str):
                 "door_open": True,
                 "unclosed_alarm": True,
                 "unlocked_alarm": True,
+            },
+        ),
+        (
+            SwitchbotModel.LOCK_VISION,
+            b"\x80\x00\x00\x00\x00\x00",
+            {
+                "calibration": True,
+                "status": LockStatus.LOCKED,  # (0x80 & 0b01110000) >> 4 = 0 = LOCKED
+                "unlocked_alarm": False,
+            },
+        ),
+        (
+            SwitchbotModel.LOCK_VISION_PRO,
+            b"\x80\x00\x00\x00\x00\x00",
+            {
+                "calibration": True,
+                "status": LockStatus.LOCKED,  # (0x80 & 0b01111000) >> 3 = 0 = LOCKED
+                "door_open": False,
+                "unclosed_alarm": False,
+                "unlocked_alarm": False,
             },
         ),
     ],
@@ -626,6 +692,8 @@ def test_parse_lock_data_new_formats(model: str, data: bytes, expected: dict):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 async def test_lock_with_update(model: str):
@@ -650,6 +718,8 @@ async def test_lock_with_update(model: str):
         (SwitchbotModel.LOCK_LITE, LockStatus.LOCKING),
         (SwitchbotModel.LOCK_PRO, LockStatus.LOCKED),
         (SwitchbotModel.LOCK_ULTRA, LockStatus.LOCKING),
+        (SwitchbotModel.LOCK_VISION, LockStatus.LOCKED),
+        (SwitchbotModel.LOCK_VISION_PRO, LockStatus.LOCKED),
     ],
 )
 async def test_lock_already_locked(model: str, status: LockStatus):
@@ -670,6 +740,8 @@ async def test_lock_already_locked(model: str, status: LockStatus):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
     ],
 )
 async def test_lock_with_invalid_basic_data(model: str):
