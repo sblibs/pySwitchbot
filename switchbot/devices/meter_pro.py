@@ -423,7 +423,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         return result
 
     def _get_point_five_byte(self, cold: float, hot: float):
-        """Represents if either of the temperatures has a .5 decimalplace """
+        """Represents if either of the temperatures has a .5 decimalplace"""
         point_five = 0x00
         if int(cold * 10) % 10 == 5:
             point_five += 0x05
