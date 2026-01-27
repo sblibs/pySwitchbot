@@ -9,7 +9,7 @@ COMMAND_DATE_FORMAT = f"{SETTINGS_HEADER}070107"
 
 COMMAND_TEMPERATURE_UPDATE_INTERVAL = f"{SETTINGS_HEADER}070105"
 COMMAND_CO2_UPDATE_INTERVAL = f"{SETTINGS_HEADER}0b06"
-COMMAND_FORCE_NEW_CO2_Measurement = f"{SETTINGS_HEADER}0b04"
+COMMAND_FORCE_NEW_CO2_MEASUREMENT = f"{SETTINGS_HEADER}0b04"
 COMMAND_CO2_THRESHOLDS = f"{SETTINGS_HEADER}020302"
 COMMAND_COMFORTLEVEL = f"{SETTINGS_HEADER}020188"
 
@@ -334,7 +334,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             + absolute_humidity_low_bytes
         )
 
-    async def set_alert_co2(self, on: bool, co2_low: int, co2_high: max, reverse: bool):
+    async def set_alert_co2(self, on: bool, co2_low: int, co2_high: int, reverse: bool):
         """
         Sets the CO2-Alert.
         on: Turn CO2-Alert on or off
@@ -370,7 +370,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
 
     async def set_button_function(self, change_unit: bool, change_data_source: bool):
         """
-        Sets the function of te top button:
+        Sets the function of the top button:
         Default (both options false): Only update data
         changeUnit: switch between ℃ and ℉
         changeDataSource: switch between display of indoor and outdoor temperature
@@ -387,7 +387,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
 
     async def force_new_co2_measurement(self):
         """Requests a new CO2 measurement, regardless of update interval"""
-        await self._send_command(COMMAND_FORCE_NEW_CO2_Measurement)
+        await self._send_command(COMMAND_FORCE_NEW_CO2_MEASUREMENT)
 
     async def calibrate_co2_sensor(self):
         """
@@ -423,7 +423,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         return result
 
     def _get_point_five_byte(self, cold: float, hot: float):
-        """This byte represents if either of the temperatures has a .5 decimalplace"""
+        """Represents if either of the temperatures has a .5 decimalplace """
         point_five = 0x00
         if int(cold * 10) % 10 == 5:
             point_five += 0x05
