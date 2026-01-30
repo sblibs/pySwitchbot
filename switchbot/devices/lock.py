@@ -20,6 +20,7 @@ COMMAND_LOCK_INFO = {
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4f8107",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4f8102",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4f8102",
+    SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4f810a",
 }
 COMMAND_UNLOCK = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0f4e01011080",
@@ -28,6 +29,7 @@ COMMAND_UNLOCK = {
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e0101000080",
+    SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e0101000080",
 }
 COMMAND_UNLOCK_WITHOUT_UNLATCH = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0f4e010110a0",
@@ -36,6 +38,7 @@ COMMAND_UNLOCK_WITHOUT_UNLATCH = {
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e01010000a0",
+    SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e01010000a0",
 }
 COMMAND_LOCK = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0f4e01011000",
@@ -44,6 +47,7 @@ COMMAND_LOCK = {
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e0101000000",
+    SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e0101000000",
 }
 COMMAND_ENABLE_NOTIFICATIONS = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0e01001e00008101",
@@ -52,6 +56,7 @@ COMMAND_ENABLE_NOTIFICATIONS = {
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0e01001e00008107",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0e01001e00008102",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0e01001e00008102",
+    SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0e01001e00008104",
 }
 COMMAND_DISABLE_NOTIFICATIONS = f"{COMMAND_HEADER}0e00"
 
@@ -86,6 +91,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             SwitchbotModel.LOCK_ULTRA,
             SwitchbotModel.LOCK_VISION_PRO,
             SwitchbotModel.LOCK_VISION,
+            SwitchbotModel.LOCK_PRO_WIFI,
         ):
             raise ValueError("initializing SwitchbotLock with a non-lock model")
         self._notifications_enabled: bool = False
