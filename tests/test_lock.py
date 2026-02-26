@@ -91,12 +91,15 @@ async def test_lock(model: str, command: bytes):
     device = create_device_for_command_testing(model)
     device._get_adv_value = Mock(return_value=LockStatus.UNLOCKED)
     with (
-        patch.object(device, "_send_command", return_value=b"\x01\x00"),
+        patch.object(
+            device, "_send_command", return_value=b"\x01\x00"
+        ) as mock_send_command,
         patch.object(device, "_enable_notifications", return_value=True),
         patch.object(device, "_get_basic_info", return_value=b"\x00\x64\x01"),
     ):
         result = await device.lock()
         assert result is True
+        mock_send_command.assert_any_call(lock.COMMAND_LOCK[model])
 
 
 @pytest.mark.asyncio
@@ -117,12 +120,15 @@ async def test_unlock(model: str, command: bytes):
     device = create_device_for_command_testing(model)
     device._get_adv_value = Mock(return_value=LockStatus.LOCKED)
     with (
-        patch.object(device, "_send_command", return_value=b"\x01\x00"),
+        patch.object(
+            device, "_send_command", return_value=b"\x01\x00"
+        ) as mock_send_command,
         patch.object(device, "_enable_notifications", return_value=True),
         patch.object(device, "_get_basic_info", return_value=b"\x00\x64\x01"),
     ):
         result = await device.unlock()
         assert result is True
+        mock_send_command.assert_any_call(lock.COMMAND_UNLOCK[model])
 
 
 @pytest.mark.asyncio
