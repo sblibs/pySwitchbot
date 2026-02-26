@@ -25,7 +25,6 @@ ignore = [
     "S110", # `try`-`except`-`pass` detected, consider logging the exception
     "D106", # Missing docstring in public nested class
     "UP007", # typer needs Optional syntax
-    "UP038", # Use `X | Y` in `isinstance` is slower
     "S603", #  check for execution of untrusted input
     "S105", # possible hard coded creds
     "TID252", # not for this lib
