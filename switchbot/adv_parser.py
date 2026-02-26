@@ -791,7 +791,7 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelFriendlyName": "Lock Pro Wifi",
         "func": process_wolock_pro,
         "manufacturer_id": 2409,
-    },    
+    },
 }
 
 _SWITCHBOT_MODEL_TO_CHAR: defaultdict[SwitchbotModel, list[str | bytes]] = defaultdict(

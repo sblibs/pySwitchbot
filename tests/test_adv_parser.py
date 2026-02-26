@@ -2776,8 +2776,8 @@ def test_hub3_with_empty_data() -> None:
             SwitchbotModel.LOCK_VISION_PRO,
         ),
         AdvTestCase(
-            b'\xb0\xe9\xfe\xb0^\xfe\x0e\x02\x00=\x00\x08',
-            b'\x00\x80=\x00\x10\xff\x90',
+            b"\xb0\xe9\xfe\xb0^\xfe\x0e\x02\x00=\x00\x08",
+            b"\x00\x80=\x00\x10\xff\x90",
             {
                 "sequence_number": 14,
                 "battery": 61,
@@ -2962,8 +2962,8 @@ def test_lock_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.LOCK_VISION_PRO,
         ),
         AdvTestCase(
-            b'\xb0\xe9\xfe\xb0^\xfe\x0e\x02\x00=\x00\x08',
-            b'\x00\x80=\x00\x10\xff\x90',
+            b"\xb0\xe9\xfe\xb0^\xfe\x0e\x02\x00=\x00\x08",
+            b"\x00\x80=\x00\x10\xff\x90",
             {
                 "sequence_number": 14,
                 "battery": 61,
@@ -3066,7 +3066,7 @@ def test_lock_passive(test_case: AdvTestCase) -> None:
         ),
         AdvTestCase(
             None,
-            b'\x00\x80=\x00\x10\xff\x90',
+            b"\x00\x80=\x00\x10\xff\x90",
             {},
             b"\x00\x10\xff\x90",
             "Lock Pro Wifi",
