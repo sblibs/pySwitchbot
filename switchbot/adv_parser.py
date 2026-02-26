@@ -32,7 +32,6 @@ from .adv_parsers.light_strip import process_light, process_rgbic_light, process
 from .adv_parsers.lock import (
     process_lock2,
     process_locklite,
-    process_lockvision,
     process_wolock,
     process_wolock_pro,
 )
@@ -759,13 +758,13 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
     b"\x00\x11\x69\x09": {
         "modelName": SwitchbotModel.LOCK_VISION_PRO,
         "modelFriendlyName": "Lock Vision Pro",
-        "func": process_lockvision,
+        "func": process_lock2,
         "manufacturer_id": 2409,
     },
     b"\x01\x11\x69\x09": {
         "modelName": SwitchbotModel.LOCK_VISION_PRO,
         "modelFriendlyName": "Lock Vision Pro",
-        "func": process_lockvision,
+        "func": process_lock2,
         "manufacturer_id": 2409,
     },
     b"\x00\x11\x69\x08": {

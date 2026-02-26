@@ -280,7 +280,6 @@ def test_get_lock_status(model: str):
         SwitchbotModel.LOCK,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
-        SwitchbotModel.LOCK_VISION,
         SwitchbotModel.LOCK_VISION_PRO,
         SwitchbotModel.LOCK_PRO_WIFI,
     ],
@@ -298,7 +297,6 @@ def test_is_door_open(model: str):
         SwitchbotModel.LOCK,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
-        SwitchbotModel.LOCK_VISION,
         SwitchbotModel.LOCK_VISION_PRO,
         SwitchbotModel.LOCK_PRO_WIFI,
     ],
@@ -739,6 +737,7 @@ def test_parse_lock_data_new_formats(model: str, data: bytes, expected: dict):
         SwitchbotModel.LOCK_ULTRA,
         SwitchbotModel.LOCK_VISION,
         SwitchbotModel.LOCK_VISION_PRO,
+        SwitchbotModel.LOCK_PRO_WIFI,
     ],
 )
 async def test_lock_with_update(model: str):
@@ -765,6 +764,7 @@ async def test_lock_with_update(model: str):
         (SwitchbotModel.LOCK_ULTRA, LockStatus.LOCKING),
         (SwitchbotModel.LOCK_VISION, LockStatus.LOCKED),
         (SwitchbotModel.LOCK_VISION_PRO, LockStatus.LOCKED),
+        (SwitchbotModel.LOCK_PRO_WIFI, LockStatus.LOCKED),
     ],
 )
 async def test_lock_already_locked(model: str, status: LockStatus):
@@ -787,6 +787,7 @@ async def test_lock_already_locked(model: str, status: LockStatus):
         SwitchbotModel.LOCK_ULTRA,
         SwitchbotModel.LOCK_VISION,
         SwitchbotModel.LOCK_VISION_PRO,
+        SwitchbotModel.LOCK_PRO_WIFI,
     ],
 )
 async def test_lock_with_invalid_basic_data(model: str):
