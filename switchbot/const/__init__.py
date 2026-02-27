@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from ..enum import StrEnum
-from .air_purifier import AirPurifierMode
+from .air_purifier import AirPurifierMode, AirQualityLevel
 from .climate import ClimateAction, ClimateMode, SmartThermostatRadiatorMode
 from .evaporative_humidifier import (
     HumidifierAction,
@@ -85,8 +85,10 @@ class SwitchbotModel(StrEnum):
     K10_VACUUM = "K10+ Vacuum"
     K10_PRO_VACUUM = "K10+ Pro Vacuum"
     K10_PRO_COMBO_VACUUM = "K10+ Pro Combo Vacuum"
-    AIR_PURIFIER = "Air Purifier"
-    AIR_PURIFIER_TABLE = "Air Purifier Table"
+    AIR_PURIFIER_US = "Air Purifier US"
+    AIR_PURIFIER_JP = "Air Purifier JP"
+    AIR_PURIFIER_TABLE_US = "Air Purifier Table US"
+    AIR_PURIFIER_TABLE_JP = "Air Purifier Table JP"
     HUB3 = "Hub3"
     LOCK_ULTRA = "Lock Ultra"
     LOCK_LITE = "Lock Lite"
@@ -112,6 +114,7 @@ __all__ = [
     "DEFAULT_RETRY_TIMEOUT",
     "DEFAULT_SCAN_TIMEOUT",
     "AirPurifierMode",
+    "AirQualityLevel",
     "BulbColorMode",
     "CeilingLightColorMode",
     "ClimateAction",

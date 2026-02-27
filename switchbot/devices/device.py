@@ -78,10 +78,10 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "WoFan2": SwitchbotModel.CIRCULATOR_FAN,
     "WoHub2": SwitchbotModel.HUB2,
     "WoRollerShade": SwitchbotModel.ROLLER_SHADE,
-    "WoAirPurifierJP": SwitchbotModel.AIR_PURIFIER,
-    "WoAirPurifierUS": SwitchbotModel.AIR_PURIFIER,
-    "WoAirPurifierJPPro": SwitchbotModel.AIR_PURIFIER_TABLE,
-    "WoAirPurifierUSPro": SwitchbotModel.AIR_PURIFIER_TABLE,
+    "WoAirPurifierJP": SwitchbotModel.AIR_PURIFIER_JP,
+    "WoAirPurifierUS": SwitchbotModel.AIR_PURIFIER_US,
+    "WoAirPurifierJPPro": SwitchbotModel.AIR_PURIFIER_TABLE_JP,
+    "WoAirPurifierUSPro": SwitchbotModel.AIR_PURIFIER_TABLE_US,
     "WoSweeperMini": SwitchbotModel.K10_VACUUM,
     "WoSweeperMiniPro": SwitchbotModel.K10_PRO_VACUUM,
     "91AgWZ1n": SwitchbotModel.K10_PRO_COMBO_VACUUM,
@@ -213,6 +213,12 @@ class SwitchbotBaseDevice:
     _open_command: str | None = None
     _close_command: str | None = None
     _press_command: str | None = None
+    _open_child_lock_command: str | None = None
+    _close_child_lock_command: str | None = None
+    _open_wireless_charging_command: str | None = None
+    _close_wireless_charging_command: str | None = None
+    _open_light_sensitive_command: str | None = None
+    _close_light_sensitive_command: str | None = None
 
     def __init__(
         self,
@@ -930,6 +936,48 @@ class SwitchbotBaseDevice:
         """Press the device."""
         self._check_function_support(self._press_command)
         result = await self._send_command(self._press_command)
+        return self._check_command_result(result, 0, {1})
+    
+    @update_after_operation
+    async def open_child_lock(self) -> bool:
+        """Open the child lock."""
+        self._check_function_support(self._open_child_lock_command)
+        result = await self._send_command(self._open_child_lock_command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def close_child_lock(self) -> bool:
+        """Close the child lock."""
+        self._check_function_support(self._close_child_lock_command)
+        result = await self._send_command(self._close_child_lock_command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def open_wireless_charging(self) -> bool:
+        """Open the wireless charging."""
+        self._check_function_support(self._open_wireless_charging_command)
+        result = await self._send_command(self._open_wireless_charging_command)
+        return self._check_command_result(result, 0, {1})
+    
+    @update_after_operation
+    async def close_wireless_charging(self) -> bool:
+        """Close the wireless charging."""
+        self._check_function_support(self._close_wireless_charging_command)
+        result = await self._send_command(self._close_wireless_charging_command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def open_light_sensitive(self) -> bool:
+        """Open the light sensitive."""
+        self._check_function_support(self._open_light_sensitive_command)
+        result = await self._send_command(self._open_light_sensitive_command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def close_light_sensitive(self) -> bool:
+        """Close the light sensitive."""
+        self._check_function_support(self._close_light_sensitive_command)
+        result = await self._send_command(self._close_light_sensitive_command)
         return self._check_command_result(result, 0, {1})
 
 

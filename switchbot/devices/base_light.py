@@ -141,7 +141,8 @@ class SwitchbotBaseLight(SwitchbotDevice):
         """Get device basic settings by sending multiple commands."""
         results = []
         for command in commands:
-            if not (result := await self._get_basic_info(command)):
+            result = await self._send_command(command)
+            if not self._check_command_result(result, 0, {1}):
                 return None
             results.append(result)
         return results
