@@ -105,6 +105,9 @@ class SwitchbotModel(StrEnum):
     ART_FRAME = "Art Frame"
     KEYPAD_VISION = "Keypad Vision"
     KEYPAD_VISION_PRO = "Keypad Vision Pro"
+    LOCK_VISION_PRO = "Lock Vision Pro"
+    LOCK_VISION = "Lock Vision"
+    LOCK_PRO_WIFI = "Lock Pro Wifi"
 
 
 __all__ = [

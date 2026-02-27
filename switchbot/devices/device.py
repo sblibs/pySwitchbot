@@ -106,6 +106,9 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "W1128000": SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
     "W1111000": SwitchbotModel.CLIMATE_PANEL,
     "W1130000": SwitchbotModel.ART_FRAME,
+    "W1141001": SwitchbotModel.LOCK_VISION_PRO,
+    "W1141000": SwitchbotModel.LOCK_VISION,
+    "W1114000": SwitchbotModel.LOCK_PRO_WIFI,
 }
 
 REQ_HEADER = "570f"

@@ -18,30 +18,45 @@ COMMAND_LOCK_INFO = {
     SwitchbotModel.LOCK_LITE: f"{COMMAND_HEADER}0f4f8101",
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4f8104",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4f8107",
+    SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4f8102",
+    SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4f8102",
+    SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4f810a",
 }
 COMMAND_UNLOCK = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0f4e01011080",
     SwitchbotModel.LOCK_LITE: f"{COMMAND_HEADER}0f4e01011080",
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000080",
+    SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e0101000080",
+    SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e0101000080",
+    SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e0101000080",
 }
 COMMAND_UNLOCK_WITHOUT_UNLATCH = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0f4e010110a0",
     SwitchbotModel.LOCK_LITE: f"{COMMAND_HEADER}0f4e010110a0",
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e01010000a0",
+    SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e01010000a0",
+    SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e01010000a0",
+    SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e01010000a0",
 }
 COMMAND_LOCK = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0f4e01011000",
     SwitchbotModel.LOCK_LITE: f"{COMMAND_HEADER}0f4e01011000",
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000000",
+    SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e0101000000",
+    SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e0101000000",
+    SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e0101000000",
 }
 COMMAND_ENABLE_NOTIFICATIONS = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0e01001e00008101",
     SwitchbotModel.LOCK_LITE: f"{COMMAND_HEADER}0e01001e00008101",
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0e01001e00008104",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0e01001e00008107",
+    SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0e01001e00008102",
+    SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0e01001e00008102",
+    SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0e01001e0000810a",
 }
 COMMAND_DISABLE_NOTIFICATIONS = f"{COMMAND_HEADER}0e00"
 
@@ -74,6 +89,9 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             SwitchbotModel.LOCK_PRO,
             SwitchbotModel.LOCK_LITE,
             SwitchbotModel.LOCK_ULTRA,
+            SwitchbotModel.LOCK_VISION_PRO,
+            SwitchbotModel.LOCK_VISION,
+            SwitchbotModel.LOCK_PRO_WIFI,
         ):
             raise ValueError("initializing SwitchbotLock with a non-lock model")
         self._notifications_enabled: bool = False
@@ -236,7 +254,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     @staticmethod
     def _parse_lock_data(data: bytes, model: SwitchbotModel) -> dict[str, Any]:
-        if model == SwitchbotModel.LOCK:
+        if model in {SwitchbotModel.LOCK, SwitchbotModel.LOCK_VISION_PRO}:
             return {
                 "calibration": bool(data[0] & 0b10000000),
                 "status": LockStatus((data[0] & 0b01110000) >> 4),
@@ -244,7 +262,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                 "unclosed_alarm": bool(data[1] & 0b00100000),
                 "unlocked_alarm": bool(data[1] & 0b00010000),
             }
-        if model == SwitchbotModel.LOCK_LITE:
+        if model in {SwitchbotModel.LOCK_LITE, SwitchbotModel.LOCK_VISION}:
             return {
                 "calibration": bool(data[0] & 0b10000000),
                 "status": LockStatus((data[0] & 0b01110000) >> 4),
