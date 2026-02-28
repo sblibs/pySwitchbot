@@ -436,3 +436,31 @@ async def test_air_purifier_cache_getters():
     assert device.is_child_lock_on() is True
     assert device.is_wireless_charging_on() is True
     assert device.is_light_sensitive_on() is True
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "operation_case",
+    [
+        ("open_child_lock", "_open_child_lock_command"),
+        ("close_child_lock", "_close_child_lock_command"),
+        ("open_wireless_charging", "_open_wireless_charging_command"),
+        ("close_wireless_charging", "_close_wireless_charging_command"),
+    ],
+)
+async def test_child_lock_and_wireless_charging_operations(operation_case):
+    raw_adv, model, model_name = common_params[0]
+    device = create_device_for_command_testing(raw_adv, model, model_name)
+    operation_name, command_attr = operation_case
+    command = getattr(device, command_attr)
+
+    device._check_function_support = MagicMock()
+    device._check_command_result = MagicMock(return_value=True)
+    device._send_command = AsyncMock(return_value=b"\x01")
+
+    operation = getattr(device, operation_name)
+    assert await operation() is True
+
+    device._check_function_support.assert_called_with(command)
+    device._send_command.assert_called_with(command)
+    device._check_command_result.assert_called_with(b"\x01", 0, {1})
