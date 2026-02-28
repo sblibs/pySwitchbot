@@ -217,8 +217,6 @@ class SwitchbotBaseDevice:
     _close_child_lock_command: str | None = None
     _open_wireless_charging_command: str | None = None
     _close_wireless_charging_command: str | None = None
-    _open_light_sensitive_command: str | None = None
-    _close_light_sensitive_command: str | None = None
 
     def __init__(
         self,
