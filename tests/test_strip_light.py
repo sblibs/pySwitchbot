@@ -11,6 +11,7 @@ from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperatio
 
 from . import (
     FLOOR_LAMP_INFO,
+    RGBIC_NEON_LIGHT_INFO,
     RGBICWW_FLOOR_LAMP_INFO,
     RGBICWW_STRIP_LIGHT_INFO,
     STRIP_LIGHT_3_INFO,
@@ -24,6 +25,7 @@ from .test_adv_parser import AdvTestCase, generate_ble_device
         (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
         (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
         (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
+        (RGBIC_NEON_LIGHT_INFO, light_strip.SwitchbotRgbicNeonLight),
     ]
 )
 def device_case(request):
@@ -38,6 +40,7 @@ def expected_effects(device_case):
         SwitchbotModel.FLOOR_LAMP: ("christmas", "halloween", "sunset"),
         SwitchbotModel.RGBICWW_STRIP_LIGHT: ("romance", "energy", "heartbeat"),
         SwitchbotModel.RGBICWW_FLOOR_LAMP: ("romance", "energy", "heartbeat"),
+        SwitchbotModel.RGBIC_NEON_ROPE_LIGHT: ("romance", "energy", "heartbeat"),
     }
     return EXPECTED[adv_info.modelName]
 
@@ -96,10 +99,7 @@ async def test_default_info(device_case, expected_effects):
     assert device.is_on() is True
     assert device.on is True
     assert device.color_mode == ColorMode.RGB
-    assert device.color_modes == {
-        ColorMode.RGB,
-        ColorMode.COLOR_TEMP,
-    }
+    assert ColorMode.RGB in device.color_modes
     assert device.rgb == (30, 0, 0)
     assert device.color_temp == 3200
     assert device.brightness == adv_info.data["brightness"]

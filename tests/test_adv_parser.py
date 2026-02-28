@@ -3576,6 +3576,21 @@ def test_humidifer_with_empty_data() -> None:
             SwitchbotModel.RGBICWW_STRIP_LIGHT,
         ),
         AdvTestCase(
+            b"@L\xca!pz/\x8b'\x00\x11:\x00",
+            b"\x00\x00\x00\x00\x10\xd0\xb6",
+            {
+                "sequence_number": 47,
+                "isOn": True,
+                "brightness": 11,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 7,
+            },
+            b"\x00\x10\xd0\xb6",
+            "RGBIC Neon Rope Light",
+            SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
+        ),
+        AdvTestCase(
             b"\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15",
             b"\x00\x00M\x00\x10\xfb\xa8",
             {
@@ -3948,6 +3963,21 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.RGBICWW_STRIP_LIGHT,
         ),
         AdvTestCase(
+            b"@L\xca!pz/\x8b'\x00\x11:\x00",
+            None,
+            {
+                "sequence_number": 47,
+                "isOn": True,
+                "brightness": 11,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 7,
+            },
+            b"\x00\x10\xd0\xb6",
+            "RGBIC Neon Rope Light",
+            SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
+        ),
+        AdvTestCase(
             b"\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15",
             None,
             {
@@ -4299,6 +4329,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
             b"\x01\x11\x03x",
             "Keypad Vision",
             SwitchbotModel.KEYPAD_VISION,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x00\x00\x00\x10\xd0\xb6",
+            {},
+            b"\x00\x10\xd0\xb6",
+            "RGBIC Neon Rope Light",
+            SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
         ),
         AdvTestCase(
             None,

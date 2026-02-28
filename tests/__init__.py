@@ -81,6 +81,22 @@ RGBICWW_FLOOR_LAMP_INFO = AdvTestCase(
     SwitchbotModel.RGBICWW_FLOOR_LAMP,
 )
 
+RGBIC_NEON_LIGHT_INFO = AdvTestCase(
+    b'\xdc\x06u\xa6\xfb\xb2y\x9e"\x00\x11\xb8\x00',
+    b"\x00\x00\x00\x00\x10\xd0\xb6",
+    {
+        "sequence_number": 121,
+        "isOn": True,
+        "brightness": 30,
+        "delay": False,
+        "network_state": 2,
+        "color_mode": 2,
+    },
+    b"\x00\x10\xd0\xb4",
+    "Rgbic Neno Rope Light",
+    SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
+)
+
 
 SMART_THERMOSTAT_RADIATOR_INFO = AdvTestCase(
     b"\xb0\xe9\xfe\xa2T|6\xe4\x00\x9c\xa3A\x00",
