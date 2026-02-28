@@ -935,7 +935,7 @@ class SwitchbotBaseDevice:
         self._check_function_support(self._press_command)
         result = await self._send_command(self._press_command)
         return self._check_command_result(result, 0, {1})
-    
+
     @update_after_operation
     async def open_child_lock(self) -> bool:
         """Open the child lock."""
@@ -956,13 +956,14 @@ class SwitchbotBaseDevice:
         self._check_function_support(self._open_wireless_charging_command)
         result = await self._send_command(self._open_wireless_charging_command)
         return self._check_command_result(result, 0, {1})
-    
+
     @update_after_operation
     async def close_wireless_charging(self) -> bool:
         """Close the wireless charging."""
         self._check_function_support(self._close_wireless_charging_command)
         result = await self._send_command(self._close_wireless_charging_command)
         return self._check_command_result(result, 0, {1})
+
 
 class SwitchbotDevice(SwitchbotBaseDevice):
     """

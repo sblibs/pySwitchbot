@@ -87,7 +87,9 @@ def make_advertisement_data(
     [150],
 )
 async def test_status_from_proceess_adv(rawAdvData, model, model_name, pm25):
-    device = create_device_for_command_testing(rawAdvData, model, model_name, {"pm25": pm25})
+    device = create_device_for_command_testing(
+        rawAdvData, model, model_name, {"pm25": pm25}
+    )
     assert device.get_current_percentage() == 100
     assert device.is_on() is True
     assert device.get_current_aqi_level() == "excellent"
@@ -116,7 +118,9 @@ async def test_get_basic_info_returns_none_when_no_data(rawAdvData, model, model
     "mode", ["level_1", "level_2", "level_3", "auto", "pet", "sleep"]
 )
 async def test_set_preset_mode(rawAdvData, model, model_name, mode):
-    device = create_device_for_command_testing(rawAdvData, model, model_name, {"mode": mode})
+    device = create_device_for_command_testing(
+        rawAdvData, model, model_name, {"mode": mode}
+    )
     await device.set_preset_mode(mode)
     assert device.get_current_mode() == mode
 
@@ -127,7 +131,9 @@ async def test_set_preset_mode(rawAdvData, model, model_name, mode):
     common_params,
 )
 async def test_turn_on(rawAdvData, model, model_name):
-    device = create_device_for_command_testing(rawAdvData, model, model_name, {"isOn": True})
+    device = create_device_for_command_testing(
+        rawAdvData, model, model_name, {"isOn": True}
+    )
     await device.turn_on()
     assert device.is_on() is True
 
@@ -138,7 +144,9 @@ async def test_turn_on(rawAdvData, model, model_name):
     common_params,
 )
 async def test_turn_off(rawAdvData, model, model_name):
-    device = create_device_for_command_testing(rawAdvData, model, model_name, {"isOn": False})
+    device = create_device_for_command_testing(
+        rawAdvData, model, model_name, {"isOn": False}
+    )
     await device.turn_off()
     assert device.is_on() is False
 
@@ -320,7 +328,9 @@ async def test_set_percentage_validation_and_command():
     device._send_command = AsyncMock(return_value=b"\x01")
 
     assert await device.set_percentage(25) is True
-    device._send_command.assert_called_with(air_purifier.COMMAND_SET_PERCENTAGE.format(percentage=25))
+    device._send_command.assert_called_with(
+        air_purifier.COMMAND_SET_PERCENTAGE.format(percentage=25)
+    )
 
     with pytest.raises(AssertionError, match="Percentage must be between 0 and 100"):
         await device.set_percentage(-1)
@@ -346,7 +356,9 @@ async def test_set_brightness_validation_and_command():
     device._send_command = AsyncMock(return_value=b"\x01")
 
     assert await device.set_brightness(10) is True
-    device._send_command.assert_called_with(device._set_brightness_command.format("0102030A"))
+    device._send_command.assert_called_with(
+        device._set_brightness_command.format("0102030A")
+    )
 
     with pytest.raises(AssertionError, match="Brightness must be between 0 and 100"):
         await device.set_brightness(101)
@@ -375,7 +387,9 @@ async def test_set_rgb_validation_and_command():
 @pytest.mark.asyncio
 async def test_led_and_light_sensitive_commands():
     raw_adv, model, model_name = common_params[0]
-    device = create_device_for_command_testing(raw_adv, model, model_name, {"led_status": True})
+    device = create_device_for_command_testing(
+        raw_adv, model, model_name, {"led_status": True}
+    )
     device._check_command_result = MagicMock(return_value=True)
     device._send_command = AsyncMock(return_value=b"\x01")
 

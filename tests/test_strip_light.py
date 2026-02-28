@@ -124,7 +124,9 @@ async def test_get_basic_info_returns_none(basic_info, version_info, device_case
     device = create_device_for_command_testing(adv_info, dev_cls)
 
     device._send_command = AsyncMock(side_effect=[version_info, basic_info])
-    device._check_command_result = MagicMock(side_effect=[bool(version_info), bool(basic_info)])
+    device._check_command_result = MagicMock(
+        side_effect=[bool(version_info), bool(basic_info)]
+    )
 
     assert await device.get_basic_info() is None
 

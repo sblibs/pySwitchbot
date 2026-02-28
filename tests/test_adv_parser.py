@@ -2491,7 +2491,9 @@ def test_air_purifier_passive() -> None:
         },
         rssi=-97,
     )
-    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.AIR_PURIFIER_US)
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.AIR_PURIFIER_US
+    )
     assert result == SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={

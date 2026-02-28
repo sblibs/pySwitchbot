@@ -9,14 +9,14 @@ from typing import Any
 from bleak.backends.device import BLEDevice
 
 from ..adv_parsers.air_purifier import get_air_purifier_mode
-from .base_light import SwitchbotSequenceBaseLight
 from ..const import SwitchbotModel
 from ..const.air_purifier import AirPurifierMode, AirQualityLevel
+from ..const.light import ColorMode
+from .base_light import SwitchbotSequenceBaseLight
 from .device import (
     SwitchbotEncryptedDevice,
     update_after_operation,
 )
-from ..const.light import ColorMode
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,6 +35,7 @@ COMMAND_SET_PERCENTAGE = f"{COMMAND_HEAD}02{{percentage:02x}}"
 READ_LED_SETTINGS_COMMAND = "570f4d05"
 READ_LED_STATUS_COMMAND = "570f4d07"
 
+
 class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Air Purifier."""
 
@@ -46,9 +47,13 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
     _close_wireless_charging_command = f"{COMMAND_HEAD}0d00"
     _open_light_sensitive_command = f"{COMMAND_HEAD}0702"
     _turn_led_on_command = f"{COMMAND_HEAD}0701"
-    _turn_led_off_command = f"{COMMAND_HEAD}0700" 
+    _turn_led_off_command = f"{COMMAND_HEAD}0700"
     _set_rgb_command = _set_brightness_command = f"{COMMAND_HEAD}0501{{}}"
-    _get_basic_info_command = [DEVICE_GET_BASIC_SETTINGS_KEY, READ_LED_SETTINGS_COMMAND, READ_LED_STATUS_COMMAND]
+    _get_basic_info_command = [
+        DEVICE_GET_BASIC_SETTINGS_KEY,
+        READ_LED_SETTINGS_COMMAND,
+        READ_LED_STATUS_COMMAND,
+    ]
 
     def __init__(
         self,
@@ -88,17 +93,30 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
     def is_led_on(self) -> bool | None:
         """Return LED state from cache."""
         return self._get_adv_value("led_status")
-    
+
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
-        if not (res := await self._get_basic_info_by_multi_commands(self._get_basic_info_command)):
+        if not (
+            res := await self._get_basic_info_by_multi_commands(
+                self._get_basic_info_command
+            )
+        ):
             return None
-        
-        _data, led_settings, led_status =  res[0], res[1], res[2]
 
-        _LOGGER.debug("%s %s basic info %s", self._model, self._device.address, _data.hex())
-        _LOGGER.debug("%s %s led settings %s", self._model, self._device.address, led_settings.hex())
-        _LOGGER.debug("%s %s led_status %s", self._model, self._device.address, led_status.hex())
+        _data, led_settings, led_status = res[0], res[1], res[2]
+
+        _LOGGER.debug(
+            "%s %s basic info %s", self._model, self._device.address, _data.hex()
+        )
+        _LOGGER.debug(
+            "%s %s led settings %s",
+            self._model,
+            self._device.address,
+            led_settings.hex(),
+        )
+        _LOGGER.debug(
+            "%s %s led_status %s", self._model, self._device.address, led_status.hex()
+        )
         isOn = bool(_data[2] & 0b10000000)
         wireless_charging = bool(_data[2] & 0b01000000)
         version_info = (_data[2] & 0b00110000) >> 4
@@ -117,7 +135,7 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         brightness = led_settings[5]
         light_sensitive = bool(led_status[1] & 0x02)
         led_status = bool(led_status[1] & 0x01)
-        
+
         data = {
             "isOn": isOn,
             "wireless_charging": wireless_charging,
@@ -132,10 +150,13 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
             "light_sensitive": light_sensitive,
             "led_status": led_status,
         }
-        if self._model in (SwitchbotModel.AIR_PURIFIER_JP, SwitchbotModel.AIR_PURIFIER_TABLE_JP):
+        if self._model in (
+            SwitchbotModel.AIR_PURIFIER_JP,
+            SwitchbotModel.AIR_PURIFIER_TABLE_JP,
+        ):
             return data
         return data | {"pm25": pm25}
-    
+
     async def _get_basic_info(self) -> bytes | None:
         """Return basic info of device."""
         _data = await self._send_command(
@@ -147,7 +168,7 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
             return None
 
         return _data
-    
+
     async def read_led_settings(self) -> dict[str, Any] | None:
         """Read LED settings."""
         if not (_data := await self._send_command()):
@@ -162,31 +183,39 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         """Send command to set air purifier preset_mode."""
         result = await self._send_command(COMMAND_SET_MODE[preset_mode])
         return self._check_command_result(result, 0, {1})
-    
+
     @update_after_operation
     async def set_percentage(self, percentage: int) -> bool:
         """Set percentage."""
         assert 0 <= percentage <= 100, "Percentage must be between 0 and 100"
         self._validate_current_mode()
-        
-        result = await self._send_command(COMMAND_SET_PERCENTAGE.format(percentage=percentage))
+
+        result = await self._send_command(
+            COMMAND_SET_PERCENTAGE.format(percentage=percentage)
+        )
         return self._check_command_result(result, 0, {1})
-    
+
     def _validate_current_mode(self) -> None:
         """Validate current mode for setting percentage."""
         current_mode = self.get_current_mode()
-        if current_mode not in (AirPurifierMode.LEVEL_1.name.lower(), AirPurifierMode.LEVEL_2.name.lower(), AirPurifierMode.LEVEL_3.name.lower()):
+        if current_mode not in (
+            AirPurifierMode.LEVEL_1.name.lower(),
+            AirPurifierMode.LEVEL_2.name.lower(),
+            AirPurifierMode.LEVEL_3.name.lower(),
+        ):
             raise ValueError("Percentage can only be set in LEVEL modes.")
 
     @update_after_operation
     async def set_brightness(self, brightness: int) -> bool:
         """Set brightness."""
         assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
-        r, g, b = self._state.get("r", 0), self._state.get("g", 0), self._state.get("b", 0)
-        hex_data = f"{r:02X}{g:02X}{b:02X}{brightness:02X}"
-        result = await self._send_command(
-            self._set_brightness_command.format(hex_data)
+        r, g, b = (
+            self._state.get("r", 0),
+            self._state.get("g", 0),
+            self._state.get("b", 0),
         )
+        hex_data = f"{r:02X}{g:02X}{b:02X}{brightness:02X}"
+        result = await self._send_command(self._set_brightness_command.format(hex_data))
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
@@ -199,13 +228,13 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         hex_data = f"{r:02X}{g:02X}{b:02X}{brightness:02X}"
         result = await self._send_command(self._set_rgb_command.format(hex_data))
         return self._check_command_result(result, 0, {1})
-    
+
     @update_after_operation
     async def turn_led_on(self) -> bool:
         """Turn on LED."""
         result = await self._send_command(self._turn_led_on_command)
         return self._check_command_result(result, 0, {1})
-    
+
     @update_after_operation
     async def turn_led_off(self) -> bool:
         """Turn off LED."""
@@ -224,7 +253,7 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         if self.is_led_on:
             result = await self._send_command(self._turn_led_on_command)
         else:
-            result = await self._send_command(self._turn_led_off_command)    
+            result = await self._send_command(self._turn_led_off_command)
         return self._check_command_result(result, 0, {1})
 
     def is_on(self) -> bool | None:
@@ -242,15 +271,15 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
     def get_current_mode(self) -> Any:
         """Return cached mode."""
         return self._get_adv_value("mode")
-    
+
     def is_child_lock_on(self) -> bool | None:
         """Return child lock state from cache."""
         return self._get_adv_value("child_lock")
-    
+
     def is_wireless_charging_on(self) -> bool | None:
         """Return wireless charging state from cache."""
         return self._get_adv_value("wireless_charging")
-    
+
     def get_current_percentage(self) -> int | None:
         """Return cached percentage."""
         return self._get_adv_value("speed")
