@@ -83,11 +83,6 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
     def color_mode(self) -> ColorMode:
         """Return the current color mode."""
         return ColorMode.RGB
-    
-    @property
-    def led_state(self) -> bool | None:
-        """Return LED state from cache."""
-        return self.is_led_on()
 
     @property
     def is_led_on(self) -> bool | None:
@@ -226,7 +221,7 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
     @update_after_operation
     async def close_light_sensitive(self) -> bool:
         """Close the light sensitive."""
-        if self.is_led_on():
+        if self.is_led_on:
             result = await self._send_command(self._turn_led_on_command)
         else:
             result = await self._send_command(self._turn_led_off_command)    

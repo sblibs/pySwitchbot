@@ -165,11 +165,11 @@ async def test__get_basic_info(rawAdvData, model, model_name, response, expected
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("rawAdvData", "model", "model_name"),
+    "device_case",
     common_params,
 )
 @pytest.mark.parametrize(
-    ("basic_info", "led_settings", "led_status", "result"),
+    "info_case",
     [
         (
             bytearray(
@@ -215,7 +215,9 @@ async def test__get_basic_info(rawAdvData, model, model_name, response, expected
         ),
     ],
 )
-async def test_get_basic_info(rawAdvData, model, model_name, basic_info, led_settings, led_status, result):
+async def test_get_basic_info(device_case, info_case):
+    rawAdvData, model, model_name = device_case
+    basic_info, led_settings, led_status, result = info_case
     device = create_device_for_command_testing(rawAdvData, model, model_name)
     device._get_basic_info_by_multi_commands = AsyncMock(
         return_value=[basic_info, led_settings, led_status]
@@ -291,8 +293,6 @@ async def test_air_purifier_color_and_led_properties():
     assert device.color_modes == {air_purifier.ColorMode.RGB}
     assert device.color_mode == air_purifier.ColorMode.RGB
     assert device.is_led_on is True
-    with pytest.raises(TypeError, match="object is not callable"):
-        _ = device.led_state
 
 
 @pytest.mark.asyncio
@@ -388,8 +388,7 @@ async def test_led_and_light_sensitive_commands():
     assert await device.open_light_sensitive() is True
     device._send_command.assert_called_with(device._open_light_sensitive_command)
 
-    with patch.object(type(device), "is_led_on", MagicMock(return_value=True)):
-        await device.close_light_sensitive()
+    assert await device.close_light_sensitive() is True
     device._send_command.assert_called_with(device._turn_led_on_command)
 
     device_off = create_device_for_command_testing(
@@ -400,8 +399,7 @@ async def test_led_and_light_sensitive_commands():
     )
     device_off._check_command_result = MagicMock(return_value=True)
     device_off._send_command = AsyncMock(return_value=b"\x01")
-    with patch.object(type(device_off), "is_led_on", MagicMock(return_value=False)):
-        assert await device_off.close_light_sensitive() is True
+    assert await device_off.close_light_sensitive() is True
     device_off._send_command.assert_called_with(device_off._turn_led_off_command)
 
 
