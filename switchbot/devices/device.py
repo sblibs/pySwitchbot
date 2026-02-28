@@ -966,21 +966,6 @@ class SwitchbotBaseDevice:
         result = await self._send_command(self._close_wireless_charging_command)
         return self._check_command_result(result, 0, {1})
 
-    @update_after_operation
-    async def open_light_sensitive(self) -> bool:
-        """Open the light sensitive."""
-        self._check_function_support(self._open_light_sensitive_command)
-        result = await self._send_command(self._open_light_sensitive_command)
-        return self._check_command_result(result, 0, {1})
-
-    @update_after_operation
-    async def close_light_sensitive(self) -> bool:
-        """Close the light sensitive."""
-        self._check_function_support(self._close_light_sensitive_command)
-        result = await self._send_command(self._close_light_sensitive_command)
-        return self._check_command_result(result, 0, {1})
-
-
 class SwitchbotDevice(SwitchbotBaseDevice):
     """
     Base Representation of a Switchbot Device.

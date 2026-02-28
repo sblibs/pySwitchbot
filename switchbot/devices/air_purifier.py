@@ -45,7 +45,9 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
     _open_wireless_charging_command = f"{COMMAND_HEAD}0d01"
     _close_wireless_charging_command = f"{COMMAND_HEAD}0d00"
     _open_light_sensitive_command = f"{COMMAND_HEAD}0702"
-    _close_light_sensitive_command = f"{COMMAND_HEAD}0700"
+    _turn_led_on_command = f"{COMMAND_HEAD}0701"
+    _turn_led_off_command = f"{COMMAND_HEAD}0700" 
+    _set_rgb_command = _set_brightness_command = f"{COMMAND_HEAD}0501{{}}"
     _get_basic_info_command = [DEVICE_GET_BASIC_SETTINGS_KEY, READ_LED_SETTINGS_COMMAND, READ_LED_STATUS_COMMAND]
 
     def __init__(
@@ -81,6 +83,16 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
     def color_mode(self) -> ColorMode:
         """Return the current color mode."""
         return ColorMode.RGB
+    
+    @property
+    def led_state(self) -> bool | None:
+        """Return LED state from cache."""
+        return self.is_led_on()
+
+    @property
+    def is_led_on(self) -> bool | None:
+        """Return LED state from cache."""
+        return self._get_adv_value("led_status")
     
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
@@ -170,6 +182,56 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         current_mode = self.get_current_mode()
         if current_mode not in (AirPurifierMode.LEVEL_1.name.lower(), AirPurifierMode.LEVEL_2.name.lower(), AirPurifierMode.LEVEL_3.name.lower()):
             raise ValueError("Percentage can only be set in LEVEL modes.")
+
+    @update_after_operation
+    async def set_brightness(self, brightness: int) -> bool:
+        """Set brightness."""
+        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
+        r, g, b = self._state.get("r", 0), self._state.get("g", 0), self._state.get("b", 0)
+        hex_data = f"{r:02X}{g:02X}{b:02X}{brightness:02X}"
+        result = await self._send_command(
+            self._set_brightness_command.format(hex_data)
+        )
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def set_rgb(self, brightness: int, r: int, g: int, b: int) -> bool:
+        """Set rgb."""
+        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
+        assert 0 <= r <= 255, "r must be between 0 and 255"
+        assert 0 <= g <= 255, "g must be between 0 and 255"
+        assert 0 <= b <= 255, "b must be between 0 and 255"
+        hex_data = f"{r:02X}{g:02X}{b:02X}{brightness:02X}"
+        result = await self._send_command(self._set_rgb_command.format(hex_data))
+        return self._check_command_result(result, 0, {1})
+    
+    @update_after_operation
+    async def turn_led_on(self) -> bool:
+        """Turn on LED."""
+        result = await self._send_command(self._turn_led_on_command)
+        return self._check_command_result(result, 0, {1})
+    
+    @update_after_operation
+    async def turn_led_off(self) -> bool:
+        """Turn off LED."""
+        result = await self._send_command(self._turn_led_off_command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def open_light_sensitive(self) -> bool:
+        """Open the light sensitive."""
+        result = await self._send_command(self._open_light_sensitive_command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def close_light_sensitive(self) -> bool:
+        """Close the light sensitive."""
+        if self.is_led_on():
+            result = await self._send_command(self._turn_led_on_command)
+        else:
+            result = await self._send_command(self._turn_led_off_command)    
+        return self._check_command_result(result, 0, {1})
+
 
     def get_current_percentage(self) -> Any:
         """Return cached percentage."""
