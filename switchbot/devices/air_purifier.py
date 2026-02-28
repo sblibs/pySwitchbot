@@ -232,11 +232,6 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
             result = await self._send_command(self._turn_led_off_command)    
         return self._check_command_result(result, 0, {1})
 
-
-    def get_current_percentage(self) -> Any:
-        """Return cached percentage."""
-        return self._get_adv_value("speed")
-
     def is_on(self) -> bool | None:
         """Return air purifier state from cache."""
         return self._get_adv_value("isOn")

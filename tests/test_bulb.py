@@ -81,15 +81,8 @@ async def test_default_info():
 )
 async def test_get_basic_info_returns_none(basic_info, version_info):
     device = create_device_for_command_testing()
-
-    async def mock_get_basic_info(arg):
-        if arg == device._get_basic_info_command[1]:
-            return basic_info
-        if arg == device._get_basic_info_command[0]:
-            return version_info
-        return None
-
-    device._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
+    device._send_command = AsyncMock(side_effect=[version_info, basic_info])
+    device._check_command_result = MagicMock(side_effect=[bool(version_info), bool(basic_info)])
 
     assert await device.get_basic_info() is None
 
@@ -124,15 +117,10 @@ async def test_get_basic_info_returns_none(basic_info, version_info):
 async def test_get_basic_info(info_data, result):
     """Test getting basic info from the color bulb."""
     device = create_device_for_command_testing()
-
-    async def mock_get_basic_info(args: str) -> list[int] | None:
-        if args == device._get_basic_info_command[1]:
-            return info_data["basic_info"]
-        if args == device._get_basic_info_command[0]:
-            return info_data["version_info"]
-        return None
-
-    device._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
+    device._send_command = AsyncMock(
+        side_effect=[info_data["version_info"], info_data["basic_info"]]
+    )
+    device._check_command_result = MagicMock(side_effect=[True, True])
     info = await device.get_basic_info()
 
     assert info["isOn"] is result[0]

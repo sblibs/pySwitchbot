@@ -2364,8 +2364,8 @@ def test_s10_with_empty_data() -> None:
                 "sequence_number": 161,
             },
             "7",
-            "Air Purifier Table",
-            SwitchbotModel.AIR_PURIFIER_TABLE,
+            "Air Purifier Table US",
+            SwitchbotModel.AIR_PURIFIER_TABLE_US,
         ),
         AdvTestCase(
             b'\xcc\x8d\xa2\xa7\x92>\t"\x80\x000\x00\x0f\x00\x00',
@@ -2382,8 +2382,8 @@ def test_s10_with_empty_data() -> None:
                 "sequence_number": 9,
             },
             "*",
-            "Air Purifier",
-            SwitchbotModel.AIR_PURIFIER,
+            "Air Purifier US",
+            SwitchbotModel.AIR_PURIFIER_US,
         ),
         AdvTestCase(
             b"\xcc\x8d\xa2\xa7\xe4\xa6\x0b\x83\x88d\x00\xea`\x00\x00",
@@ -2400,8 +2400,8 @@ def test_s10_with_empty_data() -> None:
                 "sequence_number": 11,
             },
             "+",
-            "Air Purifier",
-            SwitchbotModel.AIR_PURIFIER,
+            "Air Purifier JP",
+            SwitchbotModel.AIR_PURIFIER_JP,
         ),
         AdvTestCase(
             b"\xcc\x8d\xa2\xa7\xc1\xae\x9b\x81\x8c\xb2\x00\x01\x94\x00\x00",
@@ -2418,8 +2418,8 @@ def test_s10_with_empty_data() -> None:
                 "sequence_number": 155,
             },
             "8",
-            "Air Purifier Table",
-            SwitchbotModel.AIR_PURIFIER_TABLE,
+            "Air Purifier Table JP",
+            SwitchbotModel.AIR_PURIFIER_TABLE_JP,
         ),
         AdvTestCase(
             b"\xcc\x8d\xa2\xa7\xc1\xae\x9e\xa1\x8c\x800\x01\x95\x00\x00",
@@ -2436,8 +2436,8 @@ def test_s10_with_empty_data() -> None:
                 "sequence_number": 158,
             },
             "8",
-            "Air Purifier Table",
-            SwitchbotModel.AIR_PURIFIER_TABLE,
+            "Air Purifier Table JP",
+            SwitchbotModel.AIR_PURIFIER_TABLE_JP,
         ),
         AdvTestCase(
             b"\xcc\x8d\xa2\xa7\xc1\xae\x9e\x05\x8c\x800\x01\x95\x00\x00",
@@ -2454,8 +2454,8 @@ def test_s10_with_empty_data() -> None:
                 "sequence_number": 158,
             },
             "8",
-            "Air Purifier Table",
-            SwitchbotModel.AIR_PURIFIER_TABLE,
+            "Air Purifier Table JP",
+            SwitchbotModel.AIR_PURIFIER_TABLE_JP,
         ),
     ],
 )
@@ -2491,7 +2491,7 @@ def test_air_purifier_passive() -> None:
         },
         rssi=-97,
     )
-    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.AIR_PURIFIER)
+    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.AIR_PURIFIER_US)
     assert result == SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
@@ -2509,8 +2509,8 @@ def test_air_purifier_passive() -> None:
             },
             "isEncrypted": False,
             "model": "*",
-            "modelFriendlyName": "Air Purifier",
-            "modelName": SwitchbotModel.AIR_PURIFIER,
+            "modelFriendlyName": "Air Purifier US",
+            "modelName": SwitchbotModel.AIR_PURIFIER_US,
         },
         device=ble_device,
         rssi=-97,
