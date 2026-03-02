@@ -44,7 +44,6 @@ def device_with_candle_warmer_lamp(request):
     return request.param
 
 
-
 @pytest.fixture
 def expected_effects(device_case):
     adv_info, _dev_cls = device_case
@@ -144,14 +143,16 @@ async def test_candle_warmer_lamp_info():
     assert device.brightness == adv_info.data["brightness"]
     # Check that effect list contains expected lowercase effect names
     effect_list = device.get_effect_list
-    assert effect_list is  None
+    assert effect_list is None
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("basic_info", "version_info"), [(True, False), (False, True), (False, False)]
 )
-async def test_get_basic_info_returns_none(basic_info, version_info, device_with_candle_warmer_lamp):
+async def test_get_basic_info_returns_none(
+    basic_info, version_info, device_with_candle_warmer_lamp
+):
     """Test that get_basic_info returns None if no data is available."""
     adv_info, dev_cls = device_with_candle_warmer_lamp
     device = create_device_for_command_testing(adv_info, dev_cls)
@@ -347,7 +348,9 @@ async def test_set_effect_normalizes_case(device_case):
 
 @pytest.mark.asyncio
 @patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)
-async def test_verify_encryption_key(mock_parent_verify, device_with_candle_warmer_lamp):
+async def test_verify_encryption_key(
+    mock_parent_verify, device_with_candle_warmer_lamp
+):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     key_id = "ff"
     encryption_key = "ffffffffffffffffffffffffffffffff"
