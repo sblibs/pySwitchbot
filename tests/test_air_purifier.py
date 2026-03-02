@@ -460,7 +460,7 @@ async def test_child_lock_operations(operation_case):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "raw_adv,model,model_name,supported",
+    ("raw_adv,model,model_name,supported",),
     [
         (*common_params[0], True),
         (*common_params[3], True),
