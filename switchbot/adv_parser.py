@@ -28,7 +28,12 @@ from .adv_parsers.humidifier import process_evaporative_humidifier, process_wohu
 from .adv_parsers.keypad import process_wokeypad
 from .adv_parsers.keypad_vision import process_keypad_vision, process_keypad_vision_pro
 from .adv_parsers.leak import process_leak
-from .adv_parsers.light_strip import process_light, process_rgbic_light, process_wostrip
+from .adv_parsers.light_strip import (
+    process_candle_warmer_lamp,
+    process_light,
+    process_rgbic_light,
+    process_wostrip,
+)
 from .adv_parsers.lock import (
     process_lock2,
     process_locklite,
@@ -609,6 +614,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.FLOOR_LAMP,
         "modelFriendlyName": "Floor Lamp",
         "func": process_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x11\x22\xb8": {
+        "modelName": SwitchbotModel.CANDLE_WARMER_LAMP,
+        "modelFriendlyName": "Candle Warmer Lamp",
+        "func": process_candle_warmer_lamp,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\x22\xb8": {
+        "modelName": SwitchbotModel.CANDLE_WARMER_LAMP,
+        "modelFriendlyName": "Candle Warmer Lamp",
+        "func": process_candle_warmer_lamp,
         "manufacturer_id": 2409,
     },
     b"\x00\x10\xd0\xb1": {
