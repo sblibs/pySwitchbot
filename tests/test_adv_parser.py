@@ -3485,6 +3485,20 @@ def test_humidifer_with_empty_data() -> None:
             SwitchbotModel.FLOOR_LAMP,
         ),
         AdvTestCase(
+            b"\x90\xe5\xb1h\xda\xaa\n\xb0 \x00",
+            b"\x00\x00\x00\x00\x11\x22\xb8",
+            {
+                "brightness": 48,
+                "delay": False,
+                "isOn": True,
+                "network_state": 2,
+                "sequence_number": 10,
+            },
+            b"\x00\x11\x22\xb8",
+            "Candle Warmer Lamp",
+            SwitchbotModel.CANDLE_WARMER_LAMP,
+        ),
+        AdvTestCase(
             b"\xef\xfe\xfb\x9d\x10\xfe\n\x01\x18\xf3$",
             b"q\x00",
             {
@@ -3932,6 +3946,20 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.RGBICWW_FLOOR_LAMP,
         ),
         AdvTestCase(
+            b"\x90\xe5\xb1h\xda\xaa\n\xb0 \x00",
+            None,
+            {
+                "brightness": 48,
+                "delay": False,
+                "isOn": True,
+                "network_state": 2,
+                "sequence_number": 10,
+            },
+            b"\x00\x11\x22\xb8",
+            "Candle Warmer Lamp",
+            SwitchbotModel.CANDLE_WARMER_LAMP,
+        ),
+        AdvTestCase(
             b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00',
             None,
             {
@@ -4190,6 +4218,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
             b"\x00\x10\xd0\xb0",
             "Floor Lamp",
             SwitchbotModel.FLOOR_LAMP,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x00\x00\x00\x11\x22\xb8",
+            {},
+            b"\x00\x11\x22\xb8",
+            "Candle Warmer Lamp",
+            SwitchbotModel.CANDLE_WARMER_LAMP,
         ),
         AdvTestCase(
             None,
