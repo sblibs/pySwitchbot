@@ -202,7 +202,6 @@ async def test__get_basic_info(rawAdvData, model, model_name, response, expected
                 2.3,
                 0x44,
                 True,
-                True,
             ],
         ),
         (
@@ -222,7 +221,6 @@ async def test__get_basic_info(rawAdvData, model, model_name, response, expected
                 256,
                 2.3,
                 0x1E,
-                False,
                 False,
             ],
         ),
@@ -254,8 +252,6 @@ async def test_get_basic_info(device_case, info_case):
     assert info["firmware"] == result[8]
     assert info["brightness"] == result[9]
     assert info["light_sensitive"] == result[10]
-    assert info["led_status"] == result[11]
-
 
 @pytest.mark.asyncio
 @patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)
@@ -300,12 +296,10 @@ async def test_air_purifier_color_and_led_properties():
         raw_adv,
         model,
         model_name,
-        {"led_status": True},
     )
 
     assert device.color_modes == {air_purifier.ColorMode.RGB}
     assert device.color_mode == air_purifier.ColorMode.RGB
-    assert device.is_led_on is True
 
 
 @pytest.mark.asyncio
@@ -402,12 +396,11 @@ async def test_led_and_light_sensitive_commands():
         raw_adv,
         model,
         model_name,
-        {"led_status": False},
     )
     device_off._check_command_result = MagicMock(return_value=True)
     device_off._send_command = AsyncMock(return_value=b"\x01")
     assert await device_off.close_light_sensitive_switch() is True
-    device_off._send_command.assert_called_with(device_off._turn_led_off_command)
+    device_off._send_command.assert_called_with(device_off._turn_led_on_command)
 
 
 @pytest.mark.asyncio

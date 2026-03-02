@@ -112,11 +112,6 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         """Return the current color mode."""
         return ColorMode.RGB
 
-    @property
-    def is_led_on(self) -> bool | None:
-        """Return LED state from cache."""
-        return self._get_adv_value("led_status")
-
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
         if not (
@@ -157,7 +152,6 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         self._state["b"] = led_settings[4]
         brightness = led_settings[5]
         light_sensitive = bool(led_status[1] & 0x02)
-        led_status = bool(led_status[1] & 0x01)
 
         data = {
             "isOn": isOn,
@@ -170,7 +164,6 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
             "firmware": firmware,
             "brightness": brightness,
             "light_sensitive": light_sensitive,
-            "led_status": led_status,
         }
         if self._model in self._WIRELESS_MODELS:
             data["wireless_charging"] = wireless_charging
@@ -260,10 +253,7 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
     @update_after_operation
     async def close_light_sensitive_switch(self) -> bool:
         """Close the light sensitive switch."""
-        if self.is_led_on:
-            result = await self._send_command(self._turn_led_on_command)
-        else:
-            result = await self._send_command(self._turn_led_off_command)
+        result = await self._send_command(self._turn_led_on_command)
         return self._check_command_result(result, 0, {1})
 
     def _check_wireless_charging_supported(self) -> None:
