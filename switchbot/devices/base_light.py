@@ -78,7 +78,8 @@ class SwitchbotBaseLight(SwitchbotDevice):
     @update_after_operation
     async def set_brightness(self, brightness: int) -> bool:
         """Set brightness."""
-        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
+        if not 0 <= brightness <= 100:
+            raise ValueError("Brightness must be between 0 and 100")
         hex_brightness = f"{brightness:02X}"
         self._check_function_support(self._set_brightness_command)
         result = await self._send_command(
@@ -89,22 +90,33 @@ class SwitchbotBaseLight(SwitchbotDevice):
     @update_after_operation
     async def set_color_temp(self, brightness: int, color_temp: int) -> bool:
         """Set color temp."""
-        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
-        assert 2700 <= color_temp <= 6500, "Color Temp must be between 2700 and 6500"
+        if not 0 <= brightness <= 100:
+            raise ValueError("Brightness must be between 0 and 100")
+        if not 2700 <= color_temp <= 6500:
+            raise ValueError("Color Temp must be between 2700 and 6500")
         hex_data = f"{brightness:02X}{color_temp:04X}"
         self._check_function_support(self._set_color_temp_command)
         result = await self._send_command(self._set_color_temp_command.format(hex_data))
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
-    async def set_rgb(self, brightness: int, r: int, g: int, b: int) -> bool:
+    async def set_rgb(
+        self, brightness: int, r: int, g: int, b: int, reverse: bool = False
+    ) -> bool:
         """Set rgb."""
-        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
-        assert 0 <= r <= 255, "r must be between 0 and 255"
-        assert 0 <= g <= 255, "g must be between 0 and 255"
-        assert 0 <= b <= 255, "b must be between 0 and 255"
+        if not 0 <= brightness <= 100:
+            raise ValueError("Brightness must be between 0 and 100")
+        if not 0 <= r <= 255:
+            raise ValueError("r must be between 0 and 255")
+        if not 0 <= g <= 255:
+            raise ValueError("g must be between 0 and 255")
+        if not 0 <= b <= 255:
+            raise ValueError("b must be between 0 and 255")
         self._check_function_support(self._set_rgb_command)
-        hex_data = f"{brightness:02X}{r:02X}{g:02X}{b:02X}"
+        if reverse:
+            hex_data = f"{r:02X}{g:02X}{b:02X}{brightness:02X}"
+        else:
+            hex_data = f"{brightness:02X}{r:02X}{g:02X}{b:02X}"
         result = await self._send_command(self._set_rgb_command.format(hex_data))
         return self._check_command_result(result, 0, {1})
 

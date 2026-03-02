@@ -91,7 +91,7 @@ def make_advertisement_data(
     "pm25",
     [150],
 )
-async def test_status_from_proceess_adv(rawAdvData, model, model_name, pm25):
+async def test_status_from_process_adv(rawAdvData, model, model_name, pm25):
     device = create_device_for_command_testing(
         rawAdvData, model, model_name, {"pm25": pm25}
     )
@@ -325,9 +325,9 @@ async def test_set_percentage_validation_and_command():
         air_purifier.COMMAND_SET_PERCENTAGE.format(percentage=25)
     )
 
-    with pytest.raises(AssertionError, match="Percentage must be between 0 and 100"):
+    with pytest.raises(ValueError, match="Percentage must be between 0 and 100"):
         await device.set_percentage(-1)
-    with pytest.raises(AssertionError, match="Percentage must be between 0 and 100"):
+    with pytest.raises(ValueError, match="Percentage must be between 0 and 100"):
         await device.set_percentage(101)
 
     invalid_mode_device = create_device_for_command_testing(
@@ -353,7 +353,7 @@ async def test_set_brightness_validation_and_command():
         device._set_brightness_command.format("0102030A")
     )
 
-    with pytest.raises(AssertionError, match="Brightness must be between 0 and 100"):
+    with pytest.raises(ValueError, match="Brightness must be between 0 and 100"):
         await device.set_brightness(101)
 
 
@@ -367,13 +367,13 @@ async def test_set_rgb_validation_and_command():
     assert await device.set_rgb(20, 1, 2, 3) is True
     device._send_command.assert_called_with(device._set_rgb_command.format("01020314"))
 
-    with pytest.raises(AssertionError, match="Brightness must be between 0 and 100"):
+    with pytest.raises(ValueError, match="Brightness must be between 0 and 100"):
         await device.set_rgb(101, 1, 2, 3)
-    with pytest.raises(AssertionError, match="r must be between 0 and 255"):
+    with pytest.raises(ValueError, match="r must be between 0 and 255"):
         await device.set_rgb(10, 256, 2, 3)
-    with pytest.raises(AssertionError, match="g must be between 0 and 255"):
+    with pytest.raises(ValueError, match="g must be between 0 and 255"):
         await device.set_rgb(10, 1, 256, 3)
-    with pytest.raises(AssertionError, match="b must be between 0 and 255"):
+    with pytest.raises(ValueError, match="b must be between 0 and 255"):
         await device.set_rgb(10, 1, 2, 256)
 
 
@@ -392,10 +392,10 @@ async def test_led_and_light_sensitive_commands():
     assert await device.turn_led_off() is True
     device._send_command.assert_called_with(device._turn_led_off_command)
 
-    assert await device.open_light_sensitive() is True
-    device._send_command.assert_called_with(device._open_light_sensitive_command)
+    assert await device.open_light_sensitive_switch() is True
+    device._send_command.assert_called_with(device._open_light_sensitive_switch_command)
 
-    assert await device.close_light_sensitive() is True
+    assert await device.close_light_sensitive_switch() is True
     device._send_command.assert_called_with(device._turn_led_on_command)
 
     device_off = create_device_for_command_testing(
@@ -406,7 +406,7 @@ async def test_led_and_light_sensitive_commands():
     )
     device_off._check_command_result = MagicMock(return_value=True)
     device_off._send_command = AsyncMock(return_value=b"\x01")
-    assert await device_off.close_light_sensitive() is True
+    assert await device_off.close_light_sensitive_switch() is True
     device_off._send_command.assert_called_with(device_off._turn_led_off_command)
 
 

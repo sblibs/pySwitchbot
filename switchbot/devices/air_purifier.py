@@ -46,7 +46,7 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
     _close_child_lock_command = f"{COMMAND_HEAD}0300"
     _open_wireless_charging_command = f"{COMMAND_HEAD}0d01"
     _close_wireless_charging_command = f"{COMMAND_HEAD}0d00"
-    _open_light_sensitive_command = f"{COMMAND_HEAD}0702"
+    _open_light_sensitive_switch_command = f"{COMMAND_HEAD}0702"
     _turn_led_on_command = f"{COMMAND_HEAD}0701"
     _turn_led_off_command = f"{COMMAND_HEAD}0700"
     _set_rgb_command = _set_brightness_command = f"{COMMAND_HEAD}0501{{}}"
@@ -56,7 +56,22 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         READ_LED_STATUS_COMMAND,
     ]
 
-    _wireless_models: ClassVar[frozenset[SwitchbotModel]] = frozenset(
+    _PM25_MODELS: ClassVar[frozenset[SwitchbotModel]] = frozenset(
+        {
+            SwitchbotModel.AIR_PURIFIER_US,
+            SwitchbotModel.AIR_PURIFIER_TABLE_US,
+        }
+    )
+
+    _LEVEL_MODES: ClassVar[frozenset[str]] = frozenset(
+        {
+            AirPurifierMode.LEVEL_1.name.lower(),
+            AirPurifierMode.LEVEL_2.name.lower(),
+            AirPurifierMode.LEVEL_3.name.lower(),
+        }
+    )
+
+    _WIRELESS_MODELS: ClassVar[frozenset[SwitchbotModel]] = frozenset(
         {
             SwitchbotModel.AIR_PURIFIER_TABLE_US,
             SwitchbotModel.AIR_PURIFIER_TABLE_JP,
@@ -146,7 +161,6 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
 
         data = {
             "isOn": isOn,
-            "wireless_charging": wireless_charging,
             "version_info": version_info,
             "mode": mode,
             "isAqiValid": isAqiValid,
@@ -158,12 +172,12 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
             "light_sensitive": light_sensitive,
             "led_status": led_status,
         }
-        if self._model in (
-            SwitchbotModel.AIR_PURIFIER_JP,
-            SwitchbotModel.AIR_PURIFIER_TABLE_JP,
-        ):
-            return data
-        return data | {"pm25": pm25}
+        if self._model in self._WIRELESS_MODELS:
+            data["wireless_charging"] = wireless_charging
+
+        if self._model in self._PM25_MODELS:
+            return data | {"pm25": pm25}
+        return data
 
     async def _get_basic_info(self) -> bytes | None:
         """Return basic info of device."""
@@ -186,7 +200,8 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
     @update_after_operation
     async def set_percentage(self, percentage: int) -> bool:
         """Set percentage."""
-        assert 0 <= percentage <= 100, "Percentage must be between 0 and 100"
+        if not 0 <= percentage <= 100:
+            raise ValueError("Percentage must be between 0 and 100")
         self._validate_current_mode()
 
         result = await self._send_command(
@@ -197,17 +212,14 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
     def _validate_current_mode(self) -> None:
         """Validate current mode for setting percentage."""
         current_mode = self.get_current_mode()
-        if current_mode not in (
-            AirPurifierMode.LEVEL_1.name.lower(),
-            AirPurifierMode.LEVEL_2.name.lower(),
-            AirPurifierMode.LEVEL_3.name.lower(),
-        ):
+        if current_mode not in self._LEVEL_MODES:
             raise ValueError("Percentage can only be set in LEVEL modes.")
 
     @update_after_operation
     async def set_brightness(self, brightness: int) -> bool:
         """Set brightness."""
-        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
+        if not 0 <= brightness <= 100:
+            raise ValueError("Brightness must be between 0 and 100")
         r, g, b = (
             self._state.get("r", 0),
             self._state.get("g", 0),
@@ -220,13 +232,7 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
     @update_after_operation
     async def set_rgb(self, brightness: int, r: int, g: int, b: int) -> bool:
         """Set rgb."""
-        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
-        assert 0 <= r <= 255, "r must be between 0 and 255"
-        assert 0 <= g <= 255, "g must be between 0 and 255"
-        assert 0 <= b <= 255, "b must be between 0 and 255"
-        hex_data = f"{r:02X}{g:02X}{b:02X}{brightness:02X}"
-        result = await self._send_command(self._set_rgb_command.format(hex_data))
-        return self._check_command_result(result, 0, {1})
+        return await super().set_rgb(brightness, r, g, b, reverse=True)
 
     @update_after_operation
     async def turn_led_on(self) -> bool:
@@ -241,14 +247,18 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
-    async def open_light_sensitive(self) -> bool:
-        """Open the light sensitive."""
-        result = await self._send_command(self._open_light_sensitive_command)
+    async def open_light_sensitive_switch(self) -> bool:
+        """Open the light sensitive switch.
+        
+        This will allow the LED to automatically adjust brightness based on ambient light. 
+        The LED will turn on in dark environments and turn off in bright environments.
+        """
+        result = await self._send_command(self._open_light_sensitive_switch_command)
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
-    async def close_light_sensitive(self) -> bool:
-        """Close the light sensitive."""
+    async def close_light_sensitive_switch(self) -> bool:
+        """Close the light sensitive switch."""
         if self.is_led_on:
             result = await self._send_command(self._turn_led_on_command)
         else:
@@ -256,7 +266,7 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         return self._check_command_result(result, 0, {1})
 
     def _check_wireless_charging_supported(self) -> None:
-        if self._model not in self._wireless_models:
+        if self._model not in self._WIRELESS_MODELS:
             raise SwitchbotOperationError(
                 "Wireless charging is only available on table versions"
                 f" (current model={self._model})"
