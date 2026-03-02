@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import struct
-from typing import Any
+from typing import Any, ClassVar
 
 from bleak.backends.device import BLEDevice
 
@@ -16,6 +16,7 @@ from .base_light import SwitchbotSequenceBaseLight
 from .device import (
     SwitchbotEncryptedDevice,
     update_after_operation,
+    SwitchbotOperationError,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,6 +55,13 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         READ_LED_SETTINGS_COMMAND,
         READ_LED_STATUS_COMMAND,
     ]
+
+    _wireless_models: ClassVar[frozenset[SwitchbotModel]] = frozenset(
+        {
+            SwitchbotModel.AIR_PURIFIER_TABLE_US,
+            SwitchbotModel.AIR_PURIFIER_TABLE_JP,
+        }
+    )
 
     def __init__(
         self,
@@ -169,15 +177,6 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
 
         return _data
 
-    async def read_led_settings(self) -> dict[str, Any] | None:
-        """Read LED settings."""
-        if not (_data := await self._send_command()):
-            return None
-
-        led_brightness = (_data[2] & 0b00001100) >> 2
-        led_color = _data[2] & 0b00000011
-        return {"led_brightness": led_brightness, "led_color": led_color}
-
     @update_after_operation
     async def set_preset_mode(self, preset_mode: str) -> bool:
         """Send command to set air purifier preset_mode."""
@@ -254,6 +253,27 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
             result = await self._send_command(self._turn_led_on_command)
         else:
             result = await self._send_command(self._turn_led_off_command)
+        return self._check_command_result(result, 0, {1})
+
+    def _check_wireless_charging_supported(self) -> None:
+        if self._model not in self._wireless_models:
+            raise SwitchbotOperationError(
+                "Wireless charging is only available on table versions"
+                f" (current model={self._model})"
+            )
+
+    @update_after_operation
+    async def open_wireless_charging(self) -> bool:
+        """Enable the wireless charging pad (table models only)."""
+        self._check_wireless_charging_supported()
+        result = await self._send_command(self._open_wireless_charging_command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def close_wireless_charging(self) -> bool:  # type: ignore[override]
+        """Disable the wireless charging pad (table models only)."""
+        self._check_wireless_charging_supported()
+        result = await self._send_command(self._close_wireless_charging_command)
         return self._check_command_result(result, 0, {1})
 
     def is_on(self) -> bool | None:

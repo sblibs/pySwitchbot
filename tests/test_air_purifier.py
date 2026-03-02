@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.backends.device import BLEDevice
 
-from switchbot import SwitchBotAdvertisement, SwitchbotEncryptedDevice, SwitchbotModel
+from switchbot import SwitchBotAdvertisement, SwitchbotEncryptedDevice, SwitchbotModel, SwitchbotOperationError
 from switchbot.const.air_purifier import AirPurifierMode
 from switchbot.devices import air_purifier
 
@@ -181,7 +181,7 @@ async def test__get_basic_info(rawAdvData, model, model_name, response, expected
     [
         (
             bytearray(
-                b"\x01\xa7\xe9\x8c\x08\x00\xb2\x01\x96\x00\x00\x00\xf0\x00\x00\x17"
+                b"\x01\xa7\xe9\x8c\x08\x00\xb2\x01\x96\x00\x00\x00\x00\x01\x00\x17"
             ),
             bytearray(b"\x01\x01\x11\x22\x33\x44"),
             bytearray(b"\x01\x03"),
@@ -193,7 +193,7 @@ async def test__get_basic_info(rawAdvData, model, model_name, response, expected
                 False,
                 "excellent",
                 50,
-                0,
+                1,
                 2.3,
                 0x44,
                 True,
@@ -202,7 +202,7 @@ async def test__get_basic_info(rawAdvData, model, model_name, response, expected
         ),
         (
             bytearray(
-                b"\x01\xa8\xec\x8c\x08\x00\xb2\x01\x96\x00\x00\x00\xf0\x00\x00\x17"
+                b"\x01\xa8\xec\x8c\x08\x00\xb2\x01\x96\x00\x00\x00\x01\x00\x00\x17"
             ),
             bytearray(b"\x01\x01\xaa\xbb\xcc\x1e"),
             bytearray(b"\x01\x00"),
@@ -214,7 +214,7 @@ async def test__get_basic_info(rawAdvData, model, model_name, response, expected
                 False,
                 "excellent",
                 50,
-                0,
+                256,
                 2.3,
                 0x1E,
                 False,
@@ -301,18 +301,6 @@ async def test_air_purifier_color_and_led_properties():
     assert device.color_modes == {air_purifier.ColorMode.RGB}
     assert device.color_mode == air_purifier.ColorMode.RGB
     assert device.is_led_on is True
-
-
-@pytest.mark.asyncio
-async def test_read_led_settings():
-    raw_adv, model, model_name = common_params[0]
-    device = create_device_for_command_testing(raw_adv, model, model_name)
-
-    device._send_command = AsyncMock(return_value=None)
-    assert await device.read_led_settings() is None
-
-    device._send_command = AsyncMock(return_value=b"\x01\x00\x0d")
-    assert await device.read_led_settings() == {"led_brightness": 3, "led_color": 1}
 
 
 @pytest.mark.asyncio
@@ -444,11 +432,10 @@ async def test_air_purifier_cache_getters():
     [
         ("open_child_lock", "_open_child_lock_command"),
         ("close_child_lock", "_close_child_lock_command"),
-        ("open_wireless_charging", "_open_wireless_charging_command"),
-        ("close_wireless_charging", "_close_wireless_charging_command"),
     ],
 )
-async def test_child_lock_and_wireless_charging_operations(operation_case):
+async def test_child_lock_operations(operation_case):
+    """Child lock commands should always be forwarded correctly."""
     raw_adv, model, model_name = common_params[0]
     device = create_device_for_command_testing(raw_adv, model, model_name)
     operation_name, command_attr = operation_case
@@ -464,3 +451,35 @@ async def test_child_lock_and_wireless_charging_operations(operation_case):
     device._check_function_support.assert_called_with(command)
     device._send_command.assert_called_with(command)
     device._check_command_result.assert_called_with(b"\x01", 0, {1})
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "raw_adv,model,model_name,supported",
+    [
+        (*common_params[0], True),
+        (*common_params[3], True),
+        (*common_params[1], False),
+        (*common_params[2], False),
+    ],
+)
+async def test_wireless_charging_model_support(raw_adv, model, model_name, supported):
+    """Wireless charging operations should only succeed for table variants."""
+    device = create_device_for_command_testing(raw_adv, model, model_name)
+    if supported:
+        device._check_command_result = MagicMock(return_value=True)
+        device._send_command = AsyncMock(return_value=b"\x01")
+
+        assert await device.open_wireless_charging() is True
+        assert await device.close_wireless_charging() is True
+
+        assert device._send_command.call_args_list == [
+            ((device._open_wireless_charging_command,),),
+            ((device._close_wireless_charging_command,),),
+        ]
+
+    else:
+        with pytest.raises(SwitchbotOperationError):
+            await device.open_wireless_charging()
+        with pytest.raises(SwitchbotOperationError):
+            await device.close_wireless_charging()

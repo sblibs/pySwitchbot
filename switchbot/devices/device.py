@@ -215,8 +215,6 @@ class SwitchbotBaseDevice:
     _press_command: str | None = None
     _open_child_lock_command: str | None = None
     _close_child_lock_command: str | None = None
-    _open_wireless_charging_command: str | None = None
-    _close_wireless_charging_command: str | None = None
 
     def __init__(
         self,
@@ -949,21 +947,6 @@ class SwitchbotBaseDevice:
         self._check_function_support(self._close_child_lock_command)
         result = await self._send_command(self._close_child_lock_command)
         return self._check_command_result(result, 0, {1})
-
-    @update_after_operation
-    async def open_wireless_charging(self) -> bool:
-        """Open the wireless charging."""
-        self._check_function_support(self._open_wireless_charging_command)
-        result = await self._send_command(self._open_wireless_charging_command)
-        return self._check_command_result(result, 0, {1})
-
-    @update_after_operation
-    async def close_wireless_charging(self) -> bool:
-        """Close the wireless charging."""
-        self._check_function_support(self._close_wireless_charging_command)
-        result = await self._send_command(self._close_wireless_charging_command)
-        return self._check_command_result(result, 0, {1})
-
 
 class SwitchbotDevice(SwitchbotBaseDevice):
     """
