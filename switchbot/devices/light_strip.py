@@ -367,7 +367,7 @@ class SwitchbotRgbicNeonLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         device: BLEDevice,
         key_id: str,
         encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.RGBICWW_STRIP_LIGHT,
+        model: SwitchbotModel = SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
         **kwargs: Any,
     ) -> bool:
         return await super().verify_encryption_key(
