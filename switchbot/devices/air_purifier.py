@@ -15,8 +15,8 @@ from ..const.light import ColorMode
 from .base_light import SwitchbotSequenceBaseLight
 from .device import (
     SwitchbotEncryptedDevice,
-    update_after_operation,
     SwitchbotOperationError,
+    update_after_operation,
 )
 
 _LOGGER = logging.getLogger(__name__)

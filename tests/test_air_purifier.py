@@ -3,7 +3,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.backends.device import BLEDevice
 
-from switchbot import SwitchBotAdvertisement, SwitchbotEncryptedDevice, SwitchbotModel, SwitchbotOperationError
+from switchbot import (
+    SwitchBotAdvertisement,
+    SwitchbotEncryptedDevice,
+    SwitchbotModel,
+    SwitchbotOperationError,
+)
 from switchbot.const.air_purifier import AirPurifierMode
 from switchbot.devices import air_purifier
 

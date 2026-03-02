@@ -948,6 +948,7 @@ class SwitchbotBaseDevice:
         result = await self._send_command(self._close_child_lock_command)
         return self._check_command_result(result, 0, {1})
 
+
 class SwitchbotDevice(SwitchbotBaseDevice):
     """
     Base Representation of a Switchbot Device.
