@@ -253,6 +253,7 @@ async def test_get_basic_info(device_case, info_case):
     assert info["brightness"] == result[9]
     assert info["light_sensitive"] == result[10]
 
+
 @pytest.mark.asyncio
 @patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)
 async def test_verify_encryption_key(mock_parent_verify):
