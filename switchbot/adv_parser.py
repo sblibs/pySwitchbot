@@ -755,6 +755,42 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_keypad_vision_pro,
         "manufacturer_id": 2409,
     },
+    b"\x00\x11\x69\x09": {
+        "modelName": SwitchbotModel.LOCK_VISION_PRO,
+        "modelFriendlyName": "Lock Vision Pro",
+        "func": process_lock2,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\x69\x09": {
+        "modelName": SwitchbotModel.LOCK_VISION_PRO,
+        "modelFriendlyName": "Lock Vision Pro",
+        "func": process_lock2,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x11\x69\x08": {
+        "modelName": SwitchbotModel.LOCK_VISION,
+        "modelFriendlyName": "Lock Vision",
+        "func": process_locklite,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\x69\x08": {
+        "modelName": SwitchbotModel.LOCK_VISION,
+        "modelFriendlyName": "Lock Vision",
+        "func": process_locklite,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x10\xff\x90": {
+        "modelName": SwitchbotModel.LOCK_PRO_WIFI,
+        "modelFriendlyName": "Lock Pro Wifi",
+        "func": process_wolock_pro,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x10\xff\x90": {
+        "modelName": SwitchbotModel.LOCK_PRO_WIFI,
+        "modelFriendlyName": "Lock Pro Wifi",
+        "func": process_wolock_pro,
+        "manufacturer_id": 2409,
+    },
 }
 
 _SWITCHBOT_MODEL_TO_CHAR: defaultdict[SwitchbotModel, list[str | bytes]] = defaultdict(
