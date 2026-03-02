@@ -93,7 +93,7 @@ RGBIC_NEON_LIGHT_INFO = AdvTestCase(
         "color_mode": 2,
     },
     b"\x00\x10\xd0\xb6",
-    "Rgbic Neno Rope Light",
+    "Rgbic Neon Rope Light",
     SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
 )
 
