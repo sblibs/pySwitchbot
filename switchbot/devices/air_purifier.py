@@ -248,9 +248,10 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
 
     @update_after_operation
     async def open_light_sensitive_switch(self) -> bool:
-        """Open the light sensitive switch.
-        
-        This will allow the LED to automatically adjust brightness based on ambient light. 
+        """
+        Open the light sensitive switch.
+
+        This will allow the LED to automatically adjust brightness based on ambient light.
         The LED will turn on in dark environments and turn off in bright environments.
         """
         result = await self._send_command(self._open_light_sensitive_switch_command)
