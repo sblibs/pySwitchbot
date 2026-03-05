@@ -296,7 +296,9 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch, SwitchbotBaseCover):
     async def set_position(self, position: int, mode: int = 0) -> bool:
         """Send position command (0-100) to device. 0 - performance mode, 1 - unfelt mode."""
         position = (100 - position) if self._reverse else position
-        self._update_motion_direction(True, self._get_adv_value("position"), position)
+        self._update_motion_direction(
+            True, self._get_adv_value("position", channel=1), position
+        )
         result = await self._send_command(COMMAND_POSITION.format(position))
         return self._check_command_result(result, 0, {1})
 

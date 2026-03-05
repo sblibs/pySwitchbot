@@ -501,3 +501,166 @@ async def test_press():
     )
     await device.press()
     device._send_command.assert_awaited_once_with(device._press_command)
+
+
+def create_2pm_device_with_position(position: int = 50, calibration: bool = True):
+    """Create a 2PM device with position/calibration data for cover testing."""
+    return create_device_for_command_testing(
+        b"\x00\x00\x00\x00\x00\x00",
+        SwitchbotModel.RELAY_SWITCH_2PM,
+        {
+            1: {
+                "switchMode": True,
+                "sequence_number": 99,
+                "isOn": True,
+                "position": position,
+                "calibration": calibration,
+                "mode": 0,
+            },
+            2: {
+                "switchMode": True,
+                "sequence_number": 99,
+                "isOn": False,
+                "position": position,
+                "calibration": calibration,
+                "mode": 0,
+            },
+        },
+    )
+
+
+@pytest.mark.asyncio
+async def test_2pm_open():
+    """Test open command for 2PM roller mode."""
+    device = create_2pm_device_with_position()
+    await device.open()
+    device._send_command.assert_called_with(relay_switch.COMMAND_OPEN)
+    assert device.is_opening() is True
+    assert device.is_closing() is False
+
+
+@pytest.mark.asyncio
+async def test_2pm_close():
+    """Test close command for 2PM roller mode."""
+    device = create_2pm_device_with_position()
+    await device.close()
+    device._send_command.assert_called_with(relay_switch.COMMAND_CLOSE)
+    assert device.is_opening() is False
+    assert device.is_closing() is True
+
+
+@pytest.mark.asyncio
+async def test_2pm_stop():
+    """Test stop command for 2PM roller mode."""
+    device = create_2pm_device_with_position()
+    await device.stop()
+    device._send_command.assert_called_with(relay_switch.COMMAND_STOP)
+    assert device.is_opening() is False
+    assert device.is_closing() is False
+
+
+@pytest.mark.asyncio
+async def test_2pm_set_position_opening():
+    """Test set_position moves to a higher position (opening)."""
+    device = create_2pm_device_with_position(position=30)
+    await device.set_position(80)
+    device._send_command.assert_called_with(relay_switch.COMMAND_POSITION.format(80))
+    assert device.is_opening() is True
+    assert device.is_closing() is False
+
+
+@pytest.mark.asyncio
+async def test_2pm_set_position_closing():
+    """Test set_position moves to a lower position (closing)."""
+    device = create_2pm_device_with_position(position=80)
+    await device.set_position(20)
+    device._send_command.assert_called_with(relay_switch.COMMAND_POSITION.format(20))
+    assert device.is_opening() is False
+    assert device.is_closing() is True
+
+
+@pytest.mark.asyncio
+async def test_2pm_set_position_reverse():
+    """Test set_position with reverse=True inverts the position value."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    device = relay_switch.SwitchbotRelaySwitch2PM(
+        ble_device, "ff", "ffffffffffffffffffffffffffffffff", reverse=True
+    )
+    device.update_from_advertisement(
+        make_advertisement_data(
+            ble_device,
+            b"\x00\x00\x00\x00\x00\x00",
+            SwitchbotModel.RELAY_SWITCH_2PM,
+            {
+                1: {
+                    "switchMode": True,
+                    "sequence_number": 99,
+                    "isOn": True,
+                    "position": 30,
+                    "calibration": True,
+                    "mode": 0,
+                },
+                2: {
+                    "switchMode": True,
+                    "sequence_number": 99,
+                    "isOn": False,
+                    "position": 30,
+                    "calibration": True,
+                    "mode": 0,
+                },
+            },
+        )
+    )
+    device._send_command = AsyncMock()
+    device._check_command_result = MagicMock()
+    device.update = AsyncMock()
+
+    await device.set_position(40)
+    # reverse=True: actual position sent = 100 - 40 = 60
+    device._send_command.assert_called_with(relay_switch.COMMAND_POSITION.format(60))
+
+
+def test_2pm_position_property():
+    """Test position property returns value from channel 1."""
+    device = create_2pm_device_with_position(position=42)
+    assert device.position == 42
+
+
+def test_2pm_mode_property():
+    """Test mode property returns value from channel 1."""
+    device = create_2pm_device_with_position()
+    assert device.mode == 0
+
+
+def test_2pm_update_motion_direction_no_previous():
+    """Test _update_motion_direction with no previous position does nothing."""
+    device = create_2pm_device_with_position()
+    device._update_motion_direction(True, None, 80)
+    assert device.is_opening() is False
+    assert device.is_closing() is False
+
+
+def test_2pm_update_motion_direction_stop():
+    """Test _update_motion_direction with in_motion=False clears both flags."""
+    device = create_2pm_device_with_position()
+    device._is_opening = True
+    device._is_closing = True
+    device._update_motion_direction(False, 50, 80)
+    assert device.is_opening() is False
+    assert device.is_closing() is False
+
+
+def test_2pm_update_motion_direction_opening():
+    """Test _update_motion_direction detects opening."""
+    device = create_2pm_device_with_position()
+    device._update_motion_direction(True, 30, 70)
+    assert device.is_opening() is True
+    assert device.is_closing() is False
+
+
+def test_2pm_update_motion_direction_closing():
+    """Test _update_motion_direction detects closing."""
+    device = create_2pm_device_with_position()
+    device._update_motion_direction(True, 70, 30)
+    assert device.is_opening() is False
+    assert device.is_closing() is True
