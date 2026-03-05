@@ -47,7 +47,7 @@ class SwitchbotCurtain(SwitchbotBaseCover):
         # the definition of position is the same as in Home Assistant.
 
         self._reverse: bool = kwargs.pop("reverse_mode", True)
-        super().__init__(self._reverse, *args, **kwargs)
+        super().__init__(reverse=self._reverse, *args, **kwargs)
         self._settings: dict[str, Any] = {}
         self.ext_info_sum: dict[str, Any] = {}
         self.ext_info_adv: dict[str, Any] = {}
