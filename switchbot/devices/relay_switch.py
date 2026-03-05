@@ -250,7 +250,9 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch, SwitchbotBaseCover):
         reverse: bool = False,
         **kwargs: Any,
     ) -> None:
-        super().__init__(device, key_id, encryption_key, interface, model, reverse=reverse, **kwargs)
+        super().__init__(
+            device, key_id, encryption_key, interface, model, reverse=reverse, **kwargs
+        )
         self._channel = 2
 
     @property
