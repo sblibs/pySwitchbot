@@ -11,7 +11,7 @@ from .test_adv_parser import generate_ble_device
 
 def create_device_for_command_testing(position=50, calibration=True):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    base_cover_device = base_cover.SwitchbotBaseCover(False, ble_device)
+    base_cover_device = base_cover.SwitchbotBaseCover(ble_device, reverse=False)
     base_cover_device.update_from_advertisement(
         make_advertisement_data(ble_device, True, position, calibration)
     )
@@ -50,7 +50,7 @@ def make_advertisement_data(
 @pytest.mark.asyncio
 async def test_send_multiple_commands():
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    base_cover_device = base_cover.SwitchbotBaseCover(False, ble_device)
+    base_cover_device = base_cover.SwitchbotBaseCover(ble_device, reverse=False)
     base_cover_device.update_from_advertisement(
         make_advertisement_data(ble_device, True, 50, True)
     )
