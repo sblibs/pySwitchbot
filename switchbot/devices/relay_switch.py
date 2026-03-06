@@ -102,10 +102,12 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     def _parse_common_data(self, raw_data: bytes) -> dict[str, Any]:
         """Parse common data from raw bytes."""
         return {
-            "sequence_number": raw_data[0],
             "isOn": bool(raw_data[2] & SWITCH1_ON_MASK),
             "firmware": raw_data[16] / 10.0,
             "channel2_isOn": bool(raw_data[2] & SWITCH2_ON_MASK),
+            "calibration": bool(raw_data[3] & 0b01000000),
+            "mode": raw_data[4] & 0b00001111,
+            "position": raw_data[9] >> 1,
         }
 
     def _parse_user_data(self, raw_data: bytes) -> dict[str, Any]:
@@ -179,7 +181,9 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             return None
 
         _LOGGER.debug(
-            "on-off hex: %s, channel1_hex_data: %s", _data.hex(), _channel1_data.hex()
+            "get_basic_info raw: %s, channel1 raw: %s",
+            _data.hex(),
+            _channel1_data.hex(),
         )
 
         common_data = self._parse_common_data(_data)
@@ -299,7 +303,7 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch, SwitchbotBaseCover):
         self._update_motion_direction(
             True, self._get_adv_value("position", channel=1), position
         )
-        result = await self._send_command(COMMAND_POSITION.format(position))
+        result = await self._send_command(COMMAND_POSITION.format(f"{position:02X}"))
         return self._check_command_result(result, 0, {1})
 
     def get_parsed_data(self, channel: int | None = None) -> dict[str, Any]:
@@ -311,10 +315,18 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch, SwitchbotBaseCover):
         current_time_hex, current_day_start_time_hex = (
             self.get_current_time_and_start_time()
         )
-        if not (common_data := await super().get_basic_info()):
+        if not (_basic_raw := await self._get_basic_info(COMMAND_GET_BASIC_INFO)):
             return None
         if not (
-            _channel2_data := await self._get_basic_info(
+            _channel1_raw := await self._get_basic_info(
+                COMMAND_GET_CHANNEL1_INFO.format(
+                    current_time_hex, current_day_start_time_hex
+                )
+            )
+        ):
+            return None
+        if not (
+            _channel2_raw := await self._get_basic_info(
                 COMMAND_GET_CHANNEL2_INFO.format(
                     current_time_hex, current_day_start_time_hex
                 )
@@ -322,18 +334,35 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch, SwitchbotBaseCover):
         ):
             return None
 
-        _LOGGER.debug("channel2_hex_data: %s", _channel2_data.hex())
+        _LOGGER.debug(
+            "get_basic_info 2PM basic_raw: %s, channel1_raw: %s, channel2_raw: %s",
+            _basic_raw.hex(),
+            _channel1_raw.hex(),
+            _channel2_raw.hex(),
+        )
 
-        channel2_data = self._parse_user_data(_channel2_data)
-        channel2_data["isOn"] = common_data["channel2_isOn"]
+        parsed = self._parse_common_data(_basic_raw)
+
+        channel1_data = self._parse_user_data(_channel1_raw)
+        channel1_data["isOn"] = parsed["isOn"]
+        channel1_data["firmware"] = parsed["firmware"]
+        channel1_data["calibration"] = parsed["calibration"]
+        channel1_data["mode"] = parsed["mode"]
+        channel1_data["position"] = parsed["position"]
+
+        if not channel1_data["isOn"]:
+            self._reset_power_data(channel1_data)
+
+        channel2_data = self._parse_user_data(_channel2_raw)
+        channel2_data["isOn"] = parsed["channel2_isOn"]
 
         if not channel2_data["isOn"]:
             self._reset_power_data(channel2_data)
 
         _LOGGER.debug(
-            "channel1_data: %s, channel2_data: %s", common_data, channel2_data
+            "channel1_data: %s, channel2_data: %s", channel1_data, channel2_data
         )
-        return {1: common_data, 2: channel2_data}
+        return {1: channel1_data, 2: channel2_data}
 
     @update_after_operation
     async def turn_on(self, channel: int) -> bool:

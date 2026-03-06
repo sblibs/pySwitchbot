@@ -564,7 +564,7 @@ async def test_2pm_set_position_opening():
     """Test set_position moves to a higher position (opening)."""
     device = create_2pm_device_with_position(position=30)
     await device.set_position(80)
-    device._send_command.assert_called_with(relay_switch.COMMAND_POSITION.format(80))
+    device._send_command.assert_called_with(relay_switch.COMMAND_POSITION.format(f"{80:02X}"))
     assert device.is_opening() is True
     assert device.is_closing() is False
 
@@ -574,7 +574,7 @@ async def test_2pm_set_position_closing():
     """Test set_position moves to a lower position (closing)."""
     device = create_2pm_device_with_position(position=80)
     await device.set_position(20)
-    device._send_command.assert_called_with(relay_switch.COMMAND_POSITION.format(20))
+    device._send_command.assert_called_with(relay_switch.COMMAND_POSITION.format(f"{20:02X}"))
     assert device.is_opening() is False
     assert device.is_closing() is True
 
@@ -617,7 +617,7 @@ async def test_2pm_set_position_reverse():
 
     await device.set_position(40)
     # reverse=True: actual position sent = 100 - 40 = 60
-    device._send_command.assert_called_with(relay_switch.COMMAND_POSITION.format(60))
+    device._send_command.assert_called_with(relay_switch.COMMAND_POSITION.format(f"{60:02X}"))
 
 
 def test_2pm_position_property():
