@@ -22,6 +22,7 @@ from .const import (
     HumidifierWaterLevel,
     LockStatus,
     SmartThermostatRadiatorMode,
+    StandingFanMode,
     StripLightColorMode,
     SwitchbotAccountConnectionError,
     SwitchbotApiError,
@@ -43,7 +44,7 @@ from .devices.device import (
     fetch_cloud_devices,
 )
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
-from .devices.fan import SwitchbotFan
+from .devices.fan import SwitchbotFan, SwitchbotStandingFan
 from .devices.humidifier import SwitchbotHumidifier
 from .devices.keypad_vision import SwitchbotKeypadVision
 from .devices.light_strip import (
@@ -79,6 +80,7 @@ __all__ = [
     "HumidifierWaterLevel",
     "LockStatus",
     "SmartThermostatRadiatorMode",
+    "StandingFanMode",
     "StripLightColorMode",
     "SwitchBotAdvertisement",
     "Switchbot",
@@ -97,6 +99,7 @@ __all__ = [
     "SwitchbotEncryptedDevice",
     "SwitchbotEvaporativeHumidifier",
     "SwitchbotFan",
+    "SwitchbotStandingFan",
     "SwitchbotGarageDoorOpener",
     "SwitchbotHumidifier",
     "SwitchbotKeypadVision",

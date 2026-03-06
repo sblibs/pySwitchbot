@@ -791,6 +791,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_wolock_pro,
         "manufacturer_id": 2409,
     },
+    b"\x00\x11\x07\x60": {
+        "modelName": SwitchbotModel.STANDING_FAN,
+        "modelFriendlyName": "Standing Fan",
+        "func": process_fan,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\x07\x60": {
+        "modelName": SwitchbotModel.STANDING_FAN,
+        "modelFriendlyName": "Standing Fan",
+        "func": process_fan,
+        "manufacturer_id": 2409,
+    },
 }
 
 _SWITCHBOT_MODEL_TO_CHAR: defaultdict[SwitchbotModel, list[str | bytes]] = defaultdict(
