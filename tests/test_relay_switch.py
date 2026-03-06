@@ -560,35 +560,35 @@ async def test_2pm_stop():
 
 
 @pytest.mark.asyncio
-async def test_2pm_set_position_opening():
-    """Test set_position moves to a higher position (opening)."""
+async def test_2pm_set_position_closing():
+    """Test set_position to a higher device position (closing in HA terms)."""
     device = create_2pm_device_with_position(position=30)
     await device.set_position(80)
     device._send_command.assert_called_with(
         relay_switch.COMMAND_POSITION.format(f"{80:02X}")
-    )
-    assert device.is_opening() is True
-    assert device.is_closing() is False
-
-
-@pytest.mark.asyncio
-async def test_2pm_set_position_closing():
-    """Test set_position moves to a lower position (closing)."""
-    device = create_2pm_device_with_position(position=80)
-    await device.set_position(20)
-    device._send_command.assert_called_with(
-        relay_switch.COMMAND_POSITION.format(f"{20:02X}")
     )
     assert device.is_opening() is False
     assert device.is_closing() is True
 
 
 @pytest.mark.asyncio
-async def test_2pm_set_position_reverse():
-    """Test set_position with reverse=True inverts the position value."""
+async def test_2pm_set_position_opening():
+    """Test set_position to a lower device position (opening in HA terms)."""
+    device = create_2pm_device_with_position(position=80)
+    await device.set_position(20)
+    device._send_command.assert_called_with(
+        relay_switch.COMMAND_POSITION.format(f"{20:02X}")
+    )
+    assert device.is_opening() is True
+    assert device.is_closing() is False
+
+
+@pytest.mark.asyncio
+async def test_2pm_set_position_passthrough():
+    """Test set_position sends position directly without transformation."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device = relay_switch.SwitchbotRelaySwitch2PM(
-        ble_device, "ff", "ffffffffffffffffffffffffffffffff", reverse=True
+        ble_device, "ff", "ffffffffffffffffffffffffffffffff"
     )
     device.update_from_advertisement(
         make_advertisement_data(
@@ -620,9 +620,9 @@ async def test_2pm_set_position_reverse():
     device.update = AsyncMock()
 
     await device.set_position(40)
-    # reverse=True: actual position sent = 100 - 40 = 60
+    # position sent directly as-is
     device._send_command.assert_called_with(
-        relay_switch.COMMAND_POSITION.format(f"{60:02X}")
+        relay_switch.COMMAND_POSITION.format(f"{40:02X}")
     )
 
 

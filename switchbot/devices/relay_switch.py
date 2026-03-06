@@ -273,6 +273,19 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch, SwitchbotBaseCover):
         """Return mode."""
         return self._get_adv_value("mode", channel=1)
 
+    def _update_motion_direction(
+        self, in_motion: bool, previous_position: int | None, new_position: int
+    ) -> None:
+        """Update opening/closing status based on position change."""
+        if previous_position is None:
+            return
+        if in_motion is False:
+            self._is_closing = self._is_opening = False
+            return
+        if new_position != previous_position:
+            self._is_opening = new_position > previous_position
+            self._is_closing = new_position < previous_position
+
     @update_after_operation
     async def open(self) -> bool:
         """Send open command. 0 - performance mode, 1 - unfelt mode."""
@@ -299,9 +312,11 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch, SwitchbotBaseCover):
     @update_after_operation
     async def set_position(self, position: int, mode: int = 0) -> bool:
         """Send position command (0-100) to device. 0 - performance mode, 1 - unfelt mode."""
-        position = (100 - position) if self._reverse else position
+        prev = self._get_adv_value("position", channel=1)
         self._update_motion_direction(
-            True, self._get_adv_value("position", channel=1), position
+            True,
+            (100 - prev) if prev is not None else None,
+            100 - position,
         )
         result = await self._send_command(COMMAND_POSITION.format(f"{position:02X}"))
         return self._check_command_result(result, 0, {1})
