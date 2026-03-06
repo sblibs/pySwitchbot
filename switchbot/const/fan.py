@@ -12,3 +12,15 @@ class FanMode(Enum):
     @classmethod
     def get_modes(cls) -> list[str]:
         return [mode.name.lower() for mode in cls]
+
+
+class StandingFanMode(Enum):
+    NORMAL = 1
+    NATURAL = 2
+    SLEEP = 3
+    BABY = 4
+    CUSTOM_NATURAL = 5
+
+    @classmethod
+    def get_modes(cls) -> list[str]:
+        return [mode.name.lower() for mode in cls]

@@ -6,6 +6,7 @@ from bleak.backends.device import BLEDevice
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
 from switchbot.const.fan import FanMode
 from switchbot.devices import fan
+from switchbot.devices.fan import SwitchbotStandingFan
 
 from .test_adv_parser import generate_ble_device
 
@@ -175,3 +176,37 @@ async def test_turn_off():
 
 def test_get_modes():
     assert FanMode.get_modes() == ["normal", "natural", "sleep", "baby"]
+
+
+def test_standing_fan_inherits_from_switchbot_fan():
+    assert issubclass(SwitchbotStandingFan, fan.SwitchbotFan)
+
+
+def test_standing_fan_instantiation():
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    standing_fan = SwitchbotStandingFan(ble_device, model=SwitchbotModel.STANDING_FAN)
+    assert standing_fan is not None
+
+
+@pytest.mark.asyncio
+async def test_standing_fan_turn_on():
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    standing_fan = SwitchbotStandingFan(ble_device, model=SwitchbotModel.STANDING_FAN)
+    standing_fan.update_from_advertisement(make_advertisement_data(ble_device, {"isOn": True}))
+    standing_fan._send_command = AsyncMock()
+    standing_fan._check_command_result = MagicMock()
+    standing_fan.update = AsyncMock()
+    await standing_fan.turn_on()
+    assert standing_fan.is_on() is True
+
+
+@pytest.mark.asyncio
+async def test_standing_fan_turn_off():
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    standing_fan = SwitchbotStandingFan(ble_device, model=SwitchbotModel.STANDING_FAN)
+    standing_fan.update_from_advertisement(make_advertisement_data(ble_device, {"isOn": False}))
+    standing_fan._send_command = AsyncMock()
+    standing_fan._check_command_result = MagicMock()
+    standing_fan.update = AsyncMock()
+    await standing_fan.turn_off()
+    assert standing_fan.is_on() is False
