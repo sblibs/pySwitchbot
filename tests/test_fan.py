@@ -181,9 +181,7 @@ def test_get_modes():
 def create_standing_fan_for_testing(init_data: dict | None = None):
     """Create a SwitchbotStandingFan instance for command testing."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    standing_fan = SwitchbotStandingFan(
-        ble_device, model=SwitchbotModel.STANDING_FAN
-    )
+    standing_fan = SwitchbotStandingFan(ble_device, model=SwitchbotModel.STANDING_FAN)
     standing_fan.update_from_advertisement(
         make_advertisement_data(ble_device, init_data)
     )
@@ -243,9 +241,7 @@ async def test_standing_fan_set_preset_mode(mode):
     ("basic_info", "firmware_info", "result"),
     [
         (
-            bytearray(
-                b"\x01\x02W\x82g\xf5\xde4\x01=dPP\x03\x14P\x00\x00\x00\x00"
-            ),
+            bytearray(b"\x01\x02W\x82g\xf5\xde4\x01=dPP\x03\x14P\x00\x00\x00\x00"),
             bytearray(b"\x01W\x0b\x17\x01"),
             {
                 "battery": 87,
@@ -259,9 +255,7 @@ async def test_standing_fan_set_preset_mode(mode):
             },
         ),
         (
-            bytearray(
-                b"\x01\x02U\xc2g\xf5\xde4\x04+dPP\x03\x14P\x00\x00\x00\x00"
-            ),
+            bytearray(b"\x01\x02U\xc2g\xf5\xde4\x04+dPP\x03\x14P\x00\x00\x00\x00"),
             bytearray(b"\x01U\x0b\x17\x01"),
             {
                 "battery": 85,
@@ -275,9 +269,7 @@ async def test_standing_fan_set_preset_mode(mode):
             },
         ),
         (
-            bytearray(
-                b"\x01\x02U\xe2g\xf5\xde4\x05+dPP\x03\x14P\x00\x00\x00\x00"
-            ),
+            bytearray(b"\x01\x02U\xe2g\xf5\xde4\x05+dPP\x03\x14P\x00\x00\x00\x00"),
             bytearray(b"\x01U\x0b\x17\x01"),
             {
                 "battery": 85,
