@@ -359,18 +359,42 @@ def test_standing_fan_get_night_light_state():
 
 
 @pytest.mark.asyncio
-async def test_standing_fan_set_horizontal_oscillation():
-    standing_fan = create_standing_fan_for_testing({"oscillating": True})
-    await standing_fan.set_horizontal_oscillation(True)
+@pytest.mark.parametrize(
+    ("oscillating", "expected_cmd"),
+    [
+        (True, fan.COMMAND_START_HORIZONTAL_OSCILLATION),
+        (False, fan.COMMAND_STOP_HORIZONTAL_OSCILLATION),
+    ],
+)
+async def test_standing_fan_set_horizontal_oscillation(oscillating, expected_cmd):
+    standing_fan = create_standing_fan_for_testing({"oscillating": oscillating})
+    await standing_fan.set_horizontal_oscillation(oscillating)
     standing_fan._send_command.assert_called_once()
     cmd = standing_fan._send_command.call_args[0][0]
-    assert cmd == fan.COMMAND_START_HORIZONTAL_OSCILLATION
+    assert cmd == expected_cmd
 
 
 @pytest.mark.asyncio
-async def test_standing_fan_set_vertical_oscillation():
-    standing_fan = create_standing_fan_for_testing({"oscillating": True})
-    await standing_fan.set_vertical_oscillation(True)
+@pytest.mark.parametrize(
+    ("oscillating", "expected_cmd"),
+    [
+        (True, fan.COMMAND_START_VERTICAL_OSCILLATION),
+        (False, fan.COMMAND_STOP_VERTICAL_OSCILLATION),
+    ],
+)
+async def test_standing_fan_set_vertical_oscillation(oscillating, expected_cmd):
+    standing_fan = create_standing_fan_for_testing({"oscillating": oscillating})
+    await standing_fan.set_vertical_oscillation(oscillating)
     standing_fan._send_command.assert_called_once()
     cmd = standing_fan._send_command.call_args[0][0]
-    assert cmd == fan.COMMAND_START_VERTICAL_OSCILLATION
+    assert cmd == expected_cmd
+
+
+def test_standing_fan_get_horizontal_oscillating_state():
+    standing_fan = create_standing_fan_for_testing({"oscillating_horizontal": True})
+    assert standing_fan.get_horizontal_oscillating_state() is True
+
+
+def test_standing_fan_get_vertical_oscillating_state():
+    standing_fan = create_standing_fan_for_testing({"oscillating_vertical": True})
+    assert standing_fan.get_vertical_oscillating_state() is True
