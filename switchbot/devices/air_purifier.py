@@ -211,8 +211,7 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
     @update_after_operation
     async def set_brightness(self, brightness: int) -> bool:
         """Set brightness."""
-        if not 0 <= brightness <= 100:
-            raise ValueError("Brightness must be between 0 and 100")
+        self._validate_brightness(brightness)
         r, g, b = (
             self._state.get("r", 0),
             self._state.get("g", 0),
@@ -224,8 +223,17 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
 
     @update_after_operation
     async def set_rgb(self, brightness: int, r: int, g: int, b: int) -> bool:
-        """Set rgb."""
-        return await super().set_rgb(brightness, r, g, b, reverse=True)
+        """
+        Set rgb.
+
+        Note: byte order is reversed from base class (RGB+brightness
+        instead of brightness+RGB).
+        """
+        self._validate_brightness(brightness)
+        self._validate_rgb(r, g, b)
+        hex_data = f"{r:02X}{g:02X}{b:02X}{brightness:02X}"
+        result = await self._send_command(self._set_rgb_command.format(hex_data))
+        return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def turn_led_on(self) -> bool:
@@ -271,7 +279,7 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
-    async def close_wireless_charging(self) -> bool:  # type: ignore[override]
+    async def close_wireless_charging(self) -> bool:
         """Disable the wireless charging pad (table models only)."""
         self._check_wireless_charging_supported()
         result = await self._send_command(self._close_wireless_charging_command)
