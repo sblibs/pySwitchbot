@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import struct
 from typing import Any, ClassVar
 
 from bleak.backends.device import BLEDevice
@@ -12,6 +11,7 @@ from ..adv_parsers.air_purifier import get_air_purifier_mode
 from ..const import SwitchbotModel
 from ..const.air_purifier import AirPurifierMode, AirQualityLevel
 from ..const.light import ColorMode
+from ..helpers import _UNPACK_UINT16_BE
 from .base_light import SwitchbotSequenceBaseLight
 from .device import (
     SwitchbotEncryptedDevice,
@@ -144,7 +144,7 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         _aqi_level = (_data[4] & 0b00000110) >> 1
         aqi_level = AirQualityLevel(_aqi_level).name.lower()
         speed = _data[6] & 0b01111111
-        pm25 = struct.unpack(">H", _data[12:14])[0] & 0xFFF
+        pm25 = _UNPACK_UINT16_BE(_data, 12)[0] & 0xFFF
         firmware = _data[15] / 10.0
         mode = get_air_purifier_mode(_mode, speed)
         self._state["r"] = led_settings[2]
