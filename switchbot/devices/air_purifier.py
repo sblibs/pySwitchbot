@@ -172,18 +172,6 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
             return data | {"pm25": pm25}
         return data
 
-    async def _get_basic_info(self) -> bytes | None:
-        """Return basic info of device."""
-        _data = await self._send_command(
-            key=DEVICE_GET_BASIC_SETTINGS_KEY, retry=self._retry_count
-        )
-
-        if _data in (b"\x07", b"\x00"):
-            _LOGGER.error("Unsuccessful, please try again")
-            return None
-
-        return _data
-
     @update_after_operation
     async def set_preset_mode(self, preset_mode: str) -> bool:
         """Send command to set air purifier preset_mode."""
