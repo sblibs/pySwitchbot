@@ -248,7 +248,11 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
 
     @update_after_operation
     async def close_light_sensitive_switch(self) -> bool:
-        """Close the light sensitive switch."""
+        """Close the light sensitive switch.
+        
+        Since the current protocol does not support obtaining the LED status, 
+        sending an on or off command will turn off the light sensitive switch.
+        """
         result = await self._send_command(self._turn_led_on_command)
         return self._check_command_result(result, 0, {1})
 
