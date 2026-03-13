@@ -38,7 +38,7 @@ def test_lock_init(model: str):
 @pytest.mark.parametrize(
     "model",
     [
-        SwitchbotModel.AIR_PURIFIER,
+        SwitchbotModel.AIR_PURIFIER_JP,
     ],
 )
 def test_lock_init_with_invalid_model(model: str):
