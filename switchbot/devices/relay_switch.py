@@ -4,6 +4,8 @@ from typing import Any
 
 from bleak.backends.device import BLEDevice
 
+from switchbot.devices.base_cover import SwitchbotBaseCover
+
 from ..const import SwitchbotModel
 from ..helpers import parse_power_data, parse_uint24_be
 from ..models import SwitchBotAdvertisement
@@ -55,6 +57,12 @@ MULTI_CHANNEL_COMMANDS_GET_VOLTAGE_AND_CURRENT = {
     }
 }
 
+# roller mode command
+COMMAND_OPEN = f"{COMMAND_CONTROL}0D040001"
+COMMAND_CLOSE = f"{COMMAND_CONTROL}0D046401"
+COMMAND_POSITION = f"{COMMAND_CONTROL}0D04{{}}01"
+COMMAND_STOP = f"{COMMAND_CONTROL}0D00"
+
 
 class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot relay switch 1pm."""
@@ -94,10 +102,12 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     def _parse_common_data(self, raw_data: bytes) -> dict[str, Any]:
         """Parse common data from raw bytes."""
         return {
-            "sequence_number": raw_data[1],
             "isOn": bool(raw_data[2] & SWITCH1_ON_MASK),
             "firmware": raw_data[16] / 10.0,
             "channel2_isOn": bool(raw_data[2] & SWITCH2_ON_MASK),
+            "calibration": bool(raw_data[3] & 0b01000000),
+            "mode": raw_data[4] & 0b00001111,
+            "position": raw_data[9] >> 1,
         }
 
     def _parse_user_data(self, raw_data: bytes) -> dict[str, Any]:
@@ -171,7 +181,9 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             return None
 
         _LOGGER.debug(
-            "on-off hex: %s, channel1_hex_data: %s", _data.hex(), _channel1_data.hex()
+            "get_basic_info raw: %s, channel1 raw: %s",
+            _data.hex(),
+            _channel1_data.hex(),
         )
 
         common_data = self._parse_common_data(_data)
@@ -229,24 +241,72 @@ class SwitchbotGarageDoorOpener(SwitchbotRelaySwitch):
         super().__init__(device, key_id, encryption_key, interface, model, **kwargs)
 
 
-class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch):
+class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch, SwitchbotBaseCover):
     """Representation of a Switchbot relay switch 2pm."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         device: BLEDevice,
         key_id: str,
         encryption_key: str,
         interface: int = 0,
         model: SwitchbotModel = SwitchbotModel.RELAY_SWITCH_2PM,
+        reverse: bool = False,
         **kwargs: Any,
     ) -> None:
-        super().__init__(device, key_id, encryption_key, interface, model, **kwargs)
+        super().__init__(
+            device, key_id, encryption_key, interface, model, reverse=reverse, **kwargs
+        )
         self._channel = 2
 
     @property
     def channel(self) -> int:
         return self._channel
+
+    @property
+    def position(self) -> int | None:
+        """Return position."""
+        return self._get_adv_value("position", channel=1)
+
+    @property
+    def mode(self) -> int | None:
+        """Return mode."""
+        return self._get_adv_value("mode", channel=1)
+
+    @update_after_operation
+    async def open(self) -> bool:
+        """Send open command. 0 - performance mode, 1 - unfelt mode."""
+        self._is_opening = True
+        self._is_closing = False
+        result = await self._send_command(COMMAND_OPEN)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def close(self) -> bool:
+        """Send close command. 0 - performance mode, 1 - unfelt mode."""
+        self._is_closing = True
+        self._is_opening = False
+        result = await self._send_command(COMMAND_CLOSE)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def stop(self) -> bool:
+        """Send stop command to device."""
+        self._is_opening = self._is_closing = False
+        result = await self._send_command(COMMAND_STOP)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def set_position(self, position: int, mode: int = 0) -> bool:
+        """Send position command (0-100) to device. 0 - performance mode, 1 - unfelt mode."""
+        prev = self._get_adv_value("position", channel=1)
+        self._update_motion_direction(
+            True,
+            (100 - prev) if prev is not None else None,
+            100 - position,
+        )
+        result = await self._send_command(COMMAND_POSITION.format(f"{position:02X}"))
+        return self._check_command_result(result, 0, {1})
 
     def get_parsed_data(self, channel: int | None = None) -> dict[str, Any]:
         """Return parsed device data, optionally for a specific channel."""
@@ -257,10 +317,18 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch):
         current_time_hex, current_day_start_time_hex = (
             self.get_current_time_and_start_time()
         )
-        if not (common_data := await super().get_basic_info()):
+        if not (_basic_raw := await self._get_basic_info(COMMAND_GET_BASIC_INFO)):
             return None
         if not (
-            _channel2_data := await self._get_basic_info(
+            _channel1_raw := await self._get_basic_info(
+                COMMAND_GET_CHANNEL1_INFO.format(
+                    current_time_hex, current_day_start_time_hex
+                )
+            )
+        ):
+            return None
+        if not (
+            _channel2_raw := await self._get_basic_info(
                 COMMAND_GET_CHANNEL2_INFO.format(
                     current_time_hex, current_day_start_time_hex
                 )
@@ -268,18 +336,35 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch):
         ):
             return None
 
-        _LOGGER.debug("channel2_hex_data: %s", _channel2_data.hex())
+        _LOGGER.debug(
+            "get_basic_info 2PM basic_raw: %s, channel1_raw: %s, channel2_raw: %s",
+            _basic_raw.hex(),
+            _channel1_raw.hex(),
+            _channel2_raw.hex(),
+        )
 
-        channel2_data = self._parse_user_data(_channel2_data)
-        channel2_data["isOn"] = common_data["channel2_isOn"]
+        parsed = self._parse_common_data(_basic_raw)
+
+        channel1_data = self._parse_user_data(_channel1_raw)
+        channel1_data["isOn"] = parsed["isOn"]
+        channel1_data["firmware"] = parsed["firmware"]
+        channel1_data["calibration"] = parsed["calibration"]
+        channel1_data["mode"] = parsed["mode"]
+        channel1_data["position"] = parsed["position"]
+
+        if not channel1_data["isOn"]:
+            self._reset_power_data(channel1_data)
+
+        channel2_data = self._parse_user_data(_channel2_raw)
+        channel2_data["isOn"] = parsed["channel2_isOn"]
 
         if not channel2_data["isOn"]:
             self._reset_power_data(channel2_data)
 
         _LOGGER.debug(
-            "channel1_data: %s, channel2_data: %s", common_data, channel2_data
+            "channel1_data: %s, channel2_data: %s", channel1_data, channel2_data
         )
-        return {1: common_data, 2: channel2_data}
+        return {1: channel1_data, 2: channel2_data}
 
     @update_after_operation
     async def turn_on(self, channel: int) -> bool:
@@ -312,3 +397,17 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch):
     def switch_mode(self, channel: int) -> bool | None:
         """Return true or false from cache."""
         return self._get_adv_value("switchMode", channel)
+
+    def _update_motion_direction(
+        self, in_motion: bool, previous_position: int | None, new_position: int
+    ) -> None:
+        """Update opening/closing status based on movement."""
+        if previous_position is None:
+            return
+        if in_motion is False:
+            self._is_closing = self._is_opening = False
+            return
+
+        if new_position != previous_position:
+            self._is_opening = new_position > previous_position
+            self._is_closing = new_position < previous_position
