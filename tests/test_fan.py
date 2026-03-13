@@ -4,8 +4,9 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
-from switchbot.const.fan import FanMode
+from switchbot.const.fan import FanMode, StandingFanMode
 from switchbot.devices import fan
+from switchbot.devices.fan import SwitchbotStandingFan
 
 from .test_adv_parser import generate_ble_device
 
@@ -175,3 +176,225 @@ async def test_turn_off():
 
 def test_get_modes():
     assert FanMode.get_modes() == ["normal", "natural", "sleep", "baby"]
+
+
+def create_standing_fan_for_testing(init_data: dict | None = None):
+    """Create a SwitchbotStandingFan instance for command testing."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    standing_fan = SwitchbotStandingFan(ble_device, model=SwitchbotModel.STANDING_FAN)
+    standing_fan.update_from_advertisement(
+        make_advertisement_data(ble_device, init_data)
+    )
+    standing_fan._send_command = AsyncMock()
+    standing_fan._check_command_result = MagicMock()
+    standing_fan.update = AsyncMock()
+    return standing_fan
+
+
+def test_standing_fan_inherits_from_switchbot_fan():
+    assert issubclass(SwitchbotStandingFan, fan.SwitchbotFan)
+
+
+def test_standing_fan_instantiation():
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    standing_fan = SwitchbotStandingFan(ble_device, model=SwitchbotModel.STANDING_FAN)
+    assert standing_fan is not None
+
+
+def test_standing_fan_get_modes():
+    assert StandingFanMode.get_modes() == [
+        "normal",
+        "natural",
+        "sleep",
+        "baby",
+        "custom_natural",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_standing_fan_turn_on():
+    standing_fan = create_standing_fan_for_testing({"isOn": True})
+    await standing_fan.turn_on()
+    assert standing_fan.is_on() is True
+
+
+@pytest.mark.asyncio
+async def test_standing_fan_turn_off():
+    standing_fan = create_standing_fan_for_testing({"isOn": False})
+    await standing_fan.turn_off()
+    assert standing_fan.is_on() is False
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "mode",
+    ["normal", "natural", "sleep", "baby", "custom_natural"],
+)
+async def test_standing_fan_set_preset_mode(mode):
+    standing_fan = create_standing_fan_for_testing({"mode": mode})
+    await standing_fan.set_preset_mode(mode)
+    assert standing_fan.get_current_mode() == mode
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("basic_info", "firmware_info", "result"),
+    [
+        (
+            bytearray(b"\x01\x02W\x82g\xf5\xde4\x01=dPP\x03\x14P\x00\x00\x00\x00"),
+            bytearray(b"\x01W\x0b\x17\x01"),
+            {
+                "battery": 87,
+                "isOn": True,
+                "oscillating": False,
+                "oscillating_horizontal": False,
+                "oscillating_vertical": False,
+                "mode": "normal",
+                "speed": 61,
+                "firmware": 1.1,
+            },
+        ),
+        (
+            bytearray(b"\x01\x02U\xc2g\xf5\xde4\x04+dPP\x03\x14P\x00\x00\x00\x00"),
+            bytearray(b"\x01U\x0b\x17\x01"),
+            {
+                "battery": 85,
+                "isOn": True,
+                "oscillating": True,
+                "oscillating_horizontal": True,
+                "oscillating_vertical": False,
+                "mode": "baby",
+                "speed": 43,
+                "firmware": 1.1,
+            },
+        ),
+        (
+            bytearray(b"\x01\x02U\xe2g\xf5\xde4\x05+dPP\x03\x14P\x00\x00\x00\x00"),
+            bytearray(b"\x01U\x0b\x17\x01"),
+            {
+                "battery": 85,
+                "isOn": True,
+                "oscillating": True,
+                "oscillating_horizontal": True,
+                "oscillating_vertical": True,
+                "mode": "custom_natural",
+                "speed": 43,
+                "firmware": 1.1,
+            },
+        ),
+    ],
+)
+async def test_standing_fan_get_basic_info(basic_info, firmware_info, result):
+    standing_fan = create_standing_fan_for_testing()
+
+    async def mock_get_basic_info(arg):
+        if arg == fan.COMMAND_GET_BASIC_INFO:
+            return basic_info
+        if arg == fan.DEVICE_GET_BASIC_SETTINGS_KEY:
+            return firmware_info
+        return None
+
+    standing_fan._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
+
+    info = await standing_fan.get_basic_info()
+    assert info == result
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("basic_info", "firmware_info"),
+    [(True, False), (False, True), (False, False)],
+)
+async def test_standing_fan_get_basic_info_returns_none(basic_info, firmware_info):
+    standing_fan = create_standing_fan_for_testing()
+
+    async def mock_get_basic_info(arg):
+        if arg == fan.COMMAND_GET_BASIC_INFO:
+            return basic_info
+        if arg == fan.DEVICE_GET_BASIC_SETTINGS_KEY:
+            return firmware_info
+        return None
+
+    standing_fan._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
+
+    assert await standing_fan.get_basic_info() is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("angle", [30, 60, 90])
+async def test_standing_fan_set_horizontal_oscillation_angle(angle):
+    standing_fan = create_standing_fan_for_testing()
+    await standing_fan.set_horizontal_oscillation_angle(angle)
+    standing_fan._send_command.assert_called_once()
+    cmd = standing_fan._send_command.call_args[0][0]
+    assert cmd == f"570f410202{angle:02X}FFFFFF"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("angle", [30, 60, 90])
+async def test_standing_fan_set_vertical_oscillation_angle(angle):
+    standing_fan = create_standing_fan_for_testing()
+    await standing_fan.set_vertical_oscillation_angle(angle)
+    standing_fan._send_command.assert_called_once()
+    cmd = standing_fan._send_command.call_args[0][0]
+    assert cmd == f"570f410202FFFF{angle:02X}FF"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("state", "label"),
+    [(1, "level_1"), (2, "level_2"), (3, "off")],
+)
+async def test_standing_fan_set_night_light(state, label):
+    standing_fan = create_standing_fan_for_testing()
+    await standing_fan.set_night_light(state)
+    standing_fan._send_command.assert_called_once()
+    cmd = standing_fan._send_command.call_args[0][0]
+    assert cmd == f"570f410502{state:02X}FFFF"
+
+
+def test_standing_fan_get_night_light_state():
+    standing_fan = create_standing_fan_for_testing({"nightLight": 1})
+    assert standing_fan.get_night_light_state() == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("oscillating", "expected_cmd"),
+    [
+        (True, fan.COMMAND_START_HORIZONTAL_OSCILLATION),
+        (False, fan.COMMAND_STOP_HORIZONTAL_OSCILLATION),
+    ],
+)
+async def test_standing_fan_set_horizontal_oscillation(oscillating, expected_cmd):
+    standing_fan = create_standing_fan_for_testing({"oscillating": oscillating})
+    await standing_fan.set_horizontal_oscillation(oscillating)
+    standing_fan._send_command.assert_called_once()
+    cmd = standing_fan._send_command.call_args[0][0]
+    assert cmd == expected_cmd
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("oscillating", "expected_cmd"),
+    [
+        (True, fan.COMMAND_START_VERTICAL_OSCILLATION),
+        (False, fan.COMMAND_STOP_VERTICAL_OSCILLATION),
+    ],
+)
+async def test_standing_fan_set_vertical_oscillation(oscillating, expected_cmd):
+    standing_fan = create_standing_fan_for_testing({"oscillating": oscillating})
+    await standing_fan.set_vertical_oscillation(oscillating)
+    standing_fan._send_command.assert_called_once()
+    cmd = standing_fan._send_command.call_args[0][0]
+    assert cmd == expected_cmd
+
+
+def test_standing_fan_get_horizontal_oscillating_state():
+    standing_fan = create_standing_fan_for_testing({"oscillating_horizontal": True})
+    assert standing_fan.get_horizontal_oscillating_state() is True
+
+
+def test_standing_fan_get_vertical_oscillating_state():
+    standing_fan = create_standing_fan_for_testing({"oscillating_vertical": True})
+    assert standing_fan.get_vertical_oscillating_state() is True
