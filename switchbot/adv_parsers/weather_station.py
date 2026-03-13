@@ -10,7 +10,8 @@ from ..helpers import celsius_to_fahrenheit
 def process_weather_station(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, Any]:
-    """Process Weather Station advertisement data.
+    """
+    Process Weather Station advertisement data.
 
     Manufacturer data layout (mfr_id=2409, after company ID stripped by bleak):
         Byte 0-5: MAC address
