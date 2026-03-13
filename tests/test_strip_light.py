@@ -10,6 +10,7 @@ from switchbot.devices.base_light import SwitchbotBaseLight
 from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperationError
 
 from . import (
+    CANDLE_WARMER_LAMP_INFO,
     FLOOR_LAMP_INFO,
     RGBICWW_FLOOR_LAMP_INFO,
     RGBICWW_STRIP_LIGHT_INFO,
@@ -27,6 +28,19 @@ from .test_adv_parser import AdvTestCase, generate_ble_device
     ]
 )
 def device_case(request):
+    return request.param
+
+
+@pytest.fixture(
+    params=[
+        (STRIP_LIGHT_3_INFO, light_strip.SwitchbotStripLight3),
+        (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
+        (CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp),
+        (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
+        (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
+    ]
+)
+def device_with_candle_warmer_lamp(request):
     return request.param
 
 
@@ -115,12 +129,32 @@ async def test_default_info(device_case, expected_effects):
 
 
 @pytest.mark.asyncio
+async def test_candle_warmer_lamp_info():
+    """Test default initialization of the candle warmer lamp."""
+    adv_info, dev_cls = CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp
+    device = create_device_for_command_testing(adv_info, dev_cls)
+    assert device.rgb is None
+    assert device.is_on() is True
+    assert device.on is True
+    assert device.color_mode == ColorMode.BRIGHTNESS
+    assert device.color_modes == {
+        ColorMode.BRIGHTNESS,
+    }
+    assert device.brightness == adv_info.data["brightness"]
+    # Check that effect list contains expected lowercase effect names
+    effect_list = device.get_effect_list
+    assert effect_list is None
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("basic_info", "version_info"), [(True, False), (False, True), (False, False)]
 )
-async def test_get_basic_info_returns_none(basic_info, version_info, device_case):
+async def test_get_basic_info_returns_none(
+    basic_info, version_info, device_with_candle_warmer_lamp
+):
     """Test that get_basic_info returns None if no data is available."""
-    adv_info, dev_cls = device_case
+    adv_info, dev_cls = device_with_candle_warmer_lamp
     device = create_device_for_command_testing(adv_info, dev_cls)
 
     device._send_command = AsyncMock(side_effect=[version_info, basic_info])
@@ -306,14 +340,16 @@ async def test_set_effect_normalizes_case(device_case):
 
 @pytest.mark.asyncio
 @patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)
-async def test_verify_encryption_key(mock_parent_verify, device_case):
+async def test_verify_encryption_key(
+    mock_parent_verify, device_with_candle_warmer_lamp
+):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     key_id = "ff"
     encryption_key = "ffffffffffffffffffffffffffffffff"
 
     mock_parent_verify.return_value = True
 
-    adv_info, dev_cls = device_case
+    adv_info, dev_cls = device_with_candle_warmer_lamp
 
     result = await dev_cls.verify_encryption_key(
         device=ble_device,

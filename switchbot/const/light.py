@@ -6,6 +6,7 @@ class ColorMode(Enum):
     COLOR_TEMP = 1
     RGB = 2
     EFFECT = 3
+    BRIGHTNESS = 11
 
 
 class StripLightColorMode(Enum):
