@@ -58,7 +58,18 @@ async def test_open():
     assert roller_shade_device.is_opening() is True
     assert roller_shade_device.is_closing() is False
     roller_shade_device._send_multiple_commands.assert_awaited_once_with(
-        roller_shade.OPEN_KEYS
+        [roller_shade.OPEN_KEYS[0], f"{roller_shade.OPEN_KEYS[1]}0000"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_open_quietdrift():
+    roller_shade_device = create_device_for_command_testing()
+    await roller_shade_device.open(mode=1)
+    assert roller_shade_device.is_opening() is True
+    assert roller_shade_device.is_closing() is False
+    roller_shade_device._send_multiple_commands.assert_awaited_once_with(
+        [roller_shade.OPEN_KEYS[0], f"{roller_shade.OPEN_KEYS[1]}0100"]
     )
 
 
@@ -69,7 +80,18 @@ async def test_close():
     assert roller_shade_device.is_opening() is False
     assert roller_shade_device.is_closing() is True
     roller_shade_device._send_multiple_commands.assert_awaited_once_with(
-        roller_shade.CLOSE_KEYS
+        [roller_shade.CLOSE_KEYS[0], f"{roller_shade.CLOSE_KEYS[1]}0064"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_close_quietdrift():
+    roller_shade_device = create_device_for_command_testing()
+    await roller_shade_device.close(mode=1)
+    assert roller_shade_device.is_opening() is False
+    assert roller_shade_device.is_closing() is True
+    roller_shade_device._send_multiple_commands.assert_awaited_once_with(
+        [roller_shade.CLOSE_KEYS[0], f"{roller_shade.CLOSE_KEYS[1]}0164"]
     )
 
 
@@ -202,6 +224,18 @@ async def test_set_position_closing():
     assert curtain_device.is_opening() is False
     assert curtain_device.is_closing() is True
     curtain_device._send_multiple_commands.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_set_position_quietdrift():
+    curtain_device = create_device_for_command_testing(reverse_mode=True)
+    await curtain_device.set_position(50, mode=1)
+    curtain_device._send_multiple_commands.assert_awaited_once_with(
+        [
+            f"{roller_shade.POSITION_KEYS[0]}32",
+            f"{roller_shade.POSITION_KEYS[1]}0132",
+        ]
+    )
 
 
 def test_get_position():
