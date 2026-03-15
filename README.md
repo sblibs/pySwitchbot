@@ -1,6 +1,6 @@
 # pySwitchbot [![codecov](https://codecov.io/gh/sblibs/pySwitchbot/graph/badge.svg?token=TI027U5ISQ)](https://codecov.io/gh/sblibs/pySwitchbot)
 
-Library to control Switchbot IoT devices https://www.switch-bot.com/bot
+Library to control Switchbot IoT devices https://www.switch-bot.com/
 
 ## Obtaining encryption key for Switchbot Locks
 
