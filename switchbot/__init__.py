@@ -48,6 +48,7 @@ from .devices.fan import SwitchbotFan
 from .devices.humidifier import SwitchbotHumidifier
 from .devices.keypad_vision import SwitchbotKeypadVision
 from .devices.light_strip import (
+    SwitchbotCandleWarmerLamp,
     SwitchbotLightStrip,
     SwitchbotRgbicLight,
     SwitchbotStripLight3,
@@ -93,6 +94,7 @@ __all__ = [
     "SwitchbotBaseLight",
     "SwitchbotBlindTilt",
     "SwitchbotBulb",
+    "SwitchbotCandleWarmerLamp",
     "SwitchbotCeilingLight",
     "SwitchbotCurtain",
     "SwitchbotDevice",
