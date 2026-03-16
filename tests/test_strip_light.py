@@ -423,10 +423,13 @@ async def test_exception_with_wrong_model():
         (10, ColorMode.OFF),  # UNKNOWN
     ],
 )
-async def test_permanent_outdoor_light_color_mode(color_mode_value, expected_color_mode):
+async def test_permanent_outdoor_light_color_mode(
+    color_mode_value, expected_color_mode
+):
     """Test that POL correctly handles all RGBICStripLightColorMode values including EFFECT (7)."""
     device = create_device_for_command_testing(
-        PERMANENT_OUTDOOR_LIGHT_INFO, light_strip.SwitchbotPermanentOutdoorLight,
+        PERMANENT_OUTDOOR_LIGHT_INFO,
+        light_strip.SwitchbotPermanentOutdoorLight,
         init_data={"color_mode": color_mode_value},
     )
     assert device.color_mode == expected_color_mode
