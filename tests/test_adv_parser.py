@@ -3578,6 +3578,22 @@ def test_humidifer_with_empty_data() -> None:
             SwitchbotModel.RGBICWW_STRIP_LIGHT,
         ),
         AdvTestCase(
+            b'\xc0N0\xe0U\x9a\x85\x9e"\xd0\x00\x00\x00\x00\x00\x00\x12\x91\x00',
+            b"\x00\x00\x00\x00\x10\xd0\xb7",
+            {
+                "sequence_number": 133,
+                "isOn": True,
+                "brightness": 30,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 2,
+                "cw": 4753,
+            },
+            b"\x00\x10\xd0\xb7",
+            "Permanent Outdoor Light",
+            SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
+        ),
+        AdvTestCase(
             b"\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15",
             b"\x00\x00M\x00\x10\xfb\xa8",
             {
@@ -3950,6 +3966,38 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.RGBICWW_STRIP_LIGHT,
         ),
         AdvTestCase(
+            b'\xc0N0\xe0U\x9a\x85\x9e"\xd0\x00\x00\x00\x00\x00\x00\x12\x91\x00',
+            None,
+            {
+                "sequence_number": 133,
+                "isOn": True,
+                "brightness": 30,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 2,
+                "cw": 4753,
+            },
+            b"\x00\x10\xd0\xb7",
+            "Permanent Outdoor Light",
+            SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
+        ),
+        AdvTestCase(
+            b'\xc0N0\xe0U\x9a\x85\x9e"\xd0\x00\x00',
+            None,
+            {
+                "sequence_number": 133,
+                "isOn": True,
+                "brightness": 30,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 2,
+                "cw": 0,
+            },
+            b"\x00\x10\xd0\xb7",
+            "Permanent Outdoor Light",
+            SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
+        ),
+        AdvTestCase(
             b"\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15",
             None,
             {
@@ -4245,6 +4293,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
             b"\x00\x10\xd0\xb3",
             "RGBICWW Strip Light",
             SwitchbotModel.RGBICWW_STRIP_LIGHT,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x00\x00\x00\x10\xd0\xb7",
+            {},
+            b"\x00\x10\xd0\xb7",
+            "Permanent Outdoor Light",
+            SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
         ),
         AdvTestCase(
             None,

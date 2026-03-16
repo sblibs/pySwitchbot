@@ -25,6 +25,7 @@ _RGBICWW_STRIP_LIGHT_COLOR_MODE_MAP = {
     RGBICStripLightColorMode.MUSIC: ColorMode.EFFECT,
     RGBICStripLightColorMode.CONTROLLER: ColorMode.EFFECT,
     RGBICStripLightColorMode.COLOR_TEMP: ColorMode.COLOR_TEMP,
+    RGBICStripLightColorMode.EFFECT: ColorMode.EFFECT,
     RGBICStripLightColorMode.UNKNOWN: ColorMode.OFF,
 }
 LIGHT_STRIP_CONTROL_HEADER = "570F4901"
@@ -302,6 +303,47 @@ class SwitchbotStripLight3(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     def color_modes(self) -> set[ColorMode]:
         """Return the supported color modes."""
         return {ColorMode.RGB, ColorMode.COLOR_TEMP}
+
+
+class SwitchbotPermanentOutdoorLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
+    """Support for Switchbot Permanent Outdoor Light."""
+
+    _effect_dict = RGBIC_EFFECTS
+
+    def __init__(
+        self,
+        device: BLEDevice,
+        key_id: str,
+        encryption_key: str,
+        interface: int = 0,
+        model: SwitchbotModel = SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
+
+    @classmethod
+    async def verify_encryption_key(
+        cls,
+        device: BLEDevice,
+        key_id: str,
+        encryption_key: str,
+        model: SwitchbotModel = SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
+        **kwargs: Any,
+    ) -> bool:
+        return await super().verify_encryption_key(
+            device, key_id, encryption_key, model, **kwargs
+        )
+
+    @property
+    def color_modes(self) -> set[ColorMode]:
+        """Return the supported color modes."""
+        return {ColorMode.RGB, ColorMode.COLOR_TEMP}
+
+    @property
+    def color_mode(self) -> ColorMode:
+        """Return the current color mode."""
+        device_mode = RGBICStripLightColorMode(self._get_adv_value("color_mode") or 10)
+        return _RGBICWW_STRIP_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
 
 
 class SwitchbotRgbicLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
