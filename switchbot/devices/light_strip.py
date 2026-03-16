@@ -353,6 +353,7 @@ class SwitchbotCandleWarmerLamp(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         return {
             "isOn": bool(_data[1] & 0b10000000),
             "brightness": _data[2] & 0b01111111,
+            "firmware": _version_info[2] / 10.0
         }
 
 
