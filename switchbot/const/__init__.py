@@ -97,6 +97,7 @@ class SwitchbotModel(StrEnum):
     PLUG_MINI_EU = "Plug Mini (EU)"
     RGBICWW_STRIP_LIGHT = "RGBICWW Strip Light"
     RGBICWW_FLOOR_LAMP = "RGBICWW Floor Lamp"
+    PERMANENT_OUTDOOR_LIGHT = "Permanent Outdoor Light"
     K11_VACUUM = "K11+ Vacuum"
     CLIMATE_PANEL = "Climate Panel"
     SMART_THERMOSTAT_RADIATOR = "Smart Thermostat Radiator"

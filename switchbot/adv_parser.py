@@ -659,6 +659,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_rgbic_light,
         "manufacturer_id": 2409,
     },
+    b"\x00\x10\xd0\xb7": {
+        "modelName": SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
+        "modelFriendlyName": "Permanent Outdoor Light",
+        "func": process_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x10\xd0\xb7": {
+        "modelName": SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
+        "modelFriendlyName": "Permanent Outdoor Light",
+        "func": process_light,
+        "manufacturer_id": 2409,
+    },
     b"\x00\x10\xfb\xa8": {
         "modelName": SwitchbotModel.K11_VACUUM,
         "modelFriendlyName": "K11+ Vacuum",

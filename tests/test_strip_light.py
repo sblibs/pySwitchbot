@@ -11,6 +11,7 @@ from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperatio
 
 from . import (
     FLOOR_LAMP_INFO,
+    PERMANENT_OUTDOOR_LIGHT_INFO,
     RGBICWW_FLOOR_LAMP_INFO,
     RGBICWW_STRIP_LIGHT_INFO,
     STRIP_LIGHT_3_INFO,
@@ -24,6 +25,7 @@ from .test_adv_parser import AdvTestCase, generate_ble_device
         (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
         (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
         (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
+        (PERMANENT_OUTDOOR_LIGHT_INFO, light_strip.SwitchbotPermanentOutdoorLight),
     ]
 )
 def device_case(request):
@@ -38,6 +40,7 @@ def expected_effects(device_case):
         SwitchbotModel.FLOOR_LAMP: ("christmas", "halloween", "sunset"),
         SwitchbotModel.RGBICWW_STRIP_LIGHT: ("romance", "energy", "heartbeat"),
         SwitchbotModel.RGBICWW_FLOOR_LAMP: ("romance", "energy", "heartbeat"),
+        SwitchbotModel.PERMANENT_OUTDOOR_LIGHT: ("romance", "energy", "heartbeat"),
     }
     return EXPECTED[adv_info.modelName]
 
@@ -404,3 +407,26 @@ async def test_exception_with_wrong_model():
         match="Current device aa:bb:cc:dd:ee:ff does not support this functionality",
     ):
         await device.set_rgb(100, 255, 128, 64)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("color_mode_value", "expected_color_mode"),
+    [
+        (1, ColorMode.EFFECT),  # SEGMENTED
+        (2, ColorMode.RGB),
+        (3, ColorMode.EFFECT),  # SCENE
+        (4, ColorMode.EFFECT),  # MUSIC
+        (5, ColorMode.EFFECT),  # CONTROLLER
+        (6, ColorMode.COLOR_TEMP),
+        (7, ColorMode.EFFECT),  # EFFECT (RGBIC-specific)
+        (10, ColorMode.OFF),  # UNKNOWN
+    ],
+)
+async def test_permanent_outdoor_light_color_mode(color_mode_value, expected_color_mode):
+    """Test that POL correctly handles all RGBICStripLightColorMode values including EFFECT (7)."""
+    device = create_device_for_command_testing(
+        PERMANENT_OUTDOOR_LIGHT_INFO, light_strip.SwitchbotPermanentOutdoorLight,
+        init_data={"color_mode": color_mode_value},
+    )
+    assert device.color_mode == expected_color_mode
