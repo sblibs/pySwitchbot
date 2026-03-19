@@ -273,6 +273,10 @@ async def test_set_co2_thresholds():
     await device.set_co2_thresholds(lower=500, upper=1000)
     device._send_command.assert_called_with("570f6802030201f403e8")
 
+    # Error if lower >= upper
+    with pytest.raises(ValueError):
+        await device.set_co2_thresholds(lower=500, upper=400)
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -297,6 +301,20 @@ async def test_set_comfortlevel(
 
 
 @pytest.mark.asyncio
+async def test_set_alert_co2_throws_on_invalid_input():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    # Error if cold >= hot
+    with pytest.raises(ValueError):
+        await device.set_comfortlevel(16, 15, 10, 20)
+
+    # Error if dry >= wet
+    with pytest.raises(ValueError):
+        await device.set_comfortlevel(15, 16, 20, 10)
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("on", "co2_low", "co2_high", "reverse", "expected_payload"),
     [
@@ -317,6 +335,16 @@ async def test_set_alert_co2(
 
     await device.set_alert_co2(on, co2_low, co2_high, reverse)
     device._send_command.assert_called_with("570f68020301" + expected_payload)
+
+
+@pytest.mark.asyncio
+async def test_set_alert_co2_throws_on_invalid_input():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    # Error if lower >= upper
+    with pytest.raises(ValueError):
+        await device.set_alert_co2(True, 500, 400, True)
 
 
 @pytest.mark.asyncio
