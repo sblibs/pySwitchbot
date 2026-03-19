@@ -273,6 +273,11 @@ async def test_set_co2_thresholds():
     await device.set_co2_thresholds(lower=500, upper=1000)
     device._send_command.assert_called_with("570f6802030201f403e8")
 
+@pytest.mark.asyncio
+async def test_set_co2_thresholds_throws_on_invalid_input():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
     # Error if lower >= upper
     with pytest.raises(ValueError, match="Lower should be smaller than upper"):
         await device.set_co2_thresholds(lower=500, upper=400)
@@ -301,7 +306,7 @@ async def test_set_comfortlevel(
 
 
 @pytest.mark.asyncio
-async def test_set_alert_co2_throws_on_invalid_input():
+async def test_set_comfortlevel_throws_on_invalid_input():
     device = create_device()
     device._send_command.return_value = bytes.fromhex("01")
 
