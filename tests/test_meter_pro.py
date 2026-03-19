@@ -274,7 +274,7 @@ async def test_set_co2_thresholds():
     device._send_command.assert_called_with("570f6802030201f403e8")
 
     # Error if lower >= upper
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Lower should be smaller than upper"):
         await device.set_co2_thresholds(lower=500, upper=400)
 
 
@@ -306,11 +306,11 @@ async def test_set_alert_co2_throws_on_invalid_input():
     device._send_command.return_value = bytes.fromhex("01")
 
     # Error if cold >= hot
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Cold should be smaller than Hot"):
         await device.set_comfortlevel(16, 15, 10, 20)
 
     # Error if dry >= wet
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Dry should be smaller than Wet"):
         await device.set_comfortlevel(15, 16, 20, 10)
 
 
@@ -343,7 +343,7 @@ async def test_set_alert_co2_throws_on_invalid_input():
     device._send_command.return_value = bytes.fromhex("01")
 
     # Error if lower >= upper
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match= "Upper value should bigger than the lower value. Do you want to use reverse instead?"):
         await device.set_alert_co2(True, 500, 400, True)
 
 
