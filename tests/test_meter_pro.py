@@ -351,7 +351,7 @@ async def test_set_alert_co2_throws_on_invalid_input():
     # Error if lower >= upper
     with pytest.raises(
         ValueError,
-        match="Upper value should bigger than the lower value. Do you want to use reverse instead\?",
+        match=r"Upper value should bigger than the lower value. Do you want to use reverse instead\?",
     ):
         await device.set_alert_co2(True, 500, 400, True)
 
