@@ -14,11 +14,11 @@ _LOGGER = logging.getLogger(__name__)
 
 OPEN_KEYS = [
     f"{REQ_HEADER}{ROLLERSHADE_COMMAND}01{CONTROL_SOURCE}0100",
-    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}0000",
+    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}",  # +mode + "00"
 ]
 CLOSE_KEYS = [
     f"{REQ_HEADER}{ROLLERSHADE_COMMAND}01{CONTROL_SOURCE}0164",
-    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}0064",
+    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}",  # +mode + "64"
 ]
 POSITION_KEYS = [
     f"{REQ_HEADER}{ROLLERSHADE_COMMAND}01{CONTROL_SOURCE}01",
@@ -50,17 +50,21 @@ class SwitchbotRollerShade(SwitchbotBaseCover, SwitchbotSequenceDevice):
 
     @update_after_operation
     async def open(self, mode: int = 0) -> bool:
-        """Send open command. 0 - performance mode, 1 - unfelt mode."""
+        """Send open command. 0 - performance mode, 1 - quiet mode."""
         self._is_opening = True
         self._is_closing = False
-        return await self._send_multiple_commands(OPEN_KEYS)
+        return await self._send_multiple_commands(
+            [OPEN_KEYS[0], f"{OPEN_KEYS[1]}{mode:02X}00"]
+        )
 
     @update_after_operation
-    async def close(self, speed: int = 0) -> bool:
-        """Send close command. 0 - performance mode, 1 - unfelt mode."""
+    async def close(self, mode: int = 0) -> bool:
+        """Send close command. 0 - performance mode, 1 - quiet mode."""
         self._is_closing = True
         self._is_opening = False
-        return await self._send_multiple_commands(CLOSE_KEYS)
+        return await self._send_multiple_commands(
+            [CLOSE_KEYS[0], f"{CLOSE_KEYS[1]}{mode:02X}64"]
+        )
 
     @update_after_operation
     async def stop(self) -> bool:
