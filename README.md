@@ -2,6 +2,14 @@
 
 Library to control Switchbot IoT devices https://www.switch-bot.com/
 
+## Setting up the environment
+
+```shell
+python3 -m venv .venv
+source .venv/bin/activate
+pip install .
+```
+
 ## Obtaining encryption key for Switchbot Locks
 
 Using the script `scripts/get_encryption_key.py` you can manually obtain locks encryption key.
@@ -9,7 +17,7 @@ Using the script `scripts/get_encryption_key.py` you can manually obtain locks e
 Usage:
 
 ```shell
-$ python3 get_encryption_key.py MAC USERNAME
+$ python3 scripts/get_encryption_key.py MAC USERNAME
 Key ID: XX
 Encryption key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
