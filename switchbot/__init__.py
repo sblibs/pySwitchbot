@@ -49,6 +49,7 @@ from .devices.humidifier import SwitchbotHumidifier
 from .devices.keypad_vision import SwitchbotKeypadVision
 from .devices.light_strip import (
     SwitchbotLightStrip,
+    SwitchbotPermanentOutdoorLight,
     SwitchbotRgbicLight,
     SwitchbotStripLight3,
 )
@@ -108,6 +109,7 @@ __all__ = [
     "SwitchbotModel",
     "SwitchbotModel",
     "SwitchbotOperationError",
+    "SwitchbotPermanentOutdoorLight",
     "SwitchbotPlugMini",
     "SwitchbotPlugMini",
     "SwitchbotRelaySwitch",

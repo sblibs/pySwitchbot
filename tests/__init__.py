@@ -82,6 +82,24 @@ RGBICWW_FLOOR_LAMP_INFO = AdvTestCase(
 )
 
 
+PERMANENT_OUTDOOR_LIGHT_INFO = AdvTestCase(
+    b'\xc0N0\xe0U\x9a\x85\x9e"\xd0\x00\x00\x00\x00\x00\x00\x12\x91\x00',
+    b"\x00\x00\x00\x00\x10\xd0\xb7",
+    {
+        "sequence_number": 133,
+        "isOn": True,
+        "brightness": 30,
+        "delay": False,
+        "network_state": 2,
+        "color_mode": 2,
+        "cw": 4753,
+    },
+    b"\x00\x10\xd0\xb7",
+    "Permanent Outdoor Light",
+    SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
+)
+
+
 SMART_THERMOSTAT_RADIATOR_INFO = AdvTestCase(
     b"\xb0\xe9\xfe\xa2T|6\xe4\x00\x9c\xa3A\x00",
     b"\x00 d\x00\x116@",
