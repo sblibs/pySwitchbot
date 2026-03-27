@@ -10,7 +10,7 @@ from .evaporative_humidifier import (
     HumidifierMode,
     HumidifierWaterLevel,
 )
-from .fan import FanMode
+from .fan import FanMode, StandingFanMode
 from .light import (
     BulbColorMode,
     CeilingLightColorMode,
@@ -80,6 +80,7 @@ class SwitchbotModel(StrEnum):
     ROLLER_SHADE = "Roller Shade"
     HUBMINI_MATTER = "HubMini Matter"
     CIRCULATOR_FAN = "Circulator Fan"
+    STANDING_FAN = "Standing Fan"
     K20_VACUUM = "K20 Vacuum"
     S10_VACUUM = "S10 Vacuum"
     K10_VACUUM = "K10+ Vacuum"
@@ -129,6 +130,7 @@ __all__ = [
     "HumidifierWaterLevel",
     "LockStatus",
     "SmartThermostatRadiatorMode",
+    "StandingFanMode",
     "StripLightColorMode",
     "SwitchbotAccountConnectionError",
     "SwitchbotApiError",
