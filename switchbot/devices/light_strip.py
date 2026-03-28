@@ -304,6 +304,59 @@ class SwitchbotStripLight3(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         return {ColorMode.RGB, ColorMode.COLOR_TEMP}
 
 
+class SwitchbotCandleWarmerLamp(SwitchbotEncryptedDevice, SwitchbotLightStrip):
+    """Support for Switchbot Candle Warmer Lamp."""
+
+    _effect_dict = {}
+
+    def __init__(
+        self,
+        device: BLEDevice,
+        key_id: str,
+        encryption_key: str,
+        interface: int = 0,
+        model: SwitchbotModel = SwitchbotModel.CANDLE_WARMER_LAMP,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
+
+    @classmethod
+    async def verify_encryption_key(
+        cls,
+        device: BLEDevice,
+        key_id: str,
+        encryption_key: str,
+        model: SwitchbotModel = SwitchbotModel.CANDLE_WARMER_LAMP,
+        **kwargs: Any,
+    ) -> bool:
+        return await super().verify_encryption_key(
+            device, key_id, encryption_key, model, **kwargs
+        )
+
+    @property
+    def color_modes(self) -> set[ColorMode]:
+        """Return the supported color modes."""
+        return {ColorMode.BRIGHTNESS}
+
+    @property
+    def color_mode(self) -> ColorMode:
+        """Return the current color mode."""
+        return ColorMode.BRIGHTNESS
+
+    async def get_basic_info(self) -> dict[str, Any] | None:
+        """Get device basic settings."""
+        if not (
+            res := await self._get_multi_commands_results(self._get_basic_info_command)
+        ):
+            return None
+        _version_info, _data = res
+        return {
+            "isOn": bool(_data[1] & 0b10000000),
+            "brightness": _data[2] & 0b01111111,
+            "firmware": _version_info[2] / 10.0,
+        }
+
+
 class SwitchbotRgbicLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     """Support for Switchbot RGBIC lights."""
 
