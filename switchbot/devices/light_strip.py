@@ -356,7 +356,7 @@ class SwitchbotRgbicNeonLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         key_id: str,
         encryption_key: str,
         interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.RGBICWW_STRIP_LIGHT,
+        model: SwitchbotModel = SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
         **kwargs: Any,
     ) -> None:
         super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
