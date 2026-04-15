@@ -10,7 +10,11 @@ from bleak.backends.device import BLEDevice
 
 from ..const import SwitchbotModel
 from ..const.lock import LockStatus
-from .device import SwitchbotEncryptedDevice, SwitchbotOperationError, SwitchbotSequenceDevice
+from .device import (
+    SwitchbotEncryptedDevice,
+    SwitchbotOperationError,
+    SwitchbotSequenceDevice,
+)
 
 COMMAND_HEADER = "57"
 COMMAND_LOCK_INFO = {

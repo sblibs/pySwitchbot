@@ -794,6 +794,7 @@ async def test_half_lock_not_calibrated():
     with pytest.raises(SwitchbotOperationError, match="not calibrated"):
         await device.half_lock()
 
+
 @pytest.mark.asyncio
 async def test_half_lock():
     """Test half_lock method."""
@@ -806,9 +807,9 @@ async def test_half_lock():
     ):
         result = await device.half_lock()
         assert result is True
-        mock_send.assert_awaited_once_with(lock.COMMAND_HALF_LOCK[SwitchbotModel.LOCK_ULTRA])
-
-
+        mock_send.assert_awaited_once_with(
+            lock.COMMAND_HALF_LOCK[SwitchbotModel.LOCK_ULTRA]
+        )
 
 
 @pytest.mark.asyncio
