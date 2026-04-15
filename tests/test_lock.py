@@ -760,6 +760,57 @@ async def test_lock_with_update(model: str):
         assert result is True
 
 
+def test_is_half_lock_calibrated():
+    """Test is_half_lock_calibrated method."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    device._get_adv_value = Mock(return_value=True)
+    assert device.is_half_lock_calibrated() is True
+
+    device._get_adv_value = Mock(return_value=False)
+    assert device.is_half_lock_calibrated() is False
+
+
+@pytest.mark.asyncio
+async def test_half_lock_calibrated():
+    """Test half_lock succeeds when calibrated."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    device._get_adv_value = Mock(side_effect=[True, LockStatus.LOCKED])
+    with (
+        patch.object(device, "_send_command", return_value=b"\x01\x00"),
+        patch.object(device, "_enable_notifications", return_value=True),
+        patch.object(device, "_get_basic_info", return_value=b"\x01\x64\x01"),
+    ):
+        result = await device.half_lock()
+        assert result is True
+
+
+@pytest.mark.asyncio
+async def test_half_lock_not_calibrated():
+    """Test half_lock raises SwitchbotOperationError when not calibrated."""
+    from switchbot.devices.device import SwitchbotOperationError
+
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    device._get_adv_value = Mock(return_value=False)
+    with pytest.raises(SwitchbotOperationError, match="not calibrated"):
+        await device.half_lock()
+
+@pytest.mark.asyncio
+async def test_half_lock():
+    """Test half_lock method."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    device._get_adv_value = Mock(side_effect=[True, LockStatus.LOCKED])
+    with (
+        patch.object(device, "_send_command", return_value=b"\x01\x00") as mock_send,
+        patch.object(device, "_enable_notifications", return_value=True),
+        patch.object(device, "_get_basic_info", return_value=b"\x01\x64\x01"),
+    ):
+        result = await device.half_lock()
+        assert result is True
+        mock_send.assert_awaited_once_with(lock.COMMAND_HALF_LOCK[SwitchbotModel.LOCK_ULTRA])
+
+
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("model", "status"),
