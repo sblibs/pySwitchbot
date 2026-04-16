@@ -625,6 +625,7 @@ def test_update_lock_status(model: str):
                 "door_open": True,
                 "unclosed_alarm": True,
                 "unlocked_alarm": True,
+                "half_lock_calibration": False,
             },
         ),
         (
@@ -713,6 +714,7 @@ def test_parse_lock_data(model: str, data: bytes, expected: dict):
                 "door_open": False,
                 "unclosed_alarm": False,
                 "unlocked_alarm": True,  # bit 6 of byte 5
+                "half_lock_calibration": False,
             },
         ),
         (
