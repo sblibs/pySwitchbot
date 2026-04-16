@@ -263,6 +263,14 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch, SwitchbotBaseCover):
     def channel(self) -> int:
         return self._channel
 
+    def get_position(self) -> Any:
+        """Return cached position (0-100) of Relay Switch 2PM."""
+        return self._get_adv_value("position", channel=1)
+
+    async def get_extended_info_summary(self) -> dict[str, Any] | None:
+        """Get extended info summary. Not supported for Relay Switch 2PM."""
+        return None
+
     @property
     def position(self) -> int | None:
         """Return position."""

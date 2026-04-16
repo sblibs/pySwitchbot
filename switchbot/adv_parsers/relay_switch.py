@@ -63,7 +63,7 @@ def process_relay_switch_2pm(
             "sequence_number": mfr_data[6],
             "isOn": bool(mfr_data[7] & 0b01000000),
             "power": parse_power_data(mfr_data, 12),
-            "mode": mfr_data[9] & 0b11110000 >> 4,
+            "mode": (mfr_data[9] & 0b11110000) >> 4,
             "position": mfr_data[14],
             "calibration": bool(mfr_data[8] & 0b01000000),
         },
