@@ -6,6 +6,7 @@ import pytest
 from switchbot import SwitchbotModel
 from switchbot.const.lock import LockStatus
 from switchbot.devices import lock
+from switchbot.devices.device import SwitchbotOperationError
 
 from .test_adv_parser import generate_ble_device
 
@@ -787,7 +788,6 @@ async def test_half_lock_calibrated():
 @pytest.mark.asyncio
 async def test_half_lock_not_calibrated():
     """Test half_lock raises SwitchbotOperationError when not calibrated."""
-    from switchbot.devices.device import SwitchbotOperationError
 
     device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
     device._get_adv_value = Mock(return_value=False)
