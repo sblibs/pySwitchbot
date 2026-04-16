@@ -161,6 +161,23 @@ async def test_set_oscillation():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("oscillating", "expected_cmd"),
+    [
+        (True, fan.COMMAND_START_OSCILLATION),
+        (False, fan.COMMAND_STOP_OSCILLATION),
+    ],
+)
+async def test_set_oscillation_command(oscillating, expected_cmd):
+    """Verify set_oscillation sends the correct H+V command."""
+    fan_device = create_device_for_command_testing({"oscillating": oscillating})
+    await fan_device.set_oscillation(oscillating)
+    fan_device._send_command.assert_called_once()
+    cmd = fan_device._send_command.call_args[0][0]
+    assert cmd == expected_cmd
+
+
+@pytest.mark.asyncio
 async def test_turn_on():
     fan_device = create_device_for_command_testing({"isOn": True})
     await fan_device.turn_on()
