@@ -4528,6 +4528,22 @@ def test_weather_station_empty_data() -> None:
     assert result.data["data"] == {}
 
 
+def test_weather_station_short_service_data() -> None:
+    """Test Weather Station with too-short service data does not raise IndexError."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x01"
+        },
+        rssi=-67,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.WEATHER_STATION
+    )
+    assert result is not None
+    assert result.data["data"] == {}
+
+
 def test_weather_station_no_data() -> None:
     """Test Weather Station with no usable data."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")

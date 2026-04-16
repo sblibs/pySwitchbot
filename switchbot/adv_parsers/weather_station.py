@@ -28,7 +28,7 @@ def process_weather_station(
         temp_data = mfr_data[8:11]
         battery = mfr_data[7] & 0b01111111
 
-    if data:
+    if data and len(data) >= 6:
         if not temp_data:
             temp_data = data[3:6]
         if battery is None:
