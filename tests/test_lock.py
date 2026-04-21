@@ -797,6 +797,25 @@ async def test_half_lock_not_calibrated():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "model",
+    [
+        SwitchbotModel.LOCK,
+        SwitchbotModel.LOCK_LITE,
+        SwitchbotModel.LOCK_PRO,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
+        SwitchbotModel.LOCK_PRO_WIFI,
+    ],
+)
+async def test_half_lock_unsupported_model(model: str):
+    """Test half_lock raises SwitchbotOperationError on unsupported models."""
+    device = create_device_for_command_testing(model)
+    with pytest.raises(SwitchbotOperationError, match="not supported"):
+        await device.half_lock()
+
+
+@pytest.mark.asyncio
 async def test_half_lock():
     """Test half_lock method."""
     device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)

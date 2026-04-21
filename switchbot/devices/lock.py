@@ -139,8 +139,11 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     async def half_lock(self) -> bool:
         """Send half lock command (Lock Ultra EU type only)."""
-        calibrated = self.is_half_lock_calibrated()
-        if not calibrated:
+        if self._model not in COMMAND_HALF_LOCK:
+            raise SwitchbotOperationError(
+                f"Half lock is not supported on {self._model}"
+            )
+        if not self.is_half_lock_calibrated():
             raise SwitchbotOperationError("Half lock is not calibrated")
         return await self._lock_unlock(
             COMMAND_HALF_LOCK[self._model],
