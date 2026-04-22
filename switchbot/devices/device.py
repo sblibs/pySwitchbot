@@ -9,7 +9,7 @@ import time
 from collections.abc import Callable
 from dataclasses import replace
 from enum import IntEnum
-from typing import Any, ClassVar, TypeVar, cast
+from typing import Any, TypeVar, cast
 from uuid import UUID
 
 import aiohttp
@@ -996,7 +996,7 @@ class SwitchbotDevice(SwitchbotBaseDevice):
 class SwitchbotEncryptedDevice(SwitchbotDevice):
     """A Switchbot device that uses encryption."""
 
-    _model: ClassVar[SwitchbotModel | None] = None
+    _model: SwitchbotModel | None = None
 
     def __init__(
         self,
