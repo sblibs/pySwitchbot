@@ -10,6 +10,7 @@ from switchbot.devices.base_light import SwitchbotBaseLight
 from switchbot.devices.device import SwitchbotOperationError
 
 from . import (
+    CANDLE_WARMER_LAMP_INFO,
     FLOOR_LAMP_INFO,
     RGBIC_NEON_LIGHT_INFO,
     RGBICWW_FLOOR_LAMP_INFO,
@@ -18,43 +19,40 @@ from . import (
 )
 from .test_adv_parser import AdvTestCase, generate_ble_device
 
+ALL_LIGHT_CASES = [
+    (STRIP_LIGHT_3_INFO, light_strip.SwitchbotStripLight3),
+    (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
+    (CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp),
+    (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
+    (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
+    (RGBIC_NEON_LIGHT_INFO, light_strip.SwitchbotRgbicNeonLight),
+]
 
-@pytest.fixture(
-    params=[
-        (
-            STRIP_LIGHT_3_INFO,
-            light_strip.SwitchbotStripLight3,
-            ("christmas", "halloween", "sunset"),
-            {ColorMode.RGB, ColorMode.COLOR_TEMP},
-        ),
-        (
-            FLOOR_LAMP_INFO,
-            light_strip.SwitchbotStripLight3,
-            ("christmas", "halloween", "sunset"),
-            {ColorMode.RGB, ColorMode.COLOR_TEMP},
-        ),
-        (
-            RGBICWW_STRIP_LIGHT_INFO,
-            light_strip.SwitchbotRgbicLight,
-            ("romance", "energy", "heartbeat"),
-            {ColorMode.RGB, ColorMode.COLOR_TEMP},
-        ),
-        (
-            RGBICWW_FLOOR_LAMP_INFO,
-            light_strip.SwitchbotRgbicLight,
-            ("romance", "energy", "heartbeat"),
-            {ColorMode.RGB, ColorMode.COLOR_TEMP},
-        ),
-        (
-            RGBIC_NEON_LIGHT_INFO,
-            light_strip.SwitchbotRgbicNeonLight,
-            ("romance", "energy", "heartbeat"),
-            {ColorMode.RGB},
-        ),
-    ]
-)
+# RGB + color-temp devices. Excludes brightness-only lights (CWL) and
+# RGB-only lights (RGBIC Neon) whose color_modes differ from the rest.
+RGB_LIGHT_CASES = [
+    case
+    for case in ALL_LIGHT_CASES
+    if case[1]
+    not in (light_strip.SwitchbotCandleWarmerLamp, light_strip.SwitchbotRgbicNeonLight)
+]
+
+
+@pytest.fixture(params=RGB_LIGHT_CASES)
 def device_case(request):
     return request.param
+
+
+@pytest.fixture
+def expected_effects(device_case):
+    adv_info, _dev_cls = device_case
+    EXPECTED = {
+        SwitchbotModel.STRIP_LIGHT_3: ("christmas", "halloween", "sunset"),
+        SwitchbotModel.FLOOR_LAMP: ("christmas", "halloween", "sunset"),
+        SwitchbotModel.RGBICWW_STRIP_LIGHT: ("romance", "energy", "heartbeat"),
+        SwitchbotModel.RGBICWW_FLOOR_LAMP: ("romance", "energy", "heartbeat"),
+    }
+    return EXPECTED[adv_info.modelName]
 
 
 def create_device_for_command_testing(
@@ -99,9 +97,9 @@ def make_advertisement_data(
 
 
 @pytest.mark.asyncio
-async def test_default_info(device_case):
+async def test_default_info(device_case, expected_effects):
     """Test default initialization of the strip light."""
-    adv_info, dev_cls, expected_effects, expected_color_modes = device_case
+    adv_info, dev_cls = device_case
     device = create_device_for_command_testing(adv_info, dev_cls)
 
     assert device.rgb is None
@@ -111,7 +109,7 @@ async def test_default_info(device_case):
     assert device.is_on() is True
     assert device.on is True
     assert device.color_mode == ColorMode.RGB
-    assert device.color_modes == expected_color_modes
+    assert device.color_modes == {ColorMode.RGB, ColorMode.COLOR_TEMP}
     assert device.rgb == (30, 0, 0)
     assert device.color_temp == 3200
     assert device.brightness == adv_info.data["brightness"]
@@ -127,12 +125,50 @@ async def test_default_info(device_case):
 
 
 @pytest.mark.asyncio
+async def test_candle_warmer_lamp_info() -> None:
+    """Test default initialization of the candle warmer lamp."""
+    adv_info, dev_cls = CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp
+    device = create_device_for_command_testing(adv_info, dev_cls)
+    assert device.rgb is None
+    assert device.is_on() is True
+    assert device.on is True
+    assert device.color_mode == ColorMode.BRIGHTNESS
+    assert device.color_modes == {
+        ColorMode.BRIGHTNESS,
+    }
+    assert device.brightness == adv_info.data["brightness"]
+    assert device.get_effect_list is None
+
+
+@pytest.mark.asyncio
+async def test_candle_warmer_lamp_unsupported_operations() -> None:
+    """Test that RGB/color-temp/effect operations are not supported on CWL."""
+    device = create_device_for_command_testing(
+        CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp
+    )
+    with pytest.raises(
+        SwitchbotOperationError,
+        match="does not support this functionality",
+    ):
+        await device.set_rgb(100, 255, 128, 64)
+    with pytest.raises(
+        SwitchbotOperationError,
+        match="does not support this functionality",
+    ):
+        await device.set_color_temp(100, 4000)
+    with pytest.raises(SwitchbotOperationError, match="not supported"):
+        await device.set_effect("sunset")
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("basic_info", "version_info"), [(True, False), (False, True), (False, False)]
 )
-async def test_get_basic_info_returns_none(basic_info, version_info, device_case):
+@pytest.mark.parametrize(("adv_info", "dev_cls"), ALL_LIGHT_CASES)
+async def test_get_basic_info_returns_none(
+    basic_info, version_info, adv_info, dev_cls
+) -> None:
     """Test that get_basic_info returns None if no data is available."""
-    adv_info, dev_cls, *_ = device_case
     device = create_device_for_command_testing(adv_info, dev_cls)
 
     device._send_command = AsyncMock(side_effect=[version_info, basic_info])
@@ -172,7 +208,7 @@ async def test_get_basic_info_returns_none(basic_info, version_info, device_case
 )
 async def test_strip_light_get_basic_info(info_data, result, device_case):
     """Test getting basic info from the strip light."""
-    adv_info, dev_cls, *_ = device_case
+    adv_info, dev_cls = device_case
     device = create_device_for_command_testing(adv_info, dev_cls)
 
     device._send_command = AsyncMock(
@@ -194,7 +230,7 @@ async def test_strip_light_get_basic_info(info_data, result, device_case):
 @pytest.mark.asyncio
 async def test_set_color_temp(device_case):
     """Test setting color temperature."""
-    adv_info, dev_cls, *_ = device_case
+    adv_info, dev_cls = device_case
     device = create_device_for_command_testing(adv_info, dev_cls)
 
     await device.set_color_temp(50, 3000)
@@ -208,7 +244,7 @@ async def test_set_color_temp(device_case):
 async def test_turn_on(device_case):
     """Test turning on the strip light."""
     init_data = {"isOn": True}
-    adv_info, dev_cls, *_ = device_case
+    adv_info, dev_cls = device_case
     device = create_device_for_command_testing(adv_info, dev_cls, init_data)
 
     await device.turn_on()
@@ -222,7 +258,7 @@ async def test_turn_on(device_case):
 async def test_turn_off(device_case):
     """Test turning off the strip light."""
     init_data = {"isOn": False}
-    adv_info, dev_cls, *_ = device_case
+    adv_info, dev_cls = device_case
     device = create_device_for_command_testing(adv_info, dev_cls, init_data)
 
     await device.turn_off()
@@ -235,7 +271,7 @@ async def test_turn_off(device_case):
 @pytest.mark.asyncio
 async def test_set_brightness(device_case):
     """Test setting brightness."""
-    adv_info, dev_cls, *_ = device_case
+    adv_info, dev_cls = device_case
     device = create_device_for_command_testing(adv_info, dev_cls)
 
     await device.set_brightness(75)
@@ -246,7 +282,7 @@ async def test_set_brightness(device_case):
 @pytest.mark.asyncio
 async def test_set_rgb(device_case):
     """Test setting RGB values."""
-    adv_info, dev_cls, *_ = device_case
+    adv_info, dev_cls = device_case
     device = create_device_for_command_testing(adv_info, dev_cls)
 
     await device.set_rgb(100, 255, 128, 64)
@@ -257,7 +293,7 @@ async def test_set_rgb(device_case):
 @pytest.mark.asyncio
 async def test_set_effect_with_invalid_effect(device_case):
     """Test setting an invalid effect."""
-    adv_info, dev_cls, *_ = device_case
+    adv_info, dev_cls = device_case
     device = create_device_for_command_testing(adv_info, dev_cls)
 
     with pytest.raises(
@@ -269,7 +305,7 @@ async def test_set_effect_with_invalid_effect(device_case):
 @pytest.mark.asyncio
 async def test_set_effect_with_valid_effect(device_case):
     """Test setting a valid effect."""
-    adv_info, dev_cls, *_ = device_case
+    adv_info, dev_cls = device_case
     device = create_device_for_command_testing(adv_info, dev_cls)
     device._send_multiple_commands = AsyncMock()
 
@@ -281,9 +317,9 @@ async def test_set_effect_with_valid_effect(device_case):
 
 
 @pytest.mark.asyncio
-async def test_effect_list_contains_lowercase_names(device_case):
+async def test_effect_list_contains_lowercase_names(device_case, expected_effects):
     """Test that all effect names in get_effect_list are lowercase."""
-    adv_info, dev_cls, expected_effects, _ = device_case
+    adv_info, dev_cls = device_case
     device = create_device_for_command_testing(adv_info, dev_cls)
 
     effect_list = device.get_effect_list
@@ -302,7 +338,7 @@ async def test_effect_list_contains_lowercase_names(device_case):
 @pytest.mark.asyncio
 async def test_set_effect_normalizes_case(device_case):
     """Test that set_effect normalizes effect names to lowercase."""
-    adv_info, dev_cls, *_ = device_case
+    adv_info, dev_cls = device_case
     device = create_device_for_command_testing(adv_info, dev_cls)
     device._send_multiple_commands = AsyncMock()
 
@@ -322,6 +358,7 @@ async def test_set_effect_normalizes_case(device_case):
         (light_strip.SwitchbotStripLight3, SwitchbotModel.STRIP_LIGHT_3),
         (light_strip.SwitchbotRgbicLight, SwitchbotModel.RGBICWW_STRIP_LIGHT),
         (light_strip.SwitchbotRgbicNeonLight, SwitchbotModel.RGBIC_NEON_ROPE_LIGHT),
+        (light_strip.SwitchbotCandleWarmerLamp, SwitchbotModel.CANDLE_WARMER_LAMP),
     ],
 )
 def test_default_model_classvar(dev_cls, expected_model):
@@ -356,7 +393,7 @@ async def test_strip_light_supported_color_modes():
 )
 async def test_send_multiple_commands(commands, results, final_result, device_case):
     """Test sending multiple commands."""
-    adv_info, dev_cls, *_ = device_case
+    adv_info, dev_cls = device_case
     device = create_device_for_command_testing(adv_info, dev_cls)
 
     device._send_command = AsyncMock(side_effect=[r[0] for r in results])

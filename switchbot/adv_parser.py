@@ -28,7 +28,12 @@ from .adv_parsers.humidifier import process_evaporative_humidifier, process_wohu
 from .adv_parsers.keypad import process_wokeypad
 from .adv_parsers.keypad_vision import process_keypad_vision, process_keypad_vision_pro
 from .adv_parsers.leak import process_leak
-from .adv_parsers.light_strip import process_light, process_rgbic_light, process_wostrip
+from .adv_parsers.light_strip import (
+    process_candle_warmer_lamp,
+    process_light,
+    process_rgbic_light,
+    process_wostrip,
+)
 from .adv_parsers.lock import (
     process_lock2,
     process_locklite,
@@ -49,6 +54,7 @@ from .adv_parsers.remote import process_woremote
 from .adv_parsers.roller_shade import process_worollershade
 from .adv_parsers.smart_thermostat_radiator import process_smart_thermostat_radiator
 from .adv_parsers.vacuum import process_vacuum, process_vacuum_k
+from .adv_parsers.weather_station import process_weather_station
 from .const import SwitchbotModel
 from .models import SwitchBotAdvertisement
 from .utils import format_mac_upper
@@ -611,6 +617,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_light,
         "manufacturer_id": 2409,
     },
+    b"\x00\x11\x22\xb8": {
+        "modelName": SwitchbotModel.CANDLE_WARMER_LAMP,
+        "modelFriendlyName": "Candle Warmer Lamp",
+        "func": process_candle_warmer_lamp,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\x22\xb8": {
+        "modelName": SwitchbotModel.CANDLE_WARMER_LAMP,
+        "modelFriendlyName": "Candle Warmer Lamp",
+        "func": process_candle_warmer_lamp,
+        "manufacturer_id": 2409,
+    },
     b"\x00\x10\xd0\xb1": {
         "modelName": SwitchbotModel.STRIP_LIGHT_3,
         "modelFriendlyName": "Strip Light 3",
@@ -813,6 +831,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.LOCK_PRO_WIFI,
         "modelFriendlyName": "Lock Pro Wifi",
         "func": process_wolock_pro,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x10\x53\xb0": {
+        "modelName": SwitchbotModel.WEATHER_STATION,
+        "modelFriendlyName": "Weather Station",
+        "func": process_weather_station,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x10\x53\xb0": {
+        "modelName": SwitchbotModel.WEATHER_STATION,
+        "modelFriendlyName": "Weather Station",
+        "func": process_weather_station,
         "manufacturer_id": 2409,
     },
 }
