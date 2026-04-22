@@ -335,3 +335,20 @@ class SwitchbotPermanentOutdoorLight(SwitchbotRgbicLight):
     """Support for Switchbot Permanent Outdoor Light."""
 
     _model = SwitchbotModel.PERMANENT_OUTDOOR_LIGHT
+
+
+class SwitchbotRgbicNeonLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
+    """Support for Switchbot RGBIC Neon lights."""
+
+    _model = SwitchbotModel.RGBIC_NEON_ROPE_LIGHT
+    _effect_dict = RGBIC_EFFECTS
+
+    @property
+    def color_modes(self) -> set[ColorMode]:
+        """Return the supported color modes."""
+        return {ColorMode.RGB}
+
+    @property
+    def color_mode(self) -> ColorMode:
+        """Return the current color mode."""
+        return ColorMode.RGB

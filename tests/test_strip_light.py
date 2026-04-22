@@ -13,6 +13,7 @@ from . import (
     CANDLE_WARMER_LAMP_INFO,
     FLOOR_LAMP_INFO,
     PERMANENT_OUTDOOR_LIGHT_INFO,
+    RGBIC_NEON_LIGHT_INFO,
     RGBICWW_FLOOR_LAMP_INFO,
     RGBICWW_STRIP_LIGHT_INFO,
     STRIP_LIGHT_3_INFO,
@@ -26,13 +27,16 @@ ALL_LIGHT_CASES = [
     (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
     (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
     (PERMANENT_OUTDOOR_LIGHT_INFO, light_strip.SwitchbotPermanentOutdoorLight),
+    (RGBIC_NEON_LIGHT_INFO, light_strip.SwitchbotRgbicNeonLight),
 ]
 
-# RGB/effect-capable devices only; excludes brightness-only lights like CWL.
+# RGB + color-temp devices. Excludes brightness-only lights (CWL) and
+# RGB-only lights (RGBIC Neon) whose color_modes differ from the rest.
 RGB_LIGHT_CASES = [
     case
     for case in ALL_LIGHT_CASES
-    if case[1] is not light_strip.SwitchbotCandleWarmerLamp
+    if case[1]
+    not in (light_strip.SwitchbotCandleWarmerLamp, light_strip.SwitchbotRgbicNeonLight)
 ]
 
 
@@ -108,10 +112,7 @@ async def test_default_info(device_case, expected_effects):
     assert device.is_on() is True
     assert device.on is True
     assert device.color_mode == ColorMode.RGB
-    assert device.color_modes == {
-        ColorMode.RGB,
-        ColorMode.COLOR_TEMP,
-    }
+    assert device.color_modes == {ColorMode.RGB, ColorMode.COLOR_TEMP}
     assert device.rgb == (30, 0, 0)
     assert device.color_temp == 3200
     assert device.brightness == adv_info.data["brightness"]
@@ -124,6 +125,15 @@ async def test_default_info(device_case, expected_effects):
     # Verify some known effects are present
     for effect in expected_effects:
         assert effect in effect_list
+
+
+@pytest.mark.asyncio
+async def test_rgbic_neon_light_info() -> None:
+    """Test color_mode / color_modes on SwitchbotRgbicNeonLight (RGB only)."""
+    adv_info, dev_cls = RGBIC_NEON_LIGHT_INFO, light_strip.SwitchbotRgbicNeonLight
+    device = create_device_for_command_testing(adv_info, dev_cls)
+    assert device.color_mode == ColorMode.RGB
+    assert device.color_modes == {ColorMode.RGB}
 
 
 @pytest.mark.asyncio
@@ -363,6 +373,7 @@ async def test_set_effect_normalizes_case(device_case):
             light_strip.SwitchbotPermanentOutdoorLight,
             SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
         ),
+        (light_strip.SwitchbotRgbicNeonLight, SwitchbotModel.RGBIC_NEON_ROPE_LIGHT),
         (light_strip.SwitchbotCandleWarmerLamp, SwitchbotModel.CANDLE_WARMER_LAMP),
     ],
 )
