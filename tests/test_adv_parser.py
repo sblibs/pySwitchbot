@@ -3993,6 +3993,21 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
         ),
         AdvTestCase(
+            b"@L\xca!pz/\x8b'\x00\x11:\x00",
+            None,
+            {
+                "sequence_number": 47,
+                "isOn": True,
+                "brightness": 11,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 7,
+            },
+            b"\x00\x10\xd0\xb5",
+            "RGBIC Neon Wire Rope Light",
+            SwitchbotModel.RGBIC_NEON_WIRE_ROPE_LIGHT,
+        ),
+        AdvTestCase(
             b"\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15",
             None,
             {
