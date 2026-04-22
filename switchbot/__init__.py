@@ -51,6 +51,7 @@ from .devices.light_strip import (
     SwitchbotCandleWarmerLamp,
     SwitchbotLightStrip,
     SwitchbotRgbicLight,
+    SwitchbotRgbicNeonLight,
     SwitchbotStripLight3,
 )
 from .devices.lock import SwitchbotLock
@@ -115,6 +116,7 @@ __all__ = [
     "SwitchbotRelaySwitch",
     "SwitchbotRelaySwitch2PM",
     "SwitchbotRgbicLight",
+    "SwitchbotRgbicNeonLight",
     "SwitchbotRollerShade",
     "SwitchbotSmartThermostatRadiator",
     "SwitchbotStripLight3",
