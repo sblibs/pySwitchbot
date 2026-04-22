@@ -285,6 +285,8 @@ class SwitchbotCandleWarmerLamp(SwitchbotEncryptedDevice, SwitchbotLightStrip):
 
     _model = SwitchbotModel.CANDLE_WARMER_LAMP
     _effect_dict = {}
+    _set_rgb_command = ""
+    _set_color_temp_command = ""
 
     @property
     def color_modes(self) -> set[ColorMode]:

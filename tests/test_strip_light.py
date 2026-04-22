@@ -141,9 +141,27 @@ async def test_candle_warmer_lamp_info() -> None:
         ColorMode.BRIGHTNESS,
     }
     assert device.brightness == adv_info.data["brightness"]
-    # Check that effect list contains expected lowercase effect names
-    effect_list = device.get_effect_list
-    assert effect_list is None
+    assert device.get_effect_list is None
+
+
+@pytest.mark.asyncio
+async def test_candle_warmer_lamp_unsupported_operations() -> None:
+    """Test that RGB/color-temp/effect operations are not supported on CWL."""
+    device = create_device_for_command_testing(
+        CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp
+    )
+    with pytest.raises(
+        SwitchbotOperationError,
+        match="does not support this functionality",
+    ):
+        await device.set_rgb(100, 255, 128, 64)
+    with pytest.raises(
+        SwitchbotOperationError,
+        match="does not support this functionality",
+    ):
+        await device.set_color_temp(100, 4000)
+    with pytest.raises(SwitchbotOperationError, match="not supported"):
+        await device.set_effect("sunset")
 
 
 @pytest.mark.asyncio
