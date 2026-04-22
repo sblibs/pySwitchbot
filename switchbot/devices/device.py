@@ -1003,8 +1003,8 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         device: BLEDevice,
         key_id: str,
         encryption_key: str,
-        model: SwitchbotModel | None = None,
         interface: int = 0,
+        model: SwitchbotModel | None = None,
         **kwargs: Any,
     ) -> None:
         """Switchbot base class constructor for encrypted devices."""
@@ -1095,7 +1095,11 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
             raise ValueError("model must be provided or set on the subclass as _model")
         try:
             switchbot_device = cls(
-                device, key_id=key_id, encryption_key=encryption_key, model=model
+                device,
+                key_id=key_id,
+                encryption_key=encryption_key,
+                model=model,
+                **kwargs,
             )
         except ValueError:
             return False

@@ -91,8 +91,8 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         device: BLEDevice,
         key_id: str,
         encryption_key: str,
-        model: SwitchbotModel | None = None,
         interface: int = 0,
+        model: SwitchbotModel | None = None,
         **kwargs: Any,
     ) -> None:
         if model is None:
@@ -107,7 +107,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             SwitchbotModel.LOCK_PRO_WIFI,
         ):
             raise ValueError("initializing SwitchbotLock with a non-lock model")
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
+        super().__init__(device, key_id, encryption_key, interface, model, **kwargs)
 
     async def lock(self) -> bool:
         """Send lock command."""
