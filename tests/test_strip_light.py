@@ -10,6 +10,7 @@ from switchbot.devices.base_light import SwitchbotBaseLight
 from switchbot.devices.device import SwitchbotOperationError
 
 from . import (
+    CANDLE_WARMER_LAMP_INFO,
     FLOOR_LAMP_INFO,
     RGBICWW_FLOOR_LAMP_INFO,
     RGBICWW_STRIP_LIGHT_INFO,
@@ -17,15 +18,23 @@ from . import (
 )
 from .test_adv_parser import AdvTestCase, generate_ble_device
 
+ALL_LIGHT_CASES = [
+    (STRIP_LIGHT_3_INFO, light_strip.SwitchbotStripLight3),
+    (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
+    (CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp),
+    (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
+    (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
+]
 
-@pytest.fixture(
-    params=[
-        (STRIP_LIGHT_3_INFO, light_strip.SwitchbotStripLight3),
-        (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
-        (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
-        (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
-    ]
-)
+# RGB/effect-capable devices only; excludes brightness-only lights like CWL.
+RGB_LIGHT_CASES = [
+    case
+    for case in ALL_LIGHT_CASES
+    if case[1] is not light_strip.SwitchbotCandleWarmerLamp
+]
+
+
+@pytest.fixture(params=RGB_LIGHT_CASES)
 def device_case(request):
     return request.param
 
@@ -115,12 +124,50 @@ async def test_default_info(device_case, expected_effects):
 
 
 @pytest.mark.asyncio
+async def test_candle_warmer_lamp_info() -> None:
+    """Test default initialization of the candle warmer lamp."""
+    adv_info, dev_cls = CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp
+    device = create_device_for_command_testing(adv_info, dev_cls)
+    assert device.rgb is None
+    assert device.is_on() is True
+    assert device.on is True
+    assert device.color_mode == ColorMode.BRIGHTNESS
+    assert device.color_modes == {
+        ColorMode.BRIGHTNESS,
+    }
+    assert device.brightness == adv_info.data["brightness"]
+    assert device.get_effect_list is None
+
+
+@pytest.mark.asyncio
+async def test_candle_warmer_lamp_unsupported_operations() -> None:
+    """Test that RGB/color-temp/effect operations are not supported on CWL."""
+    device = create_device_for_command_testing(
+        CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp
+    )
+    with pytest.raises(
+        SwitchbotOperationError,
+        match="does not support this functionality",
+    ):
+        await device.set_rgb(100, 255, 128, 64)
+    with pytest.raises(
+        SwitchbotOperationError,
+        match="does not support this functionality",
+    ):
+        await device.set_color_temp(100, 4000)
+    with pytest.raises(SwitchbotOperationError, match="not supported"):
+        await device.set_effect("sunset")
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("basic_info", "version_info"), [(True, False), (False, True), (False, False)]
 )
-async def test_get_basic_info_returns_none(basic_info, version_info, device_case):
+@pytest.mark.parametrize(("adv_info", "dev_cls"), ALL_LIGHT_CASES)
+async def test_get_basic_info_returns_none(
+    basic_info, version_info, adv_info, dev_cls
+) -> None:
     """Test that get_basic_info returns None if no data is available."""
-    adv_info, dev_cls = device_case
     device = create_device_for_command_testing(adv_info, dev_cls)
 
     device._send_command = AsyncMock(side_effect=[version_info, basic_info])
@@ -309,6 +356,7 @@ async def test_set_effect_normalizes_case(device_case):
     [
         (light_strip.SwitchbotStripLight3, SwitchbotModel.STRIP_LIGHT_3),
         (light_strip.SwitchbotRgbicLight, SwitchbotModel.RGBICWW_STRIP_LIGHT),
+        (light_strip.SwitchbotCandleWarmerLamp, SwitchbotModel.CANDLE_WARMER_LAMP),
     ],
 )
 def test_default_model_classvar(dev_cls, expected_model):
