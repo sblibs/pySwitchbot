@@ -18,15 +18,17 @@ _LOGGER = logging.getLogger(__name__)
 
 COMMAND_HEAD = "570f41"
 # Circulator Fan (single-axis): start/stop oscillation with V kept unchanged.
+# These also serve as the explicit horizontal-only commands since the byte
+# layout is identical.
 COMMAND_START_OSCILLATION = f"{COMMAND_HEAD}020101ff"
 COMMAND_STOP_OSCILLATION = f"{COMMAND_HEAD}020102ff"
+COMMAND_START_HORIZONTAL_OSCILLATION = COMMAND_START_OSCILLATION
+COMMAND_STOP_HORIZONTAL_OSCILLATION = COMMAND_STOP_OSCILLATION
+COMMAND_START_VERTICAL_OSCILLATION = f"{COMMAND_HEAD}0201ff01"  # H keep, V start
+COMMAND_STOP_VERTICAL_OSCILLATION = f"{COMMAND_HEAD}0201ff02"  # H keep, V stop
 # Standing Fan (dual-axis): start/stop both axes at once.
 COMMAND_START_OSCILLATION_ALL_AXES = f"{COMMAND_HEAD}02010101"
 COMMAND_STOP_OSCILLATION_ALL_AXES = f"{COMMAND_HEAD}02010202"
-COMMAND_START_HORIZONTAL_OSCILLATION = f"{COMMAND_HEAD}020101ff"  # H start, V keep
-COMMAND_STOP_HORIZONTAL_OSCILLATION = f"{COMMAND_HEAD}020102ff"  # H stop, V keep
-COMMAND_START_VERTICAL_OSCILLATION = f"{COMMAND_HEAD}0201ff01"  # H keep, V start
-COMMAND_STOP_VERTICAL_OSCILLATION = f"{COMMAND_HEAD}0201ff02"  # H keep, V stop
 COMMAND_SET_OSCILLATION_PARAMS = f"{COMMAND_HEAD}0202"  # +angles
 COMMAND_SET_NIGHT_LIGHT = f"{COMMAND_HEAD}0502"  # +state
 COMMAND_SET_MODE = {
@@ -103,33 +105,47 @@ class SwitchbotFan(SwitchbotSequenceDevice):
     @update_after_operation
     async def set_preset_mode(self, preset_mode: str) -> bool:
         """Send command to set fan preset_mode."""
-        return await self._send_command(self._command_set_mode[preset_mode])
+        result = await self._send_command(self._command_set_mode[preset_mode])
+        return result is not None
 
     @update_after_operation
     async def set_percentage(self, percentage: int) -> bool:
         """Send command to set fan percentage."""
-        return await self._send_command(f"{COMMAND_SET_PERCENTAGE}{percentage:02X}")
+        result = await self._send_command(f"{COMMAND_SET_PERCENTAGE}{percentage:02X}")
+        return result is not None
 
     @update_after_operation
     async def set_oscillation(self, oscillating: bool) -> bool:
         """Send command to set fan oscillation"""
-        if oscillating:
-            return await self._send_command(self._command_start_oscillation)
-        return await self._send_command(self._command_stop_oscillation)
+        cmd = (
+            self._command_start_oscillation
+            if oscillating
+            else self._command_stop_oscillation
+        )
+        result = await self._send_command(cmd)
+        return result is not None
 
     @update_after_operation
     async def set_horizontal_oscillation(self, oscillating: bool) -> bool:
         """Send command to set fan horizontal (left-right) oscillation only."""
-        if oscillating:
-            return await self._send_command(COMMAND_START_HORIZONTAL_OSCILLATION)
-        return await self._send_command(COMMAND_STOP_HORIZONTAL_OSCILLATION)
+        cmd = (
+            COMMAND_START_HORIZONTAL_OSCILLATION
+            if oscillating
+            else COMMAND_STOP_HORIZONTAL_OSCILLATION
+        )
+        result = await self._send_command(cmd)
+        return result is not None
 
     @update_after_operation
     async def set_vertical_oscillation(self, oscillating: bool) -> bool:
         """Send command to set fan vertical (up-down) oscillation only."""
-        if oscillating:
-            return await self._send_command(COMMAND_START_VERTICAL_OSCILLATION)
-        return await self._send_command(COMMAND_STOP_VERTICAL_OSCILLATION)
+        cmd = (
+            COMMAND_START_VERTICAL_OSCILLATION
+            if oscillating
+            else COMMAND_STOP_VERTICAL_OSCILLATION
+        )
+        result = await self._send_command(cmd)
+        return result is not None
 
     def get_current_percentage(self) -> Any:
         """Return cached percentage."""

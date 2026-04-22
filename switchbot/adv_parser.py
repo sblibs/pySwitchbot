@@ -75,7 +75,7 @@ class SwitchbotSupportedType(TypedDict):
 
     modelName: SwitchbotModel
     modelFriendlyName: str
-    func: Callable[[bytes, bytes | None], dict[str, bool | int]]
+    func: Callable[[bytes | None, bytes | None], dict[str, bool | int | str | None]]
     manufacturer_id: int | None
     manufacturer_data_length: int | None
 
