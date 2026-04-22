@@ -152,7 +152,7 @@ async def test_candle_warmer_lamp_info() -> None:
 )
 async def test_get_basic_info_returns_none(
     basic_info, version_info, device_with_candle_warmer_lamp
-):
+) -> None:
     """Test that get_basic_info returns None if no data is available."""
     adv_info, dev_cls = device_with_candle_warmer_lamp
     device = create_device_for_command_testing(adv_info, dev_cls)
