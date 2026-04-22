@@ -9,7 +9,7 @@ import time
 from collections.abc import Callable
 from dataclasses import replace
 from enum import IntEnum
-from typing import Any, TypeVar, cast
+from typing import Any, ClassVar, TypeVar, cast
 from uuid import UUID
 
 import aiohttp
@@ -996,16 +996,22 @@ class SwitchbotDevice(SwitchbotBaseDevice):
 class SwitchbotEncryptedDevice(SwitchbotDevice):
     """A Switchbot device that uses encryption."""
 
+    _model: ClassVar[SwitchbotModel | None] = None
+
     def __init__(
         self,
         device: BLEDevice,
         key_id: str,
         encryption_key: str,
-        model: SwitchbotModel,
+        model: SwitchbotModel | None = None,
         interface: int = 0,
         **kwargs: Any,
     ) -> None:
         """Switchbot base class constructor for encrypted devices."""
+        if model is None:
+            model = self._model
+        if model is None:
+            raise ValueError("model must be provided or set on the subclass as _model")
         if len(key_id) == 0:
             raise ValueError("key_id is missing")
         if len(key_id) != 2:
@@ -1080,9 +1086,13 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         device: BLEDevice,
         key_id: str,
         encryption_key: str,
-        model: SwitchbotModel,
+        model: SwitchbotModel | None = None,
         **kwargs: Any,
     ) -> bool:
+        if model is None:
+            model = cls._model
+        if model is None:
+            raise ValueError("model must be provided or set on the subclass as _model")
         try:
             switchbot_device = cls(
                 device, key_id=key_id, encryption_key=encryption_key, model=model

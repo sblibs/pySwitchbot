@@ -50,28 +50,11 @@ def test_lock_init_with_invalid_model(model: str):
         create_device_for_command_testing(model)
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "model",
-    [
-        SwitchbotModel.LOCK,
-        SwitchbotModel.LOCK_LITE,
-        SwitchbotModel.LOCK_PRO,
-        SwitchbotModel.LOCK_ULTRA,
-        SwitchbotModel.LOCK_VISION,
-        SwitchbotModel.LOCK_VISION_PRO,
-        SwitchbotModel.LOCK_PRO_WIFI,
-    ],
-)
-async def test_verify_encryption_key(model: str):
-    """Test verify_encryption_key method."""
+def test_default_model_classvar():
+    """The classvar default is SwitchbotModel.LOCK."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    with patch("switchbot.devices.lock.super") as mock_super:
-        mock_super().verify_encryption_key = AsyncMock(return_value=True)
-        result = await lock.SwitchbotLock.verify_encryption_key(
-            ble_device, "key_id", "encryption_key", model
-        )
-        assert result is True
+    device = lock.SwitchbotLock(ble_device, "ff", "ffffffffffffffffffffffffffffffff")
+    assert device._model == SwitchbotModel.LOCK
 
 
 @pytest.mark.asyncio
