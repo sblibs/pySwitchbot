@@ -10,7 +10,11 @@ from bleak.backends.device import BLEDevice
 
 from ..const import SwitchbotModel
 from ..const.lock import LockStatus
-from .device import SwitchbotEncryptedDevice, SwitchbotSequenceDevice
+from .device import (
+    SwitchbotEncryptedDevice,
+    SwitchbotOperationError,
+    SwitchbotSequenceDevice,
+)
 
 COMMAND_HEADER = "57"
 COMMAND_LOCK_INFO = {
@@ -49,6 +53,10 @@ COMMAND_LOCK = {
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e0101000000",
 }
+COMMAND_HALF_LOCK = {
+    SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000008",
+}
+
 COMMAND_ENABLE_NOTIFICATIONS = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0e01001e00008101",
     SwitchbotModel.LOCK_LITE: f"{COMMAND_HEADER}0e01001e00008101",
@@ -75,15 +83,20 @@ COMMAND_RESULT_EXPECTED_VALUES = {1, 6}
 class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Lock."""
 
+    _model = SwitchbotModel.LOCK
+    _notifications_enabled: bool = False
+
     def __init__(
         self,
         device: BLEDevice,
         key_id: str,
         encryption_key: str,
         interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.LOCK,
+        model: SwitchbotModel | None = None,
         **kwargs: Any,
     ) -> None:
+        if model is None:
+            model = self._model
         if model not in (
             SwitchbotModel.LOCK,
             SwitchbotModel.LOCK_PRO,
@@ -94,21 +107,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             SwitchbotModel.LOCK_PRO_WIFI,
         ):
             raise ValueError("initializing SwitchbotLock with a non-lock model")
-        self._notifications_enabled: bool = False
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-
-    @classmethod
-    async def verify_encryption_key(
-        cls,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.LOCK,
-        **kwargs: Any,
-    ) -> bool:
-        return await super().verify_encryption_key(
-            device, key_id, encryption_key, model, **kwargs
-        )
+        super().__init__(device, key_id, encryption_key, interface, model, **kwargs)
 
     async def lock(self) -> bool:
         """Send lock command."""
@@ -127,6 +126,19 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         return await self._lock_unlock(
             COMMAND_UNLOCK_WITHOUT_UNLATCH[self._model],
             {LockStatus.UNLOCKED, LockStatus.UNLOCKING, LockStatus.NOT_FULLY_LOCKED},
+        )
+
+    async def half_lock(self) -> bool:
+        """Send half lock command (Lock Ultra EU type only)."""
+        if self._model not in COMMAND_HALF_LOCK:
+            raise SwitchbotOperationError(
+                f"Half lock is not supported on {self._model}"
+            )
+        if not self.is_half_lock_calibrated():
+            raise SwitchbotOperationError("Half lock is not calibrated")
+        return await self._lock_unlock(
+            COMMAND_HALF_LOCK[self._model],
+            {LockStatus.HALF_LOCKED, LockStatus.LOCKING},
         )
 
     def _parse_basic_data(self, basic_data: bytes) -> dict[str, Any]:
@@ -207,6 +219,10 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         """Return True if Night Latch is enabled on EU firmware."""
         return self._get_adv_value("night_latch")
 
+    def is_half_lock_calibrated(self) -> bool | None:
+        """Return True if half lock position is calibrated (Lock Ultra only)."""
+        return self._get_adv_value("half_lock_calibration")
+
     async def _get_lock_info(self) -> bytes | None:
         """Return lock info of device."""
         _data = await self._send_command(
@@ -268,10 +284,13 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                 "status": LockStatus((data[0] & 0b01110000) >> 4),
                 "unlocked_alarm": bool(data[1] & 0b00010000),
             }
-        return {
+        result = {
             "calibration": bool(data[0] & 0b10000000),
             "status": LockStatus((data[0] & 0b01111000) >> 3),
             "door_open": bool(data[1] & 0b00010000),
             "unclosed_alarm": bool(data[5] & 0b10000000),
             "unlocked_alarm": bool(data[5] & 0b01000000),
         }
+        if model is SwitchbotModel.LOCK_ULTRA:
+            result["half_lock_calibration"] = bool(data[1] & 0b00000001)
+        return result
