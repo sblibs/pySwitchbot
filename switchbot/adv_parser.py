@@ -20,7 +20,7 @@ from .adv_parsers.ceiling_light import process_woceiling
 from .adv_parsers.climate_panel import process_climate_panel
 from .adv_parsers.contact import process_wocontact
 from .adv_parsers.curtain import process_wocurtain
-from .adv_parsers.fan import process_fan
+from .adv_parsers.fan import process_fan, process_standing_fan
 from .adv_parsers.hub2 import process_wohub2
 from .adv_parsers.hub3 import process_hub3
 from .adv_parsers.hubmini_matter import process_hubmini_matter
@@ -812,13 +812,13 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
     b"\x00\x11\x07\x60": {
         "modelName": SwitchbotModel.STANDING_FAN,
         "modelFriendlyName": "Standing Fan",
-        "func": process_fan,
+        "func": process_standing_fan,
         "manufacturer_id": 2409,
     },
     b"\x01\x11\x07\x60": {
         "modelName": SwitchbotModel.STANDING_FAN,
         "modelFriendlyName": "Standing Fan",
-        "func": process_fan,
+        "func": process_standing_fan,
         "manufacturer_id": 2409,
     },
     b"\x00\x10\x53\xb0": {

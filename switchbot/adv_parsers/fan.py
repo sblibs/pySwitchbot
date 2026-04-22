@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
-from ..const.fan import StandingFanMode
+from enum import Enum
+from typing import TYPE_CHECKING
+
+from ..const.fan import FanMode, StandingFanMode
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
-def process_fan(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | int]:
-    """
-    Process fan services data.
-
-    Shared parser for Circulator Fan and Standing Fan. The mode field covers
-    values 1-4 for the Circulator Fan and 1-5 for the Standing Fan
-    (CUSTOM_NATURAL = 5). StandingFanMode is used for the mapping because its
-    names are a superset of FanMode for values 1-4.
-    """
+def _parse_fan(
+    mfr_data: bytes | None, mode_enum: type[Enum]
+) -> dict[str, bool | int | str | None]:
+    """Shared fan advertisement parse, parameterized on the mode enum."""
     if mfr_data is None:
         return {}
 
@@ -22,7 +23,7 @@ def process_fan(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | 
     _seq_num = device_data[0]
     _isOn = bool(device_data[1] & 0b10000000)
     _mode = (device_data[1] & 0b01110000) >> 4
-    _mode = StandingFanMode(_mode).name.lower() if 1 <= _mode <= 5 else None
+    mode_map: Mapping[int, str] = {m.value: m.name.lower() for m in mode_enum}
     _nightLight = (device_data[1] & 0b00001100) >> 2
     _oscillate_left_and_right = bool(device_data[1] & 0b00000010)
     _oscillate_up_and_down = bool(device_data[1] & 0b00000001)
@@ -32,7 +33,7 @@ def process_fan(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | 
     return {
         "sequence_number": _seq_num,
         "isOn": _isOn,
-        "mode": _mode,
+        "mode": mode_map.get(_mode),
         "nightLight": _nightLight,
         "oscillating": _oscillate_left_and_right or _oscillate_up_and_down,
         "oscillating_horizontal": _oscillate_left_and_right,
@@ -40,3 +41,17 @@ def process_fan(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | 
         "battery": _battery,
         "speed": _speed,
     }
+
+
+def process_fan(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int | str | None]:
+    """Process Circulator Fan services data (modes 1-4)."""
+    return _parse_fan(mfr_data, FanMode)
+
+
+def process_standing_fan(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int | str | None]:
+    """Process Standing Fan services data (modes 1-5; adds CUSTOM_NATURAL)."""
+    return _parse_fan(mfr_data, StandingFanMode)
