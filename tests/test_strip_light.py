@@ -125,6 +125,15 @@ async def test_default_info(device_case, expected_effects):
 
 
 @pytest.mark.asyncio
+async def test_rgbic_neon_light_info() -> None:
+    """Test color_mode / color_modes on SwitchbotRgbicNeonLight (RGB only)."""
+    adv_info, dev_cls = RGBIC_NEON_LIGHT_INFO, light_strip.SwitchbotRgbicNeonLight
+    device = create_device_for_command_testing(adv_info, dev_cls)
+    assert device.color_mode == ColorMode.RGB
+    assert device.color_modes == {ColorMode.RGB}
+
+
+@pytest.mark.asyncio
 async def test_candle_warmer_lamp_info() -> None:
     """Test default initialization of the candle warmer lamp."""
     adv_info, dev_cls = CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp
