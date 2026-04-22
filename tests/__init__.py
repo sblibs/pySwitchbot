@@ -47,6 +47,21 @@ FLOOR_LAMP_INFO = AdvTestCase(
     SwitchbotModel.FLOOR_LAMP,
 )
 
+CANDLE_WARMER_LAMP_INFO = AdvTestCase(
+    b"\x90\xe5\xb1h\xda\xaa\n\xb0 \x00",
+    b"\x00\x00\x00\x00\x11\x22\xb8",
+    {
+        "brightness": 48,
+        "delay": False,
+        "isOn": True,
+        "network_state": 2,
+        "sequence_number": 10,
+    },
+    b"\x00\x11\x22\xb8",
+    "Candle Warmer Lamp",
+    SwitchbotModel.CANDLE_WARMER_LAMP,
+)
+
 RGBICWW_STRIP_LIGHT_INFO = AdvTestCase(
     b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00',
     b"\x00\x00\x00\x00\x10\xd0\xb3",

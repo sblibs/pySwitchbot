@@ -96,6 +96,7 @@ class SwitchbotModel(StrEnum):
     RELAY_SWITCH_2PM = "Relay Switch 2PM"
     STRIP_LIGHT_3 = "Strip Light 3"
     FLOOR_LAMP = "Floor Lamp"
+    CANDLE_WARMER_LAMP = "Candle Warmer Lamp"
     PLUG_MINI_EU = "Plug Mini (EU)"
     RGBICWW_STRIP_LIGHT = "RGBICWW Strip Light"
     RGBICWW_FLOOR_LAMP = "RGBICWW Floor Lamp"

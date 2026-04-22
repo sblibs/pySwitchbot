@@ -21,6 +21,21 @@ def process_wostrip(
     }
 
 
+def process_candle_warmer_lamp(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int]:
+    """Process Candle Warmer Lamp services data."""
+    if mfr_data is None:
+        return {}
+    return {
+        "sequence_number": mfr_data[6],
+        "isOn": bool(mfr_data[7] & 0b10000000),
+        "brightness": mfr_data[7] & 0b01111111,
+        "delay": bool(mfr_data[8] & 0b10000000),
+        "network_state": (mfr_data[8] & 0b01110000) >> 4,
+    }
+
+
 def process_light(
     data: bytes | None, mfr_data: bytes | None, cw_offset: int = 16
 ) -> dict[str, bool | int]:
