@@ -111,6 +111,7 @@ class SwitchbotModel(StrEnum):
     LOCK_VISION_PRO = "Lock Vision Pro"
     LOCK_VISION = "Lock Vision"
     LOCK_PRO_WIFI = "Lock Pro Wifi"
+    WEATHER_STATION = "Weather Station"
 
 
 __all__ = [

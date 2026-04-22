@@ -49,6 +49,7 @@ from .adv_parsers.remote import process_woremote
 from .adv_parsers.roller_shade import process_worollershade
 from .adv_parsers.smart_thermostat_radiator import process_smart_thermostat_radiator
 from .adv_parsers.vacuum import process_vacuum, process_vacuum_k
+from .adv_parsers.weather_station import process_weather_station
 from .const import SwitchbotModel
 from .models import SwitchBotAdvertisement
 from .utils import format_mac_upper
@@ -801,6 +802,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.LOCK_PRO_WIFI,
         "modelFriendlyName": "Lock Pro Wifi",
         "func": process_wolock_pro,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x10\x53\xb0": {
+        "modelName": SwitchbotModel.WEATHER_STATION,
+        "modelFriendlyName": "Weather Station",
+        "func": process_weather_station,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x10\x53\xb0": {
+        "modelName": SwitchbotModel.WEATHER_STATION,
+        "modelFriendlyName": "Weather Station",
+        "func": process_weather_station,
         "manufacturer_id": 2409,
     },
 }
