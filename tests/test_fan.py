@@ -11,6 +11,7 @@ from switchbot.const.fan import (
     StandingFanMode,
 )
 from switchbot.devices import fan
+from switchbot.devices.device import SwitchbotOperationError
 from switchbot.devices.fan import SwitchbotStandingFan
 
 from .test_adv_parser import generate_ble_device
@@ -210,6 +211,98 @@ def test_standing_fan_oscillation_command_constants():
     """Lock the bytes for the Standing Fan dual-axis oscillation commands."""
     assert fan.COMMAND_START_OSCILLATION_ALL_AXES == "570f4102010101"
     assert fan.COMMAND_STOP_OSCILLATION_ALL_AXES == "570f4102010202"
+
+
+def _fan_with_real_result_check(init_data: dict | None = None):
+    """
+    Command-test fixture that uses the real _check_command_result.
+
+    Unlike `create_device_for_command_testing`, this keeps the real
+    `_check_command_result` so setter methods exercise the success-byte
+    validation path.
+    """
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    fan_device = fan.SwitchbotFan(ble_device, model=SwitchbotModel.CIRCULATOR_FAN)
+    fan_device.update_from_advertisement(make_advertisement_data(ble_device, init_data))
+    fan_device._send_command = AsyncMock()
+    fan_device.update = AsyncMock()
+    return fan_device
+
+
+def _standing_fan_with_real_result_check(init_data: dict | None = None):
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    standing_fan = SwitchbotStandingFan(ble_device, model=SwitchbotModel.STANDING_FAN)
+    standing_fan.update_from_advertisement(
+        make_advertisement_data(ble_device, init_data)
+    )
+    standing_fan._send_command = AsyncMock()
+    standing_fan.update = AsyncMock()
+    return standing_fan
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("response", "expected"),
+    [
+        # Success byte is 1.
+        (b"\x01", True),
+        (b"\x01\xff", True),
+        # Known fan error payloads.
+        (b"\x00", False),
+        (b"\x07", False),
+    ],
+)
+@pytest.mark.parametrize(
+    "invoke",
+    [
+        lambda d: d.set_preset_mode("baby"),
+        lambda d: d.set_percentage(80),
+        lambda d: d.set_oscillation(True),
+        lambda d: d.set_oscillation(False),
+        lambda d: d.set_horizontal_oscillation(True),
+        lambda d: d.set_vertical_oscillation(True),
+    ],
+)
+async def test_circulator_fan_setters_validate_success_byte(response, expected, invoke):
+    """Every Circulator Fan setter returns True only on success-byte 1."""
+    device = _fan_with_real_result_check()
+    device._send_command.return_value = response
+    assert await invoke(device) is expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("response", "expected"),
+    [
+        (b"\x01", True),
+        (b"\x01\xff", True),
+        (b"\x00", False),
+        (b"\x07", False),
+    ],
+)
+@pytest.mark.parametrize(
+    "invoke",
+    [
+        lambda d: d.set_horizontal_oscillation_angle(OscillationAngle.ANGLE_60),
+        lambda d: d.set_vertical_oscillation_angle(OscillationAngle.ANGLE_90),
+        lambda d: d.set_night_light(NightLightState.LEVEL_1),
+        lambda d: d.set_night_light(NightLightState.OFF),
+    ],
+)
+async def test_standing_fan_setters_validate_success_byte(response, expected, invoke):
+    """Every Standing Fan setter returns True only on success-byte 1."""
+    device = _standing_fan_with_real_result_check()
+    device._send_command.return_value = response
+    assert await invoke(device) is expected
+
+
+@pytest.mark.asyncio
+async def test_fan_setter_raises_on_none_response():
+    """None responses raise SwitchbotOperationError via _check_command_result."""
+    device = _fan_with_real_result_check()
+    device._send_command.return_value = None
+    with pytest.raises(SwitchbotOperationError):
+        await device.set_oscillation(True)
 
 
 @pytest.mark.asyncio
