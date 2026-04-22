@@ -281,24 +281,6 @@ class SwitchbotStripLight3(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         return {ColorMode.RGB, ColorMode.COLOR_TEMP}
 
 
-class SwitchbotPermanentOutdoorLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
-    """Support for Switchbot Permanent Outdoor Light."""
-
-    _model = SwitchbotModel.PERMANENT_OUTDOOR_LIGHT
-    _effect_dict = RGBIC_EFFECTS
-
-    @property
-    def color_modes(self) -> set[ColorMode]:
-        """Return the supported color modes."""
-        return {ColorMode.RGB, ColorMode.COLOR_TEMP}
-
-    @property
-    def color_mode(self) -> ColorMode:
-        """Return the current color mode."""
-        device_mode = RGBICStripLightColorMode(self._get_adv_value("color_mode") or 10)
-        return _RGBICWW_STRIP_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
-
-
 class SwitchbotRgbicLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     """Support for Switchbot RGBIC lights."""
 
@@ -315,3 +297,9 @@ class SwitchbotRgbicLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         """Return the current color mode."""
         device_mode = RGBICStripLightColorMode(self._get_adv_value("color_mode") or 10)
         return _RGBICWW_STRIP_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
+
+
+class SwitchbotPermanentOutdoorLight(SwitchbotRgbicLight):
+    """Support for Switchbot Permanent Outdoor Light."""
+
+    _model = SwitchbotModel.PERMANENT_OUTDOOR_LIGHT
