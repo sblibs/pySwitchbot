@@ -78,10 +78,10 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "WoFan2": SwitchbotModel.CIRCULATOR_FAN,
     "WoHub2": SwitchbotModel.HUB2,
     "WoRollerShade": SwitchbotModel.ROLLER_SHADE,
-    "WoAirPurifierJP": SwitchbotModel.AIR_PURIFIER,
-    "WoAirPurifierUS": SwitchbotModel.AIR_PURIFIER,
-    "WoAirPurifierJPPro": SwitchbotModel.AIR_PURIFIER_TABLE,
-    "WoAirPurifierUSPro": SwitchbotModel.AIR_PURIFIER_TABLE,
+    "WoAirPurifierJP": SwitchbotModel.AIR_PURIFIER_JP,
+    "WoAirPurifierUS": SwitchbotModel.AIR_PURIFIER_US,
+    "WoAirPurifierJPPro": SwitchbotModel.AIR_PURIFIER_TABLE_JP,
+    "WoAirPurifierUSPro": SwitchbotModel.AIR_PURIFIER_TABLE_US,
     "WoSweeperMini": SwitchbotModel.K10_VACUUM,
     "WoSweeperMiniPro": SwitchbotModel.K10_PRO_VACUUM,
     "91AgWZ1n": SwitchbotModel.K10_PRO_COMBO_VACUUM,
@@ -216,6 +216,8 @@ class SwitchbotBaseDevice:
     _open_command: str | None = None
     _close_command: str | None = None
     _press_command: str | None = None
+    _open_child_lock_command: str | None = None
+    _close_child_lock_command: str | None = None
 
     def __init__(
         self,
@@ -935,6 +937,20 @@ class SwitchbotBaseDevice:
         result = await self._send_command(self._press_command)
         return self._check_command_result(result, 0, {1})
 
+    @update_after_operation
+    async def open_child_lock(self) -> bool:
+        """Open the child lock."""
+        self._check_function_support(self._open_child_lock_command)
+        result = await self._send_command(self._open_child_lock_command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def close_child_lock(self) -> bool:
+        """Close the child lock."""
+        self._check_function_support(self._close_child_lock_command)
+        result = await self._send_command(self._close_child_lock_command)
+        return self._check_command_result(result, 0, {1})
+
 
 class SwitchbotDevice(SwitchbotBaseDevice):
     """
@@ -980,16 +996,22 @@ class SwitchbotDevice(SwitchbotBaseDevice):
 class SwitchbotEncryptedDevice(SwitchbotDevice):
     """A Switchbot device that uses encryption."""
 
+    _model: SwitchbotModel | None = None
+
     def __init__(
         self,
         device: BLEDevice,
         key_id: str,
         encryption_key: str,
-        model: SwitchbotModel,
         interface: int = 0,
+        model: SwitchbotModel | None = None,
         **kwargs: Any,
     ) -> None:
         """Switchbot base class constructor for encrypted devices."""
+        if model is None:
+            model = self._model
+        if model is None:
+            raise ValueError("model must be provided or set on the subclass as _model")
         if len(key_id) == 0:
             raise ValueError("key_id is missing")
         if len(key_id) != 2:
@@ -1064,12 +1086,20 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         device: BLEDevice,
         key_id: str,
         encryption_key: str,
-        model: SwitchbotModel,
+        model: SwitchbotModel | None = None,
         **kwargs: Any,
     ) -> bool:
+        if model is None:
+            model = cls._model
+        if model is None:
+            raise ValueError("model must be provided or set on the subclass as _model")
         try:
             switchbot_device = cls(
-                device, key_id=key_id, encryption_key=encryption_key, model=model
+                device,
+                key_id=key_id,
+                encryption_key=encryption_key,
+                model=model,
+                **kwargs,
             )
         except ValueError:
             return False
