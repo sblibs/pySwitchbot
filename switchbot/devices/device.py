@@ -996,16 +996,22 @@ class SwitchbotDevice(SwitchbotBaseDevice):
 class SwitchbotEncryptedDevice(SwitchbotDevice):
     """A Switchbot device that uses encryption."""
 
+    _model: SwitchbotModel | None = None
+
     def __init__(
         self,
         device: BLEDevice,
         key_id: str,
         encryption_key: str,
-        model: SwitchbotModel,
         interface: int = 0,
+        model: SwitchbotModel | None = None,
         **kwargs: Any,
     ) -> None:
         """Switchbot base class constructor for encrypted devices."""
+        if model is None:
+            model = self._model
+        if model is None:
+            raise ValueError("model must be provided or set on the subclass as _model")
         if len(key_id) == 0:
             raise ValueError("key_id is missing")
         if len(key_id) != 2:
@@ -1080,12 +1086,20 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         device: BLEDevice,
         key_id: str,
         encryption_key: str,
-        model: SwitchbotModel,
+        model: SwitchbotModel | None = None,
         **kwargs: Any,
     ) -> bool:
+        if model is None:
+            model = cls._model
+        if model is None:
+            raise ValueError("model must be provided or set on the subclass as _model")
         try:
             switchbot_device = cls(
-                device, key_id=key_id, encryption_key=encryption_key, model=model
+                device,
+                key_id=key_id,
+                encryption_key=encryption_key,
+                model=model,
+                **kwargs,
             )
         except ValueError:
             return False

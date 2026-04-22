@@ -27,7 +27,7 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         **kwargs: Any,
     ) -> None:
         """Initialize Keypad Vision (Pro) device."""
-        super().__init__(device, key_id, encryption_key, model, **kwargs)
+        super().__init__(device, key_id, encryption_key, model=model, **kwargs)
 
     @classmethod
     async def verify_encryption_key(

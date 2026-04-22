@@ -6,6 +6,7 @@ import pytest
 from switchbot import SwitchbotModel
 from switchbot.const.lock import LockStatus
 from switchbot.devices import lock
+from switchbot.devices.device import SwitchbotOperationError
 
 from .test_adv_parser import generate_ble_device
 
@@ -49,28 +50,11 @@ def test_lock_init_with_invalid_model(model: str):
         create_device_for_command_testing(model)
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "model",
-    [
-        SwitchbotModel.LOCK,
-        SwitchbotModel.LOCK_LITE,
-        SwitchbotModel.LOCK_PRO,
-        SwitchbotModel.LOCK_ULTRA,
-        SwitchbotModel.LOCK_VISION,
-        SwitchbotModel.LOCK_VISION_PRO,
-        SwitchbotModel.LOCK_PRO_WIFI,
-    ],
-)
-async def test_verify_encryption_key(model: str):
-    """Test verify_encryption_key method."""
+def test_default_model_classvar():
+    """The classvar default is SwitchbotModel.LOCK."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    with patch("switchbot.devices.lock.super") as mock_super:
-        mock_super().verify_encryption_key = AsyncMock(return_value=True)
-        result = await lock.SwitchbotLock.verify_encryption_key(
-            ble_device, "key_id", "encryption_key", model
-        )
-        assert result is True
+    device = lock.SwitchbotLock(ble_device, "ff", "ffffffffffffffffffffffffffffffff")
+    assert device._model == SwitchbotModel.LOCK
 
 
 @pytest.mark.asyncio
@@ -624,6 +608,7 @@ def test_update_lock_status(model: str):
                 "door_open": True,
                 "unclosed_alarm": True,
                 "unlocked_alarm": True,
+                "half_lock_calibration": False,
             },
         ),
         (
@@ -712,6 +697,7 @@ def test_parse_lock_data(model: str, data: bytes, expected: dict):
                 "door_open": False,
                 "unclosed_alarm": False,
                 "unlocked_alarm": True,  # bit 6 of byte 5
+                "half_lock_calibration": False,
             },
         ),
         (
@@ -758,6 +744,75 @@ async def test_lock_with_update(model: str):
     ):
         result = await device.lock()
         assert result is True
+
+
+def test_is_half_lock_calibrated():
+    """Test is_half_lock_calibrated method."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    device._get_adv_value = Mock(return_value=True)
+    assert device.is_half_lock_calibrated() is True
+
+    device._get_adv_value = Mock(return_value=False)
+    assert device.is_half_lock_calibrated() is False
+
+
+@pytest.mark.asyncio
+async def test_half_lock_calibrated():
+    """Test half_lock succeeds when calibrated."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    device._get_adv_value = Mock(side_effect=[True, LockStatus.LOCKED])
+    with (
+        patch.object(device, "_send_command", return_value=b"\x01\x00"),
+        patch.object(device, "_enable_notifications", return_value=True),
+        patch.object(device, "_get_basic_info", return_value=b"\x01\x64\x01"),
+    ):
+        result = await device.half_lock()
+        assert result is True
+
+
+@pytest.mark.asyncio
+async def test_half_lock_not_calibrated():
+    """Test half_lock raises SwitchbotOperationError when not calibrated."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    device._get_adv_value = Mock(return_value=False)
+    with pytest.raises(SwitchbotOperationError, match="not calibrated"):
+        await device.half_lock()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "model",
+    [
+        SwitchbotModel.LOCK,
+        SwitchbotModel.LOCK_LITE,
+        SwitchbotModel.LOCK_PRO,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
+        SwitchbotModel.LOCK_PRO_WIFI,
+    ],
+)
+async def test_half_lock_unsupported_model(model: str):
+    """Test half_lock raises SwitchbotOperationError on unsupported models."""
+    device = create_device_for_command_testing(model)
+    with pytest.raises(SwitchbotOperationError, match="not supported"):
+        await device.half_lock()
+
+
+@pytest.mark.asyncio
+async def test_half_lock():
+    """Test half_lock method."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    device._get_adv_value = Mock(side_effect=[True, LockStatus.LOCKED])
+    with (
+        patch.object(device, "_send_command", return_value=b"\x01\x00") as mock_send,
+        patch.object(device, "_enable_notifications", return_value=True),
+        patch.object(device, "_get_basic_info", return_value=b"\x01\x64\x01"),
+    ):
+        result = await device.half_lock()
+        assert result is True
+        mock_send.assert_awaited_once_with(
+            lock.COMMAND_HALF_LOCK[SwitchbotModel.LOCK_ULTRA]
+        )
 
 
 @pytest.mark.asyncio

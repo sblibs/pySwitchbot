@@ -56,22 +56,30 @@ async def test_encrypted_device_init_validation() -> None:
     # Test empty key_id
     with pytest.raises(ValueError, match="key_id is missing"):
         MockEncryptedDevice(
-            ble_device, "", "0123456789abcdef0123456789abcdef", SwitchbotModel.LOCK
+            ble_device,
+            "",
+            "0123456789abcdef0123456789abcdef",
+            model=SwitchbotModel.LOCK,
         )
 
     # Test invalid key_id length
     with pytest.raises(ValueError, match="key_id is invalid"):
         MockEncryptedDevice(
-            ble_device, "1", "0123456789abcdef0123456789abcdef", SwitchbotModel.LOCK
+            ble_device,
+            "1",
+            "0123456789abcdef0123456789abcdef",
+            model=SwitchbotModel.LOCK,
         )
 
     # Test empty encryption_key
     with pytest.raises(ValueError, match="encryption_key is missing"):
-        MockEncryptedDevice(ble_device, "01", "", SwitchbotModel.LOCK)
+        MockEncryptedDevice(ble_device, "01", "", model=SwitchbotModel.LOCK)
 
     # Test invalid encryption_key length
     with pytest.raises(ValueError, match="encryption_key is invalid"):
-        MockEncryptedDevice(ble_device, "01", "0123456789abcdef", SwitchbotModel.LOCK)
+        MockEncryptedDevice(
+            ble_device, "01", "0123456789abcdef", model=SwitchbotModel.LOCK
+        )
 
 
 @pytest.mark.asyncio
@@ -527,6 +535,43 @@ async def test_empty_data_encryption_decryption() -> None:
     # Test empty decryption
     decrypted = device._decrypt(bytearray())
     assert decrypted == b""
+
+
+@pytest.mark.asyncio
+async def test_verify_encryption_key_falls_back_to_classvar() -> None:
+    """verify_encryption_key resolves `model` from `cls._model` when omitted."""
+
+    class ClassvarModelDevice(MockEncryptedDevice):
+        _model = SwitchbotModel.LOCK
+
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "Test Device")
+    with patch.object(
+        ClassvarModelDevice,
+        "get_basic_info",
+        new_callable=AsyncMock,
+        return_value={"ok": True},
+    ):
+        result = await ClassvarModelDevice.verify_encryption_key(
+            ble_device, "01", "0123456789abcdef0123456789abcdef"
+        )
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_verify_encryption_key_without_model_or_classvar_raises() -> None:
+    """verify_encryption_key raises when neither `model=` nor `cls._model` is set."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "Test Device")
+    with pytest.raises(ValueError, match="model must be provided"):
+        await MockEncryptedDevice.verify_encryption_key(
+            ble_device, "01", "0123456789abcdef0123456789abcdef"
+        )
+
+
+def test_init_without_model_or_classvar_raises() -> None:
+    """__init__ raises when neither `model=` nor `cls._model` is set."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "Test Device")
+    with pytest.raises(ValueError, match="model must be provided"):
+        MockEncryptedDevice(ble_device, "01", "0123456789abcdef0123456789abcdef")
 
 
 @pytest.mark.asyncio

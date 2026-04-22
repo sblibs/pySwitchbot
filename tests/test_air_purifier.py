@@ -1,11 +1,10 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import (
     SwitchBotAdvertisement,
-    SwitchbotEncryptedDevice,
     SwitchbotModel,
     SwitchbotOperationError,
 )
@@ -254,29 +253,12 @@ async def test_get_basic_info(device_case, info_case):
     assert info["light_sensitive"] == result[10]
 
 
-@pytest.mark.asyncio
-@patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)
-async def test_verify_encryption_key(mock_parent_verify):
+def test_default_model_classvar():
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    key_id = "ff"
-    encryption_key = "ffffffffffffffffffffffffffffffff"
-
-    mock_parent_verify.return_value = True
-
-    result = await air_purifier.SwitchbotAirPurifier.verify_encryption_key(
-        device=ble_device,
-        key_id=key_id,
-        encryption_key=encryption_key,
+    device = air_purifier.SwitchbotAirPurifier(
+        ble_device, "ff", "ffffffffffffffffffffffffffffffff"
     )
-
-    mock_parent_verify.assert_awaited_once_with(
-        ble_device,
-        key_id,
-        encryption_key,
-        SwitchbotModel.AIR_PURIFIER_US,
-    )
-
-    assert result is True
+    assert device._model == SwitchbotModel.AIR_PURIFIER_US
 
 
 def test_get_modes():

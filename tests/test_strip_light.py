@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bleak.backends.device import BLEDevice
@@ -7,7 +7,7 @@ from switchbot import SwitchBotAdvertisement, SwitchbotModel
 from switchbot.const.light import ColorMode
 from switchbot.devices import light_strip
 from switchbot.devices.base_light import SwitchbotBaseLight
-from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperationError
+from switchbot.devices.device import SwitchbotOperationError
 
 from . import (
     CANDLE_WARMER_LAMP_INFO,
@@ -338,34 +338,18 @@ async def test_set_effect_normalizes_case(device_case):
         assert device.get_effect() == test_effect  # Stored as provided
 
 
-@pytest.mark.asyncio
-@patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)
-async def test_verify_encryption_key(
-    mock_parent_verify, device_with_candle_warmer_lamp
-):
+@pytest.mark.parametrize(
+    ("dev_cls", "expected_model"),
+    [
+        (light_strip.SwitchbotStripLight3, SwitchbotModel.STRIP_LIGHT_3),
+        (light_strip.SwitchbotRgbicLight, SwitchbotModel.RGBICWW_STRIP_LIGHT),
+        (light_strip.SwitchbotCandleWarmerLamp, SwitchbotModel.CANDLE_WARMER_LAMP),
+    ],
+)
+def test_default_model_classvar(dev_cls, expected_model):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    key_id = "ff"
-    encryption_key = "ffffffffffffffffffffffffffffffff"
-
-    mock_parent_verify.return_value = True
-
-    adv_info, dev_cls = device_with_candle_warmer_lamp
-
-    result = await dev_cls.verify_encryption_key(
-        device=ble_device,
-        key_id=key_id,
-        encryption_key=encryption_key,
-        model=adv_info.modelName,
-    )
-
-    mock_parent_verify.assert_awaited_once_with(
-        ble_device,
-        key_id,
-        encryption_key,
-        adv_info.modelName,
-    )
-
-    assert result is True
+    device = dev_cls(ble_device, "ff", "ffffffffffffffffffffffffffffffff")
+    assert device._model == expected_model
 
 
 def create_strip_light_device(init_data: dict | None = None):
