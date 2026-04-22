@@ -500,15 +500,20 @@ async def test_standing_fan_set_horizontal_oscillation_angle_invalid(angle):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "angle",
-    [OscillationAngle.ANGLE_30, OscillationAngle.ANGLE_60, OscillationAngle.ANGLE_90],
+    ("angle", "expected_byte"),
+    [
+        (OscillationAngle.ANGLE_30, 30),
+        (OscillationAngle.ANGLE_60, 60),
+        # Vertical 90° maps to byte 0x5F (95); byte 0x5A (90) halts the axis.
+        (OscillationAngle.ANGLE_90, 95),
+    ],
 )
-async def test_standing_fan_set_vertical_oscillation_angle(angle):
+async def test_standing_fan_set_vertical_oscillation_angle(angle, expected_byte):
     standing_fan = create_standing_fan_for_testing()
     await standing_fan.set_vertical_oscillation_angle(angle)
     standing_fan._send_command.assert_called_once()
     cmd = standing_fan._send_command.call_args[0][0]
-    assert cmd == f"{fan.COMMAND_SET_OSCILLATION_PARAMS}FFFF{angle.value:02X}FF"
+    assert cmd == f"{fan.COMMAND_SET_OSCILLATION_PARAMS}FFFF{expected_byte:02X}FF"
 
 
 @pytest.mark.asyncio

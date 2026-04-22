@@ -16,6 +16,24 @@ from .device import (
 _LOGGER = logging.getLogger(__name__)
 
 
+# Device-protocol byte values for each user-facing oscillation angle.
+# Horizontal: byte value matches the degree value directly.
+_HORIZONTAL_ANGLE_BYTE: dict[OscillationAngle, int] = {
+    OscillationAngle.ANGLE_30: 30,
+    OscillationAngle.ANGLE_60: 60,
+    OscillationAngle.ANGLE_90: 90,
+}
+# Vertical: the Standing Fan uses a different encoding on the vertical axis.
+# Byte 90 (0x5A) halts the axis; 95 (0x5F) produces a full 90° tilt. The
+# 30°/60° bytes are assumed to equal their degree values (unverified on
+# hardware yet — track as a TODO if a user reports they misbehave).
+_VERTICAL_ANGLE_BYTE: dict[OscillationAngle, int] = {
+    OscillationAngle.ANGLE_30: 30,
+    OscillationAngle.ANGLE_60: 60,
+    OscillationAngle.ANGLE_90: 95,
+}
+
+
 COMMAND_HEAD = "570f41"
 # Circulator Fan (single-axis): start/stop oscillation with V kept unchanged.
 # These also serve as the explicit horizontal-only commands since the byte
@@ -185,8 +203,8 @@ class SwitchbotStandingFan(SwitchbotFan):
         self, angle: OscillationAngle | int
     ) -> bool:
         """Set horizontal oscillation angle (30 / 60 / 90 degrees)."""
-        value = OscillationAngle(angle).value
-        cmd = f"{COMMAND_SET_OSCILLATION_PARAMS}{value:02X}FFFFFF"
+        byte_value = _HORIZONTAL_ANGLE_BYTE[OscillationAngle(angle)]
+        cmd = f"{COMMAND_SET_OSCILLATION_PARAMS}{byte_value:02X}FFFFFF"
         result = await self._send_command(cmd)
         return self._check_command_result(result, 0, {1})
 
@@ -194,9 +212,15 @@ class SwitchbotStandingFan(SwitchbotFan):
     async def set_vertical_oscillation_angle(
         self, angle: OscillationAngle | int
     ) -> bool:
-        """Set vertical oscillation angle (30 / 60 / 90 degrees)."""
-        value = OscillationAngle(angle).value
-        cmd = f"{COMMAND_SET_OSCILLATION_PARAMS}FFFF{value:02X}FF"
+        """
+        Set vertical oscillation angle (30 / 60 / 90 degrees).
+
+        The device uses a different byte encoding on the vertical axis than
+        on the horizontal one — notably, 90° requires byte 0x5F (95), not
+        0x5A (90), which the firmware interprets as an axis halt.
+        """
+        byte_value = _VERTICAL_ANGLE_BYTE[OscillationAngle(angle)]
+        cmd = f"{COMMAND_SET_OSCILLATION_PARAMS}FFFF{byte_value:02X}FF"
         result = await self._send_command(cmd)
         return self._check_command_result(result, 0, {1})
 
