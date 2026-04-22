@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from bleak.backends.device import BLEDevice
-
 from ..const import SwitchbotModel
 from ..const.light import ColorMode, RGBICStripLightColorMode, StripLightColorMode
 from .base_light import SwitchbotSequenceBaseLight
@@ -275,29 +273,7 @@ class SwitchbotLightStrip(SwitchbotSequenceBaseLight):
 class SwitchbotStripLight3(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     """Support for switchbot strip light3 and floor lamp."""
 
-    def __init__(
-        self,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.STRIP_LIGHT_3,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-
-    @classmethod
-    async def verify_encryption_key(
-        cls,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.STRIP_LIGHT_3,
-        **kwargs: Any,
-    ) -> bool:
-        return await super().verify_encryption_key(
-            device, key_id, encryption_key, model, **kwargs
-        )
+    _model = SwitchbotModel.STRIP_LIGHT_3
 
     @property
     def color_modes(self) -> set[ColorMode]:
@@ -308,31 +284,8 @@ class SwitchbotStripLight3(SwitchbotEncryptedDevice, SwitchbotLightStrip):
 class SwitchbotPermanentOutdoorLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     """Support for Switchbot Permanent Outdoor Light."""
 
+    _model = SwitchbotModel.PERMANENT_OUTDOOR_LIGHT
     _effect_dict = RGBIC_EFFECTS
-
-    def __init__(
-        self,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-
-    @classmethod
-    async def verify_encryption_key(
-        cls,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
-        **kwargs: Any,
-    ) -> bool:
-        return await super().verify_encryption_key(
-            device, key_id, encryption_key, model, **kwargs
-        )
 
     @property
     def color_modes(self) -> set[ColorMode]:
@@ -349,31 +302,8 @@ class SwitchbotPermanentOutdoorLight(SwitchbotEncryptedDevice, SwitchbotLightStr
 class SwitchbotRgbicLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     """Support for Switchbot RGBIC lights."""
 
+    _model = SwitchbotModel.RGBICWW_STRIP_LIGHT
     _effect_dict = RGBIC_EFFECTS
-
-    def __init__(
-        self,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.RGBICWW_STRIP_LIGHT,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-
-    @classmethod
-    async def verify_encryption_key(
-        cls,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.RGBICWW_STRIP_LIGHT,
-        **kwargs: Any,
-    ) -> bool:
-        return await super().verify_encryption_key(
-            device, key_id, encryption_key, model, **kwargs
-        )
 
     @property
     def color_modes(self) -> set[ColorMode]:
