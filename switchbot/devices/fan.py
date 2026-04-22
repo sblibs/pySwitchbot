@@ -17,8 +17,12 @@ _LOGGER = logging.getLogger(__name__)
 
 
 COMMAND_HEAD = "570f41"
-COMMAND_START_OSCILLATION = f"{COMMAND_HEAD}02010101"  # H+V start
-COMMAND_STOP_OSCILLATION = f"{COMMAND_HEAD}02010202"  # H+V stop
+# Circulator Fan (single-axis): start/stop oscillation with V kept unchanged.
+COMMAND_START_OSCILLATION = f"{COMMAND_HEAD}020101ff"
+COMMAND_STOP_OSCILLATION = f"{COMMAND_HEAD}020102ff"
+# Standing Fan (dual-axis): start/stop both axes at once.
+COMMAND_START_OSCILLATION_ALL_AXES = f"{COMMAND_HEAD}02010101"
+COMMAND_STOP_OSCILLATION_ALL_AXES = f"{COMMAND_HEAD}02010202"
 COMMAND_START_HORIZONTAL_OSCILLATION = f"{COMMAND_HEAD}020101ff"  # H start, V keep
 COMMAND_STOP_HORIZONTAL_OSCILLATION = f"{COMMAND_HEAD}020102ff"  # H stop, V keep
 COMMAND_START_VERTICAL_OSCILLATION = f"{COMMAND_HEAD}0201ff01"  # H keep, V start
@@ -46,6 +50,8 @@ class SwitchbotFan(SwitchbotSequenceDevice):
     _turn_off_command = f"{COMMAND_HEAD}0102"
     _mode_enum: ClassVar[type[Enum]] = FanMode
     _command_set_mode: ClassVar[dict[str, str]] = COMMAND_SET_MODE
+    _command_start_oscillation: ClassVar[str] = COMMAND_START_OSCILLATION
+    _command_stop_oscillation: ClassVar[str] = COMMAND_STOP_OSCILLATION
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
@@ -108,8 +114,8 @@ class SwitchbotFan(SwitchbotSequenceDevice):
     async def set_oscillation(self, oscillating: bool) -> bool:
         """Send command to set fan oscillation"""
         if oscillating:
-            return await self._send_command(COMMAND_START_OSCILLATION)
-        return await self._send_command(COMMAND_STOP_OSCILLATION)
+            return await self._send_command(self._command_start_oscillation)
+        return await self._send_command(self._command_stop_oscillation)
 
     @update_after_operation
     async def set_horizontal_oscillation(self, oscillating: bool) -> bool:
@@ -155,6 +161,8 @@ class SwitchbotStandingFan(SwitchbotFan):
 
     _mode_enum: ClassVar[type[Enum]] = StandingFanMode
     _command_set_mode: ClassVar[dict[str, str]] = COMMAND_SET_STANDING_FAN_MODE
+    _command_start_oscillation: ClassVar[str] = COMMAND_START_OSCILLATION_ALL_AXES
+    _command_stop_oscillation: ClassVar[str] = COMMAND_STOP_OSCILLATION_ALL_AXES
 
     @update_after_operation
     async def set_horizontal_oscillation_angle(
@@ -163,7 +171,8 @@ class SwitchbotStandingFan(SwitchbotFan):
         """Set horizontal oscillation angle (30 / 60 / 90 degrees)."""
         value = OscillationAngle(angle).value
         cmd = f"{COMMAND_SET_OSCILLATION_PARAMS}{value:02X}FFFFFF"
-        return await self._send_command(cmd)
+        result = await self._send_command(cmd)
+        return result is not None
 
     @update_after_operation
     async def set_vertical_oscillation_angle(
@@ -172,14 +181,16 @@ class SwitchbotStandingFan(SwitchbotFan):
         """Set vertical oscillation angle (30 / 60 / 90 degrees)."""
         value = OscillationAngle(angle).value
         cmd = f"{COMMAND_SET_OSCILLATION_PARAMS}FFFF{value:02X}FF"
-        return await self._send_command(cmd)
+        result = await self._send_command(cmd)
+        return result is not None
 
     @update_after_operation
     async def set_night_light(self, state: NightLightState | int) -> bool:
         """Set night-light state (LEVEL_1, LEVEL_2, OFF)."""
         value = NightLightState(state).value
         cmd = f"{COMMAND_SET_NIGHT_LIGHT}{value:02X}FFFF"
-        return await self._send_command(cmd)
+        result = await self._send_command(cmd)
+        return result is not None
 
     def get_night_light_state(self) -> int | None:
         """Return cached night light state."""

@@ -173,13 +173,43 @@ async def test_set_oscillation():
         (False, fan.COMMAND_STOP_OSCILLATION),
     ],
 )
-async def test_set_oscillation_command(oscillating, expected_cmd):
-    """Verify set_oscillation sends the correct H+V command."""
+async def test_circulator_fan_set_oscillation_command(oscillating, expected_cmd):
+    """Circulator Fan keeps the original single-axis (V kept) payload."""
     fan_device = create_device_for_command_testing({"oscillating": oscillating})
     await fan_device.set_oscillation(oscillating)
     fan_device._send_command.assert_called_once()
     cmd = fan_device._send_command.call_args[0][0]
     assert cmd == expected_cmd
+
+
+def test_circulator_fan_oscillation_command_constants():
+    """Lock the bytes for the Circulator Fan oscillation commands."""
+    # These are master-version bytes preserved for backward compatibility.
+    assert fan.COMMAND_START_OSCILLATION == "570f41020101ff"
+    assert fan.COMMAND_STOP_OSCILLATION == "570f41020102ff"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("oscillating", "expected_cmd"),
+    [
+        (True, fan.COMMAND_START_OSCILLATION_ALL_AXES),
+        (False, fan.COMMAND_STOP_OSCILLATION_ALL_AXES),
+    ],
+)
+async def test_standing_fan_set_oscillation_command(oscillating, expected_cmd):
+    """Standing Fan oscillation toggles both axes at once."""
+    standing_fan = create_standing_fan_for_testing({"oscillating": oscillating})
+    await standing_fan.set_oscillation(oscillating)
+    standing_fan._send_command.assert_called_once()
+    cmd = standing_fan._send_command.call_args[0][0]
+    assert cmd == expected_cmd
+
+
+def test_standing_fan_oscillation_command_constants():
+    """Lock the bytes for the Standing Fan dual-axis oscillation commands."""
+    assert fan.COMMAND_START_OSCILLATION_ALL_AXES == "570f4102010101"
+    assert fan.COMMAND_STOP_OSCILLATION_ALL_AXES == "570f4102010202"
 
 
 @pytest.mark.asyncio
