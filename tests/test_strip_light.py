@@ -129,7 +129,7 @@ async def test_default_info(device_case, expected_effects):
 
 
 @pytest.mark.asyncio
-async def test_candle_warmer_lamp_info():
+async def test_candle_warmer_lamp_info() -> None:
     """Test default initialization of the candle warmer lamp."""
     adv_info, dev_cls = CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp
     device = create_device_for_command_testing(adv_info, dev_cls)
