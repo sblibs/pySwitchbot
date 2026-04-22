@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from enum import Enum
+from typing import Any, ClassVar
 
-from ..const.fan import FanMode, StandingFanMode
+from ..const.fan import FanMode, NightLightState, OscillationAngle, StandingFanMode
 from .device import (
     DEVICE_GET_BASIC_SETTINGS_KEY,
     SwitchbotSequenceDevice,
@@ -22,11 +23,17 @@ COMMAND_START_HORIZONTAL_OSCILLATION = f"{COMMAND_HEAD}020101ff"  # H start, V k
 COMMAND_STOP_HORIZONTAL_OSCILLATION = f"{COMMAND_HEAD}020102ff"  # H stop, V keep
 COMMAND_START_VERTICAL_OSCILLATION = f"{COMMAND_HEAD}0201ff01"  # H keep, V start
 COMMAND_STOP_VERTICAL_OSCILLATION = f"{COMMAND_HEAD}0201ff02"  # H keep, V stop
+COMMAND_SET_OSCILLATION_PARAMS = f"{COMMAND_HEAD}0202"  # +angles
+COMMAND_SET_NIGHT_LIGHT = f"{COMMAND_HEAD}0502"  # +state
 COMMAND_SET_MODE = {
     FanMode.NORMAL.name.lower(): f"{COMMAND_HEAD}030101ff",
     FanMode.NATURAL.name.lower(): f"{COMMAND_HEAD}030102ff",
     FanMode.SLEEP.name.lower(): f"{COMMAND_HEAD}030103",
     FanMode.BABY.name.lower(): f"{COMMAND_HEAD}030104",
+}
+COMMAND_SET_STANDING_FAN_MODE = {
+    **COMMAND_SET_MODE,
+    StandingFanMode.CUSTOM_NATURAL.name.lower(): f"{COMMAND_HEAD}030105",
 }
 COMMAND_SET_PERCENTAGE = f"{COMMAND_HEAD}0302"  #  +speed
 COMMAND_GET_BASIC_INFO = "570f428102"
@@ -37,6 +44,8 @@ class SwitchbotFan(SwitchbotSequenceDevice):
 
     _turn_on_command = f"{COMMAND_HEAD}0101"
     _turn_off_command = f"{COMMAND_HEAD}0102"
+    _mode_enum: ClassVar[type[Enum]] = FanMode
+    _command_set_mode: ClassVar[dict[str, str]] = COMMAND_SET_MODE
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
@@ -52,11 +61,13 @@ class SwitchbotFan(SwitchbotSequenceDevice):
         oscillating_vertical = bool(_data[3] & 0b00100000)
         oscillating = oscillating_horizontal or oscillating_vertical
         _mode = _data[8] & 0b00000111
-        mode = FanMode(_mode).name.lower() if 1 <= _mode <= 4 else None
+        mode_enum = self._mode_enum
+        max_mode = max(m.value for m in mode_enum)
+        mode = mode_enum(_mode).name.lower() if 1 <= _mode <= max_mode else None
         speed = _data[9]
         firmware = _data1[2] / 10.0
 
-        return {
+        info: dict[str, Any] = {
             "battery": battery,
             "isOn": isOn,
             "oscillating": oscillating,
@@ -66,6 +77,12 @@ class SwitchbotFan(SwitchbotSequenceDevice):
             "speed": speed,
             "firmware": firmware,
         }
+        # Night light is only meaningful for models that expose it. Copy from
+        # the latest advertisement parse if the parser put it there.
+        night_light = self._get_adv_value("nightLight")
+        if night_light is not None:
+            info["nightLight"] = night_light
+        return info
 
     async def _get_basic_info(self, cmd: str) -> bytes | None:
         """Return basic info of device."""
@@ -80,7 +97,7 @@ class SwitchbotFan(SwitchbotSequenceDevice):
     @update_after_operation
     async def set_preset_mode(self, preset_mode: str) -> bool:
         """Send command to set fan preset_mode."""
-        return await self._send_command(COMMAND_SET_MODE[preset_mode])
+        return await self._send_command(self._command_set_mode[preset_mode])
 
     @update_after_operation
     async def set_percentage(self, percentage: int) -> bool:
@@ -134,68 +151,34 @@ class SwitchbotFan(SwitchbotSequenceDevice):
 
 
 class SwitchbotStandingFan(SwitchbotFan):
-    """Representation of a Switchbot Standing Fan."""
+    """Representation of a Switchbot Standing Fan (FAN2)."""
 
-    COMMAND_SET_MODE = {
-        StandingFanMode.NORMAL.name.lower(): f"{COMMAND_HEAD}030101ff",
-        StandingFanMode.NATURAL.name.lower(): f"{COMMAND_HEAD}030102ff",
-        StandingFanMode.SLEEP.name.lower(): f"{COMMAND_HEAD}030103",
-        StandingFanMode.BABY.name.lower(): f"{COMMAND_HEAD}030104",
-        StandingFanMode.CUSTOM_NATURAL.name.lower(): f"{COMMAND_HEAD}030105",
-    }
-    COMMAND_SET_OSCILLATION_PARAMS = f"{COMMAND_HEAD}0202"
-    COMMAND_SET_NIGHT_LIGHT = f"{COMMAND_HEAD}0502"
+    _mode_enum: ClassVar[type[Enum]] = StandingFanMode
+    _command_set_mode: ClassVar[dict[str, str]] = COMMAND_SET_STANDING_FAN_MODE
 
     @update_after_operation
-    async def set_preset_mode(self, preset_mode: str) -> bool:
-        """Send command to set fan preset_mode."""
-        return await self._send_command(self.COMMAND_SET_MODE[preset_mode])
-
-    async def get_basic_info(self) -> dict[str, Any] | None:
-        """Get device basic settings."""
-        if not (_data := await self._get_basic_info(COMMAND_GET_BASIC_INFO)):
-            return None
-        if not (_data1 := await self._get_basic_info(DEVICE_GET_BASIC_SETTINGS_KEY)):
-            return None
-
-        _LOGGER.debug("data: %s", _data)
-        battery = _data[2] & 0b01111111
-        isOn = bool(_data[3] & 0b10000000)
-        oscillating_horizontal = bool(_data[3] & 0b01000000)
-        oscillating_vertical = bool(_data[3] & 0b00100000)
-        oscillating = oscillating_horizontal or oscillating_vertical
-        _mode = _data[8] & 0b00000111
-        mode = StandingFanMode(_mode).name.lower() if 1 <= _mode <= 5 else None
-        speed = _data[9]
-        firmware = _data1[2] / 10.0
-
-        return {
-            "battery": battery,
-            "isOn": isOn,
-            "oscillating": oscillating,
-            "oscillating_horizontal": oscillating_horizontal,
-            "oscillating_vertical": oscillating_vertical,
-            "mode": mode,
-            "speed": speed,
-            "firmware": firmware,
-        }
-
-    @update_after_operation
-    async def set_horizontal_oscillation_angle(self, angle: int) -> bool:
-        """Set horizontal oscillation angle (30/60/90)."""
-        cmd = f"{self.COMMAND_SET_OSCILLATION_PARAMS}{angle:02X}FFFFFF"
+    async def set_horizontal_oscillation_angle(
+        self, angle: OscillationAngle | int
+    ) -> bool:
+        """Set horizontal oscillation angle (30 / 60 / 90 degrees)."""
+        value = OscillationAngle(angle).value
+        cmd = f"{COMMAND_SET_OSCILLATION_PARAMS}{value:02X}FFFFFF"
         return await self._send_command(cmd)
 
     @update_after_operation
-    async def set_vertical_oscillation_angle(self, angle: int) -> bool:
-        """Set vertical oscillation angle (30/60/90)."""
-        cmd = f"{self.COMMAND_SET_OSCILLATION_PARAMS}FFFF{angle:02X}FF"
+    async def set_vertical_oscillation_angle(
+        self, angle: OscillationAngle | int
+    ) -> bool:
+        """Set vertical oscillation angle (30 / 60 / 90 degrees)."""
+        value = OscillationAngle(angle).value
+        cmd = f"{COMMAND_SET_OSCILLATION_PARAMS}FFFF{value:02X}FF"
         return await self._send_command(cmd)
 
     @update_after_operation
-    async def set_night_light(self, state: int) -> bool:
-        """Set night light state. 1=level1, 2=level2, 3=off."""
-        cmd = f"{self.COMMAND_SET_NIGHT_LIGHT}{state:02X}FFFF"
+    async def set_night_light(self, state: NightLightState | int) -> bool:
+        """Set night-light state (LEVEL_1, LEVEL_2, OFF)."""
+        value = NightLightState(state).value
+        cmd = f"{COMMAND_SET_NIGHT_LIGHT}{value:02X}FFFF"
         return await self._send_command(cmd)
 
     def get_night_light_state(self) -> int | None:

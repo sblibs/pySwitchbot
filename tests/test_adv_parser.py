@@ -1827,6 +1827,8 @@ def test_circulator_fan_active() -> None:
                 "mode": "baby",
                 "nightLight": 3,
                 "oscillating": False,
+                "oscillating_horizontal": False,
+                "oscillating_vertical": False,
                 "battery": 82,
                 "speed": 57,
             },
@@ -1861,6 +1863,8 @@ def test_circulator_fan_passive() -> None:
                 "mode": "baby",
                 "nightLight": 3,
                 "oscillating": False,
+                "oscillating_horizontal": False,
+                "oscillating_vertical": False,
                 "battery": 82,
                 "speed": 57,
             },
@@ -1898,6 +1902,26 @@ def test_circulator_fan_with_empty_data() -> None:
         rssi=-97,
         active=True,
     )
+
+
+def test_standing_fan_custom_natural_with_per_axis_oscillation() -> None:
+    """Standing Fan in CUSTOM_NATURAL (mode 5) + both axes oscillating."""
+    # Mode field is bits [6:4] of device_data[1].
+    # Mode 5 (custom_natural) = 0b0101 0000, plus isOn=0b1000_0000, plus
+    # horizontal=0b10, vertical=0b01 → 0b1101 0011 = 0xD3.
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b"\xb0\xe9\xfe\x01\x02\x03~\xd3R9"},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"\x11\x07\x60"},
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.STANDING_FAN)
+    assert result is not None
+    data = result.data["data"]
+    assert data["mode"] == "custom_natural"
+    assert data["oscillating"] is True
+    assert data["oscillating_horizontal"] is True
+    assert data["oscillating_vertical"] is True
 
 
 def test_k20_active() -> None:

@@ -10,7 +10,7 @@ from .evaporative_humidifier import (
     HumidifierMode,
     HumidifierWaterLevel,
 )
-from .fan import FanMode, StandingFanMode
+from .fan import FanMode, NightLightState, OscillationAngle, StandingFanMode
 from .light import (
     BulbColorMode,
     CeilingLightColorMode,
@@ -131,6 +131,8 @@ __all__ = [
     "HumidifierMode",
     "HumidifierWaterLevel",
     "LockStatus",
+    "NightLightState",
+    "OscillationAngle",
     "SmartThermostatRadiatorMode",
     "StandingFanMode",
     "StripLightColorMode",

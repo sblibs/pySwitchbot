@@ -4,7 +4,12 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
-from switchbot.const.fan import FanMode, StandingFanMode
+from switchbot.const.fan import (
+    FanMode,
+    NightLightState,
+    OscillationAngle,
+    StandingFanMode,
+)
 from switchbot.devices import fan
 from switchbot.devices.fan import SwitchbotStandingFan
 
@@ -302,7 +307,8 @@ async def test_standing_fan_set_preset_mode(mode):
     ],
 )
 async def test_standing_fan_get_basic_info(basic_info, firmware_info, result):
-    standing_fan = create_standing_fan_for_testing()
+    # Preload nightLight via the fixture adv data so get_basic_info can surface it.
+    standing_fan = create_standing_fan_for_testing({"nightLight": 3})
 
     async def mock_get_basic_info(arg):
         if arg == fan.COMMAND_GET_BASIC_INFO:
@@ -314,7 +320,7 @@ async def test_standing_fan_get_basic_info(basic_info, firmware_info, result):
     standing_fan._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
 
     info = await standing_fan.get_basic_info()
-    assert info == result
+    assert info == result | {"nightLight": 3}
 
 
 @pytest.mark.asyncio
@@ -338,36 +344,89 @@ async def test_standing_fan_get_basic_info_returns_none(basic_info, firmware_inf
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("angle", [30, 60, 90])
+@pytest.mark.parametrize(
+    "angle",
+    [OscillationAngle.ANGLE_30, OscillationAngle.ANGLE_60, OscillationAngle.ANGLE_90],
+)
 async def test_standing_fan_set_horizontal_oscillation_angle(angle):
     standing_fan = create_standing_fan_for_testing()
     await standing_fan.set_horizontal_oscillation_angle(angle)
     standing_fan._send_command.assert_called_once()
     cmd = standing_fan._send_command.call_args[0][0]
-    assert cmd == f"570f410202{angle:02X}FFFFFF"
+    assert cmd == f"{fan.COMMAND_SET_OSCILLATION_PARAMS}{angle.value:02X}FFFFFF"
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("angle", [30, 60, 90])
+async def test_standing_fan_set_horizontal_oscillation_angle_int(angle):
+    """Raw int inputs are coerced through OscillationAngle(angle)."""
+    standing_fan = create_standing_fan_for_testing()
+    await standing_fan.set_horizontal_oscillation_angle(angle)
+    cmd = standing_fan._send_command.call_args[0][0]
+    assert cmd == f"{fan.COMMAND_SET_OSCILLATION_PARAMS}{angle:02X}FFFFFF"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("angle", [0, 45, 120, -1])
+async def test_standing_fan_set_horizontal_oscillation_angle_invalid(angle):
+    standing_fan = create_standing_fan_for_testing()
+    with pytest.raises(ValueError, match="is not a valid"):
+        await standing_fan.set_horizontal_oscillation_angle(angle)
+    standing_fan._send_command.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "angle",
+    [OscillationAngle.ANGLE_30, OscillationAngle.ANGLE_60, OscillationAngle.ANGLE_90],
+)
 async def test_standing_fan_set_vertical_oscillation_angle(angle):
     standing_fan = create_standing_fan_for_testing()
     await standing_fan.set_vertical_oscillation_angle(angle)
     standing_fan._send_command.assert_called_once()
     cmd = standing_fan._send_command.call_args[0][0]
-    assert cmd == f"570f410202FFFF{angle:02X}FF"
+    assert cmd == f"{fan.COMMAND_SET_OSCILLATION_PARAMS}FFFF{angle.value:02X}FF"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("angle", [0, 45, 120, -1])
+async def test_standing_fan_set_vertical_oscillation_angle_invalid(angle):
+    standing_fan = create_standing_fan_for_testing()
+    with pytest.raises(ValueError, match="is not a valid"):
+        await standing_fan.set_vertical_oscillation_angle(angle)
+    standing_fan._send_command.assert_not_called()
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("state", "label"),
-    [(1, "level_1"), (2, "level_2"), (3, "off")],
+    "state",
+    [NightLightState.LEVEL_1, NightLightState.LEVEL_2, NightLightState.OFF],
 )
-async def test_standing_fan_set_night_light(state, label):
+async def test_standing_fan_set_night_light(state):
     standing_fan = create_standing_fan_for_testing()
     await standing_fan.set_night_light(state)
     standing_fan._send_command.assert_called_once()
     cmd = standing_fan._send_command.call_args[0][0]
-    assert cmd == f"570f410502{state:02X}FFFF"
+    assert cmd == f"{fan.COMMAND_SET_NIGHT_LIGHT}{state.value:02X}FFFF"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("state", [1, 2, 3])
+async def test_standing_fan_set_night_light_int(state):
+    """Raw int inputs are coerced through NightLightState(state)."""
+    standing_fan = create_standing_fan_for_testing()
+    await standing_fan.set_night_light(state)
+    cmd = standing_fan._send_command.call_args[0][0]
+    assert cmd == f"{fan.COMMAND_SET_NIGHT_LIGHT}{state:02X}FFFF"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("state", [0, 4, 99, -1])
+async def test_standing_fan_set_night_light_invalid(state):
+    standing_fan = create_standing_fan_for_testing()
+    with pytest.raises(ValueError, match="is not a valid"):
+        await standing_fan.set_night_light(state)
+    standing_fan._send_command.assert_not_called()
 
 
 def test_standing_fan_get_night_light_state():
