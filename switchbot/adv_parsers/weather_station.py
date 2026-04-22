@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..helpers import celsius_to_fahrenheit
+from ._sensor_th import decode_temp_humidity
 
 
 def process_weather_station(
@@ -37,21 +37,4 @@ def process_weather_station(
     if not temp_data:
         return {}
 
-    _temp_sign = 1 if temp_data[1] & 0b10000000 else -1
-    _temp_c = _temp_sign * (
-        (temp_data[1] & 0b01111111) + ((temp_data[0] & 0b00001111) / 10)
-    )
-    _temp_f = celsius_to_fahrenheit(_temp_c)
-    _temp_f = (_temp_f * 10) / 10
-    humidity = temp_data[2] & 0b01111111
-
-    if _temp_c == 0 and humidity == 0 and battery == 0:
-        return {}
-
-    return {
-        "temp": {"c": _temp_c, "f": _temp_f},
-        "temperature": _temp_c,
-        "fahrenheit": bool(temp_data[2] & 0b10000000),
-        "humidity": humidity,
-        "battery": battery,
-    }
+    return decode_temp_humidity(temp_data, battery)
