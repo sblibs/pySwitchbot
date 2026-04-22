@@ -34,9 +34,29 @@ class NightLightState(Enum):
     OFF = 3
 
 
-class OscillationAngle(Enum):
-    """Standing Fan oscillation angle command values (degrees)."""
+class HorizontalOscillationAngle(Enum):
+    """
+    Horizontal oscillation angle command values.
+
+    For the horizontal axis the device byte is the same as the
+    user-facing angle in degrees.
+    """
 
     ANGLE_30 = 30
     ANGLE_60 = 60
     ANGLE_90 = 90
+
+
+class VerticalOscillationAngle(Enum):
+    """
+    Vertical oscillation angle command values.
+
+    The Standing Fan uses a different byte encoding on the vertical axis
+    than on the horizontal one. Byte 0x5A (decimal 90) is interpreted as
+    an axis halt, so 90° maps to byte 0x5F (95). 30° and 60° match their
+    degree values.
+    """
+
+    ANGLE_30 = 30
+    ANGLE_60 = 60
+    ANGLE_90 = 95

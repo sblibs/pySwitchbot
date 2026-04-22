@@ -6,7 +6,13 @@ import logging
 from enum import Enum
 from typing import Any, ClassVar
 
-from ..const.fan import FanMode, NightLightState, OscillationAngle, StandingFanMode
+from ..const.fan import (
+    FanMode,
+    HorizontalOscillationAngle,
+    NightLightState,
+    StandingFanMode,
+    VerticalOscillationAngle,
+)
 from .device import (
     DEVICE_GET_BASIC_SETTINGS_KEY,
     SwitchbotSequenceDevice,
@@ -14,24 +20,6 @@ from .device import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-
-# Device-protocol byte values for each user-facing oscillation angle.
-# Horizontal: byte value matches the degree value directly.
-_HORIZONTAL_ANGLE_BYTE: dict[OscillationAngle, int] = {
-    OscillationAngle.ANGLE_30: 30,
-    OscillationAngle.ANGLE_60: 60,
-    OscillationAngle.ANGLE_90: 90,
-}
-# Vertical: the Standing Fan uses a different encoding on the vertical axis.
-# Byte 90 (0x5A) halts the axis; 95 (0x5F) produces a full 90° tilt. The
-# 30°/60° bytes are assumed to equal their degree values (unverified on
-# hardware yet — track as a TODO if a user reports they misbehave).
-_VERTICAL_ANGLE_BYTE: dict[OscillationAngle, int] = {
-    OscillationAngle.ANGLE_30: 30,
-    OscillationAngle.ANGLE_60: 60,
-    OscillationAngle.ANGLE_90: 95,
-}
 
 
 COMMAND_HEAD = "570f41"
@@ -200,27 +188,28 @@ class SwitchbotStandingFan(SwitchbotFan):
 
     @update_after_operation
     async def set_horizontal_oscillation_angle(
-        self, angle: OscillationAngle | int
+        self, angle: HorizontalOscillationAngle | int
     ) -> bool:
         """Set horizontal oscillation angle (30 / 60 / 90 degrees)."""
-        byte_value = _HORIZONTAL_ANGLE_BYTE[OscillationAngle(angle)]
-        cmd = f"{COMMAND_SET_OSCILLATION_PARAMS}{byte_value:02X}FFFFFF"
+        value = HorizontalOscillationAngle(angle).value
+        cmd = f"{COMMAND_SET_OSCILLATION_PARAMS}{value:02X}FFFFFF"
         result = await self._send_command(cmd)
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def set_vertical_oscillation_angle(
-        self, angle: OscillationAngle | int
+        self, angle: VerticalOscillationAngle | int
     ) -> bool:
         """
         Set vertical oscillation angle (30 / 60 / 90 degrees).
 
         The device uses a different byte encoding on the vertical axis than
-        on the horizontal one — notably, 90° requires byte 0x5F (95), not
-        0x5A (90), which the firmware interprets as an axis halt.
+        on the horizontal one — 90° maps to byte 0x5F (95), not 0x5A (90),
+        which the firmware interprets as an axis halt. Use
+        `VerticalOscillationAngle` (or the raw byte values 30 / 60 / 95).
         """
-        byte_value = _VERTICAL_ANGLE_BYTE[OscillationAngle(angle)]
-        cmd = f"{COMMAND_SET_OSCILLATION_PARAMS}FFFF{byte_value:02X}FF"
+        value = VerticalOscillationAngle(angle).value
+        cmd = f"{COMMAND_SET_OSCILLATION_PARAMS}FFFF{value:02X}FF"
         result = await self._send_command(cmd)
         return self._check_command_result(result, 0, {1})
 

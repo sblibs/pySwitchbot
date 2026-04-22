@@ -10,7 +10,13 @@ from .evaporative_humidifier import (
     HumidifierMode,
     HumidifierWaterLevel,
 )
-from .fan import FanMode, NightLightState, OscillationAngle, StandingFanMode
+from .fan import (
+    FanMode,
+    HorizontalOscillationAngle,
+    NightLightState,
+    StandingFanMode,
+    VerticalOscillationAngle,
+)
 from .light import (
     BulbColorMode,
     CeilingLightColorMode,
@@ -129,12 +135,12 @@ __all__ = [
     "ClimateMode",
     "ColorMode",
     "FanMode",
+    "HorizontalOscillationAngle",
     "HumidifierAction",
     "HumidifierMode",
     "HumidifierWaterLevel",
     "LockStatus",
     "NightLightState",
-    "OscillationAngle",
     "SmartThermostatRadiatorMode",
     "StandingFanMode",
     "StripLightColorMode",
@@ -142,4 +148,5 @@ __all__ = [
     "SwitchbotApiError",
     "SwitchbotAuthenticationError",
     "SwitchbotModel",
+    "VerticalOscillationAngle",
 ]
