@@ -1,5 +1,5 @@
 import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bleak.backends.device import BLEDevice
@@ -12,7 +12,7 @@ from switchbot import (
     SwitchbotModel,
 )
 from switchbot.devices import evaporative_humidifier
-from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperationError
+from switchbot.devices.device import SwitchbotOperationError
 
 from .test_adv_parser import generate_ble_device
 
@@ -311,29 +311,12 @@ async def test_set_child_lock(enabled, command):
     device._send_command.assert_awaited_once_with(command)
 
 
-@pytest.mark.asyncio
-@patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)
-async def test_verify_encryption_key(mock_parent_verify):
+def test_default_model_classvar():
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    key_id = "ff"
-    encryption_key = "ffffffffffffffffffffffffffffffff"
-
-    mock_parent_verify.return_value = True
-
-    result = await evaporative_humidifier.SwitchbotEvaporativeHumidifier.verify_encryption_key(
-        device=ble_device,
-        key_id=key_id,
-        encryption_key=encryption_key,
+    device = evaporative_humidifier.SwitchbotEvaporativeHumidifier(
+        ble_device, "ff", "ffffffffffffffffffffffffffffffff"
     )
-
-    mock_parent_verify.assert_awaited_once_with(
-        ble_device,
-        key_id,
-        encryption_key,
-        SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
-    )
-
-    assert result is True
+    assert device._model == SwitchbotModel.EVAPORATIVE_HUMIDIFIER
 
 
 def test_evaporative_humidifier_modes():

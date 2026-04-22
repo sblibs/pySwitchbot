@@ -11,6 +11,7 @@ from bleak_retry_connector import (
 from .adv_parser import SwitchbotSupportedType, parse_advertisement_data
 from .const import (
     AirPurifierMode,
+    AirQualityLevel,
     BulbColorMode,
     CeilingLightColorMode,
     ClimateAction,
@@ -67,6 +68,7 @@ from .models import SwitchBotAdvertisement
 
 __all__ = [
     "AirPurifierMode",
+    "AirQualityLevel",
     "BulbColorMode",
     "CeilingLightColorMode",
     "ClimateAction",

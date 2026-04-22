@@ -1,9 +1,9 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bleak.backends.device import BLEDevice
 
-from switchbot import SwitchBotAdvertisement, SwitchbotEncryptedDevice, SwitchbotModel
+from switchbot import SwitchBotAdvertisement, SwitchbotModel
 from switchbot.devices import relay_switch
 from switchbot.devices.device import _merge_data as merge_data
 
@@ -393,39 +393,18 @@ async def test_get_basic_info_garage_door_opener(rawAdvData, model, info_data):
     assert info["door_open"] is True
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "model",
+    ("dev_cls", "expected_model"),
     [
-        SwitchbotModel.RELAY_SWITCH_1,
-        SwitchbotModel.RELAY_SWITCH_1PM,
-        SwitchbotModel.GARAGE_DOOR_OPENER,
-        SwitchbotModel.RELAY_SWITCH_2PM,
+        (relay_switch.SwitchbotRelaySwitch, SwitchbotModel.RELAY_SWITCH_1PM),
+        (relay_switch.SwitchbotGarageDoorOpener, SwitchbotModel.GARAGE_DOOR_OPENER),
+        (relay_switch.SwitchbotRelaySwitch2PM, SwitchbotModel.RELAY_SWITCH_2PM),
     ],
 )
-@patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)
-async def test_verify_encryption_key(mock_parent_verify, model):
+def test_default_model_classvar(dev_cls, expected_model):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    key_id = "ff"
-    encryption_key = "ffffffffffffffffffffffffffffffff"
-
-    mock_parent_verify.return_value = True
-
-    result = await relay_switch.SwitchbotRelaySwitch.verify_encryption_key(
-        device=ble_device,
-        key_id=key_id,
-        encryption_key=encryption_key,
-        model=model,
-    )
-
-    mock_parent_verify.assert_awaited_once_with(
-        ble_device,
-        key_id,
-        encryption_key,
-        model,
-    )
-
-    assert result is True
+    device = dev_cls(ble_device, "ff", "ffffffffffffffffffffffffffffffff")
+    assert device._model == expected_model
 
 
 @pytest.mark.parametrize(
