@@ -18,29 +18,24 @@ from . import (
 )
 from .test_adv_parser import AdvTestCase, generate_ble_device
 
+ALL_LIGHT_CASES = [
+    (STRIP_LIGHT_3_INFO, light_strip.SwitchbotStripLight3),
+    (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
+    (CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp),
+    (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
+    (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
+]
 
-@pytest.fixture(
-    params=[
-        (STRIP_LIGHT_3_INFO, light_strip.SwitchbotStripLight3),
-        (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
-        (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
-        (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
-    ]
-)
+# RGB/effect-capable devices only; excludes brightness-only lights like CWL.
+RGB_LIGHT_CASES = [
+    case
+    for case in ALL_LIGHT_CASES
+    if case[1] is not light_strip.SwitchbotCandleWarmerLamp
+]
+
+
+@pytest.fixture(params=RGB_LIGHT_CASES)
 def device_case(request):
-    return request.param
-
-
-@pytest.fixture(
-    params=[
-        (STRIP_LIGHT_3_INFO, light_strip.SwitchbotStripLight3),
-        (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
-        (CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp),
-        (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
-        (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
-    ]
-)
-def device_with_candle_warmer_lamp(request):
     return request.param
 
 
@@ -168,11 +163,11 @@ async def test_candle_warmer_lamp_unsupported_operations() -> None:
 @pytest.mark.parametrize(
     ("basic_info", "version_info"), [(True, False), (False, True), (False, False)]
 )
+@pytest.mark.parametrize(("adv_info", "dev_cls"), ALL_LIGHT_CASES)
 async def test_get_basic_info_returns_none(
-    basic_info, version_info, device_with_candle_warmer_lamp
+    basic_info, version_info, adv_info, dev_cls
 ) -> None:
     """Test that get_basic_info returns None if no data is available."""
-    adv_info, dev_cls = device_with_candle_warmer_lamp
     device = create_device_for_command_testing(adv_info, dev_cls)
 
     device._send_command = AsyncMock(side_effect=[version_info, basic_info])
