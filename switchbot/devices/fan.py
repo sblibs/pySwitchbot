@@ -106,13 +106,13 @@ class SwitchbotFan(SwitchbotSequenceDevice):
     async def set_preset_mode(self, preset_mode: str) -> bool:
         """Send command to set fan preset_mode."""
         result = await self._send_command(self._command_set_mode[preset_mode])
-        return result is not None
+        return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def set_percentage(self, percentage: int) -> bool:
         """Send command to set fan percentage."""
         result = await self._send_command(f"{COMMAND_SET_PERCENTAGE}{percentage:02X}")
-        return result is not None
+        return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def set_oscillation(self, oscillating: bool) -> bool:
@@ -123,7 +123,7 @@ class SwitchbotFan(SwitchbotSequenceDevice):
             else self._command_stop_oscillation
         )
         result = await self._send_command(cmd)
-        return result is not None
+        return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def set_horizontal_oscillation(self, oscillating: bool) -> bool:
@@ -134,7 +134,7 @@ class SwitchbotFan(SwitchbotSequenceDevice):
             else COMMAND_STOP_HORIZONTAL_OSCILLATION
         )
         result = await self._send_command(cmd)
-        return result is not None
+        return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def set_vertical_oscillation(self, oscillating: bool) -> bool:
@@ -145,7 +145,7 @@ class SwitchbotFan(SwitchbotSequenceDevice):
             else COMMAND_STOP_VERTICAL_OSCILLATION
         )
         result = await self._send_command(cmd)
-        return result is not None
+        return self._check_command_result(result, 0, {1})
 
     def get_current_percentage(self) -> Any:
         """Return cached percentage."""
@@ -188,7 +188,7 @@ class SwitchbotStandingFan(SwitchbotFan):
         value = OscillationAngle(angle).value
         cmd = f"{COMMAND_SET_OSCILLATION_PARAMS}{value:02X}FFFFFF"
         result = await self._send_command(cmd)
-        return result is not None
+        return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def set_vertical_oscillation_angle(
@@ -198,7 +198,7 @@ class SwitchbotStandingFan(SwitchbotFan):
         value = OscillationAngle(angle).value
         cmd = f"{COMMAND_SET_OSCILLATION_PARAMS}FFFF{value:02X}FF"
         result = await self._send_command(cmd)
-        return result is not None
+        return self._check_command_result(result, 0, {1})
 
     @update_after_operation
     async def set_night_light(self, state: NightLightState | int) -> bool:
@@ -206,7 +206,7 @@ class SwitchbotStandingFan(SwitchbotFan):
         value = NightLightState(state).value
         cmd = f"{COMMAND_SET_NIGHT_LIGHT}{value:02X}FFFF"
         result = await self._send_command(cmd)
-        return result is not None
+        return self._check_command_result(result, 0, {1})
 
     def get_night_light_state(self) -> int | None:
         """Return cached night light state."""
