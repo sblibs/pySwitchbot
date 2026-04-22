@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bleak.backends.device import BLEDevice
@@ -6,7 +6,7 @@ from bleak.backends.device import BLEDevice
 from switchbot import SwitchBotAdvertisement
 from switchbot.const.climate import ClimateAction, ClimateMode
 from switchbot.const.climate import SmartThermostatRadiatorMode as STRMode
-from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperationError
+from switchbot.devices.device import SwitchbotOperationError
 from switchbot.devices.smart_thermostat_radiator import (
     COMMAND_SET_MODE,
     COMMAND_SET_TEMP,
@@ -213,27 +213,9 @@ async def test_get_basic_info_parsing(basic_info, result) -> None:
     assert info["door_open"] == result[12]
 
 
-@pytest.mark.asyncio
-@patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)
-async def test_verify_encryption_key(mock_parent_verify):
+def test_default_model_classvar():
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    key_id = "ff"
-    encryption_key = "ffffffffffffffffffffffffffffffff"
-
-    mock_parent_verify.return_value = True
-
-    result = await SwitchbotSmartThermostatRadiator.verify_encryption_key(
-        device=ble_device,
-        key_id=key_id,
-        encryption_key=encryption_key,
-        model=SMART_THERMOSTAT_RADIATOR_INFO.modelName,
+    device = SwitchbotSmartThermostatRadiator(
+        ble_device, "ff", "ffffffffffffffffffffffffffffffff"
     )
-
-    mock_parent_verify.assert_awaited_once_with(
-        ble_device,
-        key_id,
-        encryption_key,
-        SMART_THERMOSTAT_RADIATOR_INFO.modelName,
-    )
-
-    assert result is True
+    assert device._model == SMART_THERMOSTAT_RADIATOR_INFO.modelName

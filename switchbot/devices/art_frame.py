@@ -3,8 +3,6 @@
 import logging
 from typing import Any
 
-from bleak.backends.device import BLEDevice
-
 from ..const import SwitchbotModel
 from .device import (
     SwitchbotEncryptedDevice,
@@ -20,30 +18,8 @@ COMMAND_SET_IMAGE = "570F7A02{}"
 class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Art Frame."""
 
-    def __init__(
-        self,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.ART_FRAME,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-        self.response_flag = True
-
-    @classmethod
-    async def verify_encryption_key(
-        cls,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.ART_FRAME,
-        **kwargs: Any,
-    ) -> bool:
-        return await super().verify_encryption_key(
-            device, key_id, encryption_key, model, **kwargs
-        )
+    _model = SwitchbotModel.ART_FRAME
+    response_flag: bool = True
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
