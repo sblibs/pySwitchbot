@@ -4442,6 +4442,138 @@ def test_with_invalid_advertisement(manufacturer_data, service_data, model) -> N
     assert result is None
 
 
+def test_weather_station_active() -> None:
+    """Test Weather Station active advertisement."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x01\x50\x06\x9a\x23\x00\x00\x00\x00\x00"
+        },
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00\x50\x00\x10\x53\xb0"
+        },
+        rssi=-67,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "data": {
+                "battery": 80,
+                "fahrenheit": False,
+                "humidity": 35,
+                "temp": {"c": 26.6, "f": 79.88},
+                "temperature": 26.6,
+            },
+            "isEncrypted": False,
+            "model": b"\x00\x10\x53\xb0",
+            "modelFriendlyName": "Weather Station",
+            "modelName": SwitchbotModel.WEATHER_STATION,
+            "rawAdvData": b"\x00\x00\x50\x00\x10\x53\xb0",
+        },
+        device=ble_device,
+        rssi=-67,
+        active=True,
+    )
+
+
+def test_weather_station_passive() -> None:
+    """Test Weather Station passive advertisement."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x01\x50\x06\x9a\x23\x00\x00\x00\x00\x00"
+        },
+        rssi=-67,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.WEATHER_STATION
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "data": {
+                "battery": 80,
+                "fahrenheit": False,
+                "humidity": 35,
+                "temp": {"c": 26.6, "f": 79.88},
+                "temperature": 26.6,
+            },
+            "isEncrypted": False,
+            "model": b"\x00\x10\x53\xb0",
+            "modelFriendlyName": "Weather Station",
+            "modelName": SwitchbotModel.WEATHER_STATION,
+            "rawAdvData": None,
+        },
+        device=ble_device,
+        rssi=-67,
+        active=False,
+    )
+
+
+def test_weather_station_service_data_only() -> None:
+    """Test Weather Station with service data only (no manufacturer data)."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00\x50\x06\x9a\x23\x00\x10\x53\xb0"
+        },
+        rssi=-67,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.WEATHER_STATION
+    )
+    assert result is not None
+    assert result.data["data"]["temperature"] == 26.6
+    assert result.data["data"]["humidity"] == 35
+    assert result.data["data"]["battery"] == 80
+
+
+def test_weather_station_empty_data() -> None:
+    """Test Weather Station with empty/zero data returns empty dict."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x01\x00\x00\x80\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00\x00\x00\x10\x53\xb0"
+        },
+        rssi=-67,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result is not None
+    assert result.data["data"] == {}
+
+
+def test_weather_station_short_service_data() -> None:
+    """Test Weather Station with too-short service data does not raise IndexError."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x01"},
+        rssi=-67,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.WEATHER_STATION
+    )
+    assert result is not None
+    assert result.data["data"] == {}
+
+
+def test_weather_station_no_data() -> None:
+    """Test Weather Station with no usable data."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b"\xaa\xbb\xcc\xdd\xee"},
+        rssi=-67,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.WEATHER_STATION
+    )
+    assert result is not None
+    assert result.data["data"] == {}
+
+
 def test_with_special_manufacturer_data_length() -> None:
     """Test with special manufacturer data length."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
