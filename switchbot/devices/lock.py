@@ -83,15 +83,20 @@ COMMAND_RESULT_EXPECTED_VALUES = {1, 6}
 class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Lock."""
 
+    _model = SwitchbotModel.LOCK
+    _notifications_enabled: bool = False
+
     def __init__(
         self,
         device: BLEDevice,
         key_id: str,
         encryption_key: str,
         interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.LOCK,
+        model: SwitchbotModel | None = None,
         **kwargs: Any,
     ) -> None:
+        if model is None:
+            model = self._model
         if model not in (
             SwitchbotModel.LOCK,
             SwitchbotModel.LOCK_PRO,
@@ -102,21 +107,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             SwitchbotModel.LOCK_PRO_WIFI,
         ):
             raise ValueError("initializing SwitchbotLock with a non-lock model")
-        self._notifications_enabled: bool = False
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-
-    @classmethod
-    async def verify_encryption_key(
-        cls,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.LOCK,
-        **kwargs: Any,
-    ) -> bool:
-        return await super().verify_encryption_key(
-            device, key_id, encryption_key, model, **kwargs
-        )
+        super().__init__(device, key_id, encryption_key, interface, model, **kwargs)
 
     async def lock(self) -> bool:
         """Send lock command."""

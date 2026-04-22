@@ -5,8 +5,6 @@ from __future__ import annotations
 import logging
 from typing import Any, ClassVar
 
-from bleak.backends.device import BLEDevice
-
 from ..adv_parsers.air_purifier import get_air_purifier_mode
 from ..const import SwitchbotModel
 from ..const.air_purifier import AirPurifierMode, AirQualityLevel
@@ -40,6 +38,7 @@ READ_LED_STATUS_COMMAND = "570f4d07"
 class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Air Purifier."""
 
+    _model = SwitchbotModel.AIR_PURIFIER_US
     _turn_on_command = f"{COMMAND_HEAD}010100"
     _turn_off_command = f"{COMMAND_HEAD}010000"
     _open_child_lock_command = f"{COMMAND_HEAD}0301"
@@ -77,30 +76,6 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
             SwitchbotModel.AIR_PURIFIER_TABLE_JP,
         }
     )
-
-    def __init__(
-        self,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.AIR_PURIFIER_US,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-
-    @classmethod
-    async def verify_encryption_key(
-        cls,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.AIR_PURIFIER_US,
-        **kwargs: Any,
-    ) -> bool:
-        return await super().verify_encryption_key(
-            device, key_id, encryption_key, model, **kwargs
-        )
 
     @property
     def color_modes(self) -> set[ColorMode]:
