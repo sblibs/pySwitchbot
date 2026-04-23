@@ -20,7 +20,7 @@ from .adv_parsers.ceiling_light import process_woceiling
 from .adv_parsers.climate_panel import process_climate_panel
 from .adv_parsers.contact import process_wocontact
 from .adv_parsers.curtain import process_wocurtain
-from .adv_parsers.fan import process_fan
+from .adv_parsers.fan import process_fan, process_standing_fan
 from .adv_parsers.hub2 import process_wohub2
 from .adv_parsers.hub3 import process_hub3
 from .adv_parsers.hubmini_matter import process_hubmini_matter
@@ -28,7 +28,12 @@ from .adv_parsers.humidifier import process_evaporative_humidifier, process_wohu
 from .adv_parsers.keypad import process_wokeypad
 from .adv_parsers.keypad_vision import process_keypad_vision, process_keypad_vision_pro
 from .adv_parsers.leak import process_leak
-from .adv_parsers.light_strip import process_light, process_rgbic_light, process_wostrip
+from .adv_parsers.light_strip import (
+    process_candle_warmer_lamp,
+    process_light,
+    process_rgbic_light,
+    process_wostrip,
+)
 from .adv_parsers.lock import (
     process_lock2,
     process_locklite,
@@ -70,7 +75,7 @@ class SwitchbotSupportedType(TypedDict):
 
     modelName: SwitchbotModel
     modelFriendlyName: str
-    func: Callable[[bytes, bytes | None], dict[str, bool | int]]
+    func: Callable[[bytes | None, bytes | None], dict[str, bool | int | str | None]]
     manufacturer_id: int | None
     manufacturer_data_length: int | None
 
@@ -612,6 +617,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_light,
         "manufacturer_id": 2409,
     },
+    b"\x00\x11\x22\xb8": {
+        "modelName": SwitchbotModel.CANDLE_WARMER_LAMP,
+        "modelFriendlyName": "Candle Warmer Lamp",
+        "func": process_candle_warmer_lamp,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\x22\xb8": {
+        "modelName": SwitchbotModel.CANDLE_WARMER_LAMP,
+        "modelFriendlyName": "Candle Warmer Lamp",
+        "func": process_candle_warmer_lamp,
+        "manufacturer_id": 2409,
+    },
     b"\x00\x10\xd0\xb1": {
         "modelName": SwitchbotModel.STRIP_LIGHT_3,
         "modelFriendlyName": "Strip Light 3",
@@ -658,6 +675,42 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.RGBICWW_FLOOR_LAMP,
         "modelFriendlyName": "RGBICWW Floor Lamp",
         "func": process_rgbic_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x10\xd0\xb7": {
+        "modelName": SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
+        "modelFriendlyName": "Permanent Outdoor Light",
+        "func": process_rgbic_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x10\xd0\xb7": {
+        "modelName": SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
+        "modelFriendlyName": "Permanent Outdoor Light",
+        "func": process_rgbic_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x10\xd0\xb5": {
+        "modelName": SwitchbotModel.RGBIC_NEON_WIRE_ROPE_LIGHT,
+        "modelFriendlyName": "RGBIC Neon Wire Rope Light",
+        "func": process_wostrip,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x10\xd0\xb6": {
+        "modelName": SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
+        "modelFriendlyName": "RGBIC Neon Rope Light",
+        "func": process_wostrip,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x10\xd0\xb5": {
+        "modelName": SwitchbotModel.RGBIC_NEON_WIRE_ROPE_LIGHT,
+        "modelFriendlyName": "RGBIC Neon Wire Rope Light",
+        "func": process_wostrip,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x10\xd0\xb6": {
+        "modelName": SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
+        "modelFriendlyName": "RGBIC Neon Rope Light",
+        "func": process_wostrip,
         "manufacturer_id": 2409,
     },
     b"\x00\x10\xfb\xa8": {
@@ -790,6 +843,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.LOCK_PRO_WIFI,
         "modelFriendlyName": "Lock Pro Wifi",
         "func": process_wolock_pro,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x11\x07\x60": {
+        "modelName": SwitchbotModel.STANDING_FAN,
+        "modelFriendlyName": "Standing Fan",
+        "func": process_standing_fan,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\x07\x60": {
+        "modelName": SwitchbotModel.STANDING_FAN,
+        "modelFriendlyName": "Standing Fan",
+        "func": process_standing_fan,
         "manufacturer_id": 2409,
     },
     b"\x00\x10\x53\xb0": {

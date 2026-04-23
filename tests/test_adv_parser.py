@@ -1827,6 +1827,8 @@ def test_circulator_fan_active() -> None:
                 "mode": "baby",
                 "nightLight": 3,
                 "oscillating": False,
+                "oscillating_horizontal": False,
+                "oscillating_vertical": False,
                 "battery": 82,
                 "speed": 57,
             },
@@ -1861,6 +1863,8 @@ def test_circulator_fan_passive() -> None:
                 "mode": "baby",
                 "nightLight": 3,
                 "oscillating": False,
+                "oscillating_horizontal": False,
+                "oscillating_vertical": False,
                 "battery": 82,
                 "speed": 57,
             },
@@ -1898,6 +1902,36 @@ def test_circulator_fan_with_empty_data() -> None:
         rssi=-97,
         active=True,
     )
+
+
+def test_standing_fan_custom_natural_with_per_axis_oscillation() -> None:
+    """
+    Standing Fan in CUSTOM_NATURAL (mode 5) + both axes oscillating.
+
+    Uses a realistic 7-byte service_data ending with the 4-byte
+    STANDING_FAN suffix so auto-detection (no explicit model arg)
+    resolves the model via `_find_model_from_service_data_suffix`.
+    """
+    # Mode field is bits [6:4] of device_data[1].
+    # Mode 5 (custom_natural) = 0b0101 0000, plus isOn=0b1000_0000, plus
+    # horizontal=0b10, vertical=0b01 → 0b1101 0011 = 0xD3.
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: b"\xb0\xe9\xfe\x01\x02\x03~\xd3R9"},
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00\x00\x00\x11\x07\x60"
+        },
+        rssi=-97,
+    )
+    # No explicit model — exercises suffix-based auto-detection.
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result is not None
+    assert result.data["modelName"] == SwitchbotModel.STANDING_FAN
+    data = result.data["data"]
+    assert data["mode"] == "custom_natural"
+    assert data["oscillating"] is True
+    assert data["oscillating_horizontal"] is True
+    assert data["oscillating_vertical"] is True
 
 
 def test_k20_active() -> None:
@@ -3493,6 +3527,20 @@ def test_humidifer_with_empty_data() -> None:
             SwitchbotModel.FLOOR_LAMP,
         ),
         AdvTestCase(
+            b"\x90\xe5\xb1h\xda\xaa\n\xb0 \x00",
+            b"\x00\x00\x00\x00\x11\x22\xb8",
+            {
+                "brightness": 48,
+                "delay": False,
+                "isOn": True,
+                "network_state": 2,
+                "sequence_number": 10,
+            },
+            b"\x00\x11\x22\xb8",
+            "Candle Warmer Lamp",
+            SwitchbotModel.CANDLE_WARMER_LAMP,
+        ),
+        AdvTestCase(
             b"\xef\xfe\xfb\x9d\x10\xfe\n\x01\x18\xf3$",
             b"q\x00",
             {
@@ -3582,6 +3630,52 @@ def test_humidifer_with_empty_data() -> None:
             b"\x00\x10\xd0\xb3",
             "RGBICWW Strip Light",
             SwitchbotModel.RGBICWW_STRIP_LIGHT,
+        ),
+        AdvTestCase(
+            b'\xc0N0\xe0U\x9a\x85\x9e"\xd0\x00\x00\x00\x00\x00\x00\x12\x91\x00',
+            b"\x00\x00\x00\x00\x10\xd0\xb7",
+            {
+                "sequence_number": 133,
+                "isOn": True,
+                "brightness": 30,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 2,
+                "cw": 0,
+            },
+            b"\x00\x10\xd0\xb7",
+            "Permanent Outdoor Light",
+            SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
+        ),
+        AdvTestCase(
+            b"@L\xca!pz/\x8b'\x00\x11:\x00",
+            b"\x00\x00\x00\x00\x10\xd0\xb6",
+            {
+                "sequence_number": 47,
+                "isOn": True,
+                "brightness": 11,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 7,
+            },
+            b"\x00\x10\xd0\xb6",
+            "RGBIC Neon Rope Light",
+            SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
+        ),
+        AdvTestCase(
+            b"@L\xca!pz/\x8b'\x00\x11:\x00",
+            b"\x00\x00\x00\x00\x10\xd0\xb5",
+            {
+                "sequence_number": 47,
+                "isOn": True,
+                "brightness": 11,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 7,
+            },
+            b"\x00\x10\xd0\xb5",
+            "RGBIC Neon Wire Rope Light",
+            SwitchbotModel.RGBIC_NEON_WIRE_ROPE_LIGHT,
         ),
         AdvTestCase(
             b"\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15",
@@ -3948,6 +4042,20 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.RGBICWW_FLOOR_LAMP,
         ),
         AdvTestCase(
+            b"\x90\xe5\xb1h\xda\xaa\n\xb0 \x00",
+            None,
+            {
+                "brightness": 48,
+                "delay": False,
+                "isOn": True,
+                "network_state": 2,
+                "sequence_number": 10,
+            },
+            b"\x00\x11\x22\xb8",
+            "Candle Warmer Lamp",
+            SwitchbotModel.CANDLE_WARMER_LAMP,
+        ),
+        AdvTestCase(
             b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00',
             None,
             {
@@ -3962,6 +4070,52 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             b"\x00\x10\xd0\xb3",
             "RGBICWW Strip Light",
             SwitchbotModel.RGBICWW_STRIP_LIGHT,
+        ),
+        AdvTestCase(
+            b'\xc0N0\xe0U\x9a\x85\x9e"\xd0\x00\x00\x00\x00\x00\x00\x12\x91\x00',
+            None,
+            {
+                "sequence_number": 133,
+                "isOn": True,
+                "brightness": 30,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 2,
+                "cw": 0,
+            },
+            b"\x00\x10\xd0\xb7",
+            "Permanent Outdoor Light",
+            SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
+        ),
+        AdvTestCase(
+            b"@L\xca!pz/\x8b'\x00\x11:\x00",
+            None,
+            {
+                "sequence_number": 47,
+                "isOn": True,
+                "brightness": 11,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 7,
+            },
+            b"\x00\x10\xd0\xb6",
+            "RGBIC Neon Rope Light",
+            SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
+        ),
+        AdvTestCase(
+            b"@L\xca!pz/\x8b'\x00\x11:\x00",
+            None,
+            {
+                "sequence_number": 47,
+                "isOn": True,
+                "brightness": 11,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 7,
+            },
+            b"\x00\x10\xd0\xb5",
+            "RGBIC Neon Wire Rope Light",
+            SwitchbotModel.RGBIC_NEON_WIRE_ROPE_LIGHT,
         ),
         AdvTestCase(
             b"\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15",
@@ -4211,6 +4365,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
         ),
         AdvTestCase(
             None,
+            b"\x00\x00\x00\x00\x11\x22\xb8",
+            {},
+            b"\x00\x11\x22\xb8",
+            "Candle Warmer Lamp",
+            SwitchbotModel.CANDLE_WARMER_LAMP,
+        ),
+        AdvTestCase(
+            None,
             b"q\x00",
             {},
             "q",
@@ -4261,6 +4423,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
             b"\x00\x10\xd0\xb3",
             "RGBICWW Strip Light",
             SwitchbotModel.RGBICWW_STRIP_LIGHT,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x00\x00\x00\x10\xd0\xb7",
+            {},
+            b"\x00\x10\xd0\xb7",
+            "Permanent Outdoor Light",
+            SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
         ),
         AdvTestCase(
             None,
@@ -4317,6 +4487,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
             b"\x01\x11\x03x",
             "Keypad Vision",
             SwitchbotModel.KEYPAD_VISION,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x00\x00\x00\x10\xd0\xb6",
+            {},
+            b"\x00\x10\xd0\xb6",
+            "RGBIC Neon Rope Light",
+            SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
         ),
         AdvTestCase(
             None,

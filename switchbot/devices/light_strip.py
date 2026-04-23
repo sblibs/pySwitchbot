@@ -23,6 +23,7 @@ _RGBICWW_STRIP_LIGHT_COLOR_MODE_MAP = {
     RGBICStripLightColorMode.MUSIC: ColorMode.EFFECT,
     RGBICStripLightColorMode.CONTROLLER: ColorMode.EFFECT,
     RGBICStripLightColorMode.COLOR_TEMP: ColorMode.COLOR_TEMP,
+    RGBICStripLightColorMode.EFFECT: ColorMode.EFFECT,
     RGBICStripLightColorMode.UNKNOWN: ColorMode.OFF,
 }
 LIGHT_STRIP_CONTROL_HEADER = "570F4901"
@@ -280,6 +281,38 @@ class SwitchbotStripLight3(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         return {ColorMode.RGB, ColorMode.COLOR_TEMP}
 
 
+class SwitchbotCandleWarmerLamp(SwitchbotEncryptedDevice, SwitchbotLightStrip):
+    """Support for Switchbot Candle Warmer Lamp."""
+
+    _model = SwitchbotModel.CANDLE_WARMER_LAMP
+    _effect_dict = {}
+    _set_rgb_command = ""
+    _set_color_temp_command = ""
+
+    @property
+    def color_modes(self) -> set[ColorMode]:
+        """Return the supported color modes."""
+        return {ColorMode.BRIGHTNESS}
+
+    @property
+    def color_mode(self) -> ColorMode:
+        """Return the current color mode."""
+        return ColorMode.BRIGHTNESS
+
+    async def get_basic_info(self) -> dict[str, Any] | None:
+        """Get device basic settings."""
+        if not (
+            res := await self._get_multi_commands_results(self._get_basic_info_command)
+        ):
+            return None
+        _version_info, _data = res
+        return {
+            "isOn": bool(_data[1] & 0b10000000),
+            "brightness": _data[2] & 0b01111111,
+            "firmware": _version_info[2] / 10.0,
+        }
+
+
 class SwitchbotRgbicLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     """Support for Switchbot RGBIC lights."""
 
@@ -296,3 +329,26 @@ class SwitchbotRgbicLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         """Return the current color mode."""
         device_mode = RGBICStripLightColorMode(self._get_adv_value("color_mode") or 10)
         return _RGBICWW_STRIP_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
+
+
+class SwitchbotPermanentOutdoorLight(SwitchbotRgbicLight):
+    """Support for Switchbot Permanent Outdoor Light."""
+
+    _model = SwitchbotModel.PERMANENT_OUTDOOR_LIGHT
+
+
+class SwitchbotRgbicNeonLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
+    """Support for Switchbot RGBIC Neon lights."""
+
+    _model = SwitchbotModel.RGBIC_NEON_ROPE_LIGHT
+    _effect_dict = RGBIC_EFFECTS
+
+    @property
+    def color_modes(self) -> set[ColorMode]:
+        """Return the supported color modes."""
+        return {ColorMode.RGB}
+
+    @property
+    def color_mode(self) -> ColorMode:
+        """Return the current color mode."""
+        return ColorMode.RGB

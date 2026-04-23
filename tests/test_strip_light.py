@@ -10,22 +10,37 @@ from switchbot.devices.base_light import SwitchbotBaseLight
 from switchbot.devices.device import SwitchbotOperationError
 
 from . import (
+    CANDLE_WARMER_LAMP_INFO,
     FLOOR_LAMP_INFO,
+    PERMANENT_OUTDOOR_LIGHT_INFO,
+    RGBIC_NEON_LIGHT_INFO,
     RGBICWW_FLOOR_LAMP_INFO,
     RGBICWW_STRIP_LIGHT_INFO,
     STRIP_LIGHT_3_INFO,
 )
 from .test_adv_parser import AdvTestCase, generate_ble_device
 
+ALL_LIGHT_CASES = [
+    (STRIP_LIGHT_3_INFO, light_strip.SwitchbotStripLight3),
+    (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
+    (CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp),
+    (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
+    (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
+    (PERMANENT_OUTDOOR_LIGHT_INFO, light_strip.SwitchbotPermanentOutdoorLight),
+    (RGBIC_NEON_LIGHT_INFO, light_strip.SwitchbotRgbicNeonLight),
+]
 
-@pytest.fixture(
-    params=[
-        (STRIP_LIGHT_3_INFO, light_strip.SwitchbotStripLight3),
-        (FLOOR_LAMP_INFO, light_strip.SwitchbotStripLight3),
-        (RGBICWW_STRIP_LIGHT_INFO, light_strip.SwitchbotRgbicLight),
-        (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
-    ]
-)
+# RGB + color-temp devices. Excludes brightness-only lights (CWL) and
+# RGB-only lights (RGBIC Neon) whose color_modes differ from the rest.
+RGB_LIGHT_CASES = [
+    case
+    for case in ALL_LIGHT_CASES
+    if case[1]
+    not in (light_strip.SwitchbotCandleWarmerLamp, light_strip.SwitchbotRgbicNeonLight)
+]
+
+
+@pytest.fixture(params=RGB_LIGHT_CASES)
 def device_case(request):
     return request.param
 
@@ -38,6 +53,7 @@ def expected_effects(device_case):
         SwitchbotModel.FLOOR_LAMP: ("christmas", "halloween", "sunset"),
         SwitchbotModel.RGBICWW_STRIP_LIGHT: ("romance", "energy", "heartbeat"),
         SwitchbotModel.RGBICWW_FLOOR_LAMP: ("romance", "energy", "heartbeat"),
+        SwitchbotModel.PERMANENT_OUTDOOR_LIGHT: ("romance", "energy", "heartbeat"),
     }
     return EXPECTED[adv_info.modelName]
 
@@ -96,10 +112,7 @@ async def test_default_info(device_case, expected_effects):
     assert device.is_on() is True
     assert device.on is True
     assert device.color_mode == ColorMode.RGB
-    assert device.color_modes == {
-        ColorMode.RGB,
-        ColorMode.COLOR_TEMP,
-    }
+    assert device.color_modes == {ColorMode.RGB, ColorMode.COLOR_TEMP}
     assert device.rgb == (30, 0, 0)
     assert device.color_temp == 3200
     assert device.brightness == adv_info.data["brightness"]
@@ -115,12 +128,59 @@ async def test_default_info(device_case, expected_effects):
 
 
 @pytest.mark.asyncio
+async def test_rgbic_neon_light_info() -> None:
+    """Test color_mode / color_modes on SwitchbotRgbicNeonLight (RGB only)."""
+    adv_info, dev_cls = RGBIC_NEON_LIGHT_INFO, light_strip.SwitchbotRgbicNeonLight
+    device = create_device_for_command_testing(adv_info, dev_cls)
+    assert device.color_mode == ColorMode.RGB
+    assert device.color_modes == {ColorMode.RGB}
+
+
+@pytest.mark.asyncio
+async def test_candle_warmer_lamp_info() -> None:
+    """Test default initialization of the candle warmer lamp."""
+    adv_info, dev_cls = CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp
+    device = create_device_for_command_testing(adv_info, dev_cls)
+    assert device.rgb is None
+    assert device.is_on() is True
+    assert device.on is True
+    assert device.color_mode == ColorMode.BRIGHTNESS
+    assert device.color_modes == {
+        ColorMode.BRIGHTNESS,
+    }
+    assert device.brightness == adv_info.data["brightness"]
+    assert device.get_effect_list is None
+
+
+@pytest.mark.asyncio
+async def test_candle_warmer_lamp_unsupported_operations() -> None:
+    """Test that RGB/color-temp/effect operations are not supported on CWL."""
+    device = create_device_for_command_testing(
+        CANDLE_WARMER_LAMP_INFO, light_strip.SwitchbotCandleWarmerLamp
+    )
+    with pytest.raises(
+        SwitchbotOperationError,
+        match="does not support this functionality",
+    ):
+        await device.set_rgb(100, 255, 128, 64)
+    with pytest.raises(
+        SwitchbotOperationError,
+        match="does not support this functionality",
+    ):
+        await device.set_color_temp(100, 4000)
+    with pytest.raises(SwitchbotOperationError, match="not supported"):
+        await device.set_effect("sunset")
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("basic_info", "version_info"), [(True, False), (False, True), (False, False)]
 )
-async def test_get_basic_info_returns_none(basic_info, version_info, device_case):
+@pytest.mark.parametrize(("adv_info", "dev_cls"), ALL_LIGHT_CASES)
+async def test_get_basic_info_returns_none(
+    basic_info, version_info, adv_info, dev_cls
+) -> None:
     """Test that get_basic_info returns None if no data is available."""
-    adv_info, dev_cls = device_case
     device = create_device_for_command_testing(adv_info, dev_cls)
 
     device._send_command = AsyncMock(side_effect=[version_info, basic_info])
@@ -309,6 +369,12 @@ async def test_set_effect_normalizes_case(device_case):
     [
         (light_strip.SwitchbotStripLight3, SwitchbotModel.STRIP_LIGHT_3),
         (light_strip.SwitchbotRgbicLight, SwitchbotModel.RGBICWW_STRIP_LIGHT),
+        (
+            light_strip.SwitchbotPermanentOutdoorLight,
+            SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
+        ),
+        (light_strip.SwitchbotRgbicNeonLight, SwitchbotModel.RGBIC_NEON_ROPE_LIGHT),
+        (light_strip.SwitchbotCandleWarmerLamp, SwitchbotModel.CANDLE_WARMER_LAMP),
     ],
 )
 def test_default_model_classvar(dev_cls, expected_model):
@@ -381,3 +447,29 @@ async def test_exception_with_wrong_model():
         match="Current device aa:bb:cc:dd:ee:ff does not support this functionality",
     ):
         await device.set_rgb(100, 255, 128, 64)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("color_mode_value", "expected_color_mode"),
+    [
+        (1, ColorMode.EFFECT),  # SEGMENTED
+        (2, ColorMode.RGB),
+        (3, ColorMode.EFFECT),  # SCENE
+        (4, ColorMode.EFFECT),  # MUSIC
+        (5, ColorMode.EFFECT),  # CONTROLLER
+        (6, ColorMode.COLOR_TEMP),
+        (7, ColorMode.EFFECT),  # EFFECT (RGBIC-specific)
+        (10, ColorMode.OFF),  # UNKNOWN
+    ],
+)
+async def test_permanent_outdoor_light_color_mode(
+    color_mode_value, expected_color_mode
+):
+    """Test that POL correctly handles all RGBICStripLightColorMode values including EFFECT (7)."""
+    device = create_device_for_command_testing(
+        PERMANENT_OUTDOOR_LIGHT_INFO,
+        light_strip.SwitchbotPermanentOutdoorLight,
+        init_data={"color_mode": color_mode_value},
+    )
+    assert device.color_mode == expected_color_mode

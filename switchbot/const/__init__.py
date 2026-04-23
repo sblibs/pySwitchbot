@@ -10,7 +10,13 @@ from .evaporative_humidifier import (
     HumidifierMode,
     HumidifierWaterLevel,
 )
-from .fan import FanMode
+from .fan import (
+    FanMode,
+    HorizontalOscillationAngle,
+    NightLightState,
+    StandingFanMode,
+    VerticalOscillationAngle,
+)
 from .light import (
     BulbColorMode,
     CeilingLightColorMode,
@@ -80,6 +86,7 @@ class SwitchbotModel(StrEnum):
     ROLLER_SHADE = "Roller Shade"
     HUBMINI_MATTER = "HubMini Matter"
     CIRCULATOR_FAN = "Circulator Fan"
+    STANDING_FAN = "Standing Fan"
     K20_VACUUM = "K20 Vacuum"
     S10_VACUUM = "S10 Vacuum"
     K10_VACUUM = "K10+ Vacuum"
@@ -96,9 +103,13 @@ class SwitchbotModel(StrEnum):
     RELAY_SWITCH_2PM = "Relay Switch 2PM"
     STRIP_LIGHT_3 = "Strip Light 3"
     FLOOR_LAMP = "Floor Lamp"
+    CANDLE_WARMER_LAMP = "Candle Warmer Lamp"
     PLUG_MINI_EU = "Plug Mini (EU)"
     RGBICWW_STRIP_LIGHT = "RGBICWW Strip Light"
     RGBICWW_FLOOR_LAMP = "RGBICWW Floor Lamp"
+    PERMANENT_OUTDOOR_LIGHT = "Permanent Outdoor Light"
+    RGBIC_NEON_ROPE_LIGHT = "RGBIC Neon Rope Light"
+    RGBIC_NEON_WIRE_ROPE_LIGHT = "RGBIC Neon Wire Rope Light"
     K11_VACUUM = "K11+ Vacuum"
     CLIMATE_PANEL = "Climate Panel"
     SMART_THERMOSTAT_RADIATOR = "Smart Thermostat Radiator"
@@ -125,14 +136,18 @@ __all__ = [
     "ClimateMode",
     "ColorMode",
     "FanMode",
+    "HorizontalOscillationAngle",
     "HumidifierAction",
     "HumidifierMode",
     "HumidifierWaterLevel",
     "LockStatus",
+    "NightLightState",
     "SmartThermostatRadiatorMode",
+    "StandingFanMode",
     "StripLightColorMode",
     "SwitchbotAccountConnectionError",
     "SwitchbotApiError",
     "SwitchbotAuthenticationError",
     "SwitchbotModel",
+    "VerticalOscillationAngle",
 ]
