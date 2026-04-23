@@ -18,16 +18,20 @@ from .const import (
     ClimateMode,
     ColorMode,
     FanMode,
+    HorizontalOscillationAngle,
     HumidifierAction,
     HumidifierMode,
     HumidifierWaterLevel,
     LockStatus,
+    NightLightState,
     SmartThermostatRadiatorMode,
+    StandingFanMode,
     StripLightColorMode,
     SwitchbotAccountConnectionError,
     SwitchbotApiError,
     SwitchbotAuthenticationError,
     SwitchbotModel,
+    VerticalOscillationAngle,
 )
 from .devices.air_purifier import SwitchbotAirPurifier
 from .devices.art_frame import SwitchbotArtFrame
@@ -44,7 +48,7 @@ from .devices.device import (
     fetch_cloud_devices,
 )
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
-from .devices.fan import SwitchbotFan
+from .devices.fan import SwitchbotFan, SwitchbotStandingFan
 from .devices.humidifier import SwitchbotHumidifier
 from .devices.keypad_vision import SwitchbotKeypadVision
 from .devices.light_strip import (
@@ -78,11 +82,14 @@ __all__ = [
     "ColorMode",
     "FanMode",
     "GetSwitchbotDevices",
+    "HorizontalOscillationAngle",
     "HumidifierAction",
     "HumidifierMode",
     "HumidifierWaterLevel",
     "LockStatus",
+    "NightLightState",
     "SmartThermostatRadiatorMode",
+    "StandingFanMode",
     "StripLightColorMode",
     "SwitchBotAdvertisement",
     "Switchbot",
@@ -119,10 +126,12 @@ __all__ = [
     "SwitchbotRgbicNeonLight",
     "SwitchbotRollerShade",
     "SwitchbotSmartThermostatRadiator",
+    "SwitchbotStandingFan",
     "SwitchbotStripLight3",
     "SwitchbotSupportedType",
     "SwitchbotSupportedType",
     "SwitchbotVacuum",
+    "VerticalOscillationAngle",
     "close_stale_connections",
     "close_stale_connections_by_address",
     "fetch_cloud_devices",
