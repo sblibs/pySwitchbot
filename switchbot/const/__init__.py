@@ -3,14 +3,20 @@
 from __future__ import annotations
 
 from ..enum import StrEnum
-from .air_purifier import AirPurifierMode
+from .air_purifier import AirPurifierMode, AirQualityLevel
 from .climate import ClimateAction, ClimateMode, SmartThermostatRadiatorMode
 from .evaporative_humidifier import (
     HumidifierAction,
     HumidifierMode,
     HumidifierWaterLevel,
 )
-from .fan import FanMode
+from .fan import (
+    FanMode,
+    HorizontalOscillationAngle,
+    NightLightState,
+    StandingFanMode,
+    VerticalOscillationAngle,
+)
 from .light import (
     BulbColorMode,
     CeilingLightColorMode,
@@ -80,13 +86,16 @@ class SwitchbotModel(StrEnum):
     ROLLER_SHADE = "Roller Shade"
     HUBMINI_MATTER = "HubMini Matter"
     CIRCULATOR_FAN = "Circulator Fan"
+    STANDING_FAN = "Standing Fan"
     K20_VACUUM = "K20 Vacuum"
     S10_VACUUM = "S10 Vacuum"
     K10_VACUUM = "K10+ Vacuum"
     K10_PRO_VACUUM = "K10+ Pro Vacuum"
     K10_PRO_COMBO_VACUUM = "K10+ Pro Combo Vacuum"
-    AIR_PURIFIER = "Air Purifier"
-    AIR_PURIFIER_TABLE = "Air Purifier Table"
+    AIR_PURIFIER_US = "Air Purifier US"
+    AIR_PURIFIER_JP = "Air Purifier JP"
+    AIR_PURIFIER_TABLE_US = "Air Purifier Table US"
+    AIR_PURIFIER_TABLE_JP = "Air Purifier Table JP"
     HUB3 = "Hub3"
     LOCK_ULTRA = "Lock Ultra"
     LOCK_LITE = "Lock Lite"
@@ -94,9 +103,13 @@ class SwitchbotModel(StrEnum):
     RELAY_SWITCH_2PM = "Relay Switch 2PM"
     STRIP_LIGHT_3 = "Strip Light 3"
     FLOOR_LAMP = "Floor Lamp"
+    CANDLE_WARMER_LAMP = "Candle Warmer Lamp"
     PLUG_MINI_EU = "Plug Mini (EU)"
     RGBICWW_STRIP_LIGHT = "RGBICWW Strip Light"
     RGBICWW_FLOOR_LAMP = "RGBICWW Floor Lamp"
+    PERMANENT_OUTDOOR_LIGHT = "Permanent Outdoor Light"
+    RGBIC_NEON_ROPE_LIGHT = "RGBIC Neon Rope Light"
+    RGBIC_NEON_WIRE_ROPE_LIGHT = "RGBIC Neon Wire Rope Light"
     K11_VACUUM = "K11+ Vacuum"
     CLIMATE_PANEL = "Climate Panel"
     SMART_THERMOSTAT_RADIATOR = "Smart Thermostat Radiator"
@@ -105,6 +118,10 @@ class SwitchbotModel(StrEnum):
     ART_FRAME = "Art Frame"
     KEYPAD_VISION = "Keypad Vision"
     KEYPAD_VISION_PRO = "Keypad Vision Pro"
+    LOCK_VISION_PRO = "Lock Vision Pro"
+    LOCK_VISION = "Lock Vision"
+    LOCK_PRO_WIFI = "Lock Pro Wifi"
+    WEATHER_STATION = "Weather Station"
 
 
 __all__ = [
@@ -112,20 +129,25 @@ __all__ = [
     "DEFAULT_RETRY_TIMEOUT",
     "DEFAULT_SCAN_TIMEOUT",
     "AirPurifierMode",
+    "AirQualityLevel",
     "BulbColorMode",
     "CeilingLightColorMode",
     "ClimateAction",
     "ClimateMode",
     "ColorMode",
     "FanMode",
+    "HorizontalOscillationAngle",
     "HumidifierAction",
     "HumidifierMode",
     "HumidifierWaterLevel",
     "LockStatus",
+    "NightLightState",
     "SmartThermostatRadiatorMode",
+    "StandingFanMode",
     "StripLightColorMode",
     "SwitchbotAccountConnectionError",
     "SwitchbotApiError",
     "SwitchbotAuthenticationError",
     "SwitchbotModel",
+    "VerticalOscillationAngle",
 ]

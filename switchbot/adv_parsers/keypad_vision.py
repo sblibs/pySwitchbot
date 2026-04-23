@@ -19,6 +19,7 @@ def process_common_mfr_data(mfr_data: bytes | None) -> dict[str, bool | int]:
     low_temperature = bool(mfr_data[8] & 0b10000000)
     high_temperature = bool(mfr_data[8] & 0b01000000)
     doorbell = bool(mfr_data[12] & 0b00001000)
+    doorbell_seq = mfr_data[12] & 0b00000111
 
     return {
         "sequence_number": sequence_number,
@@ -30,6 +31,7 @@ def process_common_mfr_data(mfr_data: bytes | None) -> dict[str, bool | int]:
         "low_temperature": low_temperature,
         "high_temperature": high_temperature,
         "doorbell": doorbell,
+        "doorbell_seq": doorbell_seq,
     }
 
 

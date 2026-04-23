@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from bleak.backends.device import BLEDevice
-
 from ..const import SwitchbotModel
 from ..const.light import ColorMode, RGBICStripLightColorMode, StripLightColorMode
 from .base_light import SwitchbotSequenceBaseLight
@@ -25,6 +23,7 @@ _RGBICWW_STRIP_LIGHT_COLOR_MODE_MAP = {
     RGBICStripLightColorMode.MUSIC: ColorMode.EFFECT,
     RGBICStripLightColorMode.CONTROLLER: ColorMode.EFFECT,
     RGBICStripLightColorMode.COLOR_TEMP: ColorMode.COLOR_TEMP,
+    RGBICStripLightColorMode.EFFECT: ColorMode.EFFECT,
     RGBICStripLightColorMode.UNKNOWN: ColorMode.OFF,
 }
 LIGHT_STRIP_CONTROL_HEADER = "570F4901"
@@ -274,29 +273,7 @@ class SwitchbotLightStrip(SwitchbotSequenceBaseLight):
 class SwitchbotStripLight3(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     """Support for switchbot strip light3 and floor lamp."""
 
-    def __init__(
-        self,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.STRIP_LIGHT_3,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-
-    @classmethod
-    async def verify_encryption_key(
-        cls,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.STRIP_LIGHT_3,
-        **kwargs: Any,
-    ) -> bool:
-        return await super().verify_encryption_key(
-            device, key_id, encryption_key, model, **kwargs
-        )
+    _model = SwitchbotModel.STRIP_LIGHT_3
 
     @property
     def color_modes(self) -> set[ColorMode]:
@@ -304,34 +281,43 @@ class SwitchbotStripLight3(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         return {ColorMode.RGB, ColorMode.COLOR_TEMP}
 
 
+class SwitchbotCandleWarmerLamp(SwitchbotEncryptedDevice, SwitchbotLightStrip):
+    """Support for Switchbot Candle Warmer Lamp."""
+
+    _model = SwitchbotModel.CANDLE_WARMER_LAMP
+    _effect_dict = {}
+    _set_rgb_command = ""
+    _set_color_temp_command = ""
+
+    @property
+    def color_modes(self) -> set[ColorMode]:
+        """Return the supported color modes."""
+        return {ColorMode.BRIGHTNESS}
+
+    @property
+    def color_mode(self) -> ColorMode:
+        """Return the current color mode."""
+        return ColorMode.BRIGHTNESS
+
+    async def get_basic_info(self) -> dict[str, Any] | None:
+        """Get device basic settings."""
+        if not (
+            res := await self._get_multi_commands_results(self._get_basic_info_command)
+        ):
+            return None
+        _version_info, _data = res
+        return {
+            "isOn": bool(_data[1] & 0b10000000),
+            "brightness": _data[2] & 0b01111111,
+            "firmware": _version_info[2] / 10.0,
+        }
+
+
 class SwitchbotRgbicLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     """Support for Switchbot RGBIC lights."""
 
+    _model = SwitchbotModel.RGBICWW_STRIP_LIGHT
     _effect_dict = RGBIC_EFFECTS
-
-    def __init__(
-        self,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.RGBICWW_STRIP_LIGHT,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-
-    @classmethod
-    async def verify_encryption_key(
-        cls,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.RGBICWW_STRIP_LIGHT,
-        **kwargs: Any,
-    ) -> bool:
-        return await super().verify_encryption_key(
-            device, key_id, encryption_key, model, **kwargs
-        )
 
     @property
     def color_modes(self) -> set[ColorMode]:
@@ -343,3 +329,26 @@ class SwitchbotRgbicLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         """Return the current color mode."""
         device_mode = RGBICStripLightColorMode(self._get_adv_value("color_mode") or 10)
         return _RGBICWW_STRIP_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
+
+
+class SwitchbotPermanentOutdoorLight(SwitchbotRgbicLight):
+    """Support for Switchbot Permanent Outdoor Light."""
+
+    _model = SwitchbotModel.PERMANENT_OUTDOOR_LIGHT
+
+
+class SwitchbotRgbicNeonLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
+    """Support for Switchbot RGBIC Neon lights."""
+
+    _model = SwitchbotModel.RGBIC_NEON_ROPE_LIGHT
+    _effect_dict = RGBIC_EFFECTS
+
+    @property
+    def color_modes(self) -> set[ColorMode]:
+        """Return the supported color modes."""
+        return {ColorMode.RGB}
+
+    @property
+    def color_mode(self) -> ColorMode:
+        """Return the current color mode."""
+        return ColorMode.RGB

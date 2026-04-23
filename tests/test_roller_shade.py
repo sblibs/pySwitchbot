@@ -58,7 +58,18 @@ async def test_open():
     assert roller_shade_device.is_opening() is True
     assert roller_shade_device.is_closing() is False
     roller_shade_device._send_multiple_commands.assert_awaited_once_with(
-        roller_shade.OPEN_KEYS
+        [roller_shade.OPEN_KEYS[0], f"{roller_shade.OPEN_KEYS[1]}0000"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_open_quietdrift():
+    roller_shade_device = create_device_for_command_testing()
+    await roller_shade_device.open(mode=1)
+    assert roller_shade_device.is_opening() is True
+    assert roller_shade_device.is_closing() is False
+    roller_shade_device._send_multiple_commands.assert_awaited_once_with(
+        [roller_shade.OPEN_KEYS[0], f"{roller_shade.OPEN_KEYS[1]}0100"]
     )
 
 
@@ -69,7 +80,18 @@ async def test_close():
     assert roller_shade_device.is_opening() is False
     assert roller_shade_device.is_closing() is True
     roller_shade_device._send_multiple_commands.assert_awaited_once_with(
-        roller_shade.CLOSE_KEYS
+        [roller_shade.CLOSE_KEYS[0], f"{roller_shade.CLOSE_KEYS[1]}0064"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_close_quietdrift():
+    roller_shade_device = create_device_for_command_testing()
+    await roller_shade_device.close(mode=1)
+    assert roller_shade_device.is_opening() is False
+    assert roller_shade_device.is_closing() is True
+    roller_shade_device._send_multiple_commands.assert_awaited_once_with(
+        [roller_shade.CLOSE_KEYS[0], f"{roller_shade.CLOSE_KEYS[1]}0164"]
     )
 
 
@@ -202,6 +224,144 @@ async def test_set_position_closing():
     assert curtain_device.is_opening() is False
     assert curtain_device.is_closing() is True
     curtain_device._send_multiple_commands.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_set_position_default_mode_performance():
+    """`mode=0` (default) must send the same wire bytes as before quiet mode."""
+    curtain_device = create_device_for_command_testing()
+    await curtain_device.set_position(50)
+    curtain_device._send_multiple_commands.assert_awaited_once_with(
+        [
+            f"{roller_shade.POSITION_KEYS[0]}32",
+            f"{roller_shade.POSITION_KEYS[1]}0032",
+        ]
+    )
+
+
+@pytest.mark.asyncio
+async def test_set_position_quietdrift():
+    """`mode=1` flips the mode byte while leaving the position byte alone."""
+    curtain_device = create_device_for_command_testing()
+    await curtain_device.set_position(50, mode=1)
+    curtain_device._send_multiple_commands.assert_awaited_once_with(
+        [
+            f"{roller_shade.POSITION_KEYS[0]}32",
+            f"{roller_shade.POSITION_KEYS[1]}0132",
+        ]
+    )
+
+
+@pytest.mark.asyncio
+async def test_set_position_quietdrift_reversed():
+    """Quiet mode and reverse mode are independent — both apply correctly."""
+    curtain_device = create_device_for_command_testing(reverse_mode=True)
+    # position=30 with reverse → device position 70 (0x46), mode byte 01
+    await curtain_device.set_position(30, mode=1)
+    curtain_device._send_multiple_commands.assert_awaited_once_with(
+        [
+            f"{roller_shade.POSITION_KEYS[0]}46",
+            f"{roller_shade.POSITION_KEYS[1]}0146",
+        ]
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("invalid_mode", [-1, 2, 255])
+async def test_open_rejects_invalid_mode(invalid_mode):
+    roller_shade_device = create_device_for_command_testing()
+    with pytest.raises(ValueError, match="mode must be 0"):
+        await roller_shade_device.open(mode=invalid_mode)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("invalid_mode", [-1, 2, 255])
+async def test_close_rejects_invalid_mode(invalid_mode):
+    roller_shade_device = create_device_for_command_testing()
+    with pytest.raises(ValueError, match="mode must be 0"):
+        await roller_shade_device.close(mode=invalid_mode)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("invalid_mode", [-1, 2, 255])
+async def test_set_position_rejects_invalid_mode(invalid_mode):
+    roller_shade_device = create_device_for_command_testing()
+    with pytest.raises(ValueError, match="mode must be 0"):
+        await roller_shade_device.set_position(50, mode=invalid_mode)
+
+
+@pytest.mark.asyncio
+async def test_open_does_not_set_motion_flag_on_failure():
+    """If the open command fails, _is_opening must remain False."""
+    roller_shade_device = create_device_for_command_testing()
+    roller_shade_device._send_multiple_commands = AsyncMock(return_value=False)
+    result = await roller_shade_device.open()
+    assert result is False
+    assert roller_shade_device.is_opening() is False
+    assert roller_shade_device.is_closing() is False
+
+
+@pytest.mark.asyncio
+async def test_close_speed_kwarg_is_deprecated_alias_for_mode():
+    """`close(speed=1)` continues to work but emits DeprecationWarning."""
+    roller_shade_device = create_device_for_command_testing()
+    with pytest.warns(DeprecationWarning, match="speed.*deprecated"):
+        await roller_shade_device.close(speed=1)
+    roller_shade_device._send_multiple_commands.assert_awaited_once_with(
+        [roller_shade.CLOSE_KEYS[0], f"{roller_shade.CLOSE_KEYS[1]}0164"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_close_speed_kwarg_validates_mode():
+    """A bad value via `speed=` is still rejected by `_validate_mode`."""
+    roller_shade_device = create_device_for_command_testing()
+    with (
+        pytest.warns(DeprecationWarning, match="speed.*deprecated"),
+        pytest.raises(ValueError, match="mode must be 0"),
+    ):
+        await roller_shade_device.close(speed=2)
+
+
+@pytest.mark.asyncio
+async def test_close_rejects_other_unexpected_kwargs():
+    """Unknown kwargs (other than `speed`) should still raise TypeError."""
+    roller_shade_device = create_device_for_command_testing()
+    with pytest.raises(TypeError, match="unexpected keyword arguments"):
+        await roller_shade_device.close(turbo=True)
+
+
+@pytest.mark.asyncio
+async def test_close_does_not_set_motion_flag_on_failure():
+    """If the close command fails, _is_closing must remain False."""
+    roller_shade_device = create_device_for_command_testing()
+    roller_shade_device._send_multiple_commands = AsyncMock(return_value=False)
+    result = await roller_shade_device.close()
+    assert result is False
+    assert roller_shade_device.is_opening() is False
+    assert roller_shade_device.is_closing() is False
+
+
+@pytest.mark.asyncio
+async def test_stop_does_not_clear_motion_flags_on_failure():
+    """If the stop command fails, prior motion flags persist."""
+    roller_shade_device = create_device_for_command_testing()
+    roller_shade_device._is_opening = True
+    roller_shade_device._send_multiple_commands = AsyncMock(return_value=False)
+    result = await roller_shade_device.stop()
+    assert result is False
+    assert roller_shade_device.is_opening() is True
+
+
+@pytest.mark.asyncio
+async def test_set_position_does_not_update_direction_on_failure():
+    """If set_position fails, the motion direction must not be touched."""
+    roller_shade_device = create_device_for_command_testing(position=50)
+    roller_shade_device._send_multiple_commands = AsyncMock(return_value=False)
+    result = await roller_shade_device.set_position(80)
+    assert result is False
+    assert roller_shade_device.is_opening() is False
+    assert roller_shade_device.is_closing() is False
 
 
 def test_get_position():

@@ -47,6 +47,21 @@ FLOOR_LAMP_INFO = AdvTestCase(
     SwitchbotModel.FLOOR_LAMP,
 )
 
+CANDLE_WARMER_LAMP_INFO = AdvTestCase(
+    b"\x90\xe5\xb1h\xda\xaa\n\xb0 \x00",
+    b"\x00\x00\x00\x00\x11\x22\xb8",
+    {
+        "brightness": 48,
+        "delay": False,
+        "isOn": True,
+        "network_state": 2,
+        "sequence_number": 10,
+    },
+    b"\x00\x11\x22\xb8",
+    "Candle Warmer Lamp",
+    SwitchbotModel.CANDLE_WARMER_LAMP,
+)
+
 RGBICWW_STRIP_LIGHT_INFO = AdvTestCase(
     b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00',
     b"\x00\x00\x00\x00\x10\xd0\xb3",
@@ -79,6 +94,40 @@ RGBICWW_FLOOR_LAMP_INFO = AdvTestCase(
     b"\x00\x10\xd0\xb4",
     "Rgbic Floor Lamp",
     SwitchbotModel.RGBICWW_FLOOR_LAMP,
+)
+
+RGBIC_NEON_LIGHT_INFO = AdvTestCase(
+    b'\xdc\x06u\xa6\xfb\xb2y\x9e"\x00\x11\xb8\x00',
+    b"\x00\x00\x00\x00\x10\xd0\xb6",
+    {
+        "sequence_number": 121,
+        "isOn": True,
+        "brightness": 30,
+        "delay": False,
+        "network_state": 2,
+        "color_mode": 2,
+    },
+    b"\x00\x10\xd0\xb6",
+    "Rgbic Neon Rope Light",
+    SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
+)
+
+
+PERMANENT_OUTDOOR_LIGHT_INFO = AdvTestCase(
+    b'\xc0N0\xe0U\x9a\x85\x9e"\xd0\x00\x00\x00\x00\x00\x00\x12\x91\x00',
+    b"\x00\x00\x00\x00\x10\xd0\xb7",
+    {
+        "sequence_number": 133,
+        "isOn": True,
+        "brightness": 30,
+        "delay": False,
+        "network_state": 2,
+        "color_mode": 2,
+        "cw": 0,
+    },
+    b"\x00\x10\xd0\xb7",
+    "Permanent Outdoor Light",
+    SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
 )
 
 

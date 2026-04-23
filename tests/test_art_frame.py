@@ -5,7 +5,6 @@ from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement
 from switchbot.devices.art_frame import COMMAND_SET_IMAGE, SwitchbotArtFrame
-from switchbot.devices.device import SwitchbotEncryptedDevice
 
 from . import ART_FRAME_INFO
 from .test_adv_parser import AdvTestCase, generate_ble_device
@@ -195,27 +194,7 @@ async def test_set_image_with_valid_index() -> None:
         device._send_command.assert_awaited_with(COMMAND_SET_IMAGE.format("14"))
 
 
-@pytest.mark.asyncio
-@patch.object(SwitchbotEncryptedDevice, "verify_encryption_key", new_callable=AsyncMock)
-async def test_verify_encryption_key(mock_parent_verify: AsyncMock) -> None:
+def test_default_model_classvar() -> None:
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    key_id = "ff"
-    encryption_key = "ffffffffffffffffffffffffffffffff"
-
-    mock_parent_verify.return_value = True
-
-    result = await SwitchbotArtFrame.verify_encryption_key(
-        device=ble_device,
-        key_id=key_id,
-        encryption_key=encryption_key,
-        model=ART_FRAME_INFO.modelName,
-    )
-
-    mock_parent_verify.assert_awaited_once_with(
-        ble_device,
-        key_id,
-        encryption_key,
-        ART_FRAME_INFO.modelName,
-    )
-
-    assert result is True
+    device = SwitchbotArtFrame(ble_device, "ff", "ffffffffffffffffffffffffffffffff")
+    assert device._model == ART_FRAME_INFO.modelName
