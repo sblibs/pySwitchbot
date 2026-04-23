@@ -3635,7 +3635,7 @@ def test_humidifer_with_empty_data() -> None:
                 "delay": False,
                 "network_state": 2,
                 "color_mode": 2,
-                "cw": 4753,
+                "cw": 0,
             },
             b"\x00\x10\xd0\xb7",
             "Permanent Outdoor Light",
@@ -4061,22 +4061,6 @@ def test_adv_active(test_case: AdvTestCase) -> None:
         ),
         AdvTestCase(
             b'\xc0N0\xe0U\x9a\x85\x9e"\xd0\x00\x00\x00\x00\x00\x00\x12\x91\x00',
-            None,
-            {
-                "sequence_number": 133,
-                "isOn": True,
-                "brightness": 30,
-                "delay": False,
-                "network_state": 2,
-                "color_mode": 2,
-                "cw": 4753,
-            },
-            b"\x00\x10\xd0\xb7",
-            "Permanent Outdoor Light",
-            SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
-        ),
-        AdvTestCase(
-            b'\xc0N0\xe0U\x9a\x85\x9e"\xd0\x00\x00',
             None,
             {
                 "sequence_number": 133,

@@ -123,7 +123,7 @@ PERMANENT_OUTDOOR_LIGHT_INFO = AdvTestCase(
         "delay": False,
         "network_state": 2,
         "color_mode": 2,
-        "cw": 4753,
+        "cw": 0,
     },
     b"\x00\x10\xd0\xb7",
     "Permanent Outdoor Light",

@@ -44,10 +44,7 @@ def process_light(
     if not common_data:
         return {}
 
-    if mfr_data is not None and len(mfr_data) >= cw_offset + 2:
-        light_data = {"cw": _UNPACK_UINT16_BE(mfr_data, cw_offset)[0]}
-    else:
-        light_data = {"cw": 0}
+    light_data = {"cw": _UNPACK_UINT16_BE(mfr_data, cw_offset)[0]}
 
     return common_data | light_data
 
