@@ -108,3 +108,5 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
+<!-- test: verify auto-close workflow #477 (will be closed and reverted) -->
