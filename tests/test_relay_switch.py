@@ -123,7 +123,7 @@ def make_advertisement_data(
         {1: {"isOn": True}, 2: {"isOn": True}},
     ],
 )
-async def test_turn_on_2PM(common_parametrize_2pm, init_data):
+async def test_turn_on_2PM(common_parametrize_2pm, init_data) -> None:
     """Test turn on command."""
     device = create_device_for_command_testing(
         common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"], init_data
@@ -148,7 +148,7 @@ async def test_turn_on_2PM(common_parametrize_2pm, init_data):
         {1: {"isOn": False}, 2: {"isOn": False}},
     ],
 )
-async def test_turn_off_2PM(common_parametrize_2pm, init_data):
+async def test_turn_off_2PM(common_parametrize_2pm, init_data) -> None:
     """Test turn off command."""
     device = create_device_for_command_testing(
         common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"], init_data
@@ -167,7 +167,7 @@ async def test_turn_off_2PM(common_parametrize_2pm, init_data):
 
 
 @pytest.mark.asyncio
-async def test_turn_toggle_2PM(common_parametrize_2pm):
+async def test_turn_toggle_2PM(common_parametrize_2pm) -> None:
     """Test toggle command."""
     device = create_device_for_command_testing(
         common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"]
@@ -186,7 +186,7 @@ async def test_turn_toggle_2PM(common_parametrize_2pm):
 
 
 @pytest.mark.asyncio
-async def test_get_switch_mode_2PM(common_parametrize_2pm):
+async def test_get_switch_mode_2PM(common_parametrize_2pm) -> None:
     """Test get switch mode."""
     device = create_device_for_command_testing(
         common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"]
@@ -217,7 +217,7 @@ async def test_get_switch_mode_2PM(common_parametrize_2pm):
         ),
     ],
 )
-async def test_get_basic_info_2PM(common_parametrize_2pm, info_data, result):
+async def test_get_basic_info_2PM(common_parametrize_2pm, info_data, result) -> None:
     """Test get_basic_info for 2PM devices."""
     device = create_device_for_command_testing(
         common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"]
@@ -280,7 +280,7 @@ async def test_get_basic_info_2PM(common_parametrize_2pm, info_data, result):
         },
     ],
 )
-async def test_basic_info_exceptions_2PM(common_parametrize_2pm, info_data):
+async def test_basic_info_exceptions_2PM(common_parametrize_2pm, info_data) -> None:
     """Test get_basic_info exceptions."""
     device = create_device_for_command_testing(
         common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"]
@@ -307,7 +307,7 @@ async def test_basic_info_exceptions_2PM(common_parametrize_2pm, info_data):
 
 
 @pytest.mark.asyncio
-async def test_get_parsed_data_2PM(common_parametrize_2pm):
+async def test_get_parsed_data_2PM(common_parametrize_2pm) -> None:
     """Test get_parsed_data for 2PM devices."""
     device = create_device_for_command_testing(
         common_parametrize_2pm["rawAdvData"], common_parametrize_2pm["model"]
@@ -325,7 +325,7 @@ async def test_get_parsed_data_2PM(common_parametrize_2pm):
     ("rawAdvData", "model"),
     common_params,
 )
-async def test_turn_on(rawAdvData, model):
+async def test_turn_on(rawAdvData, model) -> None:
     """Test turn on command."""
     device = create_device_for_command_testing(rawAdvData, model)
     await device.turn_on()
@@ -338,7 +338,7 @@ async def test_turn_on(rawAdvData, model):
     ("rawAdvData", "model"),
     common_params,
 )
-async def test_turn_off(rawAdvData, model):
+async def test_turn_off(rawAdvData, model) -> None:
     """Test turn off command."""
     device = create_device_for_command_testing(rawAdvData, model, {"isOn": False})
     await device.turn_off()
@@ -351,7 +351,7 @@ async def test_turn_off(rawAdvData, model):
     ("rawAdvData", "model"),
     common_params,
 )
-async def test_toggle(rawAdvData, model):
+async def test_toggle(rawAdvData, model) -> None:
     """Test toggle command."""
     device = create_device_for_command_testing(rawAdvData, model)
     await device.async_toggle()
@@ -373,7 +373,7 @@ async def test_toggle(rawAdvData, model):
         )
     ],
 )
-async def test_get_basic_info_garage_door_opener(rawAdvData, model, info_data):
+async def test_get_basic_info_garage_door_opener(rawAdvData, model, info_data) -> None:
     """Test get_basic_info for garage door opener."""
     device = create_device_for_command_testing(rawAdvData, model)
     device.get_current_time_and_start_time = MagicMock(
@@ -402,7 +402,7 @@ async def test_get_basic_info_garage_door_opener(rawAdvData, model, info_data):
         (relay_switch.SwitchbotRelaySwitch2PM, SwitchbotModel.RELAY_SWITCH_2PM),
     ],
 )
-def test_default_model_classvar(dev_cls, expected_model):
+def test_default_model_classvar(dev_cls, expected_model) -> None:
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device = dev_cls(ble_device, "ff", "ffffffffffffffffffffffffffffffff")
     assert device._model == expected_model
@@ -429,14 +429,14 @@ def test_default_model_classvar(dev_cls, expected_model):
         ),
     ],
 )
-def test_merge_data(old_data, new_data, expected_result):
+def test_merge_data(old_data, new_data, expected_result) -> None:
     """Test merging of data dictionaries."""
     result = merge_data(old_data, new_data)
     assert result == expected_result
 
 
 @pytest.mark.asyncio
-async def test_garage_door_opener_open():
+async def test_garage_door_opener_open() -> None:
     """Test open the garage door."""
     device = create_device_for_command_testing(
         b">\x00\x00\x00", SwitchbotModel.GARAGE_DOOR_OPENER
@@ -447,7 +447,7 @@ async def test_garage_door_opener_open():
 
 
 @pytest.mark.asyncio
-async def test_garage_door_opener_close():
+async def test_garage_door_opener_close() -> None:
     """Test close the garage door."""
     device = create_device_for_command_testing(
         b">\x00\x00\x00", SwitchbotModel.GARAGE_DOOR_OPENER
@@ -465,7 +465,7 @@ async def test_garage_door_opener_close():
     ],
 )
 @pytest.mark.asyncio
-async def test_garage_door_opener_door_open(door_open):
+async def test_garage_door_opener_door_open(door_open) -> None:
     """Test get garage door state."""
     device = create_device_for_command_testing(
         b">\x00\x00\x00", SwitchbotModel.GARAGE_DOOR_OPENER, {"door_open": door_open}
@@ -474,7 +474,7 @@ async def test_garage_door_opener_door_open(door_open):
 
 
 @pytest.mark.asyncio
-async def test_press():
+async def test_press() -> None:
     """Test the press command for garage door opener."""
     device = create_device_for_command_testing(
         b">\x00\x00\x00", SwitchbotModel.GARAGE_DOOR_OPENER
@@ -510,7 +510,7 @@ def create_2pm_device_with_position(position: int = 50, calibration: bool = True
 
 
 @pytest.mark.asyncio
-async def test_2pm_open():
+async def test_2pm_open() -> None:
     """Test open command for 2PM roller mode."""
     device = create_2pm_device_with_position()
     await device.open()
@@ -520,7 +520,7 @@ async def test_2pm_open():
 
 
 @pytest.mark.asyncio
-async def test_2pm_close():
+async def test_2pm_close() -> None:
     """Test close command for 2PM roller mode."""
     device = create_2pm_device_with_position()
     await device.close()
@@ -530,7 +530,7 @@ async def test_2pm_close():
 
 
 @pytest.mark.asyncio
-async def test_2pm_stop():
+async def test_2pm_stop() -> None:
     """Test stop command for 2PM roller mode."""
     device = create_2pm_device_with_position()
     await device.stop()
@@ -540,7 +540,7 @@ async def test_2pm_stop():
 
 
 @pytest.mark.asyncio
-async def test_2pm_set_position_closing():
+async def test_2pm_set_position_closing() -> None:
     """Test set_position to a higher device position (closing in HA terms)."""
     device = create_2pm_device_with_position(position=30)
     await device.set_position(80)
@@ -552,7 +552,7 @@ async def test_2pm_set_position_closing():
 
 
 @pytest.mark.asyncio
-async def test_2pm_set_position_opening():
+async def test_2pm_set_position_opening() -> None:
     """Test set_position to a lower device position (opening in HA terms)."""
     device = create_2pm_device_with_position(position=80)
     await device.set_position(20)
@@ -564,7 +564,7 @@ async def test_2pm_set_position_opening():
 
 
 @pytest.mark.asyncio
-async def test_2pm_set_position_passthrough():
+async def test_2pm_set_position_passthrough() -> None:
     """Test set_position sends position directly without transformation."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device = relay_switch.SwitchbotRelaySwitch2PM(
@@ -606,19 +606,19 @@ async def test_2pm_set_position_passthrough():
     )
 
 
-def test_2pm_position_property():
+def test_2pm_position_property() -> None:
     """Test position property returns value from channel 1."""
     device = create_2pm_device_with_position(position=42)
     assert device.position == 42
 
 
-def test_2pm_mode_property():
+def test_2pm_mode_property() -> None:
     """Test mode property returns value from channel 1."""
     device = create_2pm_device_with_position()
     assert device.mode == 0
 
 
-def test_2pm_update_motion_direction_no_previous():
+def test_2pm_update_motion_direction_no_previous() -> None:
     """Test _update_motion_direction with no previous position does nothing."""
     device = create_2pm_device_with_position()
     device._update_motion_direction(True, None, 80)
@@ -626,7 +626,7 @@ def test_2pm_update_motion_direction_no_previous():
     assert device.is_closing() is False
 
 
-def test_2pm_update_motion_direction_stop():
+def test_2pm_update_motion_direction_stop() -> None:
     """Test _update_motion_direction with in_motion=False clears both flags."""
     device = create_2pm_device_with_position()
     device._is_opening = True
@@ -636,7 +636,7 @@ def test_2pm_update_motion_direction_stop():
     assert device.is_closing() is False
 
 
-def test_2pm_update_motion_direction_opening():
+def test_2pm_update_motion_direction_opening() -> None:
     """Test _update_motion_direction detects opening."""
     device = create_2pm_device_with_position()
     device._update_motion_direction(True, 30, 70)
@@ -644,7 +644,7 @@ def test_2pm_update_motion_direction_opening():
     assert device.is_closing() is False
 
 
-def test_2pm_update_motion_direction_closing():
+def test_2pm_update_motion_direction_closing() -> None:
     """Test _update_motion_direction detects closing."""
     device = create_2pm_device_with_position()
     device._update_motion_direction(True, 70, 30)
@@ -653,7 +653,7 @@ def test_2pm_update_motion_direction_closing():
 
 
 @pytest.mark.asyncio
-async def test_2pm_open_does_not_set_motion_flag_on_failure():
+async def test_2pm_open_does_not_set_motion_flag_on_failure() -> None:
     """If the open command result fails, _is_opening must remain False."""
     device = create_2pm_device_with_position()
     device._check_command_result = MagicMock(return_value=False)
@@ -664,7 +664,7 @@ async def test_2pm_open_does_not_set_motion_flag_on_failure():
 
 
 @pytest.mark.asyncio
-async def test_2pm_close_does_not_set_motion_flag_on_failure():
+async def test_2pm_close_does_not_set_motion_flag_on_failure() -> None:
     """If the close command result fails, _is_closing must remain False."""
     device = create_2pm_device_with_position()
     device._check_command_result = MagicMock(return_value=False)
@@ -675,7 +675,7 @@ async def test_2pm_close_does_not_set_motion_flag_on_failure():
 
 
 @pytest.mark.asyncio
-async def test_2pm_stop_does_not_clear_motion_flags_on_failure():
+async def test_2pm_stop_does_not_clear_motion_flags_on_failure() -> None:
     """If the stop command result fails, the prior motion flags persist."""
     device = create_2pm_device_with_position()
     device._is_opening = True
@@ -688,7 +688,7 @@ async def test_2pm_stop_does_not_clear_motion_flags_on_failure():
 
 
 @pytest.mark.asyncio
-async def test_2pm_set_position_does_not_update_direction_on_failure():
+async def test_2pm_set_position_does_not_update_direction_on_failure() -> None:
     """If the set_position command result fails, motion flags must not change."""
     device = create_2pm_device_with_position(position=30)
     device._check_command_result = MagicMock(return_value=False)
@@ -698,7 +698,7 @@ async def test_2pm_set_position_does_not_update_direction_on_failure():
     assert device.is_closing() is False
 
 
-def test_parse_common_data_includes_sequence_number():
+def test_parse_common_data_includes_sequence_number() -> None:
     """
     `_parse_common_data` must expose `sequence_number` from raw_data[1].
 
@@ -734,7 +734,7 @@ def test_parse_common_data_includes_sequence_number():
     assert parsed["sequence_number"] == 0x2A
 
 
-def test_2pm_adv_parses_distinct_per_channel_modes():
+def test_2pm_adv_parses_distinct_per_channel_modes() -> None:
     """
     Channel 1 mode is the lower nibble of mfr_data[9]; channel 2 the upper.
 
