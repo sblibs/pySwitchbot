@@ -698,6 +698,42 @@ async def test_2pm_set_position_does_not_update_direction_on_failure():
     assert device.is_closing() is False
 
 
+def test_parse_common_data_includes_sequence_number():
+    """
+    `_parse_common_data` must expose `sequence_number` from raw_data[1].
+
+    Regression test: the key was inadvertently dropped during the 2PM roller
+    work, breaking any 1PM `get_basic_info` consumer reading it.
+    """
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    device = relay_switch.SwitchbotRelaySwitch(
+        ble_device, "ff", "ffffffffffffffffffffffffffffffff"
+    )
+    raw_data = bytes(
+        [
+            0x01,
+            0x2A,
+            0x80,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x10,
+        ]
+    )
+    parsed = device._parse_common_data(raw_data)
+    assert parsed["sequence_number"] == 0x2A
+
+
 def test_2pm_adv_parses_distinct_per_channel_modes():
     """
     Channel 1 mode is the lower nibble of mfr_data[9]; channel 2 the upper.

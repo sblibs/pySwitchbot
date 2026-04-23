@@ -77,6 +77,7 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     def _parse_common_data(self, raw_data: bytes) -> dict[str, Any]:
         """Parse common data from raw bytes."""
         return {
+            "sequence_number": raw_data[1],
             "isOn": bool(raw_data[2] & SWITCH1_ON_MASK),
             "firmware": raw_data[16] / 10.0,
             "channel2_isOn": bool(raw_data[2] & SWITCH2_ON_MASK),
