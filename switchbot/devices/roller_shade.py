@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import Any
 
 from ..models import SwitchBotAdvertisement
@@ -14,11 +15,11 @@ _LOGGER = logging.getLogger(__name__)
 
 OPEN_KEYS = [
     f"{REQ_HEADER}{ROLLERSHADE_COMMAND}01{CONTROL_SOURCE}0100",
-    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}0000",
+    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}",  # +mode + "00"
 ]
 CLOSE_KEYS = [
     f"{REQ_HEADER}{ROLLERSHADE_COMMAND}01{CONTROL_SOURCE}0164",
-    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}0064",
+    f"{REQ_HEADER}{ROLLERSHADE_COMMAND}05{CONTROL_SOURCE}",  # +mode + "64"
 ]
 POSITION_KEYS = [
     f"{REQ_HEADER}{ROLLERSHADE_COMMAND}01{CONTROL_SOURCE}01",
@@ -48,37 +49,74 @@ class SwitchbotRollerShade(SwitchbotBaseCover, SwitchbotSequenceDevice):
         self._update_motion_direction(in_motion, previous_position, new_position)
         super()._set_parsed_data(advertisement, data)
 
-    @update_after_operation
-    async def open(self, mode: int = 0) -> bool:
-        """Send open command. 0 - performance mode, 1 - unfelt mode."""
-        self._is_opening = True
-        self._is_closing = False
-        return await self._send_multiple_commands(OPEN_KEYS)
+    @staticmethod
+    def _validate_mode(mode: int) -> None:
+        """Validate the motor mode (0 = performance, 1 = quiet)."""
+        if mode not in (0, 1):
+            raise ValueError(f"mode must be 0 (performance) or 1 (quiet), got {mode!r}")
 
     @update_after_operation
-    async def close(self, speed: int = 0) -> bool:
-        """Send close command. 0 - performance mode, 1 - unfelt mode."""
-        self._is_closing = True
-        self._is_opening = False
-        return await self._send_multiple_commands(CLOSE_KEYS)
+    async def open(self, mode: int = 0) -> bool:
+        """Send open command. 0 - performance mode, 1 - quiet mode."""
+        self._validate_mode(mode)
+        if success := await self._send_multiple_commands(
+            [OPEN_KEYS[0], f"{OPEN_KEYS[1]}{mode:02X}00"]
+        ):
+            self._is_opening = True
+            self._is_closing = False
+        return success
+
+    @update_after_operation
+    async def close(self, mode: int = 0, **kwargs: Any) -> bool:
+        """
+        Send close command. 0 - performance mode, 1 - quiet mode.
+
+        ``speed`` is accepted as a deprecated alias for ``mode``: prior to
+        the quietdrift work the ``speed`` parameter existed on this method
+        but was a no-op. Callers passing ``speed=`` get a
+        ``DeprecationWarning`` and the value is forwarded as ``mode``.
+        """
+        if "speed" in kwargs:
+            warnings.warn(
+                "`speed` kwarg on close() is deprecated; use `mode` instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            mode = kwargs.pop("speed")
+        if kwargs:
+            raise TypeError(
+                f"close() got unexpected keyword arguments: {sorted(kwargs)}"
+            )
+        self._validate_mode(mode)
+        if success := await self._send_multiple_commands(
+            [CLOSE_KEYS[0], f"{CLOSE_KEYS[1]}{mode:02X}64"]
+        ):
+            self._is_closing = True
+            self._is_opening = False
+        return success
 
     @update_after_operation
     async def stop(self) -> bool:
         """Send stop command to device."""
-        self._is_opening = self._is_closing = False
-        return await self._send_multiple_commands(STOP_KEYS)
+        if success := await self._send_multiple_commands(STOP_KEYS):
+            self._is_opening = self._is_closing = False
+        return success
 
     @update_after_operation
     async def set_position(self, position: int, mode: int = 0) -> bool:
-        """Send position command (0-100) to device. 0 - performance mode, 1 - unfelt mode."""
+        """Send position command (0-100) to device. 0 - performance mode, 1 - quiet mode."""
+        self._validate_mode(mode)
         position = (100 - position) if self._reverse else position
-        self._update_motion_direction(True, self._get_adv_value("position"), position)
-        return await self._send_multiple_commands(
+        if success := await self._send_multiple_commands(
             [
                 f"{POSITION_KEYS[0]}{position:02X}",
                 f"{POSITION_KEYS[1]}{mode:02X}{position:02X}",
             ]
-        )
+        ):
+            self._update_motion_direction(
+                True, self._get_adv_value("position"), position
+            )
+        return success
 
     def get_position(self) -> Any:
         """Return cached position (0-100) of Curtain."""
