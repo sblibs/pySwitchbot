@@ -275,19 +275,12 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch, SwitchbotBaseCover):
         return data.get(channel, {})
 
     async def get_basic_info(self):
+        if not (channel1_data := await super().get_basic_info()):
+            return None
+
         current_time_hex, current_day_start_time_hex = (
             self.get_current_time_and_start_time()
         )
-        if not (_basic_raw := await self._get_basic_info(COMMAND_GET_BASIC_INFO)):
-            return None
-        if not (
-            _channel1_raw := await self._get_basic_info(
-                COMMAND_GET_CHANNEL1_INFO.format(
-                    current_time_hex, current_day_start_time_hex
-                )
-            )
-        ):
-            return None
         if not (
             _channel2_raw := await self._get_basic_info(
                 COMMAND_GET_CHANNEL2_INFO.format(
@@ -297,27 +290,10 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch, SwitchbotBaseCover):
         ):
             return None
 
-        _LOGGER.debug(
-            "get_basic_info 2PM basic_raw: %s, channel1_raw: %s, channel2_raw: %s",
-            _basic_raw.hex(),
-            _channel1_raw.hex(),
-            _channel2_raw.hex(),
-        )
-
-        parsed = self._parse_common_data(_basic_raw)
-
-        channel1_data = self._parse_user_data(_channel1_raw)
-        channel1_data["isOn"] = parsed["isOn"]
-        channel1_data["firmware"] = parsed["firmware"]
-        channel1_data["calibration"] = parsed["calibration"]
-        channel1_data["mode"] = parsed["mode"]
-        channel1_data["position"] = parsed["position"]
-
-        if not channel1_data["isOn"]:
-            self._reset_power_data(channel1_data)
+        _LOGGER.debug("channel2_raw: %s", _channel2_raw.hex())
 
         channel2_data = self._parse_user_data(_channel2_raw)
-        channel2_data["isOn"] = parsed["channel2_isOn"]
+        channel2_data["isOn"] = channel1_data["channel2_isOn"]
 
         if not channel2_data["isOn"]:
             self._reset_power_data(channel2_data)
