@@ -237,37 +237,41 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch, SwitchbotBaseCover):
     @update_after_operation
     async def open(self) -> bool:
         """Send open command. 0 - performance mode, 1 - unfelt mode."""
-        self._is_opening = True
-        self._is_closing = False
         result = await self._send_command(COMMAND_OPEN)
-        return self._check_command_result(result, 0, {1})
+        if success := self._check_command_result(result, 0, {1}):
+            self._is_opening = True
+            self._is_closing = False
+        return success
 
     @update_after_operation
     async def close(self) -> bool:
         """Send close command. 0 - performance mode, 1 - unfelt mode."""
-        self._is_closing = True
-        self._is_opening = False
         result = await self._send_command(COMMAND_CLOSE)
-        return self._check_command_result(result, 0, {1})
+        if success := self._check_command_result(result, 0, {1}):
+            self._is_closing = True
+            self._is_opening = False
+        return success
 
     @update_after_operation
     async def stop(self) -> bool:
         """Send stop command to device."""
-        self._is_opening = self._is_closing = False
         result = await self._send_command(COMMAND_STOP)
-        return self._check_command_result(result, 0, {1})
+        if success := self._check_command_result(result, 0, {1}):
+            self._is_opening = self._is_closing = False
+        return success
 
     @update_after_operation
     async def set_position(self, position: int, mode: int = 0) -> bool:
         """Send position command (0-100) to device. 0 - performance mode, 1 - unfelt mode."""
-        prev = self._get_adv_value("position", channel=1)
-        self._update_motion_direction(
-            True,
-            (100 - prev) if prev is not None else None,
-            100 - position,
-        )
         result = await self._send_command(COMMAND_POSITION.format(f"{position:02X}"))
-        return self._check_command_result(result, 0, {1})
+        if success := self._check_command_result(result, 0, {1}):
+            prev = self._get_adv_value("position", channel=1)
+            self._update_motion_direction(
+                True,
+                (100 - prev) if prev is not None else None,
+                100 - position,
+            )
+        return success
 
     def get_parsed_data(self, channel: int | None = None) -> dict[str, Any]:
         """Return parsed device data, optionally for a specific channel."""

@@ -649,3 +649,49 @@ def test_2pm_update_motion_direction_closing():
     device._update_motion_direction(True, 70, 30)
     assert device.is_opening() is False
     assert device.is_closing() is True
+
+
+@pytest.mark.asyncio
+async def test_2pm_open_does_not_set_motion_flag_on_failure():
+    """If the open command result fails, _is_opening must remain False."""
+    device = create_2pm_device_with_position()
+    device._check_command_result = MagicMock(return_value=False)
+    result = await device.open()
+    assert result is False
+    assert device.is_opening() is False
+    assert device.is_closing() is False
+
+
+@pytest.mark.asyncio
+async def test_2pm_close_does_not_set_motion_flag_on_failure():
+    """If the close command result fails, _is_closing must remain False."""
+    device = create_2pm_device_with_position()
+    device._check_command_result = MagicMock(return_value=False)
+    result = await device.close()
+    assert result is False
+    assert device.is_opening() is False
+    assert device.is_closing() is False
+
+
+@pytest.mark.asyncio
+async def test_2pm_stop_does_not_clear_motion_flags_on_failure():
+    """If the stop command result fails, the prior motion flags persist."""
+    device = create_2pm_device_with_position()
+    device._is_opening = True
+    device._is_closing = False
+    device._check_command_result = MagicMock(return_value=False)
+    result = await device.stop()
+    assert result is False
+    assert device.is_opening() is True
+    assert device.is_closing() is False
+
+
+@pytest.mark.asyncio
+async def test_2pm_set_position_does_not_update_direction_on_failure():
+    """If the set_position command result fails, motion flags must not change."""
+    device = create_2pm_device_with_position(position=30)
+    device._check_command_result = MagicMock(return_value=False)
+    result = await device.set_position(80)
+    assert result is False
+    assert device.is_opening() is False
+    assert device.is_closing() is False
