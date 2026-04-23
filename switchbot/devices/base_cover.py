@@ -34,8 +34,19 @@ class SwitchbotBaseCover(SwitchbotDevice):
     """Representation of a Switchbot Cover devices for both curtains and tilt blinds."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Switchbot Cover device constructor."""
-        reverse: bool = kwargs.pop("reverse", False)
+        """
+        Switchbot Cover device constructor.
+
+        ``reverse`` may be passed either as the first positional argument
+        (legacy form, kept for backwards compatibility) or as a keyword
+        argument (preferred — required for cooperative multiple inheritance
+        where ``reverse`` must travel through ``**kwargs`` via the MRO).
+        """
+        if args and isinstance(args[0], bool):
+            reverse: bool = args[0]
+            args = args[1:]
+        else:
+            reverse = kwargs.pop("reverse", False)
         super().__init__(*args, **kwargs)
         self._reverse = reverse
         self._settings: dict[str, Any] = {}
