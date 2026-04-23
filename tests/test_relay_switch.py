@@ -4,6 +4,7 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
+from switchbot.adv_parsers.relay_switch import process_relay_switch_2pm
 from switchbot.devices import relay_switch
 from switchbot.devices.device import _merge_data as merge_data
 
@@ -695,3 +696,18 @@ async def test_2pm_set_position_does_not_update_direction_on_failure():
     assert result is False
     assert device.is_opening() is False
     assert device.is_closing() is False
+
+
+def test_2pm_adv_parses_distinct_per_channel_modes():
+    """
+    Channel 1 mode is the lower nibble of mfr_data[9]; channel 2 the upper.
+
+    Regression for the precedence bug `mfr_data[9] & 0b11110000 >> 4` which
+    Python parses as `mfr_data[9] & (0b11110000 >> 4)` = `mfr_data[9] & 0x0F`,
+    silently returning channel 1's mode for channel 2.
+    """
+    # mfr_data[9] = 0x53 → lower nibble 3 (channel 1), upper nibble 5 (channel 2)
+    mfr_data = bytes(6) + bytes([0x8A, 0xC1, 0x00, 0x53, 0x00, 0x00, 0x00, 0x00, 0x00])
+    parsed = process_relay_switch_2pm(None, mfr_data)
+    assert parsed[1]["mode"] == 0x3
+    assert parsed[2]["mode"] == 0x5
