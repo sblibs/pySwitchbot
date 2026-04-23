@@ -54,6 +54,7 @@ from .devices.keypad_vision import SwitchbotKeypadVision
 from .devices.light_strip import (
     SwitchbotCandleWarmerLamp,
     SwitchbotLightStrip,
+    SwitchbotPermanentOutdoorLight,
     SwitchbotRgbicLight,
     SwitchbotRgbicNeonLight,
     SwitchbotStripLight3,
@@ -118,6 +119,7 @@ __all__ = [
     "SwitchbotModel",
     "SwitchbotModel",
     "SwitchbotOperationError",
+    "SwitchbotPermanentOutdoorLight",
     "SwitchbotPlugMini",
     "SwitchbotPlugMini",
     "SwitchbotRelaySwitch",
