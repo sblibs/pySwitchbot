@@ -54,12 +54,18 @@ def process_relay_switch_2pm(
         1: {
             **process_relay_switch_common_data(data, mfr_data),
             "power": parse_power_data(mfr_data, 10),
+            "mode": mfr_data[9] & 0b00001111,
+            "position": mfr_data[14],
+            "calibration": bool(mfr_data[8] & 0b01000000),
         },
         2: {
             "switchMode": True,  # for compatibility, useless
             "sequence_number": mfr_data[6],
             "isOn": bool(mfr_data[7] & 0b01000000),
             "power": parse_power_data(mfr_data, 12),
+            "mode": (mfr_data[9] & 0b11110000) >> 4,
+            "position": mfr_data[14],
+            "calibration": bool(mfr_data[8] & 0b01000000),
         },
         "sequence_number": mfr_data[6],
     }
