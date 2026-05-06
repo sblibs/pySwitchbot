@@ -1,6 +1,6 @@
 """Test keypad device advertisement parsing."""
 
-from switchbot import SwitchBotAdvertisement, SwitchbotKeypad
+from switchbot import SwitchbotKeypad
 from switchbot.models import SwitchBotAdvertisement
 
 from . import KEYPAD_INFO
