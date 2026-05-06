@@ -50,6 +50,7 @@ from .devices.device import (
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
 from .devices.fan import SwitchbotFan, SwitchbotStandingFan
 from .devices.humidifier import SwitchbotHumidifier
+from .devices.keypad import SwitchbotKeypad
 from .devices.keypad_vision import SwitchbotKeypadVision
 from .devices.light_strip import (
     SwitchbotCandleWarmerLamp,
@@ -112,6 +113,7 @@ __all__ = [
     "SwitchbotFan",
     "SwitchbotGarageDoorOpener",
     "SwitchbotHumidifier",
+    "SwitchbotKeypad",
     "SwitchbotKeypadVision",
     "SwitchbotLightStrip",
     "SwitchbotLock",
