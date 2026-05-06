@@ -7,7 +7,9 @@ from . import KEYPAD_INFO
 from .test_adv_parser import AdvTestCase, generate_ble_device
 
 
-def make_advertisement_data(ble_device, adv_info: AdvTestCase, init_data: dict | None = None):
+def make_advertisement_data(
+    ble_device, adv_info: AdvTestCase, init_data: dict | None = None
+):
     """Set advertisement data with defaults."""
     if init_data is None:
         init_data = {}
