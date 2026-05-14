@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 
-from bleak.backends.device import BLEDevice
-
-from switchbot import SwitchBotAdvertisement, SwitchbotModel
+from switchbot import SwitchbotModel
 
 
 @dataclass
@@ -13,29 +11,6 @@ class AdvTestCase:
     model: str | bytes
     modelFriendlyName: str
     modelName: SwitchbotModel
-
-
-def make_advertisement_data(
-    ble_device: BLEDevice, adv_info: AdvTestCase, init_data: dict | None = None
-) -> SwitchBotAdvertisement:
-    """Build a SwitchBotAdvertisement from an AdvTestCase fixture."""
-    if init_data is None:
-        init_data = {}
-
-    return SwitchBotAdvertisement(
-        address="aa:bb:cc:dd:ee:ff",
-        data={
-            "rawAdvData": adv_info.service_data,
-            "data": adv_info.data | init_data,
-            "isEncrypted": False,
-            "model": adv_info.model,
-            "modelFriendlyName": adv_info.modelFriendlyName,
-            "modelName": adv_info.modelName,
-        },
-        device=ble_device,
-        rssi=-80,
-        active=True,
-    )
 
 
 KEYPAD_INFO = AdvTestCase(
