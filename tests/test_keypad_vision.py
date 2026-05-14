@@ -3,16 +3,14 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from bleak.backends.device import BLEDevice
 
-from switchbot import SwitchBotAdvertisement
 from switchbot.devices.device import SwitchbotEncryptedDevice
 from switchbot.devices.keypad_vision import (
     COMMAND_GET_PASSWORD_COUNT,
     SwitchbotKeypadVision,
 )
 
-from . import KEYPAD_VISION_INFO, KEYPAD_VISION_PRO_INFO
+from . import KEYPAD_VISION_INFO, KEYPAD_VISION_PRO_INFO, make_advertisement_data
 from .test_adv_parser import AdvTestCase, generate_ble_device
 
 
@@ -32,30 +30,6 @@ def create_device_for_command_testing(
         make_advertisement_data(ble_device, adv_info, init_data)
     )
     return device
-
-
-def make_advertisement_data(
-    ble_device: BLEDevice, adv_info: AdvTestCase, init_data: dict | None = None
-):
-    """Set advertisement data with defaults."""
-    if init_data is None:
-        init_data = {}
-
-    return SwitchBotAdvertisement(
-        address="aa:bb:cc:dd:ee:ff",
-        data={
-            "rawAdvData": adv_info.service_data,
-            "data": adv_info.data | init_data,
-            "isEncrypted": False,
-            "model": adv_info.model,
-            "modelFriendlyName": adv_info.modelFriendlyName,
-            "modelName": adv_info.modelName,
-        }
-        | init_data,
-        device=ble_device,
-        rssi=-80,
-        active=True,
-    )
 
 
 @pytest.mark.asyncio

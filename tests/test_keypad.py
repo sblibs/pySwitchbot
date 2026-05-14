@@ -1,60 +1,52 @@
 """Test keypad device advertisement parsing."""
 
-from switchbot import SwitchbotKeypad
-from switchbot.models import SwitchBotAdvertisement
+from switchbot import SwitchbotKeypad, SwitchbotModel
+from switchbot.adv_parser import parse_advertisement_data
 
-from . import KEYPAD_INFO
-from .test_adv_parser import AdvTestCase, generate_ble_device
-
-
-def make_advertisement_data(
-    ble_device, adv_info: AdvTestCase, init_data: dict | None = None
-):
-    """Set advertisement data with defaults."""
-    if init_data is None:
-        init_data = {}
-
-    return SwitchBotAdvertisement(
-        address="aa:bb:cc:dd:ee:ff",
-        data={
-            "rawAdvData": adv_info.service_data,
-            "data": adv_info.data | init_data,
-            "isEncrypted": False,
-            "model": adv_info.model,
-            "modelFriendlyName": adv_info.modelFriendlyName,
-            "modelName": adv_info.modelName,
-        }
-        | init_data,
-        device=ble_device,
-        rssi=-80,
-        active=True,
-    )
+from . import KEYPAD_INFO, make_advertisement_data
+from .test_adv_parser import generate_advertisement_data, generate_ble_device
 
 
 def test_keypad_advertisement_battery() -> None:
-    """Test that battery is parsed from keypad advertisement."""
+    """Test that battery is parsed from keypad advertisement data."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: KEYPAD_INFO.manufacturer_data},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": KEYPAD_INFO.service_data},
+        rssi=-80,
+    )
+    advertisement = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.KEYPAD)
     device = SwitchbotKeypad(ble_device)
-    device.update_from_advertisement(make_advertisement_data(ble_device, KEYPAD_INFO))
+    device.update_from_advertisement(advertisement)
 
-    assert device.parsed_data["battery"] == 100
+    assert device.get_battery_percent() == 100
 
 
 def test_keypad_advertisement_attempt_state() -> None:
-    """Test that attempt_state is parsed from keypad advertisement."""
+    """Test that attempt_state is parsed from keypad advertisement data."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: KEYPAD_INFO.manufacturer_data},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": KEYPAD_INFO.service_data},
+        rssi=-80,
+    )
+    advertisement = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.KEYPAD)
     device = SwitchbotKeypad(ble_device)
-    device.update_from_advertisement(make_advertisement_data(ble_device, KEYPAD_INFO))
+    device.update_from_advertisement(advertisement)
 
     assert device.parsed_data["attempt_state"] == 143
 
 
-def test_keypad_advertisement_battery_none() -> None:
+def test_keypad_advertisement_battery_none_when_no_data() -> None:
     """Test that battery is None when advertisement data is missing."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    device = SwitchbotKeypad(ble_device)
-    device.update_from_advertisement(
-        make_advertisement_data(ble_device, KEYPAD_INFO, {"battery": None})
+    adv_data = generate_advertisement_data(
+        manufacturer_data={},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": KEYPAD_INFO.service_data},
+        rssi=-80,
     )
+    advertisement = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.KEYPAD)
+    device = SwitchbotKeypad(ble_device)
+    device.update_from_advertisement(advertisement)
 
-    assert device.parsed_data["battery"] is None
+    assert device.get_battery_percent() is None
