@@ -3,7 +3,7 @@
 from switchbot import SwitchbotKeypad, SwitchbotModel
 from switchbot.adv_parser import parse_advertisement_data
 
-from . import KEYPAD_INFO, make_advertisement_data
+from . import KEYPAD_INFO
 from .test_adv_parser import generate_advertisement_data, generate_ble_device
 
 
@@ -15,7 +15,9 @@ def test_keypad_advertisement_battery() -> None:
         service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": KEYPAD_INFO.service_data},
         rssi=-80,
     )
-    advertisement = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.KEYPAD)
+    advertisement = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.KEYPAD
+    )
     device = SwitchbotKeypad(ble_device)
     device.update_from_advertisement(advertisement)
 
@@ -30,7 +32,9 @@ def test_keypad_advertisement_attempt_state() -> None:
         service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": KEYPAD_INFO.service_data},
         rssi=-80,
     )
-    advertisement = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.KEYPAD)
+    advertisement = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.KEYPAD
+    )
     device = SwitchbotKeypad(ble_device)
     device.update_from_advertisement(advertisement)
 
@@ -45,7 +49,9 @@ def test_keypad_advertisement_battery_none_when_no_data() -> None:
         service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": KEYPAD_INFO.service_data},
         rssi=-80,
     )
-    advertisement = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.KEYPAD)
+    advertisement = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.KEYPAD
+    )
     device = SwitchbotKeypad(ble_device)
     device.update_from_advertisement(advertisement)
 
