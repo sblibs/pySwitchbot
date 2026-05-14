@@ -1417,6 +1417,36 @@ def test_meter_pro_c_passive() -> None:
     )
 
 
+def test_meter_pro_c_co2_out_of_range_dropped() -> None:
+    """CO2 readings above sensor spec range (9999 ppm) are dropped as spurious."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xb0\xe9\xfeT2\x15\xb7\xe4\x07\x9b\xa4\x007\x9c\x40\x00"
+        },
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"5\x00d"},
+        rssi=-67,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert "co2" not in result.data["data"]
+    assert result.data["data"]["temperature"] == 27.7
+    assert result.data["data"]["humidity"] == 36
+
+
+def test_meter_pro_c_co2_boundary_accepted() -> None:
+    """CO2 at the upper bound (9999 ppm) is accepted."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xb0\xe9\xfeT2\x15\xb7\xe4\x07\x9b\xa4\x007\x27\x0f\x00"
+        },
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"5\x00d"},
+        rssi=-67,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result.data["data"]["co2"] == 9999
+
+
 def test_parse_advertisement_data_keypad():
     """Test parse_advertisement_data for the keypad."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
