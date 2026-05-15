@@ -408,9 +408,40 @@ async def test_get_lock_info_failure(model: str):
 async def test_enable_notifications(model: str):
     """Test _enable_notifications method."""
     device = create_device_for_command_testing(model)
-    with patch.object(device, "_send_command", return_value=b"\x01\x00"):
+    assert device._notifications_enabled is False
+    with patch.object(
+        device, "_send_command", return_value=b"\x01\x00"
+    ) as mock_send:
         result = await device._enable_notifications()
         assert result is True
+        assert device._notifications_enabled is True
+        assert mock_send.call_count == 1
+        # Second call must be a no-op once notifications are tracked as enabled.
+        result = await device._enable_notifications()
+        assert result is True
+        assert mock_send.call_count == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "model",
+    [
+        SwitchbotModel.LOCK,
+        SwitchbotModel.LOCK_LITE,
+        SwitchbotModel.LOCK_PRO,
+        SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_VISION,
+        SwitchbotModel.LOCK_VISION_PRO,
+        SwitchbotModel.LOCK_PRO_WIFI,
+    ],
+)
+async def test_enable_notifications_failure_keeps_state_false(model: str):
+    """Failed enable command must not flip the tracked state to True."""
+    device = create_device_for_command_testing(model)
+    with patch.object(device, "_send_command", return_value=b"\x00\x00"):
+        result = await device._enable_notifications()
+        assert result is False
+        assert device._notifications_enabled is False
 
 
 @pytest.mark.asyncio
