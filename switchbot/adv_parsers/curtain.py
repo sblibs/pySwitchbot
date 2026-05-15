@@ -12,8 +12,8 @@ def process_wocurtain(
         battery_data = mfr_data[12]
     elif mfr_data and len(mfr_data) >= 11:
         device_data = mfr_data[8:11]
-        battery_data = data[2] if data else None
-    elif data:
+        battery_data = data[2] if data and len(data) >= 3 else None
+    elif data and len(data) >= 6:
         device_data = data[3:6]
         battery_data = data[2]
     else:
@@ -25,7 +25,7 @@ def process_wocurtain(
     _device_chain = device_data[1] & 0b00000111
 
     return {
-        "calibration": bool(data[1] & 0b01000000) if data else None,
+        "calibration": bool(data[1] & 0b01000000) if data and len(data) >= 2 else None,
         "battery": battery_data & 0b01111111 if battery_data is not None else None,
         "inMotion": _in_motion,
         "position": (100 - _position) if reverse else _position,

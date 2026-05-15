@@ -14,7 +14,7 @@ def _parse_fan(
     mfr_data: bytes | None, mode_map: dict[int, str]
 ) -> dict[str, bool | int | str | None]:
     """Shared fan advertisement parse, parameterized on the mode map."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 10:
         return {}
 
     device_data = mfr_data[6:]

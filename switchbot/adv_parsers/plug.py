@@ -9,7 +9,7 @@ def process_woplugmini(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int]:
     """Process plug mini."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 12:
         return {}
     return {
         "switchMode": True,

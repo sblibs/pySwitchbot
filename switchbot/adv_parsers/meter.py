@@ -19,11 +19,11 @@ def process_wosensorth(data: bytes | None, mfr_data: bytes | None) -> dict[str, 
     temp_data: bytes | None = None
     battery: int | None = None
 
-    if mfr_data:
+    if mfr_data and len(mfr_data) >= 11:
         temp_data = mfr_data[8:11]
 
-    if data:
-        if not temp_data:
+    if data and len(data) >= 3:
+        if not temp_data and len(data) >= 6:
             temp_data = data[3:6]
         battery = data[2] & 0b01111111
 

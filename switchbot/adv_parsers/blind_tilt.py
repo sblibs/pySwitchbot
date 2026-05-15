@@ -7,7 +7,7 @@ def process_woblindtilt(
     data: bytes | None, mfr_data: bytes | None, reverse: bool = False
 ) -> dict[str, bool | int]:
     """Process woBlindTilt services data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 10:
         return {}
 
     device_data = mfr_data[6:]
@@ -19,7 +19,7 @@ def process_woblindtilt(
 
     return {
         "calibration": _calibrated,
-        "battery": data[2] & 0b01111111 if data else None,
+        "battery": data[2] & 0b01111111 if data and len(data) >= 3 else None,
         "inMotion": _in_motion,
         "tilt": (100 - _tilt) if reverse else _tilt,
         "lightLevel": _light_level,
