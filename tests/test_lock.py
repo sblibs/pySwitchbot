@@ -409,9 +409,7 @@ async def test_enable_notifications(model: str):
     """Test _enable_notifications method."""
     device = create_device_for_command_testing(model)
     assert device._notifications_enabled is False
-    with patch.object(
-        device, "_send_command", return_value=b"\x01\x00"
-    ) as mock_send:
+    with patch.object(device, "_send_command", return_value=b"\x01\x00") as mock_send:
         result = await device._enable_notifications()
         assert result is True
         assert device._notifications_enabled is True
