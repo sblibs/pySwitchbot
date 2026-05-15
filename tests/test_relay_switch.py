@@ -519,13 +519,9 @@ async def test_get_basic_info_2PM_filters_short_channel_response():
     async def mock_get_basic_info(arg):
         if arg == relay_switch.COMMAND_GET_BASIC_INFO:
             return valid_basic
-        if arg == relay_switch.COMMAND_GET_CHANNEL1_INFO.format(
-            "683074d6", "682fba80"
-        ):
+        if arg == relay_switch.COMMAND_GET_CHANNEL1_INFO.format("683074d6", "682fba80"):
             return valid_channel
-        if arg == relay_switch.COMMAND_GET_CHANNEL2_INFO.format(
-            "683074d6", "682fba80"
-        ):
+        if arg == relay_switch.COMMAND_GET_CHANNEL2_INFO.format("683074d6", "682fba80"):
             return short_channel2
         return None
 
