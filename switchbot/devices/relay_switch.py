@@ -66,8 +66,15 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         for key in ["power", "current", "voltage"]:
             data[key] = 0
 
-    def _parse_common_data(self, raw_data: bytes) -> dict[str, Any]:
+    def _parse_common_data(self, raw_data: bytes) -> dict[str, Any] | None:
         """Parse common data from raw bytes."""
+        if len(raw_data) < 17:
+            _LOGGER.warning(
+                "Common data too short to parse (%d bytes): %s",
+                len(raw_data),
+                raw_data.hex(),
+            )
+            return None
         return {
             "sequence_number": raw_data[1],
             "isOn": bool(raw_data[2] & SWITCH1_ON_MASK),
@@ -75,8 +82,15 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             "channel2_isOn": bool(raw_data[2] & SWITCH2_ON_MASK),
         }
 
-    def _parse_user_data(self, raw_data: bytes) -> dict[str, Any]:
+    def _parse_user_data(self, raw_data: bytes) -> dict[str, Any] | None:
         """Parse user-specific data from raw bytes."""
+        if len(raw_data) < 15:
+            _LOGGER.warning(
+                "User data too short to parse (%d bytes): %s",
+                len(raw_data),
+                raw_data.hex(),
+            )
+            return None
         _energy = parse_uint24_be(raw_data, 1) / 60000
         _energy_usage_yesterday = parse_uint24_be(raw_data, 4) / 60000
         _use_time = parse_power_data(raw_data, 7, 60.0)
@@ -151,6 +165,9 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
         common_data = self._parse_common_data(_data)
         user_data = self._parse_user_data(_channel1_data)
+
+        if common_data is None or user_data is None:
+            return None
 
         if self._model in (
             SwitchbotModel.RELAY_SWITCH_1,
@@ -227,6 +244,8 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch):
         _LOGGER.debug("channel2_hex_data: %s", _channel2_data.hex())
 
         channel2_data = self._parse_user_data(_channel2_data)
+        if channel2_data is None:
+            return None
         channel2_data["isOn"] = common_data["channel2_isOn"]
 
         if not channel2_data["isOn"]:

@@ -794,8 +794,11 @@ class SwitchbotBaseDevice:
         """Return basic info of device."""
         _data = await self._send_command(key=cmd, retry=self._retry_count)
 
-        if _data in (b"\x07", b"\x00"):
-            _LOGGER.error("Unsuccessful, please try again")
+        if not _data or len(_data) <= 1:
+            _LOGGER.error(
+                "Unsuccessful, please try again (response=%s)",
+                _data.hex() if _data else "None",
+            )
             return None
 
         return _data

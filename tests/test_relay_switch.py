@@ -480,3 +480,55 @@ async def test_press():
     )
     await device.press()
     device._send_command.assert_awaited_once_with(device._press_command)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "short_payload",
+    [b"\x02", b"\x07", b"\x00", b"", b"\x01\x02\x03"],
+)
+async def test_get_basic_info_filters_short_response(short_payload):
+    """Short or error responses must return None without raising IndexError (#369)."""
+    device = create_device_for_command_testing(
+        b"<\x00\x00\x00", SwitchbotModel.RELAY_SWITCH_1PM
+    )
+    device.get_current_time_and_start_time = MagicMock(
+        return_value=("683074d6", "682fba80")
+    )
+    device._send_command = AsyncMock(return_value=short_payload)
+
+    info = await device.get_basic_info()
+
+    assert info is None
+
+
+@pytest.mark.asyncio
+async def test_get_basic_info_2PM_filters_short_channel_response():
+    """2PM must return None when channel2 response is too short (#369)."""
+    device = create_device_for_command_testing(
+        b"\x00\x00\x00\x00\x00\x00", SwitchbotModel.RELAY_SWITCH_2PM
+    )
+    device.get_current_time_and_start_time = MagicMock(
+        return_value=("683074d6", "682fba80")
+    )
+
+    valid_basic = b"\x01\x98A\x0c\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10"
+    valid_channel = b"\x01\x00\x00\x00\x00\x00\x00\x02\x99\x00\xe9\x00\x03\x00\x00"
+    short_channel2 = b"\x02"
+
+    async def mock_get_basic_info(arg):
+        if arg == relay_switch.COMMAND_GET_BASIC_INFO:
+            return valid_basic
+        if arg == relay_switch.COMMAND_GET_CHANNEL1_INFO.format(
+            "683074d6", "682fba80"
+        ):
+            return valid_channel
+        if arg == relay_switch.COMMAND_GET_CHANNEL2_INFO.format(
+            "683074d6", "682fba80"
+        ):
+            return short_channel2
+        return None
+
+    device._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
+    info = await device.get_basic_info()
+    assert info is None
