@@ -419,7 +419,8 @@ async def test_send_command_sequence(
 def test_update_parsed_data_without_advertisement_does_not_log_exception(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """Calling _update_parsed_data before any advertisement is a no-op, not an error.
+    """
+    Calling _update_parsed_data before any advertisement is a no-op, not an error.
 
     Regression for #285: previously emitted ``_LOGGER.exception(...)`` outside an
     ``except`` block, which logged "No advertisement data to update / NoneType: None"
