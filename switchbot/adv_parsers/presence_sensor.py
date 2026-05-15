@@ -13,7 +13,7 @@ def process_presence_sensor(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int | str]:
     """Process Presence Sensor data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 12:
         return {}
 
     seq_number = mfr_data[6]
