@@ -33,7 +33,7 @@ def test_process_presence_sensor_none_mfr_returns_empty() -> None:
 
 
 @pytest.mark.parametrize(
-    "data,mfr_data",
+    ("data", "mfr_data"),
     [
         (None, b""),
         (None, b"\x00" * 12),
