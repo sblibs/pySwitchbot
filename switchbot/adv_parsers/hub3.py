@@ -10,7 +10,7 @@ from ..helpers import celsius_to_fahrenheit
 
 def process_hub3(data: bytes | None, mfr_data: bytes | None) -> dict[str, Any]:
     """Process hub3 sensor manufacturer data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 17:
         return {}
     device_data = mfr_data[6:]
 

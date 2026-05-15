@@ -9,7 +9,7 @@ def process_climate_panel(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int | str]:
     """Process Climate Panel data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 16:
         return {}
 
     seq_number = mfr_data[6]

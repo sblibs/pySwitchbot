@@ -12,7 +12,7 @@ def process_wohub2(data: bytes | None, mfr_data: bytes | None) -> dict[str, Any]
     """Process woHub2 sensor manufacturer data."""
     temp_data = None
 
-    if mfr_data:
+    if mfr_data and len(mfr_data) >= 16:
         status = mfr_data[12]
         temp_data = mfr_data[13:16]
 

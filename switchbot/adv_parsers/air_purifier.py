@@ -11,7 +11,7 @@ def process_air_purifier(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int]:
     """Process air purifier services data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 14:
         return {}
     device_data = mfr_data[6:]
 

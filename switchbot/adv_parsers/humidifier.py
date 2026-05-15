@@ -46,7 +46,7 @@ def process_wohumidifier(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int]:
     """Process WoHumi services data."""
-    if data is None:
+    if data is None or len(data) < 5:
         return {
             "isOn": None,
             "level": None,
@@ -64,7 +64,7 @@ def process_evaporative_humidifier(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int]:
     """Process WoHumi services data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 17:
         return {}
 
     seq_number = mfr_data[6]

@@ -16,8 +16,9 @@ def process_wopresence(
     sense_distance = None
     light_intensity = None
     is_light = None
+    motion_detected = None
 
-    if data:
+    if data and len(data) >= 6:
         tested = bool(data[1] & 0b10000000)
         motion_detected = bool(data[1] & 0b01000000)
         battery = data[2] & 0b01111111

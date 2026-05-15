@@ -7,7 +7,7 @@ def process_worollershade(
     data: bytes | None, mfr_data: bytes | None, reverse: bool = True
 ) -> dict[str, bool | int]:
     """Process woRollerShade services data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 10:
         return {}
 
     device_data = mfr_data[6:]
@@ -20,7 +20,7 @@ def process_worollershade(
 
     return {
         "calibration": _calibrated,
-        "battery": data[2] & 0b01111111 if data else None,
+        "battery": data[2] & 0b01111111 if data and len(data) >= 3 else None,
         "inMotion": _in_motion,
         "position": (100 - _position) if reverse else _position,
         "lightLevel": _light_level,
