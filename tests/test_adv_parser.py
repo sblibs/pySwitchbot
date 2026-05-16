@@ -1418,7 +1418,8 @@ def test_meter_pro_c_passive() -> None:
 
 
 def test_meter_pro_c_no_service_data() -> None:
-    """Meter Pro CO2 can be identified from manufacturer_data alone (issue #299).
+    """
+    Meter Pro CO2 can be identified from manufacturer_data alone (issue #299).
 
     Some BLE proxies/scanners drop the SwitchBot service_data field. Without a
     fallback that recognizes the 16-byte 2409 manufacturer_data signature, the
