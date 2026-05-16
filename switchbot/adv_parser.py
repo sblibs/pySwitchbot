@@ -200,12 +200,14 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelFriendlyName": "Meter Pro CO2",
         "func": process_wosensorth_c,
         "manufacturer_id": 2409,
+        "manufacturer_data_length": 16,
     },
     b"\x15": {
         "modelName": SwitchbotModel.METER_PRO_C,
         "modelFriendlyName": "Meter Pro CO2",
         "func": process_wosensorth_c,
         "manufacturer_id": 2409,
+        "manufacturer_data_length": 16,
     },
     "v": {
         "modelName": SwitchbotModel.HUB2,
@@ -1024,11 +1026,11 @@ def _parse_data(
     if not _model and _switchbot_model:
         _model = _find_model_from_switchbot_model(_switchbot_model)
 
-    if not _model and _mfr_id:
-        _model = _find_model_from_manufacturer_data(_mfr_id, _mfr_data)
-
     if not _model and _service_data:
         _model = _find_model_from_service_data_suffix(_service_data)
+
+    if not _model and _mfr_id:
+        _model = _find_model_from_manufacturer_data(_mfr_id, _mfr_data)
 
     if not _model:
         return None

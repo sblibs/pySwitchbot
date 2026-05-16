@@ -1417,6 +1417,45 @@ def test_meter_pro_c_passive() -> None:
     )
 
 
+def test_meter_pro_c_no_service_data() -> None:
+    """Meter Pro CO2 can be identified from manufacturer_data alone (issue #299).
+
+    Some BLE proxies/scanners drop the SwitchBot service_data field. Without a
+    fallback that recognizes the 16-byte 2409 manufacturer_data signature, the
+    device is silently ignored. ``manufacturer_data_length`` on the METER_PRO_C
+    entry enables this fallback path.
+    """
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xb0\xe9\xfeT2\x15\xb7\xe4\x07\x9b\xa4\x007\x02\xd5\x00"
+        },
+        rssi=-67,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "data": {
+                "battery": None,
+                "fahrenheit": True,
+                "humidity": 36,
+                "temp": {"c": 27.7, "f": 81.86},
+                "temperature": 27.7,
+                "co2": 725,
+            },
+            "isEncrypted": False,
+            "model": "5",
+            "modelFriendlyName": "Meter Pro CO2",
+            "modelName": SwitchbotModel.METER_PRO_C,
+            "rawAdvData": None,
+        },
+        device=ble_device,
+        rssi=-67,
+        active=False,
+    )
+
+
 def test_meter_pro_c_co2_out_of_range_dropped() -> None:
     """CO2 readings above sensor spec range (9999 ppm) are dropped as spurious."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
