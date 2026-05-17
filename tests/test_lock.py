@@ -900,9 +900,7 @@ async def test_update_lock_status_short_decrypted_payload(model: str):
     data = bytearray(b"\x0f\x00\x00\x00")  # data[4:] -> b""
     with (
         patch.object(device, "_decrypt", return_value=b""),
-        patch.object(
-            device, "_update_parsed_data", return_value=False
-        ) as mock_update,
+        patch.object(device, "_update_parsed_data", return_value=False) as mock_update,
         patch.object(device, "_reset_disconnect_timer") as mock_reset,
         patch.object(device, "_fire_callbacks") as mock_fire,
     ):

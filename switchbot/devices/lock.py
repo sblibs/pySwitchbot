@@ -203,9 +203,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             "basic_data: %s, address: %s", basic_data.hex(), self._device.address
         )
         if len(basic_data) < 3:
-            _LOGGER.warning(
-                "Invalid basic data received: %s", basic_data.hex()
-            )
+            _LOGGER.warning("Invalid basic data received: %s", basic_data.hex())
             return None
         return self._parse_lock_data(
             lock_raw_data[1:], self._model
