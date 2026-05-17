@@ -66,9 +66,7 @@ async def test_bulb_get_basic_info_short_returns_none(data_short: bytes) -> None
 async def test_bulb_get_basic_info_short_version_returns_none() -> None:
     """SwitchbotBulb.get_basic_info needs version_info[2] — short reply must return None."""
     device = bulb.SwitchbotBulb(_ble())
-    device._get_multi_commands_results = AsyncMock(
-        return_value=(b"\x01", b"\x00" * 16)
-    )
+    device._get_multi_commands_results = AsyncMock(return_value=(b"\x01", b"\x00" * 16))
     assert await device.get_basic_info() is None
 
 
@@ -86,9 +84,7 @@ async def test_ceiling_light_get_basic_info_short_data_returns_none() -> None:
 async def test_ceiling_light_get_basic_info_short_version_returns_none() -> None:
     """SwitchbotCeilingLight.get_basic_info needs version_info >= 3."""
     device = ceiling_light.SwitchbotCeilingLight(_ble())
-    device._get_multi_commands_results = AsyncMock(
-        return_value=(b"\x01", b"\x00" * 8)
-    )
+    device._get_multi_commands_results = AsyncMock(return_value=(b"\x01", b"\x00" * 8))
     assert await device.get_basic_info() is None
 
 
@@ -108,9 +104,7 @@ async def test_fan_get_basic_info_short_firmware_returns_none() -> None:
     """SwitchbotFan.get_basic_info accesses _data1[2] — short firmware reply returns None."""
     device = fan.SwitchbotFan(_ble())
     # First call returns a sufficiently-long data buffer; second (firmware) is short.
-    device._send_command = AsyncMock(
-        side_effect=[b"\x01" + b"\x80" * 10, b"\x01\x02"]
-    )
+    device._send_command = AsyncMock(side_effect=[b"\x01" + b"\x80" * 10, b"\x01\x02"])
     assert await device.get_basic_info() is None
 
 
@@ -304,7 +298,5 @@ async def test_art_frame_get_basic_info_truncated_images_returns_none() -> None:
         model=SwitchbotModel.ART_FRAME,
     )
     # _data[6] = 5 (claims 5 images) but buffer ends at byte 7 (only 1 image byte).
-    device._get_basic_info = AsyncMock(
-        return_value=b"\x01\x02\x03\x04\x05\x06\x05\xaa"
-    )
+    device._get_basic_info = AsyncMock(return_value=b"\x01\x02\x03\x04\x05\x06\x05\xaa")
     assert await device.get_basic_info() is None
