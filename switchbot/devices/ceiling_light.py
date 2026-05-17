@@ -59,6 +59,8 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
         ):
             return None
         _version_info, _data = res
+        if len(_data) < 5 or len(_version_info) < 3:
+            return None
 
         self._state["cw"] = int.from_bytes(_data[3:5], "big")
 

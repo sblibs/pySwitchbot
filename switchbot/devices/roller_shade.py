@@ -127,6 +127,8 @@ class SwitchbotRollerShade(SwitchbotBaseCover, SwitchbotSequenceDevice):
         """Get device basic settings."""
         if not (_data := await self._get_basic_info()):
             return None
+        if len(_data) < 7:
+            return None
 
         _position = max(min(_data[5], 100), 0)
         _direction_adjusted_position = (100 - _position) if self._reverse else _position
