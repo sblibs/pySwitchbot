@@ -78,7 +78,7 @@ class SwitchbotBaseCover(SwitchbotDevice):
             _LOGGER.error("%s: Unsuccessful, no result from device", self.name)
             return None
 
-        if _data in (b"\x07", b"\x00"):
+        if len(_data) < 4:
             _LOGGER.error("%s: Unsuccessful, please try again", self.name)
             return None
 
@@ -98,7 +98,7 @@ class SwitchbotBaseCover(SwitchbotDevice):
         }
 
         # If grouped curtain device present.
-        if _data[4]:
+        if len(_data) >= 7 and _data[4]:
             self.ext_info_adv["device1"] = {
                 "battery": _data[4],
                 "firmware": _data[5] / 10.0,

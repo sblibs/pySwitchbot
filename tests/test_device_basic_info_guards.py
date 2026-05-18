@@ -206,6 +206,43 @@ async def test_curtain_get_extended_info_summary_short_returns_none() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("short", [b"\x01", b"\x01\x02", b"\x01\x02\x03"])
+async def test_curtain_get_extended_info_adv_short_returns_none(short: bytes) -> None:
+    """get_extended_info_adv accesses _data[3] on device0 — short reply returns None."""
+    device = curtain.SwitchbotCurtain(_ble())
+    device._send_command = AsyncMock(return_value=short)
+    assert await device.get_extended_info_adv() is None
+
+
+@pytest.mark.asyncio
+async def test_curtain_get_extended_info_adv_single_device_short_skips_device1() -> None:
+    """A 4-byte reply parses device0 only; the device1 block (needs _data[6]) is skipped."""
+    device = curtain.SwitchbotCurtain(_ble())
+    # _data[0]=hdr, [1]=battery, [2]=firmware*10, [3]=stateOfCharge index (0..5)
+    device._send_command = AsyncMock(return_value=b"\x00\x55\x32\x01")
+    result = await device.get_extended_info_adv()
+    assert result is not None
+    assert "device0" in result
+    assert result["device0"] == {
+        "battery": 0x55,
+        "firmware": 5.0,
+        "stateOfCharge": "charging_by_adapter",
+    }
+    assert "device1" not in result
+
+
+@pytest.mark.asyncio
+async def test_curtain_get_extended_info_adv_truncated_device1_does_not_crash() -> None:
+    """A reply with _data[4] set but <7 bytes total must not IndexError on _data[5]/_data[6]."""
+    device = curtain.SwitchbotCurtain(_ble())
+    # _data[4]=0x55 would normally trigger the device1 branch; len=6 is one short of _data[6].
+    device._send_command = AsyncMock(return_value=b"\x00\x55\x32\x01\x55\x32")
+    result = await device.get_extended_info_adv()
+    assert result is not None
+    assert "device1" not in result
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("short", [b"\x01", b"\x01" * 5, b"\x01" * 10])
 async def test_evaporative_humidifier_get_basic_info_short_returns_none(
     short: bytes,
