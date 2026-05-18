@@ -215,7 +215,9 @@ async def test_curtain_get_extended_info_adv_short_returns_none(short: bytes) ->
 
 
 @pytest.mark.asyncio
-async def test_curtain_get_extended_info_adv_single_device_short_skips_device1() -> None:
+async def test_curtain_get_extended_info_adv_single_device_short_skips_device1() -> (
+    None
+):
     """A 4-byte reply parses device0 only; the device1 block (needs _data[6]) is skipped."""
     device = curtain.SwitchbotCurtain(_ble())
     # _data[0]=hdr, [1]=battery, [2]=firmware*10, [3]=stateOfCharge index (0..5)
