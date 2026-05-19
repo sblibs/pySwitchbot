@@ -203,7 +203,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             "basic_data: %s, address: %s", basic_data.hex(), self._device.address
         )
         if len(basic_data) < 3:
-            _LOGGER.warning("Invalid basic data received: %s", basic_data.hex())
+            _LOGGER.error("Invalid basic data received: %s", basic_data.hex())
             return None
         return self._parse_lock_data(
             lock_raw_data[1:], self._model
@@ -290,7 +290,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     def _parse_lock_data(data: bytes, model: SwitchbotModel) -> dict[str, Any]:
         min_len = _LOCK_DATA_MIN_LEN_BY_MODEL.get(model, _LOCK_DATA_MIN_LEN_DEFAULT)
         if len(data) < min_len:
-            _LOGGER.debug(
+            _LOGGER.error(
                 "lock data too short for %s: got %d bytes, need %d",
                 model,
                 len(data),
