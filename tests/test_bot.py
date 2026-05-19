@@ -64,7 +64,8 @@ async def test_turn_off_accepted_overrides_state() -> None:
 
 @pytest.mark.asyncio
 async def test_turn_on_rejected_preserves_state() -> None:
-    """Rejected command (e.g. 0x03 0xff 0x00) must NOT override the cached state.
+    """
+    Rejected command (e.g. 0x03 0xff 0x00) must NOT override the cached state.
 
     Regression for sblibs/pySwitchbot#213: back-to-back presses where the bot
     silently ignores the second one would still flip HA's state to ``on``
@@ -96,7 +97,9 @@ async def test_inverse_mode_is_on_reflects_override() -> None:
     """is_on() must respect inverse_mode after a successful turn_on."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device = bot.Switchbot(ble_device, model=SwitchbotModel.BOT, inverse_mode=True)
-    device.update_from_advertisement(make_advertisement_data(ble_device, {"isOn": True}))
+    device.update_from_advertisement(
+        make_advertisement_data(ble_device, {"isOn": True})
+    )
     device._send_command = AsyncMock()
     device._check_command_result = MagicMock(return_value=True)
     device.update = AsyncMock()
