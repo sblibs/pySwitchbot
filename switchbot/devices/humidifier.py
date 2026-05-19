@@ -49,8 +49,9 @@ class SwitchbotHumidifier(SwitchbotDevice):
         level = self.get_target_humidity() or 128
         result = await self._send_command(self._generate_command(on=state, level=level))
         ret = self._check_command_result(result, 0, {0x01})
-        self._override_state({"isOn": state, "level": level})
-        self._fire_callbacks()
+        if ret:
+            self._override_state({"isOn": state, "level": level})
+            self._fire_callbacks()
         return ret
 
     async def turn_on(self) -> bool:
@@ -70,8 +71,9 @@ class SwitchbotHumidifier(SwitchbotDevice):
         """Set level."""
         result = await self._send_command(self._generate_command(level=level))
         ret = self._check_command_result(result, 0, {0x01})
-        self._override_state({"level": level})
-        self._fire_callbacks()
+        if ret:
+            self._override_state({"level": level})
+            self._fire_callbacks()
         return ret
 
     async def async_set_auto(self) -> bool:
