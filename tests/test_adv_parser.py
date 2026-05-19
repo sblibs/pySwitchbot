@@ -1491,7 +1491,8 @@ def test_meter_pro_c_no_service_data_user_reported_payload() -> None:
 def test_meter_pro_c_signature_does_not_shadow_locks(
     lock_mfr_data: bytes, lock_model: SwitchbotModel
 ) -> None:
-    """16-byte 2409 mfr_data without a valid CO2 reading must NOT match Meter Pro CO2.
+    """
+    16-byte 2409 mfr_data without a valid CO2 reading must NOT match Meter Pro CO2.
 
     Locks zero-fill bytes 13-15 — the CO2-range signature must reject them
     so they fall through to service_data suffix matching.
