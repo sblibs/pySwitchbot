@@ -200,14 +200,12 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelFriendlyName": "Meter Pro CO2",
         "func": process_wosensorth_c,
         "manufacturer_id": 2409,
-        "manufacturer_data_length": 16,
     },
     b"\x15": {
         "modelName": SwitchbotModel.METER_PRO_C,
         "modelFriendlyName": "Meter Pro CO2",
         "func": process_wosensorth_c,
         "manufacturer_id": 2409,
-        "manufacturer_data_length": 16,
     },
     "v": {
         "modelName": SwitchbotModel.HUB2,
@@ -964,6 +962,15 @@ def _find_model_from_manufacturer_data(
     """Find model from manufacturer data."""
     if _mfr_id not in MODELS_BY_MANUFACTURER_DATA or _mfr_data is None:
         return None
+
+    # Meter Pro CO2 fallback when service_data is stripped (#299). Locks
+    # (Lock Vision, Lock Vision Pro) also use 16-byte 2409 mfr_data but
+    # zero-fill bytes 13-15. A valid CO2 reading (sensor spec 400-9999 ppm)
+    # in bytes [13:15] big-endian is unique to METER_PRO_C.
+    if _mfr_id == 2409 and len(_mfr_data) == 16:
+        co2 = int.from_bytes(_mfr_data[13:15], "big")
+        if 400 <= co2 <= 9999:
+            return "5"
 
     for model_chr, model_data in MODELS_BY_MANUFACTURER_DATA[_mfr_id]:
         expected_length = model_data.get("manufacturer_data_length")

@@ -1419,12 +1419,13 @@ def test_meter_pro_c_passive() -> None:
 
 def test_meter_pro_c_no_service_data() -> None:
     """
-    Meter Pro CO2 can be identified from manufacturer_data alone (issue #299).
+    Meter Pro CO2 identified from manufacturer_data alone (issue #299).
 
-    Some BLE proxies/scanners drop the SwitchBot service_data field. Without a
-    fallback that recognizes the 16-byte 2409 manufacturer_data signature, the
-    device is silently ignored. ``manufacturer_data_length`` on the METER_PRO_C
-    entry enables this fallback path.
+    Some BLE proxies/scanners drop the SwitchBot service_data field. The
+    fallback in ``_find_model_from_manufacturer_data`` recognizes Meter Pro
+    CO2 by a valid CO2 reading (400-9999 ppm spec) at bytes [13:15] BE
+    inside a 16-byte 2409 payload — a signature locks (zero-filled tail)
+    cannot satisfy.
     """
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
@@ -1455,6 +1456,57 @@ def test_meter_pro_c_no_service_data() -> None:
         rssi=-67,
         active=False,
     )
+
+
+def test_meter_pro_c_no_service_data_user_reported_payload() -> None:
+    """Real-world failing payload from issue #299 reporter."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xb0\xe9\xfeUJ\xae\x12\xe4\x00\x95\xa6\x00\x04\x02\xfb\x00"
+        },
+        rssi=-62,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result is not None
+    assert result.data["modelName"] == SwitchbotModel.METER_PRO_C
+    assert result.data["data"]["co2"] == 763
+
+
+@pytest.mark.parametrize(
+    ("lock_mfr_data", "lock_model"),
+    [
+        # Lock Vision: 16-byte 2409 payload, zero-filled tail
+        (
+            b"\xb0\xe9\xfe\x6f\xc9\xa6\x0a\x00\x00\x2e\x00\x0c\x00\x00\x00\x00",
+            SwitchbotModel.LOCK_VISION,
+        ),
+        # Lock Vision Pro: 16-byte 2409 payload, zero-filled tail
+        (
+            b"\xb0\xe9\xfe\xe6\x1aq\x03\x00\x003\x00\x0c\x00\x00\x00\x00",
+            SwitchbotModel.LOCK_VISION_PRO,
+        ),
+    ],
+)
+def test_meter_pro_c_signature_does_not_shadow_locks(
+    lock_mfr_data: bytes, lock_model: SwitchbotModel
+) -> None:
+    """16-byte 2409 mfr_data without a valid CO2 reading must NOT match Meter Pro CO2.
+
+    Locks zero-fill bytes 13-15 — the CO2-range signature must reject them
+    so they fall through to service_data suffix matching.
+    """
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    # No service_data — exercises the mfr_data fallback path only.
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: lock_mfr_data},
+        rssi=-67,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    # Without service_data, locks cannot be identified — but the critical
+    # invariant is that the parser does NOT mis-classify them as METER_PRO_C.
+    if result is not None:
+        assert result.data["modelName"] != SwitchbotModel.METER_PRO_C
 
 
 def test_meter_pro_c_co2_out_of_range_dropped() -> None:
