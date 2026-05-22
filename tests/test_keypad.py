@@ -38,7 +38,7 @@ def test_keypad_advertisement_attempt_state() -> None:
     device = SwitchbotKeypad(ble_device)
     device.update_from_advertisement(advertisement)
 
-    assert device.parsed_data["attempt_state"] == 143
+    assert device.attempt_state == 143
 
 
 def test_keypad_advertisement_battery_none_when_no_data() -> None:
@@ -56,4 +56,4 @@ def test_keypad_advertisement_battery_none_when_no_data() -> None:
     device.update_from_advertisement(advertisement)
 
     assert device.get_battery_percent() is None
-    assert device.parsed_data["attempt_state"] is None
+    assert device.attempt_state is None
