@@ -13,7 +13,7 @@ def process_hubmini_matter(
     """Process Hubmini matter sensor manufacturer data."""
     temp_data = None
 
-    if mfr_data:
+    if mfr_data and len(mfr_data) >= 16:
         temp_data = mfr_data[13:16]
 
     if not temp_data:

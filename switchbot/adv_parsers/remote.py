@@ -11,7 +11,7 @@ def process_woremote(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, int | None]:
     """Process WoRemote adv data."""
-    if data is None:
+    if data is None or len(data) < 3:
         return {
             "battery": None,
         }

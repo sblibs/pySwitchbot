@@ -9,7 +9,7 @@ def process_wostrip(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int]:
     """Process WoStrip services data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 9:
         return {}
     return {
         "sequence_number": mfr_data[6],
@@ -25,7 +25,7 @@ def process_candle_warmer_lamp(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int]:
     """Process Candle Warmer Lamp services data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 9:
         return {}
     return {
         "sequence_number": mfr_data[6],
@@ -41,7 +41,7 @@ def process_light(
 ) -> dict[str, bool | int]:
     """Support for strip light 3 and floor lamp."""
     common_data = process_wostrip(data, mfr_data)
-    if not common_data:
+    if not common_data or len(mfr_data) < cw_offset + 2:
         return {}
 
     light_data = {"cw": _UNPACK_UINT16_BE(mfr_data, cw_offset)[0]}
