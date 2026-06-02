@@ -342,7 +342,8 @@ async def test_basic_info_exceptions_2PM(common_parametrize_2pm, info_data):
     ],
 )
 async def test_get_basic_info_2PM_short_response(common_parametrize_2pm, info_data):
-    """Truncated BLE responses must yield None instead of crashing.
+    """
+    Truncated BLE responses must yield None instead of crashing.
 
     Regression coverage for issue #369: a single-byte payload reaches
     `_parse_common_data`/`_parse_user_data` and raises IndexError/ValueError.
