@@ -2003,6 +2003,12 @@ def test_circulator_fan_pro_night_light(
     assert data["night_light_level"] == level
 
 
+@pytest.mark.parametrize("mfr_data", [None, b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a"])
+def test_circulator_fan_pro_short_data(mfr_data: bytes | None) -> None:
+    """Short or missing manufacturer data yields an empty parse."""
+    assert process_circulator_fan_pro(None, mfr_data) == {}
+
+
 def test_circulator_fan_with_empty_data() -> None:
     """Test parsing circulator fan with empty data."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")

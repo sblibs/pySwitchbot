@@ -506,6 +506,46 @@ def test_circulator_fan_pro_light_state_getters(key, method, expected):
     assert getattr(fan_device, method)() == expected
 
 
+def test_circulator_fan_pro_fan_modes():
+    fan_device = create_circulator_fan_pro_for_testing()
+    assert fan_device.fan_modes == ["normal", "natural", "sleep", "hurricane"]
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_get_basic_info():
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    fan_device = SwitchbotCirculatorFanPro(
+        ble_device,
+        "ff",
+        "ffffffffffffffffffffffffffffffff",
+        model=SwitchbotModel.CIRCULATOR_FAN_PRO,
+    )
+    # Both basic-info commands return the same stub; byte 2 (0x37) -> firmware 5.5.
+    fan_device._send_command = AsyncMock(return_value=b"\x01\x02\x37\x04")
+    info = await fan_device.get_basic_info()
+    assert info == {"firmware": 5.5}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "side_effect",
+    [
+        [b"\x00"],  # first basic-info command fails
+        [b"\x01\x02\x37\x04", b"\x00"],  # second command fails
+    ],
+)
+async def test_circulator_fan_pro_get_basic_info_returns_none(side_effect):
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    fan_device = SwitchbotCirculatorFanPro(
+        ble_device,
+        "ff",
+        "ffffffffffffffffffffffffffffffff",
+        model=SwitchbotModel.CIRCULATOR_FAN_PRO,
+    )
+    fan_device._send_command = AsyncMock(side_effect=side_effect)
+    assert await fan_device.get_basic_info() is None
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("basic_info", "firmware_info", "result"),
