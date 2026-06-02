@@ -136,6 +136,11 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
         if not (_data := await self._get_basic_info(COMMAND_GET_BASIC_INFO)):
             return None
+        if len(_data) < 17:
+            _LOGGER.warning(
+                "Short basic-info response (%d bytes): %s", len(_data), _data.hex()
+            )
+            return None
         if not (
             _channel1_data := await self._get_basic_info(
                 COMMAND_GET_CHANNEL1_INFO.format(
@@ -143,6 +148,13 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                 )
             )
         ):
+            return None
+        if len(_channel1_data) < 15:
+            _LOGGER.warning(
+                "Short channel1 response (%d bytes): %s",
+                len(_channel1_data),
+                _channel1_data.hex(),
+            )
             return None
 
         _LOGGER.debug(
@@ -222,6 +234,13 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch):
                 )
             )
         ):
+            return None
+        if len(_channel2_data) < 15:
+            _LOGGER.warning(
+                "Short channel2 response (%d bytes): %s",
+                len(_channel2_data),
+                _channel2_data.hex(),
+            )
             return None
 
         _LOGGER.debug("channel2_hex_data: %s", _channel2_data.hex())
