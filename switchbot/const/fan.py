@@ -26,6 +26,23 @@ class StandingFanMode(Enum):
         return [mode.name.lower() for mode in cls]
 
 
+class CirculatorFanProMode(Enum):
+    """
+    Circulator Fan Pro (W1160) running modes.
+
+    Mode 0x04 is hurricane (飓风), not the baby mode of the legacy fan.
+    """
+
+    NORMAL = 1
+    NATURAL = 2
+    SLEEP = 3
+    HURRICANE = 4
+
+    @classmethod
+    def get_modes(cls) -> list[str]:
+        return [mode.name.lower() for mode in cls]
+
+
 class NightLightState(Enum):
     """Standing Fan night-light command values."""
 

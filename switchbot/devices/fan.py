@@ -6,7 +6,11 @@ import logging
 from enum import Enum
 from typing import Any, ClassVar
 
+from bleak.backends.device import BLEDevice
+
+from ..const import SwitchbotModel
 from ..const.fan import (
+    CirculatorFanProMode,
     FanMode,
     HorizontalOscillationAngle,
     NightLightState,
@@ -15,6 +19,7 @@ from ..const.fan import (
 )
 from .device import (
     DEVICE_GET_BASIC_SETTINGS_KEY,
+    SwitchbotEncryptedDevice,
     SwitchbotSequenceDevice,
     update_after_operation,
 )
@@ -186,6 +191,11 @@ class SwitchbotFan(SwitchbotSequenceDevice):
         """Return cached mode."""
         return self._get_adv_value("mode")
 
+    @property
+    def fan_modes(self) -> list[str]:
+        """Return the supported preset (wind) modes for this device."""
+        return self._mode_enum.get_modes()
+
 
 class SwitchbotStandingFan(SwitchbotFan):
     """Representation of a Switchbot Standing Fan (FAN2)."""
@@ -305,3 +315,105 @@ class SwitchbotStandingFan(SwitchbotFan):
     def get_auto_recenter(self) -> bool | None:
         """Return cached auto-recenter (return-to-center) state."""
         return self._get_adv_value("auto_recenter")
+
+
+class SwitchbotCirculatorFanPro(SwitchbotEncryptedDevice, SwitchbotFan):
+    """
+    Representation of a Switchbot Circulator Fan Pro (W1160).
+
+    The Pro uses extended commands (``57 0F <subcmd> …``) with a control-source
+    byte (0x29 = Home Assistant), wrapped in the encrypted command shell, so it
+    extends SwitchbotEncryptedDevice. Fan power uses subcommand 0x41 (open/close
+    sub-op 0x11); the night light uses subcommand 0x96. The night light command
+    is on/off only (the device exposes two read-only brightness levels in its
+    advertisement, but they are not separately settable here).
+    """
+
+    _model = SwitchbotModel.CIRCULATOR_FAN_PRO
+
+    # Fan power: ext 0x0F, subcmd 0x41, 0x11 = 开关机, 0x29 = control source
+    # (Home Assistant), byte5 0x01 = on / 0x00 = off / 0x02 = toggle.
+    _turn_on_command = "570f41112901"
+    _turn_off_command = "570f41112900"
+    # Preset mode: the 0x11 power command also carries the running mode in byte6
+    # (turning the fan on). The Pro's mode 0x04 is hurricane, not the legacy baby.
+    _mode_enum: ClassVar[type[Enum]] = CirculatorFanProMode
+    _command_set_mode: ClassVar[dict[str, str]] = {
+        mode.name.lower(): f"570f41112901{mode.value:02X}"
+        for mode in CirculatorFanProMode
+    }
+    # Night light: ext 0x0F, subcmd 0x96, byte3 0x0A, byte4 0x02, then a state
+    # byte: bit0 = on/off (0 off / 1 on), bit1 = level (0 high / 1 low).
+    # off = 0x00, on high = 0x01, on low = 0x03.
+    _night_light_command = "570f960a02{}"
+
+    def __init__(
+        self,
+        device: BLEDevice,
+        key_id: str,
+        encryption_key: str,
+        interface: int = 0,
+        model: SwitchbotModel = SwitchbotModel.CIRCULATOR_FAN_PRO,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the Circulator Fan Pro."""
+        super().__init__(device, key_id, encryption_key, interface, model, **kwargs)
+
+    async def get_basic_info(self) -> dict[str, Any] | None:
+        """
+        Get device basic info.
+
+        The Pro carries all runtime state (fan + night light) in its
+        advertisement, and its GATT basic-info responses differ from the
+        legacy Circulator Fan, so parse only the firmware here and do so
+        defensively.
+        """
+        if not (_data := await self._get_basic_info(COMMAND_GET_BASIC_INFO)):
+            return None
+        if not (_data1 := await self._get_basic_info(DEVICE_GET_BASIC_SETTINGS_KEY)):
+            return None
+
+        _LOGGER.debug(
+            "Circulator Fan Pro basic info: data=%s data1=%s",
+            _data.hex(),
+            _data1.hex(),
+        )
+        info: dict[str, Any] = {}
+        if len(_data1) > 2:
+            info["firmware"] = _data1[2] / 10.0
+        return info
+
+    @update_after_operation
+    async def set_percentage(self, percentage: int) -> bool:
+        """
+        Set the fan speed (1-100).
+
+        Speed lives in byte7 of the 0x11 power command and only applies in
+        direct mode, so this sends "on + direct mode + speed".
+        """
+        result = await self._send_command(f"570f4111290101{percentage:02X}")
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def turn_on_light(self, low: bool = False) -> bool:
+        """Turn the night light on (low selects level 2 / dim, else level 1 / bright)."""
+        state = 0x03 if low else 0x01
+        result = await self._send_command(
+            self._night_light_command.format(f"{state:02X}")
+        )
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def turn_off_light(self) -> bool:
+        """Turn the night light off."""
+        result = await self._send_command(self._night_light_command.format("00"))
+        return self._check_command_result(result, 0, {1})
+
+    def is_night_light_on(self) -> bool | None:
+        """Return the cached night-light power state."""
+        return self._get_adv_value("night_light_is_on")
+
+    def get_night_light_level(self) -> int | None:
+        """Return the cached night-light level (1 high, 2 low, 0 off)."""
+        return self._get_adv_value("night_light_level")
+
