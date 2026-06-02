@@ -398,9 +398,7 @@ def create_circulator_fan_pro_for_testing(init_data: dict | None = None):
         "ffffffffffffffffffffffffffffffff",
         model=SwitchbotModel.CIRCULATOR_FAN_PRO,
     )
-    fan_device.update_from_advertisement(
-        make_advertisement_data(ble_device, init_data)
-    )
+    fan_device.update_from_advertisement(make_advertisement_data(ble_device, init_data))
     fan_device._send_command = AsyncMock()
     fan_device._check_command_result = MagicMock()
     fan_device.update = AsyncMock()

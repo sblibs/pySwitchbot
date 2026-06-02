@@ -108,4 +108,3 @@ def process_circulator_fan_pro(
         "charging": _charging,
         "speed": _speed,
     }
-

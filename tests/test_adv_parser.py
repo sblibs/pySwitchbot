@@ -1928,7 +1928,9 @@ def test_circulator_fan_pro_active() -> None:
     """
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
-        manufacturer_data={2409: b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a\xd9\x98\x0b\x00\x00\x00\x00\x00\x00"},
+        manufacturer_data={
+            2409: b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a\xd9\x98\x0b\x00\x00\x00\x00\x00\x00"
+        },
         service_data={
             "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00Y\x00\x11\xb3@"
         },
@@ -1969,7 +1971,9 @@ def test_circulator_fan_pro_routes_by_service_data_suffix() -> None:
     """The Pro is identified by its service-data suffix without an explicit model."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
-        manufacturer_data={2409: b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a\xd9\x98\x0b\x00\x00\x00\x00\x00\x00"},
+        manufacturer_data={
+            2409: b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a\xd9\x98\x0b\x00\x00\x00\x00\x00\x00"
+        },
         service_data={
             "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00Y\x00\x11\xb3@"
         },
