@@ -183,7 +183,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             if len(basic_data) >= 3:
                 self._update_parsed_data(self._parse_basic_data(basic_data))
             else:
-                _LOGGER.warning("Invalid basic data received: %s", basic_data)
+                _LOGGER.error("Invalid basic data received: %s", basic_data.hex())
             self._fire_callbacks()
 
         return status
