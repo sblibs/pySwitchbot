@@ -190,19 +190,19 @@ class SwitchbotSmartThermostatRadiator(
         return self._get_adv_value("target_temperature")
 
 
-def get_action(self) -> ClimateAction:
-    """Return current action from cache."""
-    if not self.is_on():
-        return ClimateAction.OFF
+    def get_action(self) -> ClimateAction:
+        """Return current action from cache."""
+        if not self.is_on():
+            return ClimateAction.OFF
 
-    current_temp = self.get_current_temperature()
-    target_temp = self.get_target_temperature()
+        current_temp = self.get_current_temperature()
+        target_temp = self.get_target_temperature()
 
-    if (
-        current_temp is not None
-        and target_temp is not None
-        and current_temp >= (target_temp + 0.5)
-    ):
-        return ClimateAction.IDLE
+        if (
+            current_temp is not None
+            and target_temp is not None
+            and current_temp >= (target_temp + 0.5)
+        ):
+            return ClimateAction.IDLE
 
-    return ClimateAction.HEATING
+        return ClimateAction.HEATING
