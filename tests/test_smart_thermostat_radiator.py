@@ -219,3 +219,14 @@ def test_default_model_classvar():
         ble_device, "ff", "ffffffffffffffffffffffffffffffff"
     )
     assert device._model == SMART_THERMOSTAT_RADIATOR_INFO.modelName
+
+
+@pytest.mark.asyncio
+async def test_thermostat_idle_action() -> None:
+    """Test that the TRV reports IDLE when current temp exceeds target temp + hysteresis."""
+    device = create_device_for_command_testing(
+        SMART_THERMOSTAT_RADIATOR_INFO,
+        {"target_temperature": 20.0, "temperature": 28.0},
+    )
+
+    assert device.hvac_action == ClimateAction.IDLE
