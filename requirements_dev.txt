@@ -1,6 +1,6 @@
 pytest-asyncio
 pytest-cov
-aiohttp>=3.13.5
+aiohttp>=3.14.1
 bleak>=3.0.2
 bleak-retry-connector>=4.6.1
 cryptography>=49.0.0
