@@ -67,6 +67,7 @@ from .devices.relay_switch import (
     SwitchbotRelaySwitch,
     SwitchbotRelaySwitch2PM,
 )
+from .devices.remote_with_screen import SwitchbotRemoteWithScreen
 from .devices.roller_shade import SwitchbotRollerShade
 from .devices.smart_thermostat_radiator import SwitchbotSmartThermostatRadiator
 from .devices.vacuum import SwitchbotVacuum
@@ -124,6 +125,7 @@ __all__ = [
     "SwitchbotPlugMini",
     "SwitchbotRelaySwitch",
     "SwitchbotRelaySwitch2PM",
+    "SwitchbotRemoteWithScreen",
     "SwitchbotRgbicLight",
     "SwitchbotRgbicNeonLight",
     "SwitchbotRollerShade",
