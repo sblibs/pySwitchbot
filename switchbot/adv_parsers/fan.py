@@ -11,7 +11,10 @@ _STANDING_FAN_MODE_MAP: dict[int, str] = {
 
 
 def _parse_fan(
-    mfr_data: bytes | None, mode_map: dict[int, str]
+    mfr_data: bytes | None,
+    mode_map: dict[int, str],
+    *,
+    with_charging: bool = False,
 ) -> dict[str, bool | int | str | None]:
     """Shared fan advertisement parse, parameterized on the mode map."""
     if mfr_data is None or len(mfr_data) < 10:
@@ -28,7 +31,7 @@ def _parse_fan(
     _battery = device_data[2] & 0b01111111
     _speed = device_data[3] & 0b01111111
 
-    return {
+    result: dict[str, bool | int | str | None] = {
         "sequence_number": _seq_num,
         "isOn": _isOn,
         "mode": mode_map.get(_mode),
@@ -39,6 +42,10 @@ def _parse_fan(
         "battery": _battery,
         "speed": _speed,
     }
+    if with_charging:
+        # Bit 7 of the battery byte is the charging flag (Standing Fan only).
+        result["charging"] = bool(device_data[2] & 0b10000000)
+    return result
 
 
 def process_fan(
@@ -52,4 +59,4 @@ def process_standing_fan(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int | str | None]:
     """Process Standing Fan services data (modes 1-5; adds CUSTOM_NATURAL)."""
-    return _parse_fan(mfr_data, _STANDING_FAN_MODE_MAP)
+    return _parse_fan(mfr_data, _STANDING_FAN_MODE_MAP, with_charging=True)
