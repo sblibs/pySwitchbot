@@ -94,7 +94,11 @@ class SwitchbotBaseCover(SwitchbotDevice):
         self.ext_info_adv["device0"] = {
             "battery": _data[1],
             "firmware": _data[2] / 10.0,
-            "stateOfCharge": _state_of_charge[_data[3]],
+            "stateOfCharge": (
+                _state_of_charge[_data[3]]
+                if _data[3] < len(_state_of_charge)
+                else None
+            ),
         }
 
         # If grouped curtain device present.
@@ -102,7 +106,11 @@ class SwitchbotBaseCover(SwitchbotDevice):
             self.ext_info_adv["device1"] = {
                 "battery": _data[4],
                 "firmware": _data[5] / 10.0,
-                "stateOfCharge": _state_of_charge[_data[6]],
+                "stateOfCharge": (
+                    _state_of_charge[_data[6]]
+                    if _data[6] < len(_state_of_charge)
+                    else None
+                ),
             }
 
         return self.ext_info_adv

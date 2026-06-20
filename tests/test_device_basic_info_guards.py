@@ -245,6 +245,18 @@ async def test_curtain_get_extended_info_adv_truncated_device1_does_not_crash() 
 
 
 @pytest.mark.asyncio
+async def test_curtain_get_extended_info_adv_out_of_range_charge_returns_none() -> None:
+    """A full-length reply with charge byte > 5 must not IndexError; stateOfCharge is None."""
+    device = curtain.SwitchbotCurtain(_ble())
+    # _data[3]=0xFF (device0) and _data[6]=0xFF (device1) are out of range (0..5).
+    device._send_command = AsyncMock(return_value=b"\x00\x55\x32\xff\x55\x32\xff")
+    result = await device.get_extended_info_adv()
+    assert result is not None
+    assert result["device0"]["stateOfCharge"] is None
+    assert result["device1"]["stateOfCharge"] is None
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("short", [b"\x01", b"\x01" * 5, b"\x01" * 10])
 async def test_evaporative_humidifier_get_basic_info_short_returns_none(
     short: bytes,
