@@ -1513,9 +1513,16 @@ def test_leak_passive():
     assert result == SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
-            "data": {},
+            "data": {
+                "leak": False,
+                "tampered": False,
+                "battery": 78,
+                "low_battery": False,
+            },
             "isEncrypted": False,
             "model": "&",
+            "modelFriendlyName": "Leak Detector",
+            "modelName": SwitchbotModel.LEAK,
             "rawAdvData": None,
         },
         device=ble_device,

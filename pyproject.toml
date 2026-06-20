@@ -3,6 +3,8 @@ target-version = "py311"
 line-length = 88
 
 [tool.ruff.lint]
+preview = true
+explicit-preview-rules = true # opt in ONLY explicitly-listed preview rules
 ignore = [
     "S101", # use of assert
     "D203", # 1 blank line required before class docstring
@@ -34,15 +36,30 @@ ignore = [
 ]
 select = [
     "ASYNC", # async rules
+    "A",   # flake8-builtins
     "B",   # flake8-bugbear
+    "BLE", # flake8-blind-except
     "D",   # flake8-docstrings
     "C4",  # flake8-comprehensions
+    "C90", # mccabe complexity
+    "DTZ", # flake8-datetimez
+    "ERA", # eradicate
+    "EXE", # flake8-executable
     "S",   # flake8-bandit
     "F",   # pyflake
+    "FA",  # flake8-future-annotations
+    "FIX", # flake8-fixme
+    "FURB", # refurb
+    "FURB118", # reimplemented-operator (preview) - unneeded lambdas
     "E",   # pycodestyle
     "W",   # pycodestyle
     "UP",  # pyupgrade
     "I",   # isort
+    "ICN", # flake8-import-conventions
+    "INP", # flake8-no-pep420
+    "ISC", # flake8-implicit-str-concat
+    "LOG", # flake8-logging
+    "Q",   # flake8-quotes
     "RUF", # ruff specific
     "FLY", # flynt
     "G", # flake8-logging-format   ,
@@ -60,8 +77,10 @@ select = [
     "SLOT", # flake8-slots
     "T100", # Trace found: {name} used
     "T20", # flake8-print
+    "TD",  # flake8-todos
     "TID", # Tidy imports
     "TRY", # tryceratops
+    "YTT", # flake8-2020
 ]
 
 [tool.ruff.lint.per-file-ignores]
