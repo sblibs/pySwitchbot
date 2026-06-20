@@ -46,7 +46,7 @@ LOCK_MODEL=SwitchbotModel.LOCK_PRO # Your lock model (here we use the Lock-Pro)
 async def main():
     wolock = await GetSwitchbotDevices().get_locks()
     await lock.SwitchbotLock(
-        wolock[BLE_MAC].device, KEY_ID, ENCRYPTION_KEY, model=LOCK_MODEL
+        wolock[BLE_MAC].device, KEY_ID, ENC_KEY, model=LOCK_MODEL
     ).unlock()
 
 
@@ -70,7 +70,7 @@ LOCK_MODEL=SwitchbotModel.LOCK_PRO # Your lock model (here we use the Lock-Pro)
 async def main():
     wolock = await GetSwitchbotDevices().get_locks()
     await lock.SwitchbotLock(
-        wolock[BLE_MAC].device, KEY_ID, ENCRYPTION_KEY, model=LOCK_MODEL
+        wolock[BLE_MAC].device, KEY_ID, ENC_KEY, model=LOCK_MODEL
     ).lock()
 
 
