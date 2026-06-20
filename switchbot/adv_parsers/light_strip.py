@@ -54,3 +54,16 @@ def process_rgbic_light(
 ) -> dict[str, bool | int]:
     """Support for RGBIC lights."""
     return process_light(data, mfr_data, cw_offset=10)
+
+
+def process_rgbicww_ceiling_light(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int]:
+    """Support for RGBICWW Ceiling Light (white + color sub-lights)."""
+    common_data = process_light(data, mfr_data, cw_offset=10)
+    if not common_data or len(mfr_data) < 14:
+        return {}
+    return common_data | {
+        "main_isOn": bool(mfr_data[13] & 0b10000000),
+        "main_brightness": mfr_data[13] & 0b01111111,
+    }
