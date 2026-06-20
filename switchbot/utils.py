@@ -17,7 +17,7 @@ def format_mac_upper(mac: str) -> str:
         to_test = to_test.replace(".", "")
 
     if len(to_test) == 12:
-        # no : included
+        # bare 12-char hex, insert colons
         return ":".join(to_test.upper()[i : i + 2] for i in range(0, 12, 2))
 
     # Not sure how formatted, return original
