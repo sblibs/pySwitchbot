@@ -41,6 +41,7 @@ MODE_TEMP_RANGE = {
 }
 
 DEFAULT_TEMP_RANGE = (5.0, 35.0)
+HYSTERESIS_IDLE_THRESHOLD = 0.5
 
 
 class SwitchbotSmartThermostatRadiator(
@@ -193,4 +194,15 @@ class SwitchbotSmartThermostatRadiator(
         """Return current action from cache."""
         if not self.is_on():
             return ClimateAction.OFF
+
+        current_temp = self.get_current_temperature()
+        target_temp = self.get_target_temperature()
+
+        if (
+            current_temp is not None
+            and target_temp is not None
+            and current_temp >= (target_temp + HYSTERESIS_IDLE_THRESHOLD)
+        ):
+            return ClimateAction.IDLE
+
         return ClimateAction.HEATING
