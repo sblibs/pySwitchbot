@@ -95,9 +95,7 @@ class SwitchbotBaseCover(SwitchbotDevice):
             "battery": _data[1],
             "firmware": _data[2] / 10.0,
             "stateOfCharge": (
-                _state_of_charge[_data[3]]
-                if _data[3] < len(_state_of_charge)
-                else None
+                _state_of_charge[_data[3]] if _data[3] < len(_state_of_charge) else None
             ),
         }
 
