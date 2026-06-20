@@ -56,16 +56,16 @@ class SwitchbotHumidifier(SwitchbotDevice):
 
     async def turn_on(self) -> bool:
         """Turn device on."""
-        await self._async_set_state(True)
+        return await self._async_set_state(True)
 
     async def turn_off(self) -> bool:
         """Turn device off."""
-        await self._async_set_state(False)
+        return await self._async_set_state(False)
 
     async def set_level(self, level: int) -> bool:
         """Set level."""
         assert 1 <= level <= 100, "Level must be between 1 and 100"
-        await self._set_level(level)
+        return await self._set_level(level)
 
     async def _set_level(self, level: int) -> bool:
         """Set level."""
@@ -78,11 +78,11 @@ class SwitchbotHumidifier(SwitchbotDevice):
 
     async def async_set_auto(self) -> bool:
         """Set auto mode."""
-        await self._set_level(128)
+        return await self._set_level(128)
 
     async def async_set_manual(self) -> bool:
         """Set manual mode."""
-        await self._set_level(50)
+        return await self._set_level(50)
 
     def is_auto(self) -> bool:
         """Return auto state from cache."""

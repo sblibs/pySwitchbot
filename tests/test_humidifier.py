@@ -46,8 +46,9 @@ async def test_turn_on_accepted_overrides_state() -> None:
     """Accepted command must update cached state to on."""
     device = create_humidifier_for_command_testing({"isOn": False, "level": 50})
 
-    await device.turn_on()
+    assert await device.turn_on() is True
 
+    device._send_command.assert_awaited_once()
     assert device.is_on() is True
 
 
@@ -56,8 +57,9 @@ async def test_turn_off_accepted_overrides_state() -> None:
     """Accepted command must update cached state to off."""
     device = create_humidifier_for_command_testing({"isOn": True, "level": 50})
 
-    await device.turn_off()
+    assert await device.turn_off() is True
 
+    device._send_command.assert_awaited_once()
     assert device.is_on() is False
 
 
@@ -67,8 +69,9 @@ async def test_turn_on_rejected_preserves_state() -> None:
     device = create_humidifier_for_command_testing({"isOn": False, "level": 50})
     device._check_command_result = MagicMock(return_value=False)
 
-    await device.turn_on()
+    assert await device.turn_on() is False
 
+    device._send_command.assert_awaited_once()
     assert device.is_on() is False
 
 
@@ -78,8 +81,9 @@ async def test_turn_off_rejected_preserves_state() -> None:
     device = create_humidifier_for_command_testing({"isOn": True, "level": 50})
     device._check_command_result = MagicMock(return_value=False)
 
-    await device.turn_off()
+    assert await device.turn_off() is False
 
+    device._send_command.assert_awaited_once()
     assert device.is_on() is True
 
 
@@ -88,8 +92,9 @@ async def test_set_level_accepted_overrides_state() -> None:
     """Accepted set_level must update cached level."""
     device = create_humidifier_for_command_testing({"isOn": True, "level": 33})
 
-    await device.set_level(66)
+    assert await device.set_level(66) is True
 
+    device._send_command.assert_awaited_once()
     assert device.get_level() == 66
 
 
@@ -99,6 +104,7 @@ async def test_set_level_rejected_preserves_state() -> None:
     device = create_humidifier_for_command_testing({"isOn": True, "level": 33})
     device._check_command_result = MagicMock(return_value=False)
 
-    await device.set_level(66)
+    assert await device.set_level(66) is False
 
+    device._send_command.assert_awaited_once()
     assert device.get_level() == 33

@@ -48,7 +48,7 @@ async def test_turn_on_accepted_overrides_state() -> None:
 
     assert await device.turn_on() is True
 
-    device._send_command.assert_called_with(plug.PLUG_ON_KEY)
+    device._send_command.assert_awaited_once_with(plug.PLUG_ON_KEY)
     assert device.is_on() is True
 
 
@@ -59,7 +59,7 @@ async def test_turn_off_accepted_overrides_state() -> None:
 
     assert await device.turn_off() is True
 
-    device._send_command.assert_called_with(plug.PLUG_OFF_KEY)
+    device._send_command.assert_awaited_once_with(plug.PLUG_OFF_KEY)
     assert device.is_on() is False
 
 
@@ -71,7 +71,7 @@ async def test_turn_on_rejected_preserves_state() -> None:
 
     assert await device.turn_on() is False
 
-    device._send_command.assert_called_with(plug.PLUG_ON_KEY)
+    device._send_command.assert_awaited_once_with(plug.PLUG_ON_KEY)
     assert device.is_on() is False
 
 
@@ -83,5 +83,5 @@ async def test_turn_off_rejected_preserves_state() -> None:
 
     assert await device.turn_off() is False
 
-    device._send_command.assert_called_with(plug.PLUG_OFF_KEY)
+    device._send_command.assert_awaited_once_with(plug.PLUG_OFF_KEY)
     assert device.is_on() is True
