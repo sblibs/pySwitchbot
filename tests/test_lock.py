@@ -414,10 +414,6 @@ async def test_enable_notifications(model: str):
         assert result is True
         assert device._notifications_enabled is True
         assert mock_send.call_count == 1
-        # Second call must be a no-op once notifications are tracked as enabled.
-        result = await device._enable_notifications()
-        assert result is True
-        assert mock_send.call_count == 1
 
 
 @pytest.mark.asyncio

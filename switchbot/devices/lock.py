@@ -236,8 +236,6 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         return _data
 
     async def _enable_notifications(self) -> bool:
-        if self._notifications_enabled:
-            return True
         result = await self._send_command(COMMAND_ENABLE_NOTIFICATIONS[self._model])
         if self._check_command_result(result, 0, COMMAND_RESULT_EXPECTED_VALUES):
             self._notifications_enabled = True
