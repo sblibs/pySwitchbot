@@ -414,3 +414,29 @@ async def test_send_command_sequence(
     result = await device._send_command_sequence(list(commands))
 
     assert result is final_result
+
+
+def test_update_parsed_data_without_advertisement_does_not_log_exception(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """
+    Calling _update_parsed_data before any advertisement is a no-op, not an error.
+
+    Regression for #285: previously emitted ``_LOGGER.exception(...)`` outside an
+    ``except`` block, which logged "No advertisement data to update / NoneType: None"
+    on every press()/turn_on()/update() until the first advertisement arrived.
+    """
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    device = SwitchbotDevice(ble_device)
+
+    assert device._sb_adv_data is None
+
+    with caplog.at_level(logging.DEBUG, logger="switchbot.devices.device"):
+        result = device._update_parsed_data({"isOn": True})
+
+    assert result is False
+    exception_records = [
+        record for record in caplog.records if record.levelno >= logging.WARNING
+    ]
+    assert exception_records == []
+    assert all(record.exc_info is None for record in caplog.records)
