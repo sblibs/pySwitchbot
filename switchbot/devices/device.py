@@ -851,8 +851,8 @@ class SwitchbotBaseDevice:
         Returns true if data has changed and False if not.
         """
         if not self._sb_adv_data:
-            _LOGGER.exception("No advertisement data to update")
-            return None
+            _LOGGER.debug("%s: No advertisement data to update", self.name)
+            return False
         old_data = self._sb_adv_data.data.get("data") or {}
         merged_data = _merge_data(old_data, new_data)
         if merged_data == old_data:

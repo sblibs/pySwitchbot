@@ -1,0 +1,49 @@
+name: Lint PR Title
+
+# GitHub uses the pull request title as the commit subject when "Squash and
+# merge" is used. When the repo is configured for squash-merge with the PR
+# title as the commit title, individual commits on a PR branch are discarded
+# by the squash, so this workflow — which validates the PR title against the
+# Conventional Commits spec — is the sole enforcement point for the format of
+# the commit that lands on main.
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions:
+  pull-requests: read
+
+jobs:
+  lint:
+    name: Validate PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Conventional Commits types accepted by the commitizen commit-msg hook.
+          types: |
+            build
+            chore
+            ci
+            docs
+            feat
+            fix
+            perf
+            refactor
+            revert
+            style
+            test
+          requireScope: false
+          # Subject (text after the type/scope) must start lowercase.
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            doesn't start with an uppercase character.
