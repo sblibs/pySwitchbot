@@ -25,6 +25,31 @@ Encryption key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 Where `MAC` is MAC address of the lock and `USERNAME` is your SwitchBot account username, after that script will ask for your password.
 If authentication succeeds then script should output your key id and encryption key.
 
+### Troubleshooting key retrieval
+
+Key retrieval talks to SwitchBot's account API with your username and
+password. The most common failures are account-side, not bugs in this library:
+
+- **`Authentication failed: ...`** — the username/password were rejected. This
+  happens when:
+  - Two-factor authentication (2FA) is enabled on the account. The API login
+    used here does not support a verification code, so 2FA accounts cannot
+    retrieve keys this way — temporarily disable 2FA, fetch the key, then
+    re-enable it.
+  - The account was created via "Sign in with Apple"/Google and has no
+    password set. Set a password in the SwitchBot app first, or use an
+    email/password account.
+  - The username is an email but the account is registered to a phone number
+    (or vice versa). Use the exact identifier you log in with.
+- **`Failed to retrieve encryption key from SwitchBot Account: ...`** —
+  authentication succeeded but the key could not be read. Usually the account
+  is not the device **owner**: keys are only returned to the owning account,
+  not to shared/family members. Retrieve the key from the owner account, or
+  transfer ownership in the app.
+
+The key only needs to be fetched once; store the `key_id` and encryption key
+and reuse them — there is no need to call the script on every connection.
+
 ## Examples:
 
 #### WoLock (Lock-Pro)
