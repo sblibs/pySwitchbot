@@ -73,15 +73,17 @@ export in `__init__.py`.
 
 ## Running tests
 
-No Poetry/uv — plain pip + setuptools.
+This project uses [`poetry`](https://python-poetry.org/) for packaging and
+dependency management.
 
 ```bash
-pip install -r requirements_dev.txt .
-pytest --cov=switchbot tests
+poetry install
+poetry run pytest --cov=switchbot tests
 ```
 
-CI (`.github/workflows/ci.yaml`) runs the suite on Python 3.11–3.14 plus the
-pre-commit hooks, and uploads coverage to Codecov.
+CI (`.github/workflows/ci.yml`) runs the suite on Python 3.11–3.14 in a
+separate `test` job, runs the pre-commit hooks in a `lint` job, and uploads
+coverage to Codecov.
 
 ## Commit / PR conventions
 
@@ -98,9 +100,12 @@ pre-commit hooks, and uploads coverage to Codecov.
   aborts — re-stage and commit again. (pre-commit.ci also autofixes on PRs.)
 - **No PR template / no CONTRIBUTING.md** — the body is freeform; describe what
   the change does and why, and link the issue if one exists.
-- **Releases are manual:** cutting a GitHub Release triggers
-  `python-publish.yml` to build and publish to PyPI. There is no
-  semantic-release; nothing auto-bumps from commit types.
+- **Releases are automatic:** on push to `main`, the `release` job in
+  `ci.yml` runs [python-semantic-release](https://python-semantic-release.readthedocs.io/),
+  which derives the next version from the Conventional Commit messages, bumps
+  `pyproject.toml` + `switchbot/__version__.py`, updates `CHANGELOG.md`, tags,
+  creates the GitHub Release, and publishes to PyPI. The commit `type` drives
+  the bump (`fix` → patch, `feat` → minor, `!`/`BREAKING CHANGE` → major).
 
 ## Reporting security issues
 
