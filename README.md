@@ -58,7 +58,7 @@ scanning** to request that response — passive scanning never sees it.
 
 `GetSwitchbotDevices().discover()` uses an active scanner by default, so it
 works out of the box. The problem appears when advertisements come from a
-*passive* source instead — for example a Home Assistant adapter or ESPHome
+_passive_ source instead — for example a Home Assistant adapter or ESPHome
 Bluetooth proxy configured for passive-only scanning. In that case the
 `service_data` is missing and most models cannot be identified: detection falls
 back to manufacturer data, which only resolves a handful of device types. The
