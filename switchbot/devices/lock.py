@@ -183,7 +183,11 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             if len(basic_data) >= 3:
                 self._update_parsed_data(self._parse_basic_data(basic_data))
             else:
-                _LOGGER.error("Invalid basic data received: %s", basic_data.hex())
+                _LOGGER.error(
+                    "%s: Invalid basic data received: %s",
+                    self.name,
+                    basic_data.hex(),
+                )
             self._fire_callbacks()
 
         return status
@@ -203,7 +207,11 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             "basic_data: %s, address: %s", basic_data.hex(), self._device.address
         )
         if len(basic_data) < 3:
-            _LOGGER.error("Invalid basic data received: %s", basic_data.hex())
+            _LOGGER.error(
+                "%s: Invalid basic data received: %s",
+                self.name,
+                basic_data.hex(),
+            )
             return None
         return self._parse_lock_data(
             lock_raw_data[1:], self._model
@@ -291,10 +299,11 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         min_len = _LOCK_DATA_MIN_LEN_BY_MODEL.get(model, _LOCK_DATA_MIN_LEN_DEFAULT)
         if len(data) < min_len:
             _LOGGER.error(
-                "lock data too short for %s: got %d bytes, need %d",
+                "lock data too short for %s: got %d bytes, need %d (%s)",
                 model,
                 len(data),
                 min_len,
+                data.hex(),
             )
             return {}
         if model in {SwitchbotModel.LOCK, SwitchbotModel.LOCK_VISION_PRO}:
