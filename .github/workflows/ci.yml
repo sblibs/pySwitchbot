@@ -113,10 +113,25 @@ jobs:
       contents: write
 
     steps:
+      # Mint a short-lived installation token for the release-bot GitHub App,
+      # which is in the default-branch ruleset's bypass_actors list so PSR's
+      # version-bump commit/tag push isn't blocked by the required PR and
+      # status checks. Per PSR's docs, the same token must be passed to
+      # actions/checkout (via `token`) so its persisted http.extraheader
+      # doesn't override PSR's URL-embedded auth at push time and re-attribute
+      # the push to github-actions[bot].
+      - name: Generate release App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           ref: ${{ github.ref }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Create local branch name
         env:
@@ -127,7 +142,7 @@ jobs:
         uses: python-semantic-release/python-semantic-release@350c48fcb3ffcdfd2e0a235206bc2ecea6b69df0 # v10.5.3
         id: release
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token }}
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
@@ -137,4 +152,4 @@ jobs:
         uses: python-semantic-release/upload-to-gh-release@0a92b5d7ebfc15a84f9801ebd1bf706343d43711 # main
         if: steps.release.outputs.released == 'true'
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token }}
