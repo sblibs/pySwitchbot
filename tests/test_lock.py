@@ -950,6 +950,15 @@ async def test_get_quick_key_short_response():
 
 
 @pytest.mark.asyncio
+async def test_get_quick_key_unknown_function():
+    """An undefined 2-bit function value (0b11) returns None instead of raising."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    # 0xcb = enabled, single press, function bits 0b11 (undefined)
+    with patch.object(device, "_send_command", return_value=b"\x01\xcb"):
+        assert await device.get_quick_key() is None
+
+
+@pytest.mark.asyncio
 async def test_set_quick_key_rejected():
     """A non-success status from the lock makes set_quick_key return False."""
     device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)

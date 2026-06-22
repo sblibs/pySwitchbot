@@ -72,6 +72,8 @@ COMMAND_SET_QUICK_KEY_PREFIX = {
 QUICK_KEY_ENABLED_BIT = 0x08
 QUICK_KEY_DOUBLE_PRESS_BIT = 0x04
 QUICK_KEY_FUNCTION_MASK = 0x03
+# The 2-bit function field has 4 possible values but only 3 are defined.
+QUICK_KEY_FUNCTION_VALUES = frozenset(f.value for f in QuickKeyFunction)
 
 COMMAND_ENABLE_NOTIFICATIONS = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0e01001e00008101",
@@ -183,12 +185,16 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         return self._parse_quick_key(result[1])
 
     @staticmethod
-    def _parse_quick_key(cfg: int) -> dict[str, Any]:
-        """Parse the Quick Key config byte."""
+    def _parse_quick_key(cfg: int) -> dict[str, Any] | None:
+        """Parse the Quick Key config byte, or None if it can't be parsed."""
+        func_bits = cfg & QUICK_KEY_FUNCTION_MASK
+        if func_bits not in QUICK_KEY_FUNCTION_VALUES:
+            _LOGGER.error("Unknown Quick Key function value: %#04x", func_bits)
+            return None
         return {
             "enabled": bool(cfg & QUICK_KEY_ENABLED_BIT),
             "double_press": bool(cfg & QUICK_KEY_DOUBLE_PRESS_BIT),
-            "function": QuickKeyFunction(cfg & QUICK_KEY_FUNCTION_MASK),
+            "function": QuickKeyFunction(func_bits),
         }
 
     async def set_quick_key(
