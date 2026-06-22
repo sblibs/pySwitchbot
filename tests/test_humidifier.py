@@ -108,3 +108,27 @@ async def test_set_level_rejected_preserves_state() -> None:
 
     device._send_command.assert_awaited_once()
     assert device.get_level() == 33
+
+
+@pytest.mark.asyncio
+async def test_async_set_auto_overrides_level() -> None:
+    """Auto mode must set the cached level to the auto sentinel."""
+    device = create_humidifier_for_command_testing({"isOn": True, "level": 50})
+
+    assert await device.async_set_auto() is True
+
+    device._send_command.assert_awaited_once()
+    assert device.get_level() == 128
+    assert device.is_auto() is True
+
+
+@pytest.mark.asyncio
+async def test_async_set_manual_overrides_level() -> None:
+    """Manual mode must set the cached level to the manual sentinel."""
+    device = create_humidifier_for_command_testing({"isOn": True, "level": 128})
+
+    assert await device.async_set_manual() is True
+
+    device._send_command.assert_awaited_once()
+    assert device.get_level() == 50
+    assert device.is_auto() is False
