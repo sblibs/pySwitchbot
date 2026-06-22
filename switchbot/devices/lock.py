@@ -75,6 +75,8 @@ REST_STATUSES = {LockStatus.LOCKED, LockStatus.UNLOCKED, LockStatus.NOT_FULLY_LO
 # Minimum decrypted-payload bytes needed by _parse_lock_data for each model.
 # LOCK/LOCK_LITE/LOCK_VISION/LOCK_VISION_PRO read data[0..1]; the default
 # branch (LOCK_PRO/LOCK_ULTRA/LOCK_PRO_WIFI) also reads data[5].
+# Keep in sync with the model-dispatch branches in _parse_lock_data: a model
+# omitted here falls back to _LOCK_DATA_MIN_LEN_DEFAULT (6).
 _LOCK_DATA_MIN_LEN_SHORT = 2
 _LOCK_DATA_MIN_LEN_DEFAULT = 6
 _LOCK_DATA_MIN_LEN_BY_MODEL = {
