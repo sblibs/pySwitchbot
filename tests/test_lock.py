@@ -862,3 +862,74 @@ async def test_lock_with_invalid_basic_data(model: str):
     ):
         result = await device.lock()
         assert result is True
+
+
+@pytest.mark.parametrize(
+    ("model", "data"),
+    [
+        # LOCK family: parser reads data[0..1], min 2 bytes.
+        (SwitchbotModel.LOCK, b""),
+        (SwitchbotModel.LOCK, b"\x80"),
+        (SwitchbotModel.LOCK_LITE, b"\x80"),
+        (SwitchbotModel.LOCK_VISION, b"\x80"),
+        (SwitchbotModel.LOCK_VISION_PRO, b"\x80"),
+        # LOCK_PRO family: parser reads data[5], min 6 bytes.
+        (SwitchbotModel.LOCK_PRO, b""),
+        (SwitchbotModel.LOCK_PRO, b"\x80\x00\x00\x00\x00"),
+        (SwitchbotModel.LOCK_ULTRA, b"\x80\x00\x00\x00\x00"),
+        (SwitchbotModel.LOCK_PRO_WIFI, b"\x80\x00\x00\x00\x00"),
+    ],
+)
+def test_parse_lock_data_short_payload_returns_empty(model: str, data: bytes):
+    """Short payloads must return {} instead of raising IndexError."""
+    assert lock.SwitchbotLock._parse_lock_data(data, model) == {}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "model",
+    [
+        SwitchbotModel.LOCK,
+        SwitchbotModel.LOCK_PRO,
+        SwitchbotModel.LOCK_ULTRA,
+    ],
+)
+async def test_update_lock_status_short_decrypted_payload(model: str):
+    """Notification path must not crash on a too-short decrypted payload."""
+    device = create_device_for_command_testing(model)
+    data = bytearray(b"\x0f\x00\x00\x00")  # data[4:] -> b""
+    with (
+        patch.object(device, "_decrypt", return_value=b""),
+        patch.object(device, "_update_parsed_data", return_value=False) as mock_update,
+        patch.object(device, "_reset_disconnect_timer") as mock_reset,
+        patch.object(device, "_fire_callbacks") as mock_fire,
+    ):
+        device._update_lock_status(data)
+        mock_update.assert_called_once_with({})
+        # Empty dict means no real change -> timer/callbacks not fired.
+        mock_reset.assert_not_called()
+        mock_fire.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "model",
+    [
+        SwitchbotModel.LOCK,
+        SwitchbotModel.LOCK_PRO,
+        SwitchbotModel.LOCK_ULTRA,
+    ],
+)
+async def test_get_basic_info_returns_none_on_short_basic_data(model: str):
+    """get_basic_info must return None when the basic_data reply is too short."""
+    device = create_device_for_command_testing(model)
+    with (
+        patch.object(
+            device,
+            "_get_lock_info",
+            return_value=b"\x01\x80\x00\x00\x00\x00\x00",
+        ),
+        patch.object(device, "_get_basic_info", return_value=b"\x00\x64"),
+    ):
+        result = await device.get_basic_info()
+        assert result is None
