@@ -97,6 +97,8 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
             return None
 
         _data, led_settings, led_status = res[0], res[1], res[2]
+        if len(_data) < 16 or len(led_settings) < 6 or len(led_status) < 2:
+            return None
 
         _LOGGER.debug(
             "%s %s basic info %s", self._model, self._device.address, _data.hex()

@@ -25,6 +25,8 @@ class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         """Get device basic settings."""
         if not (_data := await self._get_basic_info()):
             return None
+        if len(_data) < 7:
+            return None
         _LOGGER.debug("basic info data: %s", _data.hex())
 
         battery_charging = bool(_data[1] & 0x80)
@@ -36,6 +38,8 @@ class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         last_network_status = (_data[4] >> 2) & 0x01
         current_image_index = _data[5]
         total_num_of_images = _data[6]
+        if len(_data) < 7 + total_num_of_images:
+            return None
         all_images_index = [_data[x] for x in range(7, 7 + total_num_of_images)]
 
         basic_info = {
