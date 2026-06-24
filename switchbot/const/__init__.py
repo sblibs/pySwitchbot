@@ -25,7 +25,7 @@ from .light import (
 )
 
 # Preserve old LockStatus export for backwards compatibility
-from .lock import LockStatus
+from .lock import LockStatus, QuickKeyFunction
 
 DEFAULT_RETRY_COUNT = 3
 DEFAULT_RETRY_TIMEOUT = 1
@@ -143,6 +143,7 @@ __all__ = [
     "HumidifierWaterLevel",
     "LockStatus",
     "NightLightState",
+    "QuickKeyFunction",
     "SmartThermostatRadiatorMode",
     "StandingFanMode",
     "StripLightColorMode",
