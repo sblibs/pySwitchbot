@@ -81,7 +81,7 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             "channel2_isOn": bool(raw_data[2] & SWITCH2_ON_MASK),
             "calibration": bool(raw_data[3] & 0b01000000),
             "mode": raw_data[4] & 0b00001111,
-            "position": raw_data[9] >> 1,
+            "position": raw_data[9],
         }
 
     def _parse_user_data(self, raw_data: bytes) -> dict[str, Any]:

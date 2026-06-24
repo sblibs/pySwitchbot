@@ -844,6 +844,44 @@ def test_parse_common_data_includes_sequence_number() -> None:
     assert parsed["sequence_number"] == 0x2A
 
 
+def test_parse_common_data_position_is_unshifted_percentage() -> None:
+    """
+    `_parse_common_data` must expose `position` as the raw 0-100 percentage.
+
+    Regression test: the value was shifted right by 1 (`raw_data[9] >> 1`),
+    yielding 0-50 from `get_basic_info` while the advertisement parser reports
+    the raw 0-100 value, so the same logical position reached Home Assistant
+    with two different encodings.
+    """
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    device = relay_switch.SwitchbotRelaySwitch(
+        ble_device, "ff", "ffffffffffffffffffffffffffffffff"
+    )
+    raw_data = bytes(
+        [
+            0x01,
+            0x2A,
+            0x80,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x64,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x10,
+        ]
+    )
+    parsed = device._parse_common_data(raw_data)
+    assert parsed["position"] == 100
+
+
 def test_2pm_adv_parses_distinct_per_channel_modes() -> None:
     """
     Channel 1 mode is the lower nibble of mfr_data[9]; channel 2 the upper.
