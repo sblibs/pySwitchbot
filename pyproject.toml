@@ -34,7 +34,7 @@ pyOpenSSL = ">=23.0.0"
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7,<10"
 pytest-cov = ">=3,<8"
-pytest-asyncio = ">=0.19,<1.4"
+pytest-asyncio = ">=0.19,<1.5"
 
 [tool.semantic_release]
 branch = "main"
