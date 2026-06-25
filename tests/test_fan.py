@@ -13,8 +13,8 @@ from switchbot.const.fan import (
     VerticalOscillationAngle,
 )
 from switchbot.devices import fan
-from switchbot.devices.device import SwitchbotOperationError
-from switchbot.devices.fan import SwitchbotStandingFan
+from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperationError
+from switchbot.devices.fan import SwitchbotCirculatorFanPro, SwitchbotStandingFan
 
 from .test_adv_parser import generate_ble_device
 
@@ -387,6 +387,163 @@ async def test_standing_fan_set_preset_mode(mode):
     standing_fan = create_standing_fan_for_testing({"mode": mode})
     await standing_fan.set_preset_mode(mode)
     assert standing_fan.get_current_mode() == mode
+
+
+def create_circulator_fan_pro_for_testing(init_data: dict | None = None):
+    """Create an encrypted SwitchbotCirculatorFanPro instance for testing."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    fan_device = SwitchbotCirculatorFanPro(
+        ble_device,
+        "ff",
+        "ffffffffffffffffffffffffffffffff",
+        model=SwitchbotModel.CIRCULATOR_FAN_PRO,
+    )
+    fan_device.update_from_advertisement(make_advertisement_data(ble_device, init_data))
+    fan_device._send_command = AsyncMock()
+    fan_device._check_command_result = MagicMock()
+    fan_device.update = AsyncMock()
+    return fan_device
+
+
+def test_circulator_fan_pro_inherits_from_switchbot_fan():
+    assert issubclass(SwitchbotCirculatorFanPro, fan.SwitchbotFan)
+
+
+def test_circulator_fan_pro_is_encrypted_device():
+    assert issubclass(SwitchbotCirculatorFanPro, SwitchbotEncryptedDevice)
+
+
+def test_circulator_fan_pro_instantiation():
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    fan_device = SwitchbotCirculatorFanPro(
+        ble_device, "ff", "ffffffffffffffffffffffffffffffff"
+    )
+    assert fan_device is not None
+    assert fan_device._model == SwitchbotModel.CIRCULATOR_FAN_PRO
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_turn_on():
+    fan_device = create_circulator_fan_pro_for_testing({"isOn": True})
+    await fan_device.turn_on()
+    assert fan_device.is_on() is True
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_turn_off():
+    fan_device = create_circulator_fan_pro_for_testing({"isOn": False})
+    await fan_device.turn_off()
+    assert fan_device.is_on() is False
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_set_percentage():
+    fan_device = create_circulator_fan_pro_for_testing({"speed": 80})
+    await fan_device.set_percentage(80)
+    fan_device._send_command.assert_awaited_once_with("570f411129010150")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mode", "expected_cmd"),
+    [
+        ("normal", "570f4111290101"),
+        ("natural", "570f4111290102"),
+        ("sleep", "570f4111290103"),
+        ("hurricane", "570f4111290104"),
+    ],
+)
+async def test_circulator_fan_pro_set_preset_mode(mode, expected_cmd):
+    fan_device = create_circulator_fan_pro_for_testing({"mode": mode})
+    await fan_device.set_preset_mode(mode)
+    fan_device._send_command.assert_awaited_once_with(expected_cmd)
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_turn_on_sends_extended_frame():
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.turn_on()
+    fan_device._send_command.assert_awaited_once_with("570f41112901")
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_turn_off_sends_extended_frame():
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.turn_off()
+    fan_device._send_command.assert_awaited_once_with("570f41112900")
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_turn_on_light():
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.turn_on_light()
+    fan_device._send_command.assert_awaited_once_with("570f960a0201")
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_turn_on_light_low():
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.turn_on_light(low=True)
+    fan_device._send_command.assert_awaited_once_with("570f960a0203")
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_turn_off_light():
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.turn_off_light()
+    fan_device._send_command.assert_awaited_once_with("570f960a0200")
+
+
+@pytest.mark.parametrize(
+    ("key", "method", "expected"),
+    [
+        ("night_light_is_on", "is_night_light_on", True),
+        ("night_light_level", "get_night_light_level", 2),
+    ],
+)
+def test_circulator_fan_pro_light_state_getters(key, method, expected):
+    fan_device = create_circulator_fan_pro_for_testing({key: expected})
+    assert getattr(fan_device, method)() == expected
+
+
+def test_circulator_fan_pro_fan_modes():
+    fan_device = create_circulator_fan_pro_for_testing()
+    assert fan_device.fan_modes == ["normal", "natural", "sleep", "hurricane"]
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_get_basic_info():
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    fan_device = SwitchbotCirculatorFanPro(
+        ble_device,
+        "ff",
+        "ffffffffffffffffffffffffffffffff",
+        model=SwitchbotModel.CIRCULATOR_FAN_PRO,
+    )
+    # Both basic-info commands return the same stub; byte 2 (0x37) -> firmware 5.5.
+    fan_device._send_command = AsyncMock(return_value=b"\x01\x02\x37\x04")
+    info = await fan_device.get_basic_info()
+    assert info == {"firmware": 5.5}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "side_effect",
+    [
+        [b"\x00"],  # first basic-info command fails
+        [b"\x01\x02\x37\x04", b"\x00"],  # second command fails
+    ],
+)
+async def test_circulator_fan_pro_get_basic_info_returns_none(side_effect):
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    fan_device = SwitchbotCirculatorFanPro(
+        ble_device,
+        "ff",
+        "ffffffffffffffffffffffffffffffff",
+        model=SwitchbotModel.CIRCULATOR_FAN_PRO,
+    )
+    fan_device._send_command = AsyncMock(side_effect=side_effect)
+    assert await fan_device.get_basic_info() is None
 
 
 @pytest.mark.asyncio

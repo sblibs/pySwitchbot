@@ -14,6 +14,7 @@ from .const import (
     AirQualityLevel,
     BulbColorMode,
     CeilingLightColorMode,
+    CirculatorFanProMode,
     ClimateAction,
     ClimateMode,
     ColorMode,
@@ -48,7 +49,11 @@ from .devices.device import (
     fetch_cloud_devices,
 )
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
-from .devices.fan import SwitchbotFan, SwitchbotStandingFan
+from .devices.fan import (
+    SwitchbotCirculatorFanPro,
+    SwitchbotFan,
+    SwitchbotStandingFan,
+)
 from .devices.humidifier import SwitchbotHumidifier
 from .devices.keypad_vision import SwitchbotKeypadVision
 from .devices.light_strip import (
@@ -79,6 +84,7 @@ __all__ = [
     "AirQualityLevel",
     "BulbColorMode",
     "CeilingLightColorMode",
+    "CirculatorFanProMode",
     "ClimateAction",
     "ClimateMode",
     "ColorMode",
@@ -106,6 +112,7 @@ __all__ = [
     "SwitchbotBulb",
     "SwitchbotCandleWarmerLamp",
     "SwitchbotCeilingLight",
+    "SwitchbotCirculatorFanPro",
     "SwitchbotCurtain",
     "SwitchbotDevice",
     "SwitchbotEncryptedDevice",

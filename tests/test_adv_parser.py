@@ -13,6 +13,7 @@ from switchbot.adv_parser import (
     parse_advertisement_data,
     populate_model_to_mac_cache,
 )
+from switchbot.adv_parsers.fan import process_circulator_fan_pro
 from switchbot.const.lock import LockStatus
 from switchbot.models import SwitchBotAdvertisement
 
@@ -1914,6 +1915,98 @@ def test_circulator_fan_passive() -> None:
         rssi=-97,
         active=False,
     )
+
+
+def test_circulator_fan_pro_active() -> None:
+    """
+    Test parsing Circulator Fan Pro (W1160) with active data.
+
+    Real W1160 capture (fan on, light off, no swing). The Pro shares the W1071
+    Modern Ceiling Fan broadcast layout (battery at offset 7, fan state at 8,
+    speed at 9, CCT light at 10, color temp at 11-12) and is routed by its own
+    4-byte service-data suffix (0x00 0x11 0xB3 0x40).
+    """
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a\xd9\x98\x0b\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00Y\x00\x11\xb3@"
+        },
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.CIRCULATOR_FAN_PRO
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b"\x00\x00Y\x00\x11\xb3@",
+            "data": {
+                "sequence_number": 154,
+                "isOn": True,
+                "mode": "normal",
+                "night_light_is_on": False,
+                "night_light_level": 0,
+                "oscillating": False,
+                "oscillating_horizontal": False,
+                "oscillating_vertical": False,
+                "battery": 89,
+                "charging": True,
+                "speed": 11,
+            },
+            "isEncrypted": False,
+            "model": b"\x00\x11\xb3@",
+            "modelFriendlyName": "Circulator Fan Pro",
+            "modelName": SwitchbotModel.CIRCULATOR_FAN_PRO,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+def test_circulator_fan_pro_routes_by_service_data_suffix() -> None:
+    """The Pro is identified by its service-data suffix without an explicit model."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a\xd9\x98\x0b\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00Y\x00\x11\xb3@"
+        },
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result is not None
+    assert result.data["modelName"] == SwitchbotModel.CIRCULATOR_FAN_PRO
+    assert result.data["modelFriendlyName"] == "Circulator Fan Pro"
+
+
+@pytest.mark.parametrize(
+    ("mfr_data", "is_on", "level"),
+    [
+        # state byte (offset 8): 0x98 off, 0x94 on/high (L1), 0x9c on/low (L2)
+        (b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a\xd9\x98\x0b\x00\x00\x00\x00\x00\x00", False, 0),
+        (b"\xb0\xe9\xfe\xfd\xc0\xb1\x39\x64\x94\x0b\x00\x00\x00\x00\x00\x00", True, 1),
+        (b"\xb0\xe9\xfe\xfd\xc0\xb1\x3b\xe4\x9c\x0b\x00\x00\x00\x00\x00\x00", True, 2),
+    ],
+)
+def test_circulator_fan_pro_night_light(
+    mfr_data: bytes, is_on: bool, level: int
+) -> None:
+    """The Pro night light is parsed from the fan-state byte (bit2 on, bit3 level)."""
+    data = process_circulator_fan_pro(None, mfr_data)
+    assert data["night_light_is_on"] is is_on
+    assert data["night_light_level"] == level
+
+
+@pytest.mark.parametrize("mfr_data", [None, b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a"])
+def test_circulator_fan_pro_short_data(mfr_data: bytes | None) -> None:
+    """Short or missing manufacturer data yields an empty parse."""
+    assert process_circulator_fan_pro(None, mfr_data) == {}
 
 
 def test_circulator_fan_with_empty_data() -> None:
