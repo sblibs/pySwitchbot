@@ -416,4 +416,3 @@ class SwitchbotCirculatorFanPro(SwitchbotEncryptedDevice, SwitchbotFan):
     def get_night_light_level(self) -> int | None:
         """Return the cached night-light level (1 high, 2 low, 0 off)."""
         return self._get_adv_value("night_light_level")
-
