@@ -540,6 +540,14 @@ async def test_standing_fan_set_vertical_oscillation_angle_int(byte_value):
     cmd = standing_fan._send_command.call_args[0][0]
     assert cmd == f"{fan.COMMAND_SET_OSCILLATION_PARAMS}FFFF{byte_value:02X}FF"
 
+@pytest.mark.asyncio
+async def test_standing_fan_set_vertical_oscillation_angle_90():
+    """Raw-int callers may also use 90 degrees, which maps to byte 0x5F (95)."""
+    standing_fan = create_standing_fan_for_testing()
+    byte_value = 95
+    await standing_fan.set_vertical_oscillation_angle(90)
+    cmd = standing_fan._send_command.call_args[0][0]
+    assert cmd == f"{fan.COMMAND_SET_OSCILLATION_PARAMS}FFFF{byte_value:02X}FF"
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("angle", [0, 45, 120, -1])

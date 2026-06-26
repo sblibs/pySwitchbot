@@ -59,4 +59,8 @@ class VerticalOscillationAngle(Enum):
 
     ANGLE_30 = 30
     ANGLE_60 = 60
-    ANGLE_90 = 95
+    ANGLE_90 = 90
+    ANGLE_MAX = 95
+
+    def __init__(self, value: int) -> None:
+        self._value_ = 95 if value == 90 else value
