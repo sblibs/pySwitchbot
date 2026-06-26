@@ -60,3 +60,9 @@ class VerticalOscillationAngle(Enum):
     ANGLE_30 = 30
     ANGLE_60 = 60
     ANGLE_90 = 95
+
+    @classmethod
+    def _missing_(cls, value: int) -> VerticalOscillationAngle | None:
+        if value == 90:
+            return cls.ANGLE_90
+        return None
