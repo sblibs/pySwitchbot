@@ -60,7 +60,6 @@ class VerticalOscillationAngle(Enum):
     ANGLE_30 = 30
     ANGLE_60 = 60
     ANGLE_90 = 95
-    ANGLE_MAX = 95
 
     @classmethod
     def _missing_(cls, value: int) -> VerticalOscillationAngle | None:
