@@ -60,6 +60,8 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         """Get device basic settings."""
         if not (_data := await self._get_basic_info()):
             return None
+        if len(_data) < 3:
+            return None
         _LOGGER.debug("Raw model %s basic info data: %s", self._model, _data.hex())
 
         battery = _data[1] & 0x7F
@@ -79,6 +81,37 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         """Check if the password is compliant with the rules."""
         if not PASSWORD_RE.fullmatch(password):
             raise ValueError("Password must be 6-12 digits.")
+
+    def _validate_passcode_params(  # noqa: PLR0913
+        self,
+        passcode_type: int,
+        start_time: int | None,
+        end_time: int | None,
+        region: str | None = None,
+        session: aiohttp.ClientSession | None = None,
+        token: str | None = None,
+    ) -> None:
+        """Validate passcode type, active window duration, region, and partial credentials."""
+        if passcode_type not in (0, 1, 2, 3):
+            raise ValueError(f"Invalid passcode_type: {passcode_type}")
+
+        if start_time is not None and not (0 <= start_time <= 0xFFFFFFFF):
+            raise ValueError(f"Invalid start_time: {start_time}")
+
+        if end_time is not None and not (0 <= end_time <= 0xFFFFFFFF):
+            raise ValueError(f"Invalid end_time: {end_time}")
+
+        if region is not None and not re.match(r"^[a-z]{2,8}$", region):
+            raise ValueError(f"Invalid region: {region}")
+
+        # Check for partial credentials
+        cloud_params = [session, token, region]
+        any_provided = any(p is not None for p in cloud_params)
+        all_provided = all(p is not None for p in cloud_params)
+        if any_provided and not all_provided:
+            raise ValueError(
+                "To synchronize with SwitchBot Cloud, 'session', 'token', and 'region' must all be provided."
+            )
 
     def _build_password_payload(
         self, password: str, passcode_type: int, index: int
@@ -127,6 +160,26 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
         return cmds
 
+    async def _add_passcode_to_device(self, password: str, passcode_type: int) -> int:
+        """Add passcode to physical device over BLE and return the assigned index."""
+        cmds = self._build_add_password_cmd(password, passcode_type, index=0xFF)
+
+        result = None
+        for cmd in cmds:
+            result = await self._send_command(cmd)
+            if not result or result[0] != 0x01:
+                result_hex = result.hex() if result else "None"
+                raise SwitchbotOperationError(
+                    f"Failed to add password (result={result_hex})"
+                )
+
+        if not result or len(result) < 3:
+            raise SwitchbotOperationError(
+                "Failed to retrieve passcode index from keypad response."
+            )
+
+        return result[2]
+
     async def add_password(  # noqa: PLR0913
         self,
         password: str,
@@ -174,33 +227,11 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
         """
         self._check_password_rules(password)
+        self._validate_passcode_params(
+            passcode_type, start_time, end_time, region, session, token
+        )
 
-        # Check for partial credentials
-        cloud_params = [session, token, region]
-        any_provided = any(p is not None for p in cloud_params)
-        all_provided = all(p is not None for p in cloud_params)
-        if any_provided and not all_provided:
-            raise ValueError(
-                "To synchronize with SwitchBot Cloud, 'session', 'token', and 'region' must all be provided."
-            )
-
-        cmds = self._build_add_password_cmd(password, passcode_type, index=0xFF)
-
-        result = None
-        for cmd in cmds:
-            result = await self._send_command(cmd)
-            if not result or result[0] != 0x01:
-                result_hex = result.hex() if result else "None"
-                raise SwitchbotOperationError(
-                    f"Failed to add password (result={result_hex})"
-                )
-
-        if not result or len(result) < 3:
-            raise SwitchbotOperationError(
-                "Failed to retrieve passcode index from keypad response."
-            )
-
-        assigned_index = result[2]
+        assigned_index = await self._add_passcode_to_device(password, passcode_type)
 
         # Set active time window if start/end time are supplied or type is time-limited
         start = start_time if start_time is not None else 0
@@ -209,12 +240,24 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         time_cmd = f"570F520203{assigned_index:02X}{start.to_bytes(4, 'big').hex().upper()}{end.to_bytes(4, 'big').hex().upper()}"
         time_result = await self._send_command(time_cmd)
         if not time_result or time_result[0] != 0x01:
+            success = False
+            try:
+                success = await self.delete_password(assigned_index)
+            except Exception:
+                _LOGGER.exception(
+                    "Failed to delete passcode from keypad during rollback after time window write failed."
+                )
+            if not success:
+                _LOGGER.warning(
+                    "Failed to roll back passcode at index %d after time window write failed.",
+                    assigned_index,
+                )
             raise SwitchbotOperationError(
                 "Failed to set active time window for passcode."
             )
 
         # Sync to SwitchBot Cloud if credentials are provided
-        if all_provided:
+        if session and token and region:
             clean_mac = self._device.address.replace(":", "").replace("-", "").upper()
             key_types = {0: "permanent", 1: "timeLimit", 2: "disposable", 3: "urgent"}
             key_type_str = key_types.get(passcode_type, "permanent")
@@ -256,11 +299,17 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                     "Rolling back and deleting passcode from keypad memory.",
                     assigned_index,
                 )
+                success = False
                 try:
-                    await self.delete_password(assigned_index)
+                    success = await self.delete_password(assigned_index)
                 except Exception:
                     _LOGGER.exception(
                         "Failed to delete passcode from keypad during rollback."
+                    )
+                if not success:
+                    _LOGGER.warning(
+                        "Failed to roll back/delete passcode at index %d from keypad memory after cloud sync failure.",
+                        assigned_index,
                     )
                 raise
 
@@ -276,12 +325,17 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     ) -> bool:
         """Modify an existing passcode on the Keypad."""
         self._check_password_rules(password)
+        self._validate_passcode_params(passcode_type, start_time, end_time)
+
         cmds = self._build_add_password_cmd(password, passcode_type, index=index)
 
         result = None
         for cmd in cmds:
             result = await self._send_command(cmd)
             if not result or result[0] != 0x01:
+                _LOGGER.error(
+                    "Failed to send modify password command %s for index %d", cmd, index
+                )
                 return False
 
         start = start_time if start_time is not None else 0
@@ -289,7 +343,15 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
         time_cmd = f"570F520203{index:02X}{start.to_bytes(4, 'big').hex().upper()}{end.to_bytes(4, 'big').hex().upper()}"
         time_result = await self._send_command(time_cmd)
-        return bool(time_result and time_result[0] == 0x01)
+        if not time_result or time_result[0] != 0x01:
+            _LOGGER.error(
+                "Failed to set active time window command %s for index %d",
+                time_cmd,
+                index,
+            )
+            return False
+
+        return True
 
     async def delete_password(self, index: int) -> bool:
         """Delete a passcode from the Keypad."""
@@ -300,6 +362,8 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     async def get_password_count(self) -> dict[str, int] | None:
         """Get the number of passwords stored in the Keypad."""
         if not (_data := await self._send_command(COMMAND_GET_PASSWORD_COUNT)):
+            return None
+        if len(_data) < 6:
             return None
         _LOGGER.debug("Raw model %s password count data: %s", self._model, _data.hex())
 
