@@ -25,6 +25,11 @@ def process_climate_panel(
 
     humidity = mfr_data[10] & 0x7F
 
+    on_button_mode = (mfr_data[13] >> 5) & 0x07
+    on_button_counter = mfr_data[13] & 0x1F
+    off_button_mode = (mfr_data[14] >> 5) & 0x07
+    off_button_counter = mfr_data[14] & 0x1F
+
     pir_state = bool(mfr_data[15] & 0x80)
     is_light = ((mfr_data[15] >> 1) & 0x03) == 0x02
 
@@ -36,6 +41,10 @@ def process_climate_panel(
         "humidity": humidity,
         "temp_alarm": temp_alarm,
         "humidity_alarm": humidity_alarm,
+        "on_button_mode": on_button_mode,
+        "on_button_counter": on_button_counter,
+        "off_button_mode": off_button_mode,
+        "off_button_counter": off_button_counter,
         "motion_detected": pir_state,
         "is_light": is_light,
     }

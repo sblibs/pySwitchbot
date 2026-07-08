@@ -170,6 +170,29 @@ ART_FRAME_INFO = AdvTestCase(
     SwitchbotModel.ART_FRAME,
 )
 
+CLIMATE_PANEL_INFO = AdvTestCase(
+    b"\xb0\xe9\xfe\x848\x05\x06\x14\x05\x99\x2d\x00\x00\x25\x00\xd4\x00\x0c\x04\x00",
+    b"\x00 _\x00\x10\xf3\xd8@",
+    {
+        "battery": 20,
+        "humidity": 45,
+        "sequence_number": 6,
+        "humidity_alarm": 0,
+        "isOn": False,
+        "is_light": True,
+        "motion_detected": True,
+        "temp_alarm": 0,
+        "on_button_mode": 1,
+        "on_button_counter": 5,
+        "off_button_mode": 0,
+        "off_button_counter": 0,
+        "temperature": 25.5,
+    },
+    b"\x00\x10\xf3\xd8",
+    "Climate Panel",
+    SwitchbotModel.CLIMATE_PANEL,
+)
+
 KEYPAD_VISION_INFO = AdvTestCase(
     b"\xb0\xe9\xfe\xe5\x04\x1e\xac\xdf\x00\x00\x00\x00\x00\x02",
     b"\x00\x00_\x01\x11\x03x",
