@@ -1,4 +1,4 @@
-"""Library to handle connection with Switchbot Remote With Screen."""
+"""Library to handle connection with Switchbot Universal Remote."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ from .device import SwitchbotDevice
 _LOGGER = logging.getLogger(__name__)
 
 
-class SwitchbotRemoteWithScreen(SwitchbotDevice):
-    """Representation of a Switchbot Remote With Screen (Universal Remote)."""
+class SwitchbotUniversalRemote(SwitchbotDevice):
+    """Representation of a Switchbot Universal Remote."""
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""

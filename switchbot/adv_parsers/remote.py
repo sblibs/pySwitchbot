@@ -23,11 +23,11 @@ def process_woremote(
     }
 
 
-def process_woremote_with_screen(
+def process_wouniversal_remote(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int | None]:
     """
-    Process Remote With Screen adv data.
+    Process Universal Remote adv data.
 
     The battery level and charging state are encoded in the manufacturer
     specific data. ADV byte 14 maps to ``mfr_data[9]`` (the manufacturer data

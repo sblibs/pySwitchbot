@@ -1711,8 +1711,8 @@ def test_remote_passive() -> None:
     )
 
 
-def test_remote_with_screen_active() -> None:
-    """Test Remote With Screen (Universal Remote) active scan parsing."""
+def test_universal_remote_active() -> None:
+    """Test Universal Remote active scan parsing."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
         manufacturer_data={
@@ -1732,8 +1732,8 @@ def test_remote_with_screen_active() -> None:
             },
             "isEncrypted": False,
             "model": "'",
-            "modelFriendlyName": "Remote With Screen",
-            "modelName": SwitchbotModel.REMOTE_WITH_SCREEN,
+            "modelFriendlyName": "Universal Remote",
+            "modelName": SwitchbotModel.UNIVERSAL_REMOTE,
             "rawAdvData": b"'\x00",
         },
         device=ble_device,
@@ -1742,8 +1742,8 @@ def test_remote_with_screen_active() -> None:
     )
 
 
-def test_remote_with_screen_charging() -> None:
-    """Test Remote With Screen reports the charging bit from byte 14."""
+def test_universal_remote_charging() -> None:
+    """Test Universal Remote reports the charging bit from byte 14."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
         manufacturer_data={

@@ -74,7 +74,7 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "WoBlindTilt": SwitchbotModel.BLIND_TILT,
     "WoIOSensor": SwitchbotModel.IO_METER,  # Outdoor Meter
     "WoButton": SwitchbotModel.REMOTE,  # Remote button
-    "WoRemoteWithScreen": SwitchbotModel.REMOTE_WITH_SCREEN,  # Universal Remote
+    "WoUniversalRemote": SwitchbotModel.UNIVERSAL_REMOTE,  # Universal Remote
     "WoLinkMini": SwitchbotModel.HUBMINI_MATTER,  # Hub Mini
     "WoFan2": SwitchbotModel.CIRCULATOR_FAN,
     "WoHub2": SwitchbotModel.HUB2,

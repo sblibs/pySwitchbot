@@ -51,7 +51,7 @@ from .adv_parsers.relay_switch import (
     process_relay_switch_2pm,
     process_relay_switch_common_data,
 )
-from .adv_parsers.remote import process_woremote, process_woremote_with_screen
+from .adv_parsers.remote import process_woremote, process_wouniversal_remote
 from .adv_parsers.roller_shade import process_worollershade
 from .adv_parsers.smart_thermostat_radiator import process_smart_thermostat_radiator
 from .adv_parsers.vacuum import process_vacuum, process_vacuum_k
@@ -403,15 +403,15 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "manufacturer_id": 89,
     },
     "\x07": {
-        "modelName": SwitchbotModel.REMOTE_WITH_SCREEN,
-        "modelFriendlyName": "Remote With Screen",
-        "func": process_woremote_with_screen,
+        "modelName": SwitchbotModel.UNIVERSAL_REMOTE,
+        "modelFriendlyName": "Universal Remote",
+        "func": process_wouniversal_remote,
         "manufacturer_id": 2409,
     },
     "'": {
-        "modelName": SwitchbotModel.REMOTE_WITH_SCREEN,
-        "modelFriendlyName": "Remote With Screen",
-        "func": process_woremote_with_screen,
+        "modelName": SwitchbotModel.UNIVERSAL_REMOTE,
+        "modelFriendlyName": "Universal Remote",
+        "func": process_wouniversal_remote,
         "manufacturer_id": 2409,
     },
     ",": {

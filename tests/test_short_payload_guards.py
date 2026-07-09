@@ -49,7 +49,7 @@ from switchbot.adv_parsers.lock import (
 from switchbot.adv_parsers.meter import process_wosensorth
 from switchbot.adv_parsers.motion import process_wopresence
 from switchbot.adv_parsers.plug import process_woplugmini
-from switchbot.adv_parsers.remote import process_woremote, process_woremote_with_screen
+from switchbot.adv_parsers.remote import process_woremote, process_wouniversal_remote
 from switchbot.adv_parsers.roller_shade import process_worollershade
 from switchbot.adv_parsers.smart_thermostat_radiator import (
     process_smart_thermostat_radiator,
@@ -131,8 +131,8 @@ def test_process_woremote_short_data(data):
     "mfr_data",
     [None, EMPTY, b"\x00", b"\x00" * 9],
 )
-def test_process_woremote_with_screen_short_mfr(mfr_data):
-    out = process_woremote_with_screen(None, mfr_data)
+def test_process_wouniversal_remote_short_mfr(mfr_data):
+    out = process_wouniversal_remote(None, mfr_data)
     assert out == {"battery": None, "charging": None}
 
 

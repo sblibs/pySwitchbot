@@ -3,15 +3,15 @@ from unittest.mock import AsyncMock
 import pytest
 from bleak.backends.device import BLEDevice
 
-from switchbot.devices.remote_with_screen import SwitchbotRemoteWithScreen
+from switchbot.devices.universal_remote import SwitchbotUniversalRemote
 
 
-def create_device() -> SwitchbotRemoteWithScreen:
-    """Create a Remote With Screen device for command testing."""
+def create_device() -> SwitchbotUniversalRemote:
+    """Create a Universal Remote device for command testing."""
     ble_device = BLEDevice(
         address="aa:bb:cc:dd:ee:ff", name="any", details={"rssi": -80}
     )
-    device = SwitchbotRemoteWithScreen(ble_device)
+    device = SwitchbotUniversalRemote(ble_device)
     device._send_command = AsyncMock()
     return device
 
