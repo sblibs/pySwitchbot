@@ -72,6 +72,8 @@ class SwitchbotFan(SwitchbotSequenceDevice):
             return None
         if not (_data1 := await self._get_basic_info(DEVICE_GET_BASIC_SETTINGS_KEY)):
             return None
+        if len(_data) < 10 or len(_data1) < 3:
+            return None
 
         _LOGGER.debug("data: %s", _data)
         return self._parse_basic_info(_data, _data1)
@@ -111,7 +113,7 @@ class SwitchbotFan(SwitchbotSequenceDevice):
         """Return basic info of device."""
         _data = await self._send_command(key=cmd, retry=self._retry_count)
 
-        if _data in (b"\x07", b"\x00"):
+        if _data is None or len(_data) <= 1:
             _LOGGER.error("Unsuccessful, please try again")
             return None
 
