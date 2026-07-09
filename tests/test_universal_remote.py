@@ -20,7 +20,6 @@ def create_device() -> SwitchbotUniversalRemote:
 @pytest.mark.parametrize(
     ("response", "expected"),
     [
-        # res[1] = battery, res[12] = charging
         (
             b"\x01\x50\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
             {"battery": 80, "charging": False},
