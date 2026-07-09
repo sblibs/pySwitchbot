@@ -70,6 +70,7 @@ from .devices.relay_switch import (
 )
 from .devices.roller_shade import SwitchbotRollerShade
 from .devices.smart_thermostat_radiator import SwitchbotSmartThermostatRadiator
+from .devices.universal_remote import SwitchbotUniversalRemote
 from .devices.vacuum import SwitchbotVacuum
 from .discovery import GetSwitchbotDevices
 from .models import SwitchBotAdvertisement
@@ -134,6 +135,7 @@ __all__ = [
     "SwitchbotStripLight3",
     "SwitchbotSupportedType",
     "SwitchbotSupportedType",
+    "SwitchbotUniversalRemote",
     "SwitchbotVacuum",
     "VerticalOscillationAngle",
     "close_stale_connections",

@@ -1711,6 +1711,53 @@ def test_remote_passive() -> None:
     )
 
 
+def test_universal_remote_active() -> None:
+    """Test Universal Remote active scan parsing."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x00\x50\x00\x00\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"'\x00"},
+        service_uuids=["cba20d00-224d-11e6-9fb8-0002a5d5c51b"],
+        rssi=-66,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "data": {
+                "battery": 80,
+                "charging": False,
+            },
+            "isEncrypted": False,
+            "model": "'",
+            "modelFriendlyName": "Universal Remote",
+            "modelName": SwitchbotModel.UNIVERSAL_REMOTE,
+            "rawAdvData": b"'\x00",
+        },
+        device=ble_device,
+        rssi=-66,
+        active=True,
+    )
+
+
+def test_universal_remote_charging() -> None:
+    """Test Universal Remote reports the charging bit from byte 14."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x00\xb7\x00\x00\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"'\x00"},
+        service_uuids=["cba20d00-224d-11e6-9fb8-0002a5d5c51b"],
+        rssi=-66,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result is not None
+    assert result.data["data"] == {"battery": 55, "charging": True}
+
+
 def test_parse_advertisement_data_hubmini_matter():
     """Test parse_advertisement_data for the HubMini Matter."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
