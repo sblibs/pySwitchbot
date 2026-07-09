@@ -1716,7 +1716,7 @@ def test_universal_remote_active() -> None:
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
         manufacturer_data={
-            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x00\x00\x00\x50\x00\x00\x00\x00\x00\x00"
+            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x00\x50\x00\x00\x00\x00\x00\x00\x00\x00"
         },
         service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"'\x00"},
         service_uuids=["cba20d00-224d-11e6-9fb8-0002a5d5c51b"],
@@ -1747,7 +1747,7 @@ def test_universal_remote_charging() -> None:
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
         manufacturer_data={
-            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x00\x00\x00\xb7\x00\x00\x00\x00\x00\x00"
+            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x00\xb7\x00\x00\x00\x00\x00\x00\x00\x00"
         },
         service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"'\x00"},
         service_uuids=["cba20d00-224d-11e6-9fb8-0002a5d5c51b"],

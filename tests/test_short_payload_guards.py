@@ -129,7 +129,7 @@ def test_process_woremote_short_data(data):
 
 @pytest.mark.parametrize(
     "mfr_data",
-    [None, EMPTY, b"\x00", b"\x00" * 9],
+    [None, EMPTY, b"\x00", b"\x00" * 7],
 )
 def test_process_wouniversal_remote_short_mfr(mfr_data):
     out = process_wouniversal_remote(None, mfr_data)
