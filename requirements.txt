@@ -1,4 +1,0 @@
-aiohttp>=3.13.5
-bleak>=3.0.2
-bleak-retry-connector>=4.6.1
-cryptography>=48.0.0

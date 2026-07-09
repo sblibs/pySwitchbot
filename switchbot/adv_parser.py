@@ -32,6 +32,7 @@ from .adv_parsers.light_strip import (
     process_candle_warmer_lamp,
     process_light,
     process_rgbic_light,
+    process_rgbicww_ceiling_light,
     process_wostrip,
 )
 from .adv_parsers.lock import (
@@ -687,6 +688,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.RGBICWW_FLOOR_LAMP,
         "modelFriendlyName": "RGBICWW Floor Lamp",
         "func": process_rgbic_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x11\xbb\x10": {
+        "modelName": SwitchbotModel.RGBICWW_CEILING_LIGHT,
+        "modelFriendlyName": "RGBICWW Ceiling Light",
+        "func": process_rgbicww_ceiling_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\xbb\x10": {
+        "modelName": SwitchbotModel.RGBICWW_CEILING_LIGHT,
+        "modelFriendlyName": "RGBICWW Ceiling Light",
+        "func": process_rgbicww_ceiling_light,
         "manufacturer_id": 2409,
     },
     b"\x00\x10\xd0\xb7": {

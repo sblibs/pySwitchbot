@@ -108,6 +108,7 @@ class SwitchbotModel(StrEnum):
     PLUG_MINI_EU = "Plug Mini (EU)"
     RGBICWW_STRIP_LIGHT = "RGBICWW Strip Light"
     RGBICWW_FLOOR_LAMP = "RGBICWW Floor Lamp"
+    RGBICWW_CEILING_LIGHT = "RGBICWW Ceiling Light"
     PERMANENT_OUTDOOR_LIGHT = "Permanent Outdoor Light"
     RGBIC_NEON_ROPE_LIGHT = "RGBIC Neon Rope Light"
     RGBIC_NEON_WIRE_ROPE_LIGHT = "RGBIC Neon Wire Rope Light"

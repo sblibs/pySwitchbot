@@ -4,6 +4,7 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
+from switchbot.adv_parsers.fan import process_standing_fan
 from switchbot.const.fan import (
     FanMode,
     HorizontalOscillationAngle,
@@ -290,6 +291,10 @@ async def test_circulator_fan_setters_validate_success_byte(response, expected, 
         lambda d: d.set_vertical_oscillation_angle(VerticalOscillationAngle.ANGLE_90),
         lambda d: d.set_night_light(NightLightState.LEVEL_1),
         lambda d: d.set_night_light(NightLightState.OFF),
+        lambda d: d.set_child_lock(True),
+        lambda d: d.set_display(False),
+        lambda d: d.set_sound(True),
+        lambda d: d.set_auto_recenter(False),
     ],
 )
 async def test_standing_fan_setters_validate_success_byte(response, expected, invoke):
@@ -446,7 +451,10 @@ async def test_standing_fan_get_basic_info(basic_info, firmware_info, result):
     standing_fan._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
 
     info = await standing_fan.get_basic_info()
-    assert info == result | {"nightLight": 3}
+    # Standing Fan adds extra keys (charging, angles, child_lock, ...); assert the
+    # core fields are a subset rather than requiring exact equality.
+    expected = result | {"nightLight": 3}
+    assert expected.items() <= info.items()
 
 
 @pytest.mark.asyncio
@@ -619,3 +627,100 @@ def test_standing_fan_get_horizontal_oscillating_state():
 def test_standing_fan_get_vertical_oscillating_state():
     standing_fan = create_standing_fan_for_testing({"oscillating_vertical": True})
     assert standing_fan.get_vertical_oscillating_state() is True
+
+
+@pytest.mark.asyncio
+async def test_standing_fan_get_basic_info_extended():
+    """The Standing Fan decodes angles, charging, child lock, etc. from status."""
+    standing_fan = create_standing_fan_for_testing({"nightLight": 2})
+    # byte: 2=battery|charge, 3=status bits, 4=h angle, 6=v angle (95=90deg),
+    # 8=mode (low nibble), 9=speed, 10=sound.
+    basic_info = bytearray(b"\x01\x02\xd5\xd3\x3c\x00\x5f\x00\x32\x32\x64")
+    firmware_info = bytearray(b"\x01W\x0b\x17\x01")
+
+    async def mock_get_basic_info(arg):
+        if arg == fan.COMMAND_GET_BASIC_INFO:
+            return basic_info
+        if arg == fan.DEVICE_GET_BASIC_SETTINGS_KEY:
+            return firmware_info
+        return None
+
+    standing_fan._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
+
+    info = await standing_fan.get_basic_info()
+    assert info["battery"] == 85
+    assert info["charging"] is True
+    assert info["isOn"] is True
+    assert info["oscillating_horizontal"] is True
+    assert info["oscillating_vertical"] is False
+    assert info["oscillating_horizontal_angle"] == 60
+    assert info["oscillating_vertical_angle"] == 95
+    assert info["child_lock"] is True
+    assert info["display"] is True
+    assert info["auto_recenter"] is True
+    assert info["sound"] is True
+    assert info["mode"] == "natural"
+    assert info["speed"] == 50
+    assert info["firmware"] == 1.1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("invoke", "expected_cmd"),
+    [
+        (lambda d: d.set_child_lock(True), f"{fan.COMMAND_SET_CHILD_LOCK}01"),
+        (lambda d: d.set_child_lock(False), f"{fan.COMMAND_SET_CHILD_LOCK}02"),
+        (lambda d: d.set_display(True), f"{fan.COMMAND_SET_DISPLAY_LIGHT}01FFFF"),
+        (lambda d: d.set_display(False), f"{fan.COMMAND_SET_DISPLAY_LIGHT}02FFFF"),
+        (lambda d: d.set_sound(True), f"{fan.COMMAND_SET_SOUND}64"),
+        (lambda d: d.set_sound(False), f"{fan.COMMAND_SET_SOUND}00"),
+        (lambda d: d.set_auto_recenter(True), f"{fan.COMMAND_SET_AUTO_RECENTER}0101"),
+        (lambda d: d.set_auto_recenter(False), f"{fan.COMMAND_SET_AUTO_RECENTER}0202"),
+    ],
+)
+async def test_standing_fan_extra_setter_commands(invoke, expected_cmd):
+    standing_fan = create_standing_fan_for_testing()
+    await invoke(standing_fan)
+    standing_fan._send_command.assert_called_once()
+    assert standing_fan._send_command.call_args[0][0] == expected_cmd
+
+
+@pytest.mark.parametrize(
+    ("getter", "key", "value"),
+    [
+        (
+            lambda d: d.get_horizontal_oscillation_angle(),
+            "oscillating_horizontal_angle",
+            60,
+        ),
+        (
+            lambda d: d.get_vertical_oscillation_angle(),
+            "oscillating_vertical_angle",
+            95,
+        ),
+        (lambda d: d.is_charging(), "charging", True),
+        (lambda d: d.get_child_lock(), "child_lock", True),
+        (lambda d: d.get_display(), "display", False),
+        (lambda d: d.get_sound(), "sound", True),
+        (lambda d: d.get_auto_recenter(), "auto_recenter", True),
+    ],
+)
+def test_standing_fan_cached_getters(getter, key, value):
+    standing_fan = create_standing_fan_for_testing({key: value})
+    assert getter(standing_fan) == value
+
+
+@pytest.mark.parametrize(
+    ("battery_byte", "charging", "battery"),
+    [(0xD5, True, 85), (0x55, False, 85)],
+)
+def test_process_standing_fan_charging(battery_byte, charging, battery):
+    mfr_data = bytes([0, 1, 2, 3, 4, 5, 0x01, 0x80, battery_byte, 0x32])
+    result = process_standing_fan(None, mfr_data)
+    assert result["charging"] is charging
+    assert result["battery"] == battery
+
+
+def test_process_standing_fan_charging_short_payload():
+    assert process_standing_fan(None, None) == {}
+    assert process_standing_fan(None, b"\x00") == {}

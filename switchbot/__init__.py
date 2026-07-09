@@ -57,6 +57,7 @@ from .devices.light_strip import (
     SwitchbotPermanentOutdoorLight,
     SwitchbotRgbicLight,
     SwitchbotRgbicNeonLight,
+    SwitchbotRgbicwwCeilingLight,
     SwitchbotStripLight3,
 )
 from .devices.lock import SwitchbotLock
@@ -128,6 +129,7 @@ __all__ = [
     "SwitchbotRemoteWithScreen",
     "SwitchbotRgbicLight",
     "SwitchbotRgbicNeonLight",
+    "SwitchbotRgbicwwCeilingLight",
     "SwitchbotRollerShade",
     "SwitchbotSmartThermostatRadiator",
     "SwitchbotStandingFan",

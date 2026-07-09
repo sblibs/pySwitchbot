@@ -1,0 +1,155 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  POETRY_VIRTUALENVS_IN_PROJECT: "true"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+      - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+        os:
+          - ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Set up uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: true
+      - name: Install poetry
+        run: uv tool install poetry
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "poetry"
+          allow-prereleases: true
+      - name: Cache poetry venv
+        id: cache-venv
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .venv
+          key: venv-v1-${{ runner.os }}-py${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('poetry.lock', 'pyproject.toml') }}
+      - name: Install Dependencies
+        if: steps.cache-venv.outputs.cache-hit != 'true'
+        run: poetry install --only=main,dev
+      - name: Test with Pytest
+        run: poetry run pytest --cov=switchbot --cov-report=xml --durations=30 tests
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # PRs and non-main pushes: validate the PSR config with a read-only dry run.
+  # No environment and no elevated permissions, so PR runs can never enter the
+  # release environment (avoiding approval-gate hangs) or hold OIDC/write tokens.
+  release_dry_run:
+    needs:
+      - test
+      - lint
+    if: github.ref_name != 'main'
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+
+      - name: Create local branch name
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: git switch -C "$BRANCH"
+
+      - name: Test release
+        uses: python-semantic-release/python-semantic-release@350c48fcb3ffcdfd2e0a235206bc2ecea6b69df0 # v10.5.3
+        with:
+          no_operation_mode: true
+
+  # main only: real release + publish. The environment and OIDC/write
+  # permissions live here so they are never granted on PR runs.
+  release:
+    needs:
+      - test
+      - lint
+    if: github.ref_name == 'main'
+
+    runs-on: ubuntu-latest
+    environment: release
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+      # Mint a short-lived installation token for the release-bot GitHub App,
+      # which is in the default-branch ruleset's bypass_actors list so PSR's
+      # version-bump commit/tag push isn't blocked by the required PR and
+      # status checks. Per PSR's docs, the same token must be passed to
+      # actions/checkout (via `token`) so its persisted http.extraheader
+      # doesn't override PSR's URL-embedded auth at push time and re-attribute
+      # the push to github-actions[bot].
+      - name: Generate release App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Create local branch name
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: git switch -C "$BRANCH"
+
+      - name: Release
+        uses: python-semantic-release/python-semantic-release@350c48fcb3ffcdfd2e0a235206bc2ecea6b69df0 # v10.5.3
+        id: release
+        with:
+          github_token: ${{ steps.app-token.outputs.token }}
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
+        if: steps.release.outputs.released == 'true'
+
+      - name: Publish package distributions to GitHub Releases
+        uses: python-semantic-release/upload-to-gh-release@0a92b5d7ebfc15a84f9801ebd1bf706343d43711 # main
+        if: steps.release.outputs.released == 'true'
+        with:
+          github_token: ${{ steps.app-token.outputs.token }}

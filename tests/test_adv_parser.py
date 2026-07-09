@@ -1513,9 +1513,16 @@ def test_leak_passive():
     assert result == SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
-            "data": {},
+            "data": {
+                "leak": False,
+                "tampered": False,
+                "battery": 78,
+                "low_battery": False,
+            },
             "isEncrypted": False,
             "model": "&",
+            "modelFriendlyName": "Leak Detector",
+            "modelName": SwitchbotModel.LEAK,
             "rawAdvData": None,
         },
         device=ble_device,
@@ -3749,6 +3756,24 @@ def test_humidifer_with_empty_data() -> None:
             SwitchbotModel.RGBIC_NEON_WIRE_ROPE_LIGHT,
         ),
         AdvTestCase(
+            b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00\xa0',
+            b"\x00\x00\x00\x00\x11\xbb\x10",
+            {
+                "sequence_number": 12,
+                "isOn": True,
+                "brightness": 30,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 2,
+                "cw": 4410,
+                "main_isOn": True,
+                "main_brightness": 32,
+            },
+            b"\x00\x11\xbb\x10",
+            "RGBICWW Ceiling Light",
+            SwitchbotModel.RGBICWW_CEILING_LIGHT,
+        ),
+        AdvTestCase(
             b"\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15",
             b"\x00\x00M\x00\x10\xfb\xa8",
             {
@@ -4183,6 +4208,24 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.RGBIC_NEON_WIRE_ROPE_LIGHT,
         ),
         AdvTestCase(
+            b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00\xa0',
+            None,
+            {
+                "sequence_number": 12,
+                "isOn": True,
+                "brightness": 30,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 2,
+                "cw": 4410,
+                "main_isOn": True,
+                "main_brightness": 32,
+            },
+            b"\x00\x11\xbb\x10",
+            "RGBICWW Ceiling Light",
+            SwitchbotModel.RGBICWW_CEILING_LIGHT,
+        ),
+        AdvTestCase(
             b"\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15",
             None,
             {
@@ -4480,6 +4523,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
             b"\x00\x10\xd0\xb4",
             "RGBICWW Floor Lamp",
             SwitchbotModel.RGBICWW_FLOOR_LAMP,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x00\x00\x00\x11\xbb\x10",
+            {},
+            b"\x00\x11\xbb\x10",
+            "RGBICWW Ceiling Light",
+            SwitchbotModel.RGBICWW_CEILING_LIGHT,
         ),
         AdvTestCase(
             None,

@@ -103,6 +103,7 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "W1102001": SwitchbotModel.STRIP_LIGHT_3,
     "W1102003": SwitchbotModel.RGBICWW_STRIP_LIGHT,
     "W1102004": SwitchbotModel.RGBICWW_FLOOR_LAMP,
+    "W1162000": SwitchbotModel.RGBICWW_CEILING_LIGHT,
     "W1104000": SwitchbotModel.PLUG_MINI_EU,
     "W1128000": SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
     "W1111000": SwitchbotModel.CLIMATE_PANEL,
@@ -851,8 +852,8 @@ class SwitchbotBaseDevice:
         Returns true if data has changed and False if not.
         """
         if not self._sb_adv_data:
-            _LOGGER.exception("No advertisement data to update")
-            return None
+            _LOGGER.debug("%s: No advertisement data to update", self.name)
+            return False
         old_data = self._sb_adv_data.data.get("data") or {}
         merged_data = _merge_data(old_data, new_data)
         if merged_data == old_data:

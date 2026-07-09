@@ -96,6 +96,25 @@ RGBICWW_FLOOR_LAMP_INFO = AdvTestCase(
     SwitchbotModel.RGBICWW_FLOOR_LAMP,
 )
 
+RGBICWW_CEILING_LIGHT_INFO = AdvTestCase(
+    b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00\xa0',
+    b"\x00\x00\x00\x00\x11\xbb\x10",
+    {
+        "sequence_number": 12,
+        "isOn": True,
+        "brightness": 30,
+        "delay": False,
+        "network_state": 2,
+        "color_mode": 2,
+        "cw": 4410,
+        "main_isOn": True,
+        "main_brightness": 32,
+    },
+    b"\x00\x11\xbb\x10",
+    "RGBICWW Ceiling Light",
+    SwitchbotModel.RGBICWW_CEILING_LIGHT,
+)
+
 RGBIC_NEON_LIGHT_INFO = AdvTestCase(
     b'\xdc\x06u\xa6\xfb\xb2y\x9e"\x00\x11\xb8\x00',
     b"\x00\x00\x00\x00\x10\xd0\xb6",
