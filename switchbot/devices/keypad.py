@@ -61,6 +61,10 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if not (_data := await self._get_basic_info()):
             return None
         if len(_data) < 3:
+            _LOGGER.error(
+                "Received truncated or malformed basic info data: %s",
+                _data.hex(),
+            )
             return None
         _LOGGER.debug("Raw model %s basic info data: %s", self._model, _data.hex())
 
@@ -101,7 +105,7 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if end_time is not None and not (0 <= end_time <= 0xFFFFFFFF):
             raise ValueError(f"Invalid end_time: {end_time}")
 
-        if region is not None and not re.match(r"^[a-z]{2,8}$", region):
+        if region is not None and not re.fullmatch(r"[a-z]{2,8}", region):
             raise ValueError(f"Invalid region: {region}")
 
         # Check for partial credentials
@@ -248,9 +252,8 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                     "Failed to delete passcode from keypad during rollback after time window write failed."
                 )
             if not success:
-                _LOGGER.warning(
-                    "Failed to roll back passcode at index %d after time window write failed.",
-                    assigned_index,
+                raise SwitchbotOperationError(
+                    f"Failed to set active time window for passcode. Rollback failed: passcode at index {assigned_index} may still be active on the device."
                 )
             raise SwitchbotOperationError(
                 "Failed to set active time window for passcode."
@@ -293,7 +296,7 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                     payload,
                     headers,
                 )
-            except Exception:
+            except Exception as err:
                 _LOGGER.exception(
                     "SwitchBot Cloud sync failed for passcode at index %d. "
                     "Rolling back and deleting passcode from keypad memory.",
@@ -307,10 +310,9 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                         "Failed to delete passcode from keypad during rollback."
                     )
                 if not success:
-                    _LOGGER.warning(
-                        "Failed to roll back/delete passcode at index %d from keypad memory after cloud sync failure.",
-                        assigned_index,
-                    )
+                    raise SwitchbotOperationError(
+                        f"SwitchBot Cloud sync failed for passcode at index {assigned_index}. Rollback failed: passcode at index {assigned_index} may still be active on the device."
+                    ) from err
                 raise
 
         return assigned_index
@@ -322,21 +324,39 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         passcode_type: int = 0,
         start_time: int | None = None,
         end_time: int | None = None,
-    ) -> bool:
+    ) -> None:
         """Modify an existing passcode on the Keypad."""
         self._check_password_rules(password)
         self._validate_passcode_params(passcode_type, start_time, end_time)
 
         cmds = self._build_add_password_cmd(password, passcode_type, index=index)
 
-        result = None
-        for cmd in cmds:
-            result = await self._send_command(cmd)
-            if not result or result[0] != 0x01:
-                _LOGGER.error(
-                    "Failed to send modify password command %s for index %d", cmd, index
+        try:
+            for cmd in cmds:
+                result = await self._send_command(cmd)
+                if not result or result[0] != 0x01:
+                    result_hex = result.hex() if result else "None"
+                    raise SwitchbotOperationError(
+                        f"Failed to modify password (result={result_hex})"
+                    )
+        except Exception as err:
+            _LOGGER.exception(
+                "Failed to send modify password commands for index %d. "
+                "Rolling back and deleting passcode from keypad memory.",
+                index,
+            )
+            success = False
+            try:
+                success = await self.delete_password(index)
+            except Exception:
+                _LOGGER.exception(
+                    "Failed to delete passcode from keypad during rollback after modify passcode write failed."
                 )
-                return False
+            if not success:
+                raise SwitchbotOperationError(
+                    f"Failed to modify password for index {index}. Rollback failed: passcode at index {index} may still be active on the device or in an indeterminate state."
+                ) from err
+            raise
 
         start = start_time if start_time is not None else 0
         end = end_time if end_time is not None else 0
@@ -344,14 +364,20 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         time_cmd = f"570F520203{index:02X}{start.to_bytes(4, 'big').hex().upper()}{end.to_bytes(4, 'big').hex().upper()}"
         time_result = await self._send_command(time_cmd)
         if not time_result or time_result[0] != 0x01:
-            _LOGGER.error(
-                "Failed to set active time window command %s for index %d",
-                time_cmd,
-                index,
+            success = False
+            try:
+                success = await self.delete_password(index)
+            except Exception:
+                _LOGGER.exception(
+                    "Failed to delete passcode from keypad during rollback after time window write failed."
+                )
+            if not success:
+                raise SwitchbotOperationError(
+                    f"Failed to set active time window for passcode. Rollback failed: passcode at index {index} may still be active on the device."
+                )
+            raise SwitchbotOperationError(
+                "Failed to set active time window for passcode."
             )
-            return False
-
-        return True
 
     async def delete_password(self, index: int) -> bool:
         """Delete a passcode from the Keypad."""
@@ -364,6 +390,10 @@ class SwitchbotKeypad(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if not (_data := await self._send_command(COMMAND_GET_PASSWORD_COUNT)):
             return None
         if len(_data) < 6:
+            _LOGGER.error(
+                "Received truncated or malformed password count data: %s",
+                _data.hex(),
+            )
             return None
         _LOGGER.debug("Raw model %s password count data: %s", self._model, _data.hex())
 

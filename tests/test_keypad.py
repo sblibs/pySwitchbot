@@ -191,7 +191,8 @@ async def test_add_password_time_window_failure_rollback_failure(
     ]
 
     with pytest.raises(
-        SwitchbotOperationError, match=r"Failed to set active time window"
+        SwitchbotOperationError,
+        match=r"Failed to set active time window for passcode\. Rollback failed: passcode at index 5 may still be active on the device\.",
     ):
         await device.add_password("123456")
 
@@ -219,12 +220,11 @@ async def test_modify_password_success(device: SwitchbotKeypad) -> None:
         b"\x01",
     ]
 
-    result = await device.modify_password(
+    await device.modify_password(
         index=3,
         password="654321",  # noqa: S106
         passcode_type=0,
     )
-    assert result
 
     assert device._send_command.call_count == 2
     device._send_command.assert_any_call("570F52020210030006060504030201")
@@ -233,31 +233,64 @@ async def test_modify_password_success(device: SwitchbotKeypad) -> None:
 
 @pytest.mark.asyncio
 async def test_modify_password_failure(device: SwitchbotKeypad) -> None:
-    """Test modifying a password returns False on BLE write failure."""
-    device._send_command.return_value = b"\x00"
+    """Test modifying a password raises SwitchbotOperationError and attempts rollback delete on BLE write failure."""
+    device._send_command.side_effect = [
+        b"\x00",  # BLE modify failed
+        b"\x01",  # Rollback delete success
+    ]
 
-    result = await device.modify_password(
-        index=3,
-        password="654321",  # noqa: S106
-        passcode_type=0,
-    )
-    assert not result
+    with pytest.raises(SwitchbotOperationError, match=r"Failed to modify password"):
+        await device.modify_password(
+            index=3,
+            password="654321",  # noqa: S106
+            passcode_type=0,
+        )
+
+    device._send_command.assert_any_call("570F52020503")
 
 
 @pytest.mark.asyncio
 async def test_modify_password_time_window_failure(device: SwitchbotKeypad) -> None:
-    """Test modifying a password returns False on time window write failure."""
+    """Test modifying a password raises SwitchbotOperationError and attempts rollback delete on time window write failure."""
     device._send_command.side_effect = [
         b"\x01",  # modify success
         b"\x00",  # set time window failure
+        b"\x01",  # Rollback delete success
     ]
 
-    result = await device.modify_password(
-        index=3,
-        password="654321",  # noqa: S106
-        passcode_type=0,
-    )
-    assert not result
+    with pytest.raises(
+        SwitchbotOperationError, match=r"Failed to set active time window"
+    ):
+        await device.modify_password(
+            index=3,
+            password="654321",  # noqa: S106
+            passcode_type=0,
+        )
+
+    device._send_command.assert_any_call("570F52020503")
+
+
+@pytest.mark.asyncio
+async def test_modify_password_failure_rollback_failure(
+    device: SwitchbotKeypad,
+) -> None:
+    """Test that modify password raises escalated exception when rollback delete also fails."""
+    device._send_command.side_effect = [
+        b"\x00",  # BLE modify failed
+        b"\x00",  # Rollback delete fails
+    ]
+
+    with pytest.raises(
+        SwitchbotOperationError,
+        match=r"Failed to modify password for index 3\. Rollback failed: passcode at index 3 may still be active on the device or in an indeterminate state\.",
+    ):
+        await device.modify_password(
+            index=3,
+            password="654321",  # noqa: S106
+            passcode_type=0,
+        )
+
+    device._send_command.assert_any_call("570F52020503")
 
 
 @pytest.mark.asyncio
@@ -446,7 +479,7 @@ async def test_add_password_cloud_sync_failure_rollback(
 async def test_add_password_cloud_sync_failure_and_rollback_failure(
     mock_api_request: MagicMock, device: SwitchbotKeypad
 ) -> None:
-    """Test that when cloud sync fails and the deletion rollback also fails, exception propagates."""
+    """Test that when cloud sync fails and the deletion rollback also fails, escalated exception is raised."""
     device._send_command.side_effect = [
         b"\x01\x10\x05",  # add response, returns index 5
         b"\x01",  # set time window response
@@ -456,7 +489,10 @@ async def test_add_password_cloud_sync_failure_and_rollback_failure(
     session = AsyncMock(spec=aiohttp.ClientSession)
     mock_api_request.side_effect = Exception("Cloud connection error")
 
-    with pytest.raises(Exception, match="Cloud connection error"):
+    with pytest.raises(
+        SwitchbotOperationError,
+        match=r"SwitchBot Cloud sync failed for passcode at index 5\. Rollback failed: passcode at index 5 may still be active on the device\.",
+    ):
         await device.add_password(
             "123456",
             session=session,
