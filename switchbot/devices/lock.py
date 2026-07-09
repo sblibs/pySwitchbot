@@ -72,6 +72,23 @@ MOVING_STATUSES = {LockStatus.LOCKING, LockStatus.UNLOCKING}
 BLOCKED_STATUSES = {LockStatus.LOCKING_STOP, LockStatus.UNLOCKING_STOP}
 REST_STATUSES = {LockStatus.LOCKED, LockStatus.UNLOCKED, LockStatus.NOT_FULLY_LOCKED}
 
+# Minimum decrypted-payload bytes needed by _parse_lock_data for each model.
+# LOCK/LOCK_LITE/LOCK_VISION/LOCK_VISION_PRO read data[0..1]; the default
+# branch (LOCK_PRO/LOCK_ULTRA/LOCK_PRO_WIFI) also reads data[5].
+# Keep in sync with the model-dispatch branches in _parse_lock_data: a model
+# omitted here falls back to _LOCK_DATA_MIN_LEN_DEFAULT (6).
+_LOCK_DATA_MIN_LEN_SHORT = 2
+_LOCK_DATA_MIN_LEN_DEFAULT = 6
+_LOCK_DATA_MIN_LEN_BY_MODEL = {
+    SwitchbotModel.LOCK: _LOCK_DATA_MIN_LEN_SHORT,
+    SwitchbotModel.LOCK_LITE: _LOCK_DATA_MIN_LEN_SHORT,
+    SwitchbotModel.LOCK_VISION: _LOCK_DATA_MIN_LEN_SHORT,
+    SwitchbotModel.LOCK_VISION_PRO: _LOCK_DATA_MIN_LEN_SHORT,
+    SwitchbotModel.LOCK_PRO: _LOCK_DATA_MIN_LEN_DEFAULT,
+    SwitchbotModel.LOCK_ULTRA: _LOCK_DATA_MIN_LEN_DEFAULT,
+    SwitchbotModel.LOCK_PRO_WIFI: _LOCK_DATA_MIN_LEN_DEFAULT,
+}
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -168,7 +185,11 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             if len(basic_data) >= 3:
                 self._update_parsed_data(self._parse_basic_data(basic_data))
             else:
-                _LOGGER.warning("Invalid basic data received: %s", basic_data)
+                _LOGGER.error(
+                    "%s: Invalid basic data received: %s",
+                    self.name,
+                    basic_data.hex(),
+                )
             self._fire_callbacks()
 
         return status
@@ -187,6 +208,13 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         _LOGGER.debug(
             "basic_data: %s, address: %s", basic_data.hex(), self._device.address
         )
+        if len(basic_data) < 3:
+            _LOGGER.error(
+                "%s: Invalid basic data received: %s",
+                self.name,
+                basic_data.hex(),
+            )
+            return None
         return self._parse_lock_data(
             lock_raw_data[1:], self._model
         ) | self._parse_basic_data(basic_data)
@@ -270,6 +298,16 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     @staticmethod
     def _parse_lock_data(data: bytes, model: SwitchbotModel) -> dict[str, Any]:
+        min_len = _LOCK_DATA_MIN_LEN_BY_MODEL.get(model, _LOCK_DATA_MIN_LEN_DEFAULT)
+        if len(data) < min_len:
+            _LOGGER.error(
+                "lock data too short for %s: got %d bytes, need %d (%s)",
+                model,
+                len(data),
+                min_len,
+                data.hex(),
+            )
+            return {}
         if model in {SwitchbotModel.LOCK, SwitchbotModel.LOCK_VISION_PRO}:
             return {
                 "calibration": bool(data[0] & 0b10000000),
