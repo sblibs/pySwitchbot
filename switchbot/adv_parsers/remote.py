@@ -30,13 +30,13 @@ def process_wouniversal_remote(
     Process Universal Remote adv data.
 
     The battery level and charging state are encoded in the manufacturer
-    specific data. ADV byte 14 maps to ``mfr_data[9]`` (the manufacturer data
+    specific data. ADV byte 14 maps to ``mfr_data[7]`` (the manufacturer data
     starts at ADV byte 5):
 
     - bit 7: charging state (0 = not charging, 1 = charging)
     - bits 6-0: battery level (1-100%)
     """
-    if mfr_data is None or len(mfr_data) < 10:
+    if mfr_data is None or len(mfr_data) < 8:
         return {
             "battery": None,
             "charging": None,
@@ -45,6 +45,6 @@ def process_wouniversal_remote(
     _LOGGER.debug("mfr_data: %s", mfr_data.hex())
 
     return {
-        "battery": mfr_data[9] & 0b01111111,
-        "charging": bool((mfr_data[9] >> 7) & 1),
+        "battery": mfr_data[7] & 0b01111111,
+        "charging": bool((mfr_data[7] >> 7) & 1),
     }
