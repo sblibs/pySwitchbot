@@ -31,7 +31,11 @@ def create_device_for_command_testing(
     return fan_device
 
 
-def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None):
+def make_advertisement_data(
+    ble_device: BLEDevice,
+    init_data: dict | None = None,
+    model: SwitchbotModel = SwitchbotModel.CIRCULATOR_FAN,
+):
     """Set advertisement data with defaults."""
     if init_data is None:
         init_data = {}
@@ -51,8 +55,8 @@ def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None
             | init_data,
             "isEncrypted": False,
             "model": ",",
-            "modelFriendlyName": "Circulator Fan",
-            "modelName": SwitchbotModel.CIRCULATOR_FAN,
+            "modelFriendlyName": model.value,
+            "modelName": model,
         },
         device=ble_device,
         rssi=-80,
@@ -398,7 +402,11 @@ def create_circulator_fan_pro_for_testing(init_data: dict | None = None):
         "ffffffffffffffffffffffffffffffff",
         model=SwitchbotModel.CIRCULATOR_FAN_PRO,
     )
-    fan_device.update_from_advertisement(make_advertisement_data(ble_device, init_data))
+    fan_device.update_from_advertisement(
+        make_advertisement_data(
+            ble_device, init_data, model=SwitchbotModel.CIRCULATOR_FAN_PRO
+        )
+    )
     fan_device._send_command = AsyncMock()
     fan_device._check_command_result = MagicMock()
     fan_device.update = AsyncMock()
@@ -441,6 +449,64 @@ async def test_circulator_fan_pro_set_percentage():
     fan_device = create_circulator_fan_pro_for_testing({"speed": 80})
     await fan_device.set_percentage(80)
     fan_device._send_command.assert_awaited_once_with("570f411129010150")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("percentage", "expected_cmd"),
+    [
+        (0, "570f411129010101"),  # clamped up to 1
+        (1, "570f411129010101"),
+        (100, "570f411129010164"),
+        (150, "570f411129010164"),  # clamped down to 100
+    ],
+)
+async def test_circulator_fan_pro_set_percentage_clamped(percentage, expected_cmd):
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.set_percentage(percentage)
+    fan_device._send_command.assert_awaited_once_with(expected_cmd)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("oscillating", "expected_cmd"),
+    [
+        (True, "570f4102290101"),  # start both axes
+        (False, "570f4102290202"),  # stop both axes
+    ],
+)
+async def test_circulator_fan_pro_set_oscillation(oscillating, expected_cmd):
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.set_oscillation(oscillating)
+    fan_device._send_command.assert_awaited_once_with(expected_cmd)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("oscillating", "expected_cmd"),
+    [
+        (True, "570f41022901ff"),  # start horizontal, keep vertical
+        (False, "570f41022902ff"),  # stop horizontal, keep vertical
+    ],
+)
+async def test_circulator_fan_pro_set_horizontal_oscillation(oscillating, expected_cmd):
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.set_horizontal_oscillation(oscillating)
+    fan_device._send_command.assert_awaited_once_with(expected_cmd)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("oscillating", "expected_cmd"),
+    [
+        (True, "570f410229ff01"),  # keep horizontal, start vertical
+        (False, "570f410229ff02"),  # keep horizontal, stop vertical
+    ],
+)
+async def test_circulator_fan_pro_set_vertical_oscillation(oscillating, expected_cmd):
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.set_vertical_oscillation(oscillating)
+    fan_device._send_command.assert_awaited_once_with(expected_cmd)
 
 
 @pytest.mark.asyncio

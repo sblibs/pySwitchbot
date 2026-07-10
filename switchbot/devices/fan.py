@@ -324,9 +324,9 @@ class SwitchbotCirculatorFanPro(SwitchbotEncryptedDevice, SwitchbotFan):
     The Pro uses extended commands (``57 0F <subcmd> …``) with a control-source
     byte (0x29 = Home Assistant), wrapped in the encrypted command shell, so it
     extends SwitchbotEncryptedDevice. Fan power uses subcommand 0x41 (open/close
-    sub-op 0x11); the night light uses subcommand 0x96. The night light command
-    is on/off only (the device exposes two read-only brightness levels in its
-    advertisement, but they are not separately settable here).
+    sub-op 0x11); the night light uses subcommand 0x96 and supports on/off plus
+    a choice between two brightness levels via ``turn_on_light(low=...)``
+    (level 1 / bright or level 2 / dim).
     """
 
     _model = SwitchbotModel.CIRCULATOR_FAN_PRO
@@ -346,6 +346,16 @@ class SwitchbotCirculatorFanPro(SwitchbotEncryptedDevice, SwitchbotFan):
     # byte: bit0 = on/off (0 off / 1 on), bit1 = level (0 high / 1 low).
     # off = 0x00, on high = 0x01, on low = 0x03.
     _night_light_command = "570f960a02{}"
+    # Oscillation: ext 0x0F, subcmd 0x02, 0x29 = control source (Home Assistant),
+    # then per-axis action bytes [horizontal, vertical] where 0x01 = start,
+    # 0x02 = stop, 0xFF = keep current. The Pro is dual-axis, so the all-axes
+    # start/stop variants toggle both axes at once.
+    _command_start_oscillation: ClassVar[str] = "570f4102290101"
+    _command_stop_oscillation: ClassVar[str] = "570f4102290202"
+    _command_start_horizontal_oscillation: ClassVar[str] = "570f41022901ff"
+    _command_stop_horizontal_oscillation: ClassVar[str] = "570f41022902ff"
+    _command_start_vertical_oscillation: ClassVar[str] = "570f410229ff01"
+    _command_stop_vertical_oscillation: ClassVar[str] = "570f410229ff02"
 
     def __init__(
         self,
@@ -391,7 +401,30 @@ class SwitchbotCirculatorFanPro(SwitchbotEncryptedDevice, SwitchbotFan):
         Speed lives in byte7 of the 0x11 power command and only applies in
         direct mode, so this sends "on + direct mode + speed".
         """
+        percentage = max(1, min(100, percentage))
         result = await self._send_command(f"570f4111290101{percentage:02X}")
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def set_horizontal_oscillation(self, oscillating: bool) -> bool:
+        """Send command to set fan horizontal (left-right) oscillation only."""
+        cmd = (
+            self._command_start_horizontal_oscillation
+            if oscillating
+            else self._command_stop_horizontal_oscillation
+        )
+        result = await self._send_command(cmd)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def set_vertical_oscillation(self, oscillating: bool) -> bool:
+        """Send command to set fan vertical (up-down) oscillation only."""
+        cmd = (
+            self._command_start_vertical_oscillation
+            if oscillating
+            else self._command_stop_vertical_oscillation
+        )
+        result = await self._send_command(cmd)
         return self._check_command_result(result, 0, {1})
 
     @update_after_operation
