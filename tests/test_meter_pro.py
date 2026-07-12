@@ -4,14 +4,18 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchbotOperationError
-from switchbot.devices.meter_pro import MAX_TIME_OFFSET, SwitchbotMeterProCO2
+from switchbot.devices.meter_pro import (
+    MAX_TIME_OFFSET,
+    SwitchbotMeterPro,
+    SwitchbotMeterProCO2,
+)
 
 
-def create_device():
+def create_device(cls=SwitchbotMeterProCO2):
     ble_device = BLEDevice(
         address="aa:bb:cc:dd:ee:ff", name="any", details={"rssi": -80}
     )
-    device = SwitchbotMeterProCO2(ble_device)
+    device = cls(ble_device)
     device._send_command = AsyncMock()
     return device
 
@@ -247,3 +251,20 @@ async def test_set_time_display_format_failure():
 
     with pytest.raises(SwitchbotOperationError):
         await device.set_time_display_format(is_12h_mode=True)
+
+
+@pytest.mark.asyncio
+async def test_meter_pro_shares_datetime_protocol_with_co2_variant():
+    """The plain Meter Pro (no CO2 sensor) uses the same BLE commands as the CO2 variant."""
+    device = create_device(SwitchbotMeterPro)
+    device._send_command.return_value = bytes.fromhex("01e40294230007e90c1e083701")
+
+    result = await device.get_datetime()
+    device._send_command.assert_called_with("570f6901")
+    assert result["year"] == 2025
+
+    device._send_command.return_value = bytes.fromhex("01")
+    await device.set_datetime(1709251200)
+    device._send_command.assert_called_with(
+        "57000503" + "0c" + "65e11a80".zfill(16) + "00"
+    )
