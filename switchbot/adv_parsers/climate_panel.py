@@ -28,6 +28,18 @@ def process_climate_panel(
     pir_state = bool(mfr_data[15] & 0x80)
     is_light = ((mfr_data[15] >> 1) & 0x03) == 0x02
 
+    # Keystate bytes report physical ON/OFF button presses. For each byte,
+    # Bit[7:5] is the press mode (0: power-on init, 1: single, 2: double,
+    # 3: long) and Bit[4:0] is a 1-30 cyclic counter that resets to 1 when the
+    # mode changes. A value of 0x00 is the power-on state and must not trigger.
+    # The raw byte is also exposed so consumers can watch it for any change.
+    on_keystate = mfr_data[13]
+    off_keystate = mfr_data[14]
+    on_keystate_mode = (on_keystate >> 5) & 0x07
+    on_keystate_counter = on_keystate & 0x1F
+    off_keystate_mode = (off_keystate >> 5) & 0x07
+    off_keystate_counter = off_keystate & 0x1F
+
     result = {
         "sequence_number": seq_number,
         "isOn": isOn,
@@ -38,6 +50,12 @@ def process_climate_panel(
         "humidity_alarm": humidity_alarm,
         "motion_detected": pir_state,
         "is_light": is_light,
+        "on_keystate": on_keystate,
+        "off_keystate": off_keystate,
+        "on_keystate_mode": on_keystate_mode,
+        "on_keystate_counter": on_keystate_counter,
+        "off_keystate_mode": off_keystate_mode,
+        "off_keystate_counter": off_keystate_counter,
     }
 
     _LOGGER.debug(
