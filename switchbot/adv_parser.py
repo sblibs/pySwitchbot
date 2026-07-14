@@ -678,6 +678,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_rgbic_light,
         "manufacturer_id": 2409,
     },
+    b"\x00\x11\xbe\xf8": {
+        "modelName": SwitchbotModel.RGBICWW_LIGHT_BARS,
+        "modelFriendlyName": "RGBICWW Light Bars",
+        "func": process_rgbic_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\xbe\xf8": {
+        "modelName": SwitchbotModel.RGBICWW_LIGHT_BARS,
+        "modelFriendlyName": "RGBICWW Light Bars",
+        "func": process_rgbic_light,
+        "manufacturer_id": 2409,
+    },
     b"\x00\x11\xbb\x10": {
         "modelName": SwitchbotModel.RGBICWW_CEILING_LIGHT,
         "modelFriendlyName": "RGBICWW Ceiling Light",
