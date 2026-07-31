@@ -241,7 +241,11 @@ class SwitchbotStandingFan(SwitchbotFan):
     @update_after_operation
     async def set_night_light(self, state: NightLightState | int) -> bool:
         """Set night-light state (LEVEL_1, LEVEL_2, OFF)."""
-        value = NightLightState(state).value
+        state = NightLightState(state)
+        # The Standing Fan firmware ignores the OFF byte defined by
+        # NightLightState (0x03) and only turns the night light off when it
+        # receives 0x00. Map OFF -> 0x00 here; LEVEL_1/LEVEL_2 are unchanged.
+        value = 0 if state is NightLightState.OFF else state.value
         cmd = f"{COMMAND_SET_NIGHT_LIGHT}{value:02X}FFFF"
         result = await self._send_command(cmd)
         return self._check_command_result(result, 0, {1})
