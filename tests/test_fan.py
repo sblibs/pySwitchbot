@@ -560,7 +560,9 @@ async def test_standing_fan_set_night_light(state):
     await standing_fan.set_night_light(state)
     standing_fan._send_command.assert_called_once()
     cmd = standing_fan._send_command.call_args[0][0]
-    assert cmd == f"{fan.COMMAND_SET_NIGHT_LIGHT}{state.value:02X}FFFF"
+    # OFF is sent as 0x00 (firmware ignores NightLightState.OFF's 0x03).
+    expected = 0 if state is NightLightState.OFF else state.value
+    assert cmd == f"{fan.COMMAND_SET_NIGHT_LIGHT}{expected:02X}FFFF"
 
 
 @pytest.mark.asyncio
@@ -570,7 +572,9 @@ async def test_standing_fan_set_night_light_int(state):
     standing_fan = create_standing_fan_for_testing()
     await standing_fan.set_night_light(state)
     cmd = standing_fan._send_command.call_args[0][0]
-    assert cmd == f"{fan.COMMAND_SET_NIGHT_LIGHT}{state:02X}FFFF"
+    # OFF (3) is sent as 0x00 (firmware ignores NightLightState.OFF's 0x03).
+    expected = 0 if state == NightLightState.OFF.value else state
+    assert cmd == f"{fan.COMMAND_SET_NIGHT_LIGHT}{expected:02X}FFFF"
 
 
 @pytest.mark.asyncio
