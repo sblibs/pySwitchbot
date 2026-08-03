@@ -64,7 +64,7 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
 
         return {
             "isOn": bool(_data[1] & 0b10000000),
-            "color_mode": _data[1] & 0b01000000,
+            "color_mode": (_data[1] & 0b01000000) >> 6,
             "brightness": _data[2] & 0b01111111,
             "cw": self._state["cw"],
             "firmware": _version_info[2] / 10.0,

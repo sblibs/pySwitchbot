@@ -109,6 +109,14 @@ async def test_get_basic_info_returns_none(basic_info, version_info):
             },
             [False, 14, 4246, 0, 2.1],
         ),
+        pytest.param(
+            {
+                "basic_info": b"\x01\xc0\x0e\x10\x96\x00\x01",
+                "version_info": b"\x01d\x15\x0f\x00\x00\x00\x00\x00\x00\x00\n\x00",
+            },
+            [True, 14, 4246, 1, 2.1],
+            id="night-color-mode",
+        ),
     ],
 )
 async def test_get_basic_info(info_data, result):
