@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from ..models import SwitchBotAdvertisement
 from .device import (
     DEVICE_SET_EXTENDED_KEY,
     DEVICE_SET_MODE_KEY,
@@ -33,19 +32,6 @@ class Switchbot(SwitchbotDeviceOverrideStateDuringConnection):
         """Switchbot Bot/WoHand constructor."""
         super().__init__(*args, **kwargs)
         self._inverse: bool = kwargs.pop("inverse_mode", False)
-
-    def update_from_advertisement(self, advertisement: SwitchBotAdvertisement) -> None:
-        """Update data without losing an optimistic state to an incomplete payload."""
-        had_is_on_override = bool(
-            self._override_adv_data and "isOn" in self._override_adv_data
-        )
-        override_is_on = self._override_adv_data["isOn"] if had_is_on_override else None
-        advertised_is_on = (advertisement.data.get("data") or {}).get("isOn")
-
-        super().update_from_advertisement(advertisement)
-
-        if had_is_on_override and advertised_is_on is None:
-            self._override_state({"isOn": override_is_on})
 
     @update_after_operation
     async def turn_on(self) -> bool:
@@ -145,19 +131,10 @@ class Switchbot(SwitchbotDeviceOverrideStateDuringConnection):
         if value is None:
             return None
 
-        if self._override_adv_data and "isOn" in self._override_adv_data:
-            return value
-        if self._is_inverse_direction():
+        if self._inverse:
             return not value
         return value
 
     def inverse_direction(self) -> bool | None:
         """Return the cached inverse direction setting."""
         return self._get_adv_value("inverseDirection")
-
-    def _is_inverse_direction(self) -> bool:
-        """Return the effective inverse direction setting."""
-        inverse_direction = self.inverse_direction()
-        if inverse_direction is not None:
-            return inverse_direction
-        return self._inverse
