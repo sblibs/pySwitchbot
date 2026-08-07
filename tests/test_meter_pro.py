@@ -181,6 +181,7 @@ async def test_get_datetime_wrong_response():
     ],
 )
 async def test_set_datetime(  # noqa: PLR0913
+    *,
     timestamp: int,
     utc_offset_hours: int,
     utc_offset_minutes: int,
