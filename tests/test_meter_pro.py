@@ -247,3 +247,204 @@ async def test_set_time_display_format_failure():
 
     with pytest.raises(SwitchbotOperationError):
         await device.set_time_display_format(is_12h_mode=True)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("show_battery", "expected_payload"),
+    [
+        (True, "01"),
+        (False, "00"),
+    ],
+)
+async def test_show_battery_level(show_battery: bool, expected_payload: str):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    await device.show_battery_level(show_battery=show_battery)
+    device._send_command.assert_called_with("570f68070108" + expected_payload)
+
+
+@pytest.mark.asyncio
+async def test_set_co2_thresholds():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    await device.set_co2_thresholds(lower=500, upper=1000)
+    device._send_command.assert_called_with("570f6802030201f403e8")
+
+
+@pytest.mark.asyncio
+async def test_set_co2_thresholds_throws_on_invalid_input():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    # Error if lower >= upper
+    with pytest.raises(ValueError, match="Lower should be smaller than upper"):
+        await device.set_co2_thresholds(lower=500, upper=400)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("cold", "hot", "dry", "wet", "expected_payload"),
+    [
+        (10.0, 20.0, 40, 80, "9450008a28"),
+        (-20.0, -10.0, 40, 80, "0a50001428"),
+        (-20.0, 70, 40, 80, "c650001428"),
+        (0.5, 22, 40, 82, "9652050028"),
+        (0, 22, 40, 82, "9652000028"),
+        (14, 37.5, 30, 70, "a546508e1e"),
+    ],
+)
+async def test_set_comfortlevel(
+    cold: float, hot: float, dry: int, wet: int, expected_payload: str
+):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    await device.set_comfortlevel(cold, hot, dry, wet)
+    device._send_command.assert_called_with("570f68020188" + expected_payload)
+
+
+@pytest.mark.asyncio
+async def test_set_comfortlevel_throws_on_invalid_input():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    # Error if cold >= hot
+    with pytest.raises(ValueError, match="Cold should be smaller than Hot"):
+        await device.set_comfortlevel(16, 15, 10, 20)
+
+    # Error if dry >= wet
+    with pytest.raises(ValueError, match="Dry should be smaller than Wet"):
+        await device.set_comfortlevel(15, 16, 20, 10)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("on", "co2_low", "co2_high", "reverse", "expected_payload"),
+    [
+        (False, 1000, 2000, False, "0007d003e8"),
+        (True, 1000, 2000, False, "0307d003e8"),
+        (True, 700, 2000, False, "0307d002bc"),
+        (True, 700, 1500, False, "0305dc02bc"),
+        (True, 700, 1500, True, "0405dc02bc"),
+    ],
+)
+async def test_set_alert_co2(
+    on: bool, co2_low: int, co2_high: int, reverse: bool, expected_payload: str
+):
+    # Values based on actual measurements from the app
+
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    await device.set_alert_co2(on, co2_low, co2_high, reverse)
+    device._send_command.assert_called_with("570f68020301" + expected_payload)
+
+
+@pytest.mark.asyncio
+async def test_set_alert_co2_throws_on_invalid_input():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    # Error if lower >= upper
+    with pytest.raises(
+        ValueError,
+        match=r"Upper value should bigger than the lower value. Do you want to use reverse instead\?",
+    ):
+        await device.set_alert_co2(True, 500, 400, True)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("minutes", "expected_payload"),
+    [
+        (5, "012c"),
+        (10, "0258"),
+        (30, "0708"),
+    ],
+)
+async def test_set_temperature_update_interval(minutes: int, expected_payload: str):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    await device.set_temperature_update_interval(minutes)
+    device._send_command.assert_called_with("570f68070105" + expected_payload)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("minutes", "expected_payload"),
+    [
+        (5, "012c"),
+        (10, "0258"),
+        (30, "0708"),
+    ],
+)
+async def test_set_co2_update_interval(minutes: int, expected_payload: str):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    await device.set_co2_update_interval(minutes)
+    device._send_command.assert_called_with("570f680b06" + expected_payload)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("change_unit", "change_data_source", "expected_payload"),
+    [
+        (True, True, "0001"),
+        (True, False, "0000"),
+        (False, True, "0101"),
+        (False, False, "0100"),
+    ],
+)
+async def test_set_button_function(
+    change_unit: bool, change_data_source: bool, expected_payload: str
+):
+    # Values based on actual measurements from the app
+
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    await device.set_button_function(change_unit, change_data_source)
+    device._send_command.assert_called_with("570f68070106" + expected_payload)
+
+
+@pytest.mark.asyncio
+async def test_force_new_co2_measurement():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    await device.force_new_co2_measurement()
+    device._send_command.assert_called_with("570f680b04")
+
+
+@pytest.mark.asyncio
+async def test_calibrate_co2_sensor():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    await device.calibrate_co2_sensor()
+    device._send_command.assert_called_with("570f680b02")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("sound_on", "volume", "expected_payload"),
+    [
+        (False, 4, "0401"),
+        (True, 2, "0202"),
+        (True, 3, "0302"),
+        (True, 4, "0402"),
+    ],
+)
+async def test_set_alert_sound(sound_on: bool, volume: int, expected_payload: str):
+    # Values based on actual measurements from the app
+
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    await device.set_alert_sound(sound_on, volume)
+    device._send_command.assert_called_with("570f680204" + expected_payload)
