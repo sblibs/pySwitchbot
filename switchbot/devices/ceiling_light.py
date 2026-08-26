@@ -60,7 +60,11 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
             return None
         _version_info, _data = res
 
-        self._state["cw"] = int.from_bytes(_data[3:5], "big")
+        color_temp = int.from_bytes(_data[3:5], "big")
+        if self.min_temp <= color_temp <= self.max_temp:
+            self._state["cw"] = color_temp
+        else:
+            self._state.setdefault("cw", DEFAULT_COLOR_TEMP)
 
         return {
             "isOn": bool(_data[1] & 0b10000000),

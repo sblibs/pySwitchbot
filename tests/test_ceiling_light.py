@@ -136,6 +136,45 @@ async def test_get_basic_info(info_data, result):
 
 
 @pytest.mark.asyncio
+async def test_get_basic_info_ignores_invalid_color_temp() -> None:
+    """Test retaining the last color temp when basic info reports a placeholder."""
+    device = create_device_for_command_testing()
+    device._state["cw"] = 3625
+    device._send_command = AsyncMock(
+        side_effect=[
+            b"\x01d\x18\x0e\x00\x00\x00\x00\x00\x00\x00\x0c\x01",
+            b"\x01\x80F\xff\x00\x01\x00",
+        ]
+    )
+    device._check_command_result = MagicMock(side_effect=[True, True])
+
+    info = await device.get_basic_info()
+
+    assert info is not None
+    assert info["cw"] == 3625
+    assert device.color_temp == 3625
+
+
+@pytest.mark.asyncio
+async def test_get_basic_info_uses_default_for_initial_invalid_color_temp() -> None:
+    """Test using the default color temp for an initial placeholder."""
+    device = create_device_for_command_testing()
+    device._send_command = AsyncMock(
+        side_effect=[
+            b"\x01d\x18\x0e\x00\x00\x00\x00\x00\x00\x00\x0c\x01",
+            b"\x01\x80F\xff\x00\x01\x00",
+        ]
+    )
+    device._check_command_result = MagicMock(side_effect=[True, True])
+
+    info = await device.get_basic_info()
+
+    assert info is not None
+    assert info["cw"] == 4001
+    assert device.color_temp == 4001
+
+
+@pytest.mark.asyncio
 async def test_set_color_temp():
     """Test setting color temperature."""
     device = create_device_for_command_testing()
