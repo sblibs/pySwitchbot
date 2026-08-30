@@ -269,3 +269,58 @@ async def test_meter_pro_shares_datetime_protocol_with_co2_variant():
     device._send_command.assert_called_with(
         "57000503" + "0c" + "65e11a80".zfill(16) + "00"
     )
+
+@pytest.mark.asyncio
+async def test_force_new_co2_measurement():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    await device.force_new_co2_measurement()
+    device._send_command.assert_called_with("570f680b04")
+
+
+@pytest.mark.asyncio
+async def test_calibrate_co2_sensor():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    await device.calibrate_co2_sensor()
+    device._send_command.assert_called_with("570f680b02")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("minutes", "expected_payload"),
+    [
+        (5, "012c"),
+        (10, "0258"),
+        (30, "0708"),
+    ],
+)
+async def test_set_co2_update_interval(minutes: int, expected_payload: str):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    await device.set_co2_update_interval(minutes*60)
+    device._send_command.assert_called_with("570f680b06" + expected_payload)
+
+
+
+@pytest.mark.asyncio
+async def test_set_co2_thresholds():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    await device.set_co2_thresholds(lower=500, upper=1000)
+    device._send_command.assert_called_with("570f6802030201f403e8")
+
+
+@pytest.mark.asyncio
+async def test_set_co2_thresholds_throws_on_invalid_input():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("01")
+
+    # Error if lower >= upper
+    with pytest.raises(ValueError, match="Lower should be smaller than upper"):
+        await device.set_co2_thresholds(lower=500, upper=400)
+
