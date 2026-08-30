@@ -321,5 +321,8 @@ async def test_set_co2_thresholds_throws_on_invalid_input():
     device._send_command.return_value = bytes.fromhex("01")
 
     # Error if lower >= upper
-    with pytest.raises(SwitchbotOperationError, match="Lower threshold should be smaller than upper threshold"):
+    with pytest.raises(
+        SwitchbotOperationError,
+        match="Lower threshold should be smaller than upper threshold",
+    ):
         await device.set_co2_thresholds(lower=500, upper=400)

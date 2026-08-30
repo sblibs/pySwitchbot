@@ -204,7 +204,9 @@ class SwitchbotMeterProCO2(SwitchbotMeterPro):
         Sets the interval in which co2 levels are measured in battery powered mode.
         Original App assumes seconds in {5*60, 10*60, 30*60}
         """
-        result = await self._send_command(COMMAND_CO2_UPDATE_INTERVAL + f"{seconds:04x}")
+        result = await self._send_command(
+            COMMAND_CO2_UPDATE_INTERVAL + f"{seconds:04x}"
+        )
         self._validate_result("set_co2_update_interval", result)
 
     async def set_co2_thresholds(self, lower: int, upper: int) -> None:
@@ -219,12 +221,18 @@ class SwitchbotMeterProCO2(SwitchbotMeterPro):
         lower and upper are multiples of 100
         """
         if lower < 500:
-            raise SwitchbotOperationError("Original App assumes that lower threshold is at least 500")
+            raise SwitchbotOperationError(
+                "Original App assumes that lower threshold is at least 500"
+            )
         if upper > 1900:
-            raise SwitchbotOperationError("Original App assumes that upper threshold is at most 1900")
+            raise SwitchbotOperationError(
+                "Original App assumes that upper threshold is at most 1900"
+            )
         if lower >= upper:
-            raise SwitchbotOperationError("Lower threshold should be smaller than upper threshold")
-        
+            raise SwitchbotOperationError(
+                "Lower threshold should be smaller than upper threshold"
+            )
+
         result = await self._send_command(
             COMMAND_CO2_THRESHOLDS + f"{lower:04x}" + f"{upper:04x}"
         )
