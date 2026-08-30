@@ -324,7 +324,9 @@ async def test_set_co2_thresholds():
         (600, 5000, "Original App assumes that upper threshold is at most 1900"),
     ],
 )
-async def test_set_co2_thresholds_throws_on_invalid_input(lower: int, upper: int, expected_error: str):
+async def test_set_co2_thresholds_throws_on_invalid_input(
+    lower: int, upper: int, expected_error: str
+):
     device = create_device()
     device._send_command.return_value = bytes.fromhex("01")
 
