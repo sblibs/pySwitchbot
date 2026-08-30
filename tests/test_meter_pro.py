@@ -369,7 +369,7 @@ async def test_set_temperature_update_interval(minutes: int, expected_payload: s
     device = create_device()
     device._send_command.return_value = bytes.fromhex("01")
 
-    await device.set_temperature_update_interval(minutes)
+    await device.set_temperature_update_interval(minutes*60)
     device._send_command.assert_called_with("570f68070105" + expected_payload)
 
 
@@ -386,7 +386,7 @@ async def test_set_co2_update_interval(minutes: int, expected_payload: str):
     device = create_device()
     device._send_command.return_value = bytes.fromhex("01")
 
-    await device.set_co2_update_interval(minutes)
+    await device.set_co2_update_interval(minutes*60)
     device._send_command.assert_called_with("570f680b06" + expected_payload)
 
 

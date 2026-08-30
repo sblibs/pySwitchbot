@@ -179,12 +179,12 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         result = await self._send_command(payload)
         self._validate_result("set_time_display_format", result)
 
-    async def show_battery_level(self, show_battery: bool):
+    async def show_battery_level(self, show_battery: bool) -> None:
         """Show or hide battery level on the display."""
         show_battery_byte = "01" if show_battery else "00"
         await self._send_command(COMMAND_SHOW_BATTERY_LEVEL + show_battery_byte)
 
-    async def set_co2_thresholds(self, lower: int, upper: int):
+    async def set_co2_thresholds(self, lower: int, upper: int) -> None:
         """
         Sets the thresholds to define Air Quality for depiction on display as follows:
         co2 < lower => Good (Green)
@@ -201,7 +201,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             COMMAND_CO2_THRESHOLDS + f"{lower:04x}" + f"{upper:04x}"
         )
 
-    async def set_comfortlevel(self, cold: float, hot: float, dry: int, wet: int):
+    async def set_comfortlevel(self, cold: float, hot: float, dry: int, wet: int) -> None:
         """
         Sets the Thresholds for comfortable temperature (in C) and humidity to display comfort-level.
         The supported values in the original App are as following:
@@ -226,7 +226,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             + f"{dry:02x}"
         )
 
-    async def set_alert_co2(self, on: bool, co2_low: int, co2_high: int, reverse: bool):
+    async def set_alert_co2(self, on: bool, co2_low: int, co2_high: int, reverse: bool) -> None:
         """
         Sets the CO2-Alert.
         on: Turn CO2-Alert on or off
@@ -244,23 +244,21 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             COMMAND_ALERT_CO2 + f"{mode:02x}" + f"{co2_high:04x}" + f"{co2_low:04x}"
         )
 
-    async def set_temperature_update_interval(self, minutes: int):
+    async def set_temperature_update_interval(self, seconds: int) -> None:
         """
         Sets the interval in which temperature and humidity are measured in battery powered mode.
-        Original App assumes minutes in {5, 10, 30}
+        Original App assumes seconds in {5*60, 10*60, 30*60}
         """
-        seconds = minutes * 60
         await self._send_command(COMMAND_TEMPERATURE_UPDATE_INTERVAL + f"{seconds:04x}")
 
-    async def set_co2_update_interval(self, minutes: int):
+    async def set_co2_update_interval(self, seconds: int) -> None:
         """
         Sets the interval in which co2 levels are measured in battery powered mode.
-        Original App assumes minutes in {5, 10, 30}
+        Original App assumes seconds in {5*60, 10*60, 30*60}
         """
-        seconds = minutes * 60
         await self._send_command(COMMAND_CO2_UPDATE_INTERVAL + f"{seconds:04x}")
 
-    async def set_button_function(self, change_unit: bool, change_data_source: bool):
+    async def set_button_function(self, change_unit: bool, change_data_source: bool) -> None:
         """
         Sets the function of the top button:
         Default (both options false): Only update data
@@ -277,11 +275,11 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             COMMAND_BUTTON_FUNCTION + change_unit_byte + change_data_source_byte
         )
 
-    async def force_new_co2_measurement(self):
+    async def force_new_co2_measurement(self) -> None:
         """Requests a new CO2 measurement, regardless of update interval"""
         await self._send_command(COMMAND_FORCE_NEW_CO2_MEASUREMENT)
 
-    async def calibrate_co2_sensor(self):
+    async def calibrate_co2_sensor(self) -> None:
         """
         Calibrate CO2-Sensor.
         Place your device in a well-ventilated area for 1 minute before calling this.
@@ -290,7 +288,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         """
         await self._send_command(COMMAND_CALIBRATE_CO2_SENSOR)
 
-    async def set_alert_sound(self, sound_on: bool, volume: int):
+    async def set_alert_sound(self, sound_on: bool, volume: int) -> None:
         """
         Sets the Alert-Mode.
         If soundOn is False the display flashes.
@@ -314,7 +312,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             )
         return result
 
-    def _get_point_five_byte(self, cold: float, hot: float):
+    def _get_point_five_byte(self, cold: float, hot: float) -> str:
         """Represents if either of the temperatures has a .5 decimalplace"""
         point_five = 0x00
         if int(cold * 10) % 10 == 5:
@@ -323,7 +321,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             point_five += 0x50
         return f"{point_five:02x}"
 
-    def _encode_temperature(self, temp: int):
+    def _encode_temperature(self, temp: int) -> str:
         # The encoding for a negative temperature is the value as hex
         # The encoding for a positive temperature is the value + 128 as hex
         if temp > 0:
