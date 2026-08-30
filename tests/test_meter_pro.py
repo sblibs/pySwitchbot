@@ -316,13 +316,21 @@ async def test_set_co2_thresholds():
 
 
 @pytest.mark.asyncio
-async def test_set_co2_thresholds_throws_on_invalid_input():
+@pytest.mark.parametrize(
+    ("lower", "upper", "expected_error"),
+    [
+        (600, 500, "Lower threshold should be smaller than upper threshold"),
+        (300, 500, "Original App assumes that lower threshold is at least 500"),
+        (600, 5000, "Original App assumes that upper threshold is at most 1900"),
+    ],
+)
+async def test_set_co2_thresholds_throws_on_invalid_input(lower: int, upper: int, expected_error: str):
     device = create_device()
     device._send_command.return_value = bytes.fromhex("01")
 
     # Error if lower >= upper
     with pytest.raises(
         SwitchbotOperationError,
-        match="Lower threshold should be smaller than upper threshold",
+        match=expected_error,
     ):
-        await device.set_co2_thresholds(lower=500, upper=400)
+        await device.set_co2_thresholds(lower=lower, upper=upper)
