@@ -38,9 +38,8 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
     @property
     def color_mode(self) -> ColorMode:
         """Return the current color mode."""
-        device_mode = CeilingLightColorMode(
-            value if (value := self._get_adv_value("color_mode")) is not None else 10
-        )
+        value = self._state.get("color_mode", self._get_adv_value("color_mode"))
+        device_mode = CeilingLightColorMode(value if value is not None else 10)
         return _CEILING_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
 
     @update_after_operation
@@ -71,6 +70,8 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
             # brightness and COLOR_TEMP with 100%, carrying over the
             # last-set color temp.
             brightness = 20 if is_on else 100
+        else:
+            self._validate_brightness(brightness)
         color_temp = self._state.get("cw", DEFAULT_COLOR_TEMP)
         hex_data = f"{brightness:02X}{color_temp:04X}"
         result = await self._send_command(

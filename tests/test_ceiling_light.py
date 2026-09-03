@@ -250,6 +250,19 @@ async def test_set_night_light_custom_brightness():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("brightness", [-1, 101, 300])
+async def test_set_night_light_invalid_brightness(brightness):
+    """Test that an out-of-range explicit brightness is rejected."""
+    device = create_device_for_command_testing()
+    device._state = {"cw": 2700}
+
+    with pytest.raises(ValueError, match="Brightness must be between 0 and 100"):
+        await device.set_night_light(True, brightness=brightness)
+
+    device._send_command.assert_not_called()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("color_mode", "expected"),
     [
@@ -296,3 +309,13 @@ async def test_get_color_mode(adv_value, expected_color_mode):
 
     with patch.object(device, "_get_adv_value", return_value=adv_value):
         assert device.color_mode == expected_color_mode
+
+
+@pytest.mark.asyncio
+async def test_get_color_mode_prefers_cached_state():
+    """Test that color_mode prefers the _state cache over the adv value."""
+    device = create_device_for_command_testing()
+    device._state = {"color_mode": 4}  # MUSIC -> EFFECT
+
+    with patch.object(device, "_get_adv_value", return_value=0):  # COLOR_TEMP
+        assert device.color_mode == ColorMode.EFFECT
