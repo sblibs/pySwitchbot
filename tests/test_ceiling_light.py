@@ -237,20 +237,34 @@ async def test_set_night_light_off():
 
 
 @pytest.mark.asyncio
+async def test_set_night_light_custom_brightness():
+    """Test that an explicit brightness overrides the night-light default."""
+    device = create_device_for_command_testing()
+    device._state = {"cw": 2700}
+
+    await device.set_night_light(True, brightness=30)
+
+    device._send_command.assert_called_with(
+        device._set_night_light_command.format("01", "1E0A8C")
+    )
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("adv_value", "expected"),
+    ("color_mode", "expected"),
     [
         (0, False),
         (1, True),
         (None, None),
     ],
 )
-async def test_is_night_light_on(adv_value, expected):
+async def test_is_night_light_on(color_mode, expected):
     """Test reading the cached night light state."""
     device = create_device_for_command_testing()
+    if color_mode is not None:
+        device._state = {"color_mode": color_mode}
 
-    with patch.object(device, "_get_adv_value", return_value=adv_value):
-        assert device.is_night_light_on() is expected
+    assert device.is_night_light_on() is expected
 
 
 @pytest.mark.asyncio
