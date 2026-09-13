@@ -2,6 +2,28 @@
 
 <!-- version list -->
 
+## v2.7.1 (2026-09-13)
+
+### Bug Fixes
+
+- **ceiling-light**: Ignore invalid color temperature
+  ([#557](https://github.com/sblibs/pySwitchbot/pull/557),
+  [`fbfcaa1`](https://github.com/sblibs/pySwitchbot/commit/fbfcaa12d8d1ae52d936e7d533095326b41e0c0e))
+
+### Chores
+
+- **ci**: Bump the github-actions group with 2 updates
+  ([#562](https://github.com/sblibs/pySwitchbot/pull/562),
+  [`4b4c98b`](https://github.com/sblibs/pySwitchbot/commit/4b4c98b3264ff3a1b42049a1d6bed0f579618693))
+
+- **deps**: Bump bleak-retry-connector from 4.6.3 to 4.7.0
+  ([#566](https://github.com/sblibs/pySwitchbot/pull/566),
+  [`c84a1d7`](https://github.com/sblibs/pySwitchbot/commit/c84a1d7fa1cb44fe5d582585a330be4309d4a9be))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#560](https://github.com/sblibs/pySwitchbot/pull/560),
+  [`d69e069`](https://github.com/sblibs/pySwitchbot/commit/d69e069ac41705cd875305b5e18cadaa6c2b683a))
+
+
 ## v2.7.0 (2026-08-31)
 
 ### Features
