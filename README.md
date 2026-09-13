@@ -62,10 +62,10 @@ from switchbot.discovery import GetSwitchbotDevices
 from switchbot.devices import lock
 from switchbot.const import SwitchbotModel
 
-BLE_MAC="XX:XX:XX:XX:XX:XX" # The MAC of your lock
-KEY_ID="XX" # The key-ID of your encryption-key for your lock
-ENC_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" # The encryption-key with key-ID "XX"
-LOCK_MODEL=SwitchbotModel.LOCK_PRO # Your lock model (here we use the Lock-Pro)
+BLE_MAC = "XX:XX:XX:XX:XX:XX"  # The MAC of your lock
+KEY_ID = "XX"  # The key-ID of your encryption-key for your lock
+ENC_KEY = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"  # The encryption-key with key-ID "XX"
+LOCK_MODEL = SwitchbotModel.LOCK_PRO  # Your lock model (here we use the Lock-Pro)
 
 
 async def main():
@@ -86,10 +86,10 @@ from switchbot.discovery import GetSwitchbotDevices
 from switchbot.devices import lock
 from switchbot.const import SwitchbotModel
 
-BLE_MAC="XX:XX:XX:XX:XX:XX" # The MAC of your lock
-KEY_ID="XX" # The key-ID of your encryption-key for your lock
-ENC_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" # The encryption-key with key-ID "XX"
-LOCK_MODEL=SwitchbotModel.LOCK_PRO # Your lock model (here we use the Lock-Pro)
+BLE_MAC = "XX:XX:XX:XX:XX:XX"  # The MAC of your lock
+KEY_ID = "XX"  # The key-ID of your encryption-key for your lock
+ENC_KEY = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"  # The encryption-key with key-ID "XX"
+LOCK_MODEL = SwitchbotModel.LOCK_PRO  # Your lock model (here we use the Lock-Pro)
 
 
 async def main():
