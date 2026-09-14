@@ -133,6 +133,7 @@ async def test_get_basic_info(info_data, result):
     assert info["cw"] == result[2]
     assert info["color_mode"] == result[3]
     assert info["firmware"] == result[4]
+    assert device.is_night_light_on() is bool(result[3])
 
 
 @pytest.mark.asyncio
