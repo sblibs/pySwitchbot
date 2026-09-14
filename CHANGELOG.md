@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.8.0 (2026-09-14)
+
+### Features
+
+- **ceiling_light**: Add night light mode support
+  ([#564](https://github.com/sblibs/pySwitchbot/pull/564),
+  [`e018f31`](https://github.com/sblibs/pySwitchbot/commit/e018f3165a1c06f0c5f9fa294b155ee0ad01880a))
+
+
 ## v2.7.1 (2026-09-13)
 
 ### Bug Fixes
