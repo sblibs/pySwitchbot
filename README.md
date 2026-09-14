@@ -102,6 +102,52 @@ async def main():
 asyncio.run(main())
 ```
 
+#### Subscribing to state changes
+
+Every device exposes `subscribe(callback)`, which registers a zero-argument
+callback and returns an unsubscribe function. The callback fires whenever the
+device's parsed state changes — after an active `update()` poll, and, while a
+connection is open, when the device pushes an unsolicited notification.
+
+The callback takes no arguments: read the new state from the device's accessors
+(e.g. `get_lock_status()`) when it fires.
+
+Locks push real-time updates while connected. `lock()` / `unlock()` enable
+notifications for the duration of the operation, so if the lock is operated
+manually during that window the callback fires with the updated status:
+
+```python
+import asyncio
+from switchbot.devices import lock
+from switchbot.discovery import GetSwitchbotDevices
+from switchbot.const import SwitchbotModel
+
+BLE_MAC = "XX:XX:XX:XX:XX:XX"
+KEY_ID = "XX"
+ENC_KEY = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+LOCK_MODEL = SwitchbotModel.LOCK_PRO
+
+
+async def main():
+    wolock = await GetSwitchbotDevices().get_locks()
+    device = lock.SwitchbotLock(
+        wolock[BLE_MAC].device, KEY_ID, ENC_KEY, model=LOCK_MODEL
+    )
+
+    def on_change():
+        print("lock status:", device.get_lock_status())
+
+    unsubscribe = device.subscribe(on_change)
+
+    await device.update()  # fires the callback with the current status
+    await device.unlock()
+
+    unsubscribe()
+
+
+asyncio.run(main())
+```
+
 #### WoCurtain (Curtain 3)
 
 ```python
