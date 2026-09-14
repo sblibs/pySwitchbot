@@ -50,6 +50,23 @@ password. The most common failures are account-side, not bugs in this library:
 The key only needs to be fetched once; store the `key_id` and encryption key
 and reuse them — there is no need to call the script on every connection.
 
+## Device discovery and active scanning
+
+SwitchBot devices put their model identifier in the BLE **service data**, which
+is only sent in the scan response (`SCAN_RSP`). A scanner must use **active
+scanning** to request that response — passive scanning never sees it.
+
+`GetSwitchbotDevices().discover()` uses an active scanner by default, so it
+works out of the box. The problem appears when advertisements come from a
+_passive_ source instead — for example a Home Assistant adapter or ESPHome
+Bluetooth proxy configured for passive-only scanning. In that case the
+`service_data` is missing and most models cannot be identified: detection falls
+back to manufacturer data, which only resolves a handful of device types. The
+typical symptom is "some of my SwitchBot devices are discovered but not all."
+
+If devices are missing, enable active scanning on whatever feeds the
+advertisements (the BLE adapter or proxy), then re-scan.
+
 ## Examples:
 
 #### WoLock (Lock-Pro)
