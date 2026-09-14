@@ -13,6 +13,19 @@ class AdvTestCase:
     modelName: SwitchbotModel
 
 
+KEYPAD_INFO = AdvTestCase(
+    b"\xeb\x13\x02\xe6#\x0f\x8fd\x00\x00\x00\x00",
+    b"y\x00d",
+    {
+        "battery": 100,
+        "attempt_state": 143,
+    },
+    "y",
+    "Keypad",
+    SwitchbotModel.KEYPAD,
+)
+
+
 STRIP_LIGHT_3_INFO = AdvTestCase(
     b'\xc0N0\xe0U\x9a\x85\x9e"\xd0\x00\x00\x00\x00\x00\x00\x12\x91\x00',
     b"\x00\x00\x00\x00\x10\xd0\xb1",
