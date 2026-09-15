@@ -39,6 +39,24 @@ def _oauth_error_field(
     return value[:256] or None
 
 
+def _raise_for_oauth_error(status: int, error: str | None, error_suffix: str) -> None:
+    """Raise the appropriate exception for an OAuth error response."""
+    if status in (401, 403) or (
+        status == 400 and error in {"invalid_client", "invalid_grant"}
+    ):
+        raise SwitchbotAuthenticationError(
+            f"SwitchBot OAuth token request rejected ({status}){error_suffix}"
+        )
+    if 400 <= status < 500 and status != 429:
+        raise SwitchbotApiError(
+            f"SwitchBot OAuth token request failed ({status}){error_suffix}"
+        )
+    if status == 429 or status >= 500:
+        raise SwitchbotAccountConnectionError(
+            f"SwitchBot OAuth token service unavailable ({status}){error_suffix}"
+        )
+
+
 def build_oauth_authorize_url(
     client_id: str,
     redirect_uri: str,
@@ -100,7 +118,12 @@ async def exchange_oauth_code(
             if status >= 400:
                 try:
                     error_data = await response.json()
-                except (aiohttp.ClientError, ValueError, TypeError):
+                except (aiohttp.ClientError, ValueError, TypeError) as err:
+                    _LOGGER.debug(
+                        "SwitchBot OAuth token error response could not be parsed; "
+                        "error_type=%s",
+                        type(err).__name__,
+                    )
                     error_data = None
                 error = _oauth_error_field(error_data, "error", code)
                 error_description = _oauth_error_field(
@@ -128,18 +151,11 @@ async def exchange_oauth_code(
         value for value in (error, error_description) if value is not None
     )
     error_suffix = f": {error_detail}" if error_detail else ""
-    if 400 <= status < 500 and status != 429:
-        raise SwitchbotAuthenticationError(
-            f"SwitchBot OAuth token request rejected ({status}){error_suffix}"
-        )
-    if status == 429 or status >= 500:
-        raise SwitchbotAccountConnectionError(
-            f"SwitchBot OAuth token service unavailable ({status}){error_suffix}"
-        )
+    _raise_for_oauth_error(status, error, error_suffix)
     if not isinstance(token_data, dict):
         raise SwitchbotApiError("Invalid response from SwitchBot OAuth token API")
 
-    token: dict[str, Any] = token_data
+    token: dict[str, Any] = token_data.copy()
     _LOGGER.debug("SwitchBot OAuth token response fields: %s", sorted(token))
     access_token = token.get("access_token")
     expires_in = token.get("expires_in")
@@ -151,15 +167,16 @@ async def exchange_oauth_code(
     ):
         raise SwitchbotApiError("Invalid token data from SwitchBot OAuth token API")
     try:
-        int(expires_in)
+        normalized_expires_in = int(expires_in)
     except ValueError as err:
         raise SwitchbotApiError(
             "Invalid token data from SwitchBot OAuth token API"
         ) from err
+    token["expires_in"] = normalized_expires_in
     _LOGGER.debug(
         "SwitchBot OAuth token response validated; expires_in=%s "
         "refresh_token_present=%s refresh_expires_in_present=%s",
-        int(expires_in),
+        normalized_expires_in,
         bool(token.get("refresh_token")),
         "refresh_expires_in" in token,
     )

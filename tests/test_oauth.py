@@ -115,15 +115,15 @@ async def test_exchange_oauth_code_accepts_string_expiry() -> None:
     }
     session = _mock_session(json_data=token)
 
-    assert (
-        await exchange_oauth_code(
-            session,
-            CLIENT_ID,
-            REDIRECT_URI,
-            "authorization-code",
-        )
-        == token
+    result = await exchange_oauth_code(
+        session,
+        CLIENT_ID,
+        REDIRECT_URI,
+        "authorization-code",
     )
+
+    assert result == {"access_token": "access-token", "expires_in": 3600}
+    assert token["expires_in"] == "3600"
 
 
 @pytest.mark.asyncio
@@ -156,18 +156,50 @@ async def test_exchange_oauth_code_invalid_token(token: dict[str, Any]) -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("status", [400, 401, 499])
-async def test_exchange_oauth_code_authentication_error(status: int) -> None:
+@pytest.mark.parametrize(
+    ("status", "error"),
+    [
+        pytest.param(400, "invalid_grant", id="invalid-grant"),
+        pytest.param(400, "invalid_client", id="invalid-client"),
+        pytest.param(401, "invalid_request", id="unauthorized"),
+        pytest.param(403, "access_denied", id="forbidden"),
+    ],
+)
+async def test_exchange_oauth_code_authentication_error(
+    status: int, error: str
+) -> None:
     """Test a rejected authorization code."""
     session = _mock_session(
         status=status,
         json_data={
-            "error": "invalid_grant",
+            "error": error,
             "error_description": "Authorization code expired",
         },
     )
 
-    with pytest.raises(SwitchbotAuthenticationError, match="invalid_grant"):
+    with pytest.raises(SwitchbotAuthenticationError, match=error):
+        await exchange_oauth_code(
+            session,
+            CLIENT_ID,
+            REDIRECT_URI,
+            "authorization-code",
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("status", "error"),
+    [
+        pytest.param(400, "invalid_request", id="invalid-request"),
+        pytest.param(404, "not_found", id="not-found"),
+        pytest.param(499, "invalid_grant", id="other-client-error"),
+    ],
+)
+async def test_exchange_oauth_code_api_error(status: int, error: str) -> None:
+    """Test OAuth configuration and endpoint errors."""
+    session = _mock_session(status=status, json_data={"error": error})
+
+    with pytest.raises(SwitchbotApiError, match=error):
         await exchange_oauth_code(
             session,
             CLIENT_ID,
@@ -222,12 +254,13 @@ async def test_exchange_oauth_code_unparsable_error_response(
     )
     caplog.set_level(logging.DEBUG, logger="switchbot.oauth")
 
-    with pytest.raises(SwitchbotAuthenticationError, match="400"):
+    with pytest.raises(SwitchbotApiError, match="400"):
         await exchange_oauth_code(
             session, CLIENT_ID, REDIRECT_URI, "authorization-code"
         )
 
     assert "error=unavailable" in caplog.text
+    assert "error_type=ValueError" in caplog.text
     assert "sensitive-provider-error" not in caplog.text
 
 

@@ -8,8 +8,14 @@ _REQUEST_ID_HEADERS = ("x-request-id", "x-amzn-requestid", "cf-ray")
 
 def extract_request_id(headers: Mapping[str, str]) -> str | None:
     """Extract a provider request identifier for log correlation."""
+    normalized_headers = {name.lower(): value for name, value in headers.items()}
     return next(
-        (value for name in _REQUEST_ID_HEADERS if (value := headers.get(name))), None
+        (
+            value
+            for name in _REQUEST_ID_HEADERS
+            if (value := normalized_headers.get(name))
+        ),
+        None,
     )
 
 

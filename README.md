@@ -27,7 +27,11 @@ replace PKCE.
 ```python
 import secrets
 
-from switchbot import build_oauth_authorize_url, exchange_oauth_code
+from switchbot import (
+    build_oauth_authorize_url,
+    exchange_oauth_code,
+    fetch_cloud_devices_by_token,
+)
 
 state = secrets.token_urlsafe(32)
 authorize_url = build_oauth_authorize_url(client_id, redirect_uri, state)
@@ -42,12 +46,14 @@ token = await exchange_oauth_code(
     redirect_uri,
     authorization_code,
 )
+devices = await fetch_cloud_devices_by_token(session, token["access_token"])
 ```
 
-The client ID and redirect URI must be registered with SwitchBot; arbitrary
-values will not work. `exchange_oauth_code` returns the provider's token
-mapping unchanged after validating the access token and expiry fields. The
-access token can then be passed to `fetch_cloud_devices_by_token` or
+The client ID and exact HTTPS redirect URI must be registered with SwitchBot;
+arbitrary values and wildcard redirect URIs will not work. `exchange_oauth_code`
+returns the provider's token mapping after validating the access token and
+normalizing `expires_in` to an integer. The access token can then be passed to
+`fetch_cloud_devices_by_token` or
 `SwitchbotEncryptedDevice.async_retrieve_encryption_key_by_token`.
 
 HTTP 401 and 403 responses from the SwitchBot account API raise
@@ -86,11 +92,11 @@ password. The most common failures are account-side, not bugs in this library:
     email/password account.
   - The username is an email but the account is registered to a phone number
     (or vice versa). Use the exact identifier you log in with.
-- **`Failed to retrieve encryption key from SwitchBot Account: ...`** —
-  authentication succeeded but the key could not be read. Usually the account
-  is not the device **owner**: keys are only returned to the owning account,
-  not to shared/family members. Retrieve the key from the owner account, or
-  transfer ownership in the app.
+- **`..., status code: 190`** (`SwitchbotApiError`) — authentication succeeded
+  but the key could not be read. Usually the account is not the device
+  **owner**: keys are only returned to the owning account, not to shared/family
+  members. Retrieve the key from the owner account, or transfer ownership in
+  the app.
 
 The key only needs to be fetched once; store the `key_id` and encryption key
 and reuse them — there is no need to call the script on every connection.

@@ -2,7 +2,28 @@
 
 from __future__ import annotations
 
-from switchbot.utils import format_mac_upper
+import pytest
+
+from switchbot.utils import extract_request_id, format_mac_upper
+
+
+@pytest.mark.parametrize(
+    ("headers", "expected"),
+    [
+        pytest.param({"X-Request-ID": "request-id"}, "request-id", id="request-id"),
+        pytest.param(
+            {"X-Amzn-RequestId": "amazon-request-id"},
+            "amazon-request-id",
+            id="amazon-request-id",
+        ),
+        pytest.param({"CF-Ray": "cloudflare-id"}, "cloudflare-id", id="cf-ray"),
+        pytest.param({"other": "value"}, None, id="no-request-id"),
+        pytest.param({}, None, id="no-headers"),
+    ],
+)
+def test_extract_request_id(headers: dict[str, str], expected: str | None) -> None:
+    """Test provider request IDs are extracted case-insensitively."""
+    assert extract_request_id(headers) == expected
 
 
 def test_format_mac_upper() -> None:

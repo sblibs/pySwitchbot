@@ -54,8 +54,10 @@ def _masked_device_id(device_id: str) -> str:
 
 def _extract_region(userinfo: dict[str, Any]) -> str:
     """Extract region from user info, defaulting to 'us'."""
-    if "botRegion" in userinfo and userinfo["botRegion"] != "":
-        return userinfo["botRegion"]
+    region = userinfo.get("botRegion")
+    if isinstance(region, str) and region:
+        return region
+    _LOGGER.warning("SwitchBot account region missing; defaulting to us")
     return "us"
 
 
@@ -275,6 +277,8 @@ class SwitchbotBaseDevice:
             )
         except SwitchbotAuthenticationError:
             raise
+        except SwitchbotApiError:
+            raise
         except Exception as err:
             raise SwitchbotAccountConnectionError(
                 f"Failed to retrieve SwitchBot Account user details: {err}"
@@ -370,12 +374,18 @@ class SwitchbotBaseDevice:
             )
         except SwitchbotAuthenticationError:
             raise
+        except SwitchbotApiError:
+            raise
         except Exception as err:
             raise SwitchbotAccountConnectionError(
                 f"Failed to retrieve devices from SwitchBot Account: {err}"
             ) from err
 
-        items: list[dict[str, Any]] = device_info["Items"]
+        items = device_info.get("Items")
+        if not isinstance(items, list) or not all(
+            isinstance(item, dict) for item in items
+        ):
+            raise SwitchbotApiError("Invalid device response from SwitchBot API")
         _LOGGER.debug("SwitchBot cloud API returned %s device records", len(items))
         mac_to_model: dict[str, SwitchbotModel] = {}
 
