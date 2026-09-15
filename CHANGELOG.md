@@ -2,6 +2,32 @@
 
 <!-- version list -->
 
+## v2.9.0 (2026-09-15)
+
+### Bug Fixes
+
+- Address OAuth review feedback ([#563](https://github.com/sblibs/pySwitchbot/pull/563),
+  [`3c2b1c0`](https://github.com/sblibs/pySwitchbot/commit/3c2b1c0423d3418f2d16fbc34c4f02805b275b06))
+
+- Address OAuth review follow-ups ([#563](https://github.com/sblibs/pySwitchbot/pull/563),
+  [`3c2b1c0`](https://github.com/sblibs/pySwitchbot/commit/3c2b1c0423d3418f2d16fbc34c4f02805b275b06))
+
+### Features
+
+- Add OAuth support for cloud APIs ([#563](https://github.com/sblibs/pySwitchbot/pull/563),
+  [`3c2b1c0`](https://github.com/sblibs/pySwitchbot/commit/3c2b1c0423d3418f2d16fbc34c4f02805b275b06))
+
+### Refactoring
+
+- Simplify encryption key delegation ([#563](https://github.com/sblibs/pySwitchbot/pull/563),
+  [`3c2b1c0`](https://github.com/sblibs/pySwitchbot/commit/3c2b1c0423d3418f2d16fbc34c4f02805b275b06))
+
+### Testing
+
+- Cover OAuth device error paths ([#563](https://github.com/sblibs/pySwitchbot/pull/563),
+  [`3c2b1c0`](https://github.com/sblibs/pySwitchbot/commit/3c2b1c0423d3418f2d16fbc34c4f02805b275b06))
+
+
 ## v2.8.0 (2026-09-14)
 
 ### Features
