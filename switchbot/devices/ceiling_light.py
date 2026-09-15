@@ -27,6 +27,7 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
     _turn_off_command = f"{CEILING_LIGHT_CONTROL_HEADER}02FF01FFFF"
     _set_brightness_command = f"{CEILING_LIGHT_CONTROL_HEADER}01FF01{{}}"
     _set_color_temp_command = f"{CEILING_LIGHT_CONTROL_HEADER}01FF01{{}}"
+    _set_night_light_command = f"{CEILING_LIGHT_CONTROL_HEADER}01{{}}01{{}}"
     _get_basic_info_command = ["5702", "570f5581"]
 
     @property
@@ -37,9 +38,8 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
     @property
     def color_mode(self) -> ColorMode:
         """Return the current color mode."""
-        device_mode = CeilingLightColorMode(
-            value if (value := self._get_adv_value("color_mode")) is not None else 10
-        )
+        value = self._state.get("color_mode", self._get_adv_value("color_mode"))
+        device_mode = CeilingLightColorMode(value if value is not None else 10)
         return _CEILING_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
 
     @update_after_operation
@@ -52,6 +52,40 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
         result = await self._send_command(self._set_brightness_command.format(hex_data))
         return self._check_command_result(result, 0, {1})
 
+    @update_after_operation
+    async def set_night_light(self, is_on: bool, brightness: int | None = None) -> bool:
+        """
+        Toggle night light color mode on or off.
+
+        Powers the light on and, unless `brightness` is given, resets
+        brightness to 20% (night) or 100% (otherwise) — mirroring the
+        official app's night light toggle.
+        """
+        color_mode = (
+            CeilingLightColorMode.NIGHT if is_on else CeilingLightColorMode.COLOR_TEMP
+        )
+        hex_mode = f"{color_mode.value:02X}"
+        if brightness is None:
+            # The app's night light toggle always pairs NIGHT with 20%
+            # brightness and COLOR_TEMP with 100%, carrying over the
+            # last-set color temp.
+            brightness = 20 if is_on else 100
+        else:
+            self._validate_brightness(brightness)
+        color_temp = self._state.get("cw", DEFAULT_COLOR_TEMP)
+        hex_data = f"{brightness:02X}{color_temp:04X}"
+        result = await self._send_command(
+            self._set_night_light_command.format(hex_mode, hex_data)
+        )
+        return self._check_command_result(result, 0, {1})
+
+    def is_night_light_on(self) -> bool | None:
+        """Return the cached night light color mode state."""
+        value = self._state.get("color_mode")
+        if value is None:
+            return None
+        return value == CeilingLightColorMode.NIGHT.value
+
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
         if not (
@@ -60,11 +94,19 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
             return None
         _version_info, _data = res
 
-        self._state["cw"] = int.from_bytes(_data[3:5], "big")
+        color_temp = int.from_bytes(_data[3:5], "big")
+        if self.min_temp <= color_temp <= self.max_temp:
+            self._state["cw"] = color_temp
+        else:
+            self._state.setdefault("cw", DEFAULT_COLOR_TEMP)
+        # Cached in self._state (not the adv-data merge) because the
+        # advertisement parser hardcodes color_mode, which would otherwise
+        # clobber this value on the next advertisement.
+        self._state["color_mode"] = (_data[1] & 0b01000000) >> 6
 
         return {
             "isOn": bool(_data[1] & 0b10000000),
-            "color_mode": (_data[1] & 0b01000000) >> 6,
+            "color_mode": self._state["color_mode"],
             "brightness": _data[2] & 0b01111111,
             "cw": self._state["cw"],
             "firmware": _version_info[2] / 10.0,
