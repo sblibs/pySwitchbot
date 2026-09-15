@@ -9,17 +9,20 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import aiohttp
 import pytest
 
-from switchbot import fetch_cloud_devices
+from switchbot import fetch_cloud_devices, fetch_cloud_devices_by_token
 from switchbot.adv_parser import _MODEL_TO_MAC_CACHE, populate_model_to_mac_cache
 from switchbot.const import (
     SwitchbotAccountConnectionError,
+    SwitchbotApiError,
     SwitchbotAuthenticationError,
     SwitchbotModel,
 )
 from switchbot.devices.device import (
     SwitchbotBaseDevice,
     SwitchbotDevice,
+    SwitchbotEncryptedDevice,
     _extract_region,
+    _masked_device_id,
 )
 
 from .test_adv_parser import generate_ble_device
@@ -150,7 +153,8 @@ async def test_get_devices(
 
         # Check that unknown model was logged
         assert "Unknown model WoUnknown for device DD:EE:FF:00:11:22" in caplog.text
-        assert "extra_field" in caplog.text  # Full item should be logged
+        assert "extra_field" in caplog.text
+        assert "extra_value" in caplog.text
 
 
 @pytest.mark.asyncio
@@ -307,6 +311,462 @@ async def test_fetch_cloud_devices(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("region", ["us", "eu", "jp"])
+async def test_fetch_cloud_devices_by_token(
+    mock_user_info: dict[str, Any],
+    mock_device_response: dict[str, Any],
+    region: str,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test fetching cloud devices with an OAuth access token."""
+    caplog.set_level(logging.DEBUG, logger="switchbot.devices.device")
+    with (
+        patch.object(SwitchbotBaseDevice, "_get_auth_result") as mock_get_auth_result,
+        patch.object(
+            SwitchbotBaseDevice,
+            "_async_get_user_info",
+            return_value={**mock_user_info, "botRegion": region},
+        ) as mock_get_user_info,
+        patch.object(
+            SwitchbotBaseDevice,
+            "api_request",
+            return_value=mock_device_response,
+        ) as mock_api_request,
+        patch(
+            "switchbot.devices.device.populate_model_to_mac_cache"
+        ) as mock_populate_cache,
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        result = await fetch_cloud_devices_by_token(session, "oauth-access-token")
+
+    mock_get_auth_result.assert_not_called()
+    mock_get_user_info.assert_awaited_once_with(
+        session, {"authorization": "oauth-access-token"}
+    )
+    mock_api_request.assert_awaited_once_with(
+        session,
+        f"wonderlabs.{region}",
+        "wonder/device/v3/getdevice",
+        {"required_type": "All"},
+        {"authorization": "oauth-access-token"},
+    )
+    assert result["AA:BB:CC:DD:EE:FF"] == SwitchbotModel.BOT
+    assert mock_populate_cache.call_count == 3
+    assert "retrieval finished; supported_devices=3 duration_ms=" in caplog.text
+    assert f"region resolved to {region}" in caplog.text
+    assert "oauth-access-token" not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_fetch_cloud_devices_by_token_connection_error(
+    mock_user_info: dict[str, Any],
+) -> None:
+    """Test an API error while fetching cloud devices with an OAuth token."""
+    with (
+        patch.object(
+            SwitchbotBaseDevice,
+            "_async_get_user_info",
+            return_value=mock_user_info,
+        ),
+        patch.object(
+            SwitchbotBaseDevice,
+            "api_request",
+            side_effect=Exception("Network error"),
+        ),
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        with pytest.raises(
+            SwitchbotAccountConnectionError, match="Failed to retrieve devices"
+        ):
+            await fetch_cloud_devices_by_token(session, "oauth-access-token")
+
+
+@pytest.mark.asyncio
+async def test_fetch_cloud_devices_by_token_authentication_error() -> None:
+    """Test an authentication error while fetching devices with an OAuth token."""
+    with patch.object(
+        SwitchbotBaseDevice,
+        "_async_get_user_info",
+        side_effect=SwitchbotAuthenticationError("invalid token"),
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        with pytest.raises(SwitchbotAuthenticationError, match="invalid token"):
+            await fetch_cloud_devices_by_token(session, "oauth-access-token")
+
+
+@pytest.mark.asyncio
+async def test_get_devices_preserves_authentication_error_after_user_info(
+    mock_user_info: dict[str, Any],
+) -> None:
+    """Test device retrieval preserves authentication errors."""
+    with (
+        patch.object(
+            SwitchbotBaseDevice,
+            "_async_get_user_info",
+            return_value=mock_user_info,
+        ),
+        patch.object(
+            SwitchbotBaseDevice,
+            "api_request",
+            side_effect=SwitchbotAuthenticationError("expired token"),
+        ),
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        with pytest.raises(SwitchbotAuthenticationError, match="expired token"):
+            await fetch_cloud_devices_by_token(session, "oauth-access-token")
+
+
+@pytest.mark.asyncio
+async def test_get_devices_preserves_api_error_after_user_info(
+    mock_user_info: dict[str, Any],
+) -> None:
+    """Test device retrieval preserves API errors."""
+    with (
+        patch.object(
+            SwitchbotBaseDevice,
+            "_async_get_user_info",
+            return_value=mock_user_info,
+        ),
+        patch.object(
+            SwitchbotBaseDevice,
+            "api_request",
+            side_effect=SwitchbotApiError("API error"),
+        ),
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        with pytest.raises(SwitchbotApiError, match="API error"):
+            await fetch_cloud_devices_by_token(session, "oauth-access-token")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "device_info",
+    [
+        pytest.param({}, id="missing-items"),
+        pytest.param({"Items": None}, id="invalid-items"),
+        pytest.param({"Items": {}}, id="items-not-list"),
+        pytest.param({"Items": ["invalid"]}, id="invalid-item"),
+    ],
+)
+async def test_get_devices_rejects_invalid_response(
+    mock_user_info: dict[str, Any], device_info: dict[str, Any]
+) -> None:
+    """Test malformed device responses retain their API error classification."""
+    with (
+        patch.object(
+            SwitchbotBaseDevice,
+            "_async_get_user_info",
+            return_value=mock_user_info,
+        ),
+        patch.object(
+            SwitchbotBaseDevice,
+            "api_request",
+            return_value=device_info,
+        ),
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        with pytest.raises(SwitchbotApiError, match="Invalid device response"):
+            await fetch_cloud_devices_by_token(session, "oauth-access-token")
+
+
+@pytest.mark.asyncio
+async def test_get_user_info_preserves_authentication_error() -> None:
+    """Test user info retrieval preserves authentication errors."""
+    with patch.object(
+        SwitchbotBaseDevice,
+        "api_request",
+        side_effect=SwitchbotAuthenticationError("invalid token"),
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        with pytest.raises(SwitchbotAuthenticationError, match="invalid token"):
+            await SwitchbotBaseDevice._async_get_user_info(
+                session,
+                {"authorization": "invalid-token"},
+            )
+
+
+@pytest.mark.asyncio
+async def test_get_user_info_preserves_api_error() -> None:
+    """Test user info retrieval preserves API errors."""
+    with patch.object(
+        SwitchbotBaseDevice,
+        "api_request",
+        side_effect=SwitchbotApiError("API error"),
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        with pytest.raises(SwitchbotApiError, match="API error"):
+            await SwitchbotBaseDevice._async_get_user_info(
+                session,
+                {"authorization": "invalid-token"},
+            )
+
+
+@pytest.mark.asyncio
+async def test_api_request_debug_logs_response_shape_without_values(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test API debug logs contain response fields but no sensitive values."""
+    response = MagicMock()
+    response.status = 200
+    response.headers = {"x-amzn-requestid": "api-request-id"}
+    response.json = AsyncMock(
+        return_value={
+            "statusCode": 100,
+            "message": "success",
+            "body": {
+                "access_token": "sensitive-access-token",
+                "deviceId": "sensitive-device-id",
+                "encryptionKey": "sensitive-encryption-key",
+            },
+        }
+    )
+    session = MagicMock(spec=aiohttp.ClientSession)
+    session.post.return_value.__aenter__ = AsyncMock(return_value=response)
+    session.post.return_value.__aexit__ = AsyncMock(return_value=None)
+    caplog.set_level(logging.DEBUG, logger="switchbot.devices.device")
+
+    result = await SwitchbotBaseDevice.api_request(
+        session, "account", "account/api/v1/user/userinfo"
+    )
+
+    assert result["deviceId"] == "sensitive-device-id"
+    assert "response fields=['body', 'message', 'statusCode']" in caplog.text
+    assert "body fields=['access_token', 'deviceId', 'encryptionKey']" in caplog.text
+    assert "duration_ms=" in caplog.text
+    assert "request_id=api-request-id" in caplog.text
+    for sensitive_value in (
+        "sensitive-access-token",
+        "sensitive-device-id",
+        "sensitive-encryption-key",
+    ):
+        assert sensitive_value not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_api_request_authentication_error() -> None:
+    """Test HTTP authentication errors retain their specific error type."""
+    response = MagicMock()
+    response.status = 401
+    session = MagicMock(spec=aiohttp.ClientSession)
+    session.post.return_value.__aenter__.return_value = response
+
+    with pytest.raises(SwitchbotAuthenticationError, match="Authentication rejected"):
+        await SwitchbotBaseDevice.api_request(
+            session,
+            "account",
+            "account/api/v1/user/userinfo",
+            {},
+            {"authorization": "invalid-token"},
+        )
+
+
+@pytest.mark.asyncio
+async def test_retrieve_encryption_key_with_password() -> None:
+    """Test the password flow delegates with its access token."""
+    key_details = {
+        "key_id": "ff",
+        "encryption_key": "ffffffffffffffffffffffffffffffff",
+    }
+    with (
+        patch.object(
+            SwitchbotEncryptedDevice,
+            "_get_auth_result",
+            return_value={"access_token": "password-access-token"},
+        ) as mock_get_auth_result,
+        patch.object(
+            SwitchbotEncryptedDevice,
+            "_async_retrieve_encryption_key",
+            return_value=key_details,
+        ) as mock_retrieve_key,
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        result = await SwitchbotEncryptedDevice.async_retrieve_encryption_key(
+            session,
+            "aa:bb:cc:dd:ee:ff",
+            "test@example.com",
+            "password",
+        )
+
+    mock_get_auth_result.assert_awaited_once_with(
+        session, "test@example.com", "password"
+    )
+    mock_retrieve_key.assert_awaited_once_with(
+        session,
+        "aa:bb:cc:dd:ee:ff",
+        {"authorization": "password-access-token"},
+    )
+    assert result == key_details
+
+
+@pytest.mark.asyncio
+async def test_retrieve_encryption_key_by_token_api_error(
+    mock_user_info: dict[str, Any],
+) -> None:
+    """Test an API error while retrieving a key with an OAuth token."""
+    with (
+        patch.object(
+            SwitchbotEncryptedDevice,
+            "_async_get_user_info",
+            return_value=mock_user_info,
+        ),
+        patch.object(
+            SwitchbotEncryptedDevice,
+            "api_request",
+            side_effect=SwitchbotApiError("API error"),
+        ),
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        with pytest.raises(SwitchbotApiError, match="API error"):
+            await SwitchbotEncryptedDevice.async_retrieve_encryption_key_by_token(
+                session, "aa:bb:cc:dd:ee:ff", "oauth-access-token"
+            )
+
+
+@pytest.mark.asyncio
+async def test_retrieve_encryption_key_by_token_authentication_error(
+    mock_user_info: dict[str, Any],
+) -> None:
+    """Test key retrieval preserves authentication errors."""
+    with (
+        patch.object(
+            SwitchbotEncryptedDevice,
+            "_async_get_user_info",
+            return_value=mock_user_info,
+        ),
+        patch.object(
+            SwitchbotEncryptedDevice,
+            "api_request",
+            side_effect=SwitchbotAuthenticationError("expired token"),
+        ),
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        with pytest.raises(SwitchbotAuthenticationError, match="expired token"):
+            await SwitchbotEncryptedDevice.async_retrieve_encryption_key_by_token(
+                session, "aa:bb:cc:dd:ee:ff", "oauth-access-token"
+            )
+
+
+@pytest.mark.asyncio
+async def test_retrieve_encryption_key_by_token_connection_error(
+    mock_user_info: dict[str, Any],
+) -> None:
+    """Test key retrieval maps unexpected request errors to connection errors."""
+    with (
+        patch.object(
+            SwitchbotEncryptedDevice,
+            "_async_get_user_info",
+            return_value=mock_user_info,
+        ),
+        patch.object(
+            SwitchbotEncryptedDevice,
+            "api_request",
+            side_effect=Exception("network error"),
+        ),
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        with pytest.raises(
+            SwitchbotAccountConnectionError,
+            match="Failed to retrieve encryption key",
+        ):
+            await SwitchbotEncryptedDevice.async_retrieve_encryption_key_by_token(
+                session, "aa:bb:cc:dd:ee:ff", "oauth-access-token"
+            )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "device_info",
+    [
+        pytest.param({}, id="missing-communication-key"),
+        pytest.param({"communicationKey": None}, id="invalid-communication-key"),
+        pytest.param(
+            {"communicationKey": {"key": "encryption-key"}}, id="missing-key-id"
+        ),
+        pytest.param(
+            {"communicationKey": {"keyId": "ff"}}, id="missing-encryption-key"
+        ),
+        pytest.param(
+            {"communicationKey": {"keyId": 1, "key": "encryption-key"}},
+            id="invalid-key-id",
+        ),
+    ],
+)
+async def test_retrieve_encryption_key_by_token_invalid_response(
+    mock_user_info: dict[str, Any], device_info: dict[str, Any]
+) -> None:
+    """Test malformed key responses retain their API error classification."""
+    with (
+        patch.object(
+            SwitchbotEncryptedDevice,
+            "_async_get_user_info",
+            return_value=mock_user_info,
+        ),
+        patch.object(
+            SwitchbotEncryptedDevice,
+            "api_request",
+            return_value=device_info,
+        ),
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        with pytest.raises(SwitchbotApiError, match="Invalid encryption key response"):
+            await SwitchbotEncryptedDevice.async_retrieve_encryption_key_by_token(
+                session, "aa:bb:cc:dd:ee:ff", "oauth-access-token"
+            )
+
+
+@pytest.mark.asyncio
+async def test_retrieve_encryption_key_by_token(
+    mock_user_info: dict[str, Any],
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test retrieving an encryption key with an OAuth access token."""
+    caplog.set_level(logging.DEBUG, logger="switchbot.devices.device")
+    with (
+        patch.object(
+            SwitchbotEncryptedDevice,
+            "_async_get_user_info",
+            return_value=mock_user_info,
+        ) as mock_get_user_info,
+        patch.object(
+            SwitchbotEncryptedDevice,
+            "api_request",
+            return_value={
+                "communicationKey": {
+                    "keyId": "ff",
+                    "key": "ffffffffffffffffffffffffffffffff",
+                }
+            },
+        ) as mock_api_request,
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        result = await SwitchbotEncryptedDevice.async_retrieve_encryption_key_by_token(
+            session, "aa:bb:cc:dd:ee:ff", "oauth-access-token"
+        )
+
+    auth_headers = {"authorization": "oauth-access-token"}
+    mock_get_user_info.assert_awaited_once_with(session, auth_headers)
+    mock_api_request.assert_awaited_once_with(
+        session,
+        "wonderlabs.us",
+        "wonder/keys/v1/communicate",
+        {"device_mac": "AABBCCDDEEFF", "keyType": "user"},
+        auth_headers,
+    )
+    assert result == {
+        "key_id": "ff",
+        "encryption_key": "ffffffffffffffffffffffffffffffff",
+    }
+    assert "device=****EEFF" in caplog.text
+    assert "retrieval finished; device=****EEFF duration_ms=" in caplog.text
+    for sensitive_value in (
+        "aa:bb:cc:dd:ee:ff",
+        "oauth-access-token",
+        "ffffffffffffffffffffffffffffffff",
+    ):
+        assert sensitive_value not in caplog.text
+
+
+@pytest.mark.asyncio
 async def test_get_devices_authentication_error() -> None:
     """Test get_devices with authentication error."""
     with patch.object(
@@ -368,8 +828,14 @@ async def test_populate_model_to_mac_cache() -> None:
     _MODEL_TO_MAC_CACHE.clear()
 
 
-def test_extract_region() -> None:
+def test_masked_device_id_empty() -> None:
+    """Test an empty device identifier is represented safely."""
+    assert _masked_device_id("") == "unknown"
+
+
+def test_extract_region(caplog: pytest.LogCaptureFixture) -> None:
     """Test the _extract_region helper function."""
+    caplog.set_level(logging.WARNING, logger="switchbot.devices.device")
     # Test with botRegion present and not empty
     assert _extract_region({"botRegion": "eu", "country": "de"}) == "eu"
     assert _extract_region({"botRegion": "us", "country": "us"}) == "us"
@@ -383,6 +849,8 @@ def test_extract_region() -> None:
 
     # Test with empty dict
     assert _extract_region({}) == "us"
+
+    assert "account region missing; defaulting to us" in caplog.text
 
 
 @pytest.mark.asyncio

@@ -10,6 +10,57 @@ source .venv/bin/activate
 pip install .
 ```
 
+## OAuth account access
+
+pySwitchbot provides helpers for SwitchBot's authorization-code flow. The
+calling application supplies a SwitchBot-issued client ID and its registered
+redirect URI; neither value is tied to Home Assistant or embedded in the
+library.
+
+SwitchBot currently treats these integrations as public clients: the token
+request does not use a client secret, and the authorization server does not
+support PKCE. The caller must generate an unpredictable, single-use `state`,
+store it for the duration of the flow, and reject callbacks whose state does
+not match. State protects the callback from request forgery but does not
+replace PKCE.
+
+```python
+import secrets
+
+from switchbot import (
+    build_oauth_authorize_url,
+    exchange_oauth_code,
+    fetch_cloud_devices_by_token,
+)
+
+state = secrets.token_urlsafe(32)
+authorize_url = build_oauth_authorize_url(client_id, redirect_uri, state)
+
+# Store state before sending the user to authorize_url. On callback:
+if callback_state != state:
+    raise ValueError("OAuth state mismatch")
+
+token = await exchange_oauth_code(
+    session,
+    client_id,
+    redirect_uri,
+    authorization_code,
+)
+devices = await fetch_cloud_devices_by_token(session, token["access_token"])
+```
+
+The client ID and exact HTTPS redirect URI must be registered with SwitchBot;
+arbitrary values and wildcard redirect URIs will not work. `exchange_oauth_code`
+returns the provider's token mapping after validating the access token and
+normalizing `expires_in` to an integer. The access token can then be passed to
+`fetch_cloud_devices_by_token` or
+`SwitchbotEncryptedDevice.async_retrieve_encryption_key_by_token`.
+
+HTTP 401 and 403 responses from the SwitchBot account API raise
+`SwitchbotAuthenticationError`. Other API failures raise `SwitchbotApiError`,
+while transport and availability failures raise
+`SwitchbotAccountConnectionError`.
+
 ## Obtaining encryption key for Switchbot Locks
 
 Using the script `scripts/get_encryption_key.py` you can manually obtain locks encryption key.
@@ -41,11 +92,11 @@ password. The most common failures are account-side, not bugs in this library:
     email/password account.
   - The username is an email but the account is registered to a phone number
     (or vice versa). Use the exact identifier you log in with.
-- **`Failed to retrieve encryption key from SwitchBot Account: ...`** —
-  authentication succeeded but the key could not be read. Usually the account
-  is not the device **owner**: keys are only returned to the owning account,
-  not to shared/family members. Retrieve the key from the owner account, or
-  transfer ownership in the app.
+- **`..., status code: 190`** (`SwitchbotApiError`) — authentication succeeded
+  but the key could not be read. Usually the account is not the device
+  **owner**: keys are only returned to the owning account, not to shared/family
+  members. Retrieve the key from the owner account, or transfer ownership in
+  the app.
 
 The key only needs to be fetched once; store the `key_id` and encryption key
 and reuse them — there is no need to call the script on every connection.

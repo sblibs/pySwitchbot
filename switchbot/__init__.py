@@ -47,6 +47,7 @@ from .devices.device import (
     SwitchbotEncryptedDevice,
     SwitchbotOperationError,
     fetch_cloud_devices,
+    fetch_cloud_devices_by_token,
 )
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
 from .devices.fan import (
@@ -79,8 +80,18 @@ from .devices.universal_remote import SwitchbotUniversalRemote
 from .devices.vacuum import SwitchbotVacuum
 from .discovery import GetSwitchbotDevices
 from .models import SwitchBotAdvertisement
+from .oauth import (
+    OAUTH_AUTHORIZE_URL,
+    OAUTH_SCOPE,
+    OAUTH_TOKEN_URL,
+    build_oauth_authorize_url,
+    exchange_oauth_code,
+)
 
 __all__ = [
+    "OAUTH_AUTHORIZE_URL",
+    "OAUTH_SCOPE",
+    "OAUTH_TOKEN_URL",
     "AirPurifierMode",
     "AirQualityLevel",
     "BulbColorMode",
@@ -142,9 +153,12 @@ __all__ = [
     "SwitchbotUniversalRemote",
     "SwitchbotVacuum",
     "VerticalOscillationAngle",
+    "build_oauth_authorize_url",
     "close_stale_connections",
     "close_stale_connections_by_address",
+    "exchange_oauth_code",
     "fetch_cloud_devices",
+    "fetch_cloud_devices_by_token",
     "get_device",
     "parse_advertisement_data",
 ]
