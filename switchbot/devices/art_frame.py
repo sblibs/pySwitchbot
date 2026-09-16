@@ -1,7 +1,7 @@
 """Device handler for the Art Frame."""
 
 import logging
-import random
+import secrets
 from typing import Any
 
 from ..const import SwitchbotModel
@@ -99,7 +99,7 @@ class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             raise RuntimeError("No images available to select from.")
 
         choices = [idx for idx in all_images_index if idx != current_index]
-        idx = random.choice(choices)
+        idx = secrets.choice(choices)
         result = await self._send_command(COMMAND_SET_IMAGE.format(f"{idx:02X}"))
         return self._check_command_result(result, 0, {1})
 
