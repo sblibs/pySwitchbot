@@ -1,6 +1,7 @@
 """Device handler for the Art Frame."""
 
 import logging
+import random
 from typing import Any
 
 from ..const import SwitchbotModel
@@ -84,6 +85,21 @@ class SwitchbotArtFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         """Display the previous image."""
         await self._get_current_image_index()
         idx = self._select_image_index(-1)
+        result = await self._send_command(COMMAND_SET_IMAGE.format(f"{idx:02X}"))
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def random_image(self) -> bool:
+        """Display a random image other than the current one."""
+        await self._get_current_image_index()
+        current_index = self.get_current_image_index()
+        all_images_index = self.get_all_images_index()
+
+        if not all_images_index or len(all_images_index) <= 1:
+            raise RuntimeError("No images available to select from.")
+
+        choices = [idx for idx in all_images_index if idx != current_index]
+        idx = random.choice(choices)
         result = await self._send_command(COMMAND_SET_IMAGE.format(f"{idx:02X}"))
         return self._check_command_result(result, 0, {1})
 

@@ -169,6 +169,42 @@ async def test_prev_image(
 
 
 @pytest.mark.asyncio
+async def test_random_image_with_single_image() -> None:
+    device = create_device_for_command_testing(ART_FRAME_INFO)
+
+    with (
+        patch.object(device, "get_current_image_index", return_value=1),
+        patch.object(device, "get_all_images_index", return_value=[1]),
+        pytest.raises(RuntimeError, match=r"No images available to select from."),
+    ):
+        await device.random_image()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("current_index", "all_images_index", "expected_choices"),
+    [
+        (100, [1, 100, 150], {1, 150}),
+        (1, [1, 100, 150], {100, 150}),
+    ],
+)
+async def test_random_image(
+    current_index: int, all_images_index: list[int], expected_choices: set[int]
+) -> None:
+    device = create_device_for_command_testing(ART_FRAME_INFO)
+
+    with (
+        patch.object(device, "get_current_image_index", return_value=current_index),
+        patch.object(device, "get_all_images_index", return_value=all_images_index),
+    ):
+        await device.random_image()
+        sent = device._send_command.await_args.args[0]
+        assert sent in {
+            COMMAND_SET_IMAGE.format(f"{idx:02X}") for idx in expected_choices
+        }
+
+
+@pytest.mark.asyncio
 async def test_set_image_with_invalid_index() -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
 
