@@ -37,7 +37,8 @@ class Switchbot(SwitchbotDeviceOverrideStateDuringConnection):
         """Turn device on."""
         result = await self._send_command(ON_KEY)
         ret = self._check_command_result(result, 0, {1, 5})
-        self._override_state({"isOn": True})
+        if ret:
+            self._override_state({"isOn": True})
         _LOGGER.debug(
             "%s: Turn on result: %s -> %s",
             self.name,
@@ -52,7 +53,8 @@ class Switchbot(SwitchbotDeviceOverrideStateDuringConnection):
         """Turn device off."""
         result = await self._send_command(OFF_KEY)
         ret = self._check_command_result(result, 0, {1, 5})
-        self._override_state({"isOn": False})
+        if ret:
+            self._override_state({"isOn": False})
         _LOGGER.debug(
             "%s: Turn off result: %s -> %s",
             self.name,
