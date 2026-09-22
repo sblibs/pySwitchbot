@@ -219,3 +219,21 @@ def test_default_model_classvar():
         ble_device, "ff", "ffffffffffffffffffffffffffffffff"
     )
     assert device._model == SMART_THERMOSTAT_RADIATOR_INFO.modelName
+
+
+@pytest.mark.asyncio
+async def test_thermostat_idle_action() -> None:
+    """Test TRV action transitions exactly at the 0.5°C hysteresis boundary."""
+    # Case 1: Room temperature is exactly at target + 0.5 -> Should be IDLE
+    device_at_boundary = create_device_for_command_testing(
+        SMART_THERMOSTAT_RADIATOR_INFO,
+        {"target_temperature": 20.0, "temperature": 20.5},
+    )
+    assert device_at_boundary.hvac_action == ClimateAction.IDLE
+
+    # Case 2: Room is warm but within the 0.5 chattering band -> Should still be HEATING
+    device_in_band = create_device_for_command_testing(
+        SMART_THERMOSTAT_RADIATOR_INFO,
+        {"target_temperature": 20.0, "temperature": 20.4},
+    )
+    assert device_in_band.hvac_action == ClimateAction.HEATING

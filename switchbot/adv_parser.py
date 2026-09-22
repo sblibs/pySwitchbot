@@ -20,7 +20,11 @@ from .adv_parsers.ceiling_light import process_woceiling
 from .adv_parsers.climate_panel import process_climate_panel
 from .adv_parsers.contact import process_wocontact
 from .adv_parsers.curtain import process_wocurtain
-from .adv_parsers.fan import process_fan, process_standing_fan
+from .adv_parsers.fan import (
+    process_circulator_fan_pro,
+    process_fan,
+    process_standing_fan,
+)
 from .adv_parsers.hub2 import process_wohub2
 from .adv_parsers.hub3 import process_hub3
 from .adv_parsers.hubmini_matter import process_hubmini_matter
@@ -32,6 +36,7 @@ from .adv_parsers.light_strip import (
     process_candle_warmer_lamp,
     process_light,
     process_rgbic_light,
+    process_rgbicww_ceiling_light,
     process_wostrip,
 )
 from .adv_parsers.lock import (
@@ -50,7 +55,7 @@ from .adv_parsers.relay_switch import (
     process_relay_switch_2pm,
     process_relay_switch_common_data,
 )
-from .adv_parsers.remote import process_woremote
+from .adv_parsers.remote import process_woremote, process_wouniversal_remote
 from .adv_parsers.roller_shade import process_worollershade
 from .adv_parsers.smart_thermostat_radiator import process_smart_thermostat_radiator
 from .adv_parsers.vacuum import process_vacuum, process_vacuum_k
@@ -401,6 +406,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_woremote,
         "manufacturer_id": 89,
     },
+    "\x07": {
+        "modelName": SwitchbotModel.UNIVERSAL_REMOTE,
+        "modelFriendlyName": "Universal Remote",
+        "func": process_wouniversal_remote,
+        "manufacturer_id": 2409,
+    },
+    "'": {
+        "modelName": SwitchbotModel.UNIVERSAL_REMOTE,
+        "modelFriendlyName": "Universal Remote",
+        "func": process_wouniversal_remote,
+        "manufacturer_id": 2409,
+    },
     ",": {
         "modelName": SwitchbotModel.ROLLER_SHADE,
         "modelFriendlyName": "Roller Shade",
@@ -677,6 +694,42 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_rgbic_light,
         "manufacturer_id": 2409,
     },
+    b"\x00\x11\xbe\xf8": {
+        "modelName": SwitchbotModel.RGBICWW_LIGHT_BARS,
+        "modelFriendlyName": "RGBICWW Light Bars",
+        "func": process_rgbic_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\xbe\xf8": {
+        "modelName": SwitchbotModel.RGBICWW_LIGHT_BARS,
+        "modelFriendlyName": "RGBICWW Light Bars",
+        "func": process_rgbic_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x11\xbb\x10": {
+        "modelName": SwitchbotModel.RGBICWW_CEILING_LIGHT,
+        "modelFriendlyName": "RGBICWW Ceiling Light",
+        "func": process_rgbicww_ceiling_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\xbb\x10": {
+        "modelName": SwitchbotModel.RGBICWW_CEILING_LIGHT,
+        "modelFriendlyName": "RGBICWW Ceiling Light",
+        "func": process_rgbicww_ceiling_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x11\xb3@": {
+        "modelName": SwitchbotModel.CIRCULATOR_FAN_PRO,
+        "modelFriendlyName": "Circulator Fan Pro",
+        "func": process_circulator_fan_pro,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\xb3@": {
+        "modelName": SwitchbotModel.CIRCULATOR_FAN_PRO,
+        "modelFriendlyName": "Circulator Fan Pro",
+        "func": process_circulator_fan_pro,
+        "manufacturer_id": 2409,
+    },
     b"\x00\x10\xd0\xb7": {
         "modelName": SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
         "modelFriendlyName": "Permanent Outdoor Light",
@@ -843,6 +896,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.LOCK_PRO_WIFI,
         "modelFriendlyName": "Lock Pro Wifi",
         "func": process_wolock_pro,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x11\x9f\xb8": {
+        "modelName": SwitchbotModel.LOCK_ULTRA_MAX,
+        "modelFriendlyName": "Lock Ultra Max",
+        "func": process_lock2,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\x9f\xb8": {
+        "modelName": SwitchbotModel.LOCK_ULTRA_MAX,
+        "modelFriendlyName": "Lock Ultra Max",
+        "func": process_lock2,
         "manufacturer_id": 2409,
     },
     b"\x00\x11\x07\x60": {

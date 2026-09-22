@@ -11,6 +11,7 @@ from .evaporative_humidifier import (
     HumidifierWaterLevel,
 )
 from .fan import (
+    CirculatorFanProMode,
     FanMode,
     HorizontalOscillationAngle,
     NightLightState,
@@ -82,10 +83,12 @@ class SwitchbotModel(StrEnum):
     RELAY_SWITCH_1PM = "Relay Switch 1PM"
     RELAY_SWITCH_1 = "Relay Switch 1"
     REMOTE = "WoRemote"
+    UNIVERSAL_REMOTE = "WoUniversalRemote"
     EVAPORATIVE_HUMIDIFIER = "Evaporative Humidifier"
     ROLLER_SHADE = "Roller Shade"
     HUBMINI_MATTER = "HubMini Matter"
     CIRCULATOR_FAN = "Circulator Fan"
+    CIRCULATOR_FAN_PRO = "Circulator Fan Pro"
     STANDING_FAN = "Standing Fan"
     K20_VACUUM = "K20 Vacuum"
     S10_VACUUM = "S10 Vacuum"
@@ -107,6 +110,8 @@ class SwitchbotModel(StrEnum):
     PLUG_MINI_EU = "Plug Mini (EU)"
     RGBICWW_STRIP_LIGHT = "RGBICWW Strip Light"
     RGBICWW_FLOOR_LAMP = "RGBICWW Floor Lamp"
+    RGBICWW_LIGHT_BARS = "RGBICWW Light Bars"
+    RGBICWW_CEILING_LIGHT = "RGBICWW Ceiling Light"
     PERMANENT_OUTDOOR_LIGHT = "Permanent Outdoor Light"
     RGBIC_NEON_ROPE_LIGHT = "RGBIC Neon Rope Light"
     RGBIC_NEON_WIRE_ROPE_LIGHT = "RGBIC Neon Wire Rope Light"
@@ -121,6 +126,7 @@ class SwitchbotModel(StrEnum):
     LOCK_VISION_PRO = "Lock Vision Pro"
     LOCK_VISION = "Lock Vision"
     LOCK_PRO_WIFI = "Lock Pro Wifi"
+    LOCK_ULTRA_MAX = "Lock Ultra Max"
     WEATHER_STATION = "Weather Station"
 
 
@@ -132,6 +138,7 @@ __all__ = [
     "AirQualityLevel",
     "BulbColorMode",
     "CeilingLightColorMode",
+    "CirculatorFanProMode",
     "ClimateAction",
     "ClimateMode",
     "ColorMode",

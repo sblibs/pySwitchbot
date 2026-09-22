@@ -4,6 +4,7 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import SwitchBotAdvertisement, SwitchbotModel
+from switchbot.adv_parsers.fan import process_standing_fan
 from switchbot.const.fan import (
     FanMode,
     HorizontalOscillationAngle,
@@ -12,8 +13,8 @@ from switchbot.const.fan import (
     VerticalOscillationAngle,
 )
 from switchbot.devices import fan
-from switchbot.devices.device import SwitchbotOperationError
-from switchbot.devices.fan import SwitchbotStandingFan
+from switchbot.devices.device import SwitchbotEncryptedDevice, SwitchbotOperationError
+from switchbot.devices.fan import SwitchbotCirculatorFanPro, SwitchbotStandingFan
 
 from .test_adv_parser import generate_ble_device
 
@@ -30,7 +31,11 @@ def create_device_for_command_testing(
     return fan_device
 
 
-def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None):
+def make_advertisement_data(
+    ble_device: BLEDevice,
+    init_data: dict | None = None,
+    model: SwitchbotModel = SwitchbotModel.CIRCULATOR_FAN,
+):
     """Set advertisement data with defaults."""
     if init_data is None:
         init_data = {}
@@ -50,8 +55,8 @@ def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None
             | init_data,
             "isEncrypted": False,
             "model": ",",
-            "modelFriendlyName": "Circulator Fan",
-            "modelName": SwitchbotModel.CIRCULATOR_FAN,
+            "modelFriendlyName": model.value,
+            "modelName": model,
         },
         device=ble_device,
         rssi=-80,
@@ -290,6 +295,10 @@ async def test_circulator_fan_setters_validate_success_byte(response, expected, 
         lambda d: d.set_vertical_oscillation_angle(VerticalOscillationAngle.ANGLE_90),
         lambda d: d.set_night_light(NightLightState.LEVEL_1),
         lambda d: d.set_night_light(NightLightState.OFF),
+        lambda d: d.set_child_lock(True),
+        lambda d: d.set_display(False),
+        lambda d: d.set_sound(True),
+        lambda d: d.set_auto_recenter(False),
     ],
 )
 async def test_standing_fan_setters_validate_success_byte(response, expected, invoke):
@@ -384,6 +393,222 @@ async def test_standing_fan_set_preset_mode(mode):
     assert standing_fan.get_current_mode() == mode
 
 
+def create_circulator_fan_pro_for_testing(init_data: dict | None = None):
+    """Create an encrypted SwitchbotCirculatorFanPro instance for testing."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    fan_device = SwitchbotCirculatorFanPro(
+        ble_device,
+        "ff",
+        "ffffffffffffffffffffffffffffffff",
+        model=SwitchbotModel.CIRCULATOR_FAN_PRO,
+    )
+    fan_device.update_from_advertisement(
+        make_advertisement_data(
+            ble_device, init_data, model=SwitchbotModel.CIRCULATOR_FAN_PRO
+        )
+    )
+    fan_device._send_command = AsyncMock()
+    fan_device._check_command_result = MagicMock()
+    fan_device.update = AsyncMock()
+    return fan_device
+
+
+def test_circulator_fan_pro_inherits_from_switchbot_fan():
+    assert issubclass(SwitchbotCirculatorFanPro, fan.SwitchbotFan)
+
+
+def test_circulator_fan_pro_is_encrypted_device():
+    assert issubclass(SwitchbotCirculatorFanPro, SwitchbotEncryptedDevice)
+
+
+def test_circulator_fan_pro_instantiation():
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    fan_device = SwitchbotCirculatorFanPro(
+        ble_device, "ff", "ffffffffffffffffffffffffffffffff"
+    )
+    assert fan_device is not None
+    assert fan_device._model == SwitchbotModel.CIRCULATOR_FAN_PRO
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_turn_on():
+    fan_device = create_circulator_fan_pro_for_testing({"isOn": True})
+    await fan_device.turn_on()
+    assert fan_device.is_on() is True
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_turn_off():
+    fan_device = create_circulator_fan_pro_for_testing({"isOn": False})
+    await fan_device.turn_off()
+    assert fan_device.is_on() is False
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_set_percentage():
+    fan_device = create_circulator_fan_pro_for_testing({"speed": 80})
+    await fan_device.set_percentage(80)
+    fan_device._send_command.assert_awaited_once_with("570f411129010150")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("percentage", "expected_cmd"),
+    [
+        (0, "570f411129010101"),  # clamped up to 1
+        (1, "570f411129010101"),
+        (100, "570f411129010164"),
+        (150, "570f411129010164"),  # clamped down to 100
+    ],
+)
+async def test_circulator_fan_pro_set_percentage_clamped(percentage, expected_cmd):
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.set_percentage(percentage)
+    fan_device._send_command.assert_awaited_once_with(expected_cmd)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("oscillating", "expected_cmd"),
+    [
+        (True, "570f4102290101"),  # start both axes
+        (False, "570f4102290202"),  # stop both axes
+    ],
+)
+async def test_circulator_fan_pro_set_oscillation(oscillating, expected_cmd):
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.set_oscillation(oscillating)
+    fan_device._send_command.assert_awaited_once_with(expected_cmd)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("oscillating", "expected_cmd"),
+    [
+        (True, "570f41022901ff"),  # start horizontal, keep vertical
+        (False, "570f41022902ff"),  # stop horizontal, keep vertical
+    ],
+)
+async def test_circulator_fan_pro_set_horizontal_oscillation(oscillating, expected_cmd):
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.set_horizontal_oscillation(oscillating)
+    fan_device._send_command.assert_awaited_once_with(expected_cmd)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("oscillating", "expected_cmd"),
+    [
+        (True, "570f410229ff01"),  # keep horizontal, start vertical
+        (False, "570f410229ff02"),  # keep horizontal, stop vertical
+    ],
+)
+async def test_circulator_fan_pro_set_vertical_oscillation(oscillating, expected_cmd):
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.set_vertical_oscillation(oscillating)
+    fan_device._send_command.assert_awaited_once_with(expected_cmd)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mode", "expected_cmd"),
+    [
+        ("normal", "570f4111290101"),
+        ("natural", "570f4111290102"),
+        ("sleep", "570f4111290103"),
+        ("hurricane", "570f4111290104"),
+    ],
+)
+async def test_circulator_fan_pro_set_preset_mode(mode, expected_cmd):
+    fan_device = create_circulator_fan_pro_for_testing({"mode": mode})
+    await fan_device.set_preset_mode(mode)
+    fan_device._send_command.assert_awaited_once_with(expected_cmd)
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_turn_on_sends_extended_frame():
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.turn_on()
+    fan_device._send_command.assert_awaited_once_with("570f41112901")
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_turn_off_sends_extended_frame():
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.turn_off()
+    fan_device._send_command.assert_awaited_once_with("570f41112900")
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_turn_on_light():
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.turn_on_light()
+    fan_device._send_command.assert_awaited_once_with("570f960a0201")
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_turn_on_light_low():
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.turn_on_light(low=True)
+    fan_device._send_command.assert_awaited_once_with("570f960a0203")
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_turn_off_light():
+    fan_device = create_circulator_fan_pro_for_testing()
+    await fan_device.turn_off_light()
+    fan_device._send_command.assert_awaited_once_with("570f960a0200")
+
+
+@pytest.mark.parametrize(
+    ("key", "method", "expected"),
+    [
+        ("night_light_is_on", "is_night_light_on", True),
+        ("night_light_level", "get_night_light_level", 2),
+    ],
+)
+def test_circulator_fan_pro_light_state_getters(key, method, expected):
+    fan_device = create_circulator_fan_pro_for_testing({key: expected})
+    assert getattr(fan_device, method)() == expected
+
+
+def test_circulator_fan_pro_fan_modes():
+    fan_device = create_circulator_fan_pro_for_testing()
+    assert fan_device.fan_modes == ["normal", "natural", "sleep", "hurricane"]
+
+
+@pytest.mark.asyncio
+async def test_circulator_fan_pro_get_basic_info():
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    fan_device = SwitchbotCirculatorFanPro(
+        ble_device,
+        "ff",
+        "ffffffffffffffffffffffffffffffff",
+        model=SwitchbotModel.CIRCULATOR_FAN_PRO,
+    )
+    fan_device._send_command = AsyncMock(return_value=b"\x01\x02\x37\x04")
+    info = await fan_device.get_basic_info()
+    assert info == {"firmware": 5.5}
+    fan_device._send_command.assert_called_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "response",
+    [b"\x00", b"\x07", b"\x01\x02"],
+)
+async def test_circulator_fan_pro_get_basic_info_returns_none(response):
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    fan_device = SwitchbotCirculatorFanPro(
+        ble_device,
+        "ff",
+        "ffffffffffffffffffffffffffffffff",
+        model=SwitchbotModel.CIRCULATOR_FAN_PRO,
+    )
+    fan_device._send_command = AsyncMock(return_value=response)
+    assert await fan_device.get_basic_info() is None
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("basic_info", "firmware_info", "result"),
@@ -446,7 +671,10 @@ async def test_standing_fan_get_basic_info(basic_info, firmware_info, result):
     standing_fan._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
 
     info = await standing_fan.get_basic_info()
-    assert info == result | {"nightLight": 3}
+    # Standing Fan adds extra keys (charging, angles, child_lock, ...); assert the
+    # core fields are a subset rather than requiring exact equality.
+    expected = result | {"nightLight": 3}
+    assert expected.items() <= info.items()
 
 
 @pytest.mark.asyncio
@@ -534,6 +762,16 @@ async def test_standing_fan_set_vertical_oscillation_angle_int(byte_value):
 
 
 @pytest.mark.asyncio
+async def test_standing_fan_set_vertical_oscillation_angle_90():
+    """Raw-int callers may also use 90 degrees, which maps to byte 0x5F (95)."""
+    standing_fan = create_standing_fan_for_testing()
+    await standing_fan.set_vertical_oscillation_angle(90)
+    cmd = standing_fan._send_command.call_args[0][0]
+    byte_value = VerticalOscillationAngle.ANGLE_90.value
+    assert cmd == f"{fan.COMMAND_SET_OSCILLATION_PARAMS}FFFF{byte_value:02X}FF"
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("angle", [0, 45, 120, -1])
 async def test_standing_fan_set_vertical_oscillation_angle_invalid(angle):
     standing_fan = create_standing_fan_for_testing()
@@ -552,7 +790,9 @@ async def test_standing_fan_set_night_light(state):
     await standing_fan.set_night_light(state)
     standing_fan._send_command.assert_called_once()
     cmd = standing_fan._send_command.call_args[0][0]
-    assert cmd == f"{fan.COMMAND_SET_NIGHT_LIGHT}{state.value:02X}FFFF"
+    # OFF is sent as 0x00 (firmware ignores NightLightState.OFF's 0x03).
+    expected = 0 if state is NightLightState.OFF else state.value
+    assert cmd == f"{fan.COMMAND_SET_NIGHT_LIGHT}{expected:02X}FFFF"
 
 
 @pytest.mark.asyncio
@@ -562,7 +802,9 @@ async def test_standing_fan_set_night_light_int(state):
     standing_fan = create_standing_fan_for_testing()
     await standing_fan.set_night_light(state)
     cmd = standing_fan._send_command.call_args[0][0]
-    assert cmd == f"{fan.COMMAND_SET_NIGHT_LIGHT}{state:02X}FFFF"
+    # OFF (3) is sent as 0x00 (firmware ignores NightLightState.OFF's 0x03).
+    expected = 0 if state == NightLightState.OFF.value else state
+    assert cmd == f"{fan.COMMAND_SET_NIGHT_LIGHT}{expected:02X}FFFF"
 
 
 @pytest.mark.asyncio
@@ -619,3 +861,100 @@ def test_standing_fan_get_horizontal_oscillating_state():
 def test_standing_fan_get_vertical_oscillating_state():
     standing_fan = create_standing_fan_for_testing({"oscillating_vertical": True})
     assert standing_fan.get_vertical_oscillating_state() is True
+
+
+@pytest.mark.asyncio
+async def test_standing_fan_get_basic_info_extended():
+    """The Standing Fan decodes angles, charging, child lock, etc. from status."""
+    standing_fan = create_standing_fan_for_testing({"nightLight": 2})
+    # byte: 2=battery|charge, 3=status bits, 4=h angle, 6=v angle (95=90deg),
+    # 8=mode (low nibble), 9=speed, 10=sound.
+    basic_info = bytearray(b"\x01\x02\xd5\xd3\x3c\x00\x5f\x00\x32\x32\x64")
+    firmware_info = bytearray(b"\x01W\x0b\x17\x01")
+
+    async def mock_get_basic_info(arg):
+        if arg == fan.COMMAND_GET_BASIC_INFO:
+            return basic_info
+        if arg == fan.DEVICE_GET_BASIC_SETTINGS_KEY:
+            return firmware_info
+        return None
+
+    standing_fan._get_basic_info = AsyncMock(side_effect=mock_get_basic_info)
+
+    info = await standing_fan.get_basic_info()
+    assert info["battery"] == 85
+    assert info["charging"] is True
+    assert info["isOn"] is True
+    assert info["oscillating_horizontal"] is True
+    assert info["oscillating_vertical"] is False
+    assert info["oscillating_horizontal_angle"] == 60
+    assert info["oscillating_vertical_angle"] == 95
+    assert info["child_lock"] is True
+    assert info["display"] is True
+    assert info["auto_recenter"] is True
+    assert info["sound"] is True
+    assert info["mode"] == "natural"
+    assert info["speed"] == 50
+    assert info["firmware"] == 1.1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("invoke", "expected_cmd"),
+    [
+        (lambda d: d.set_child_lock(True), f"{fan.COMMAND_SET_CHILD_LOCK}01"),
+        (lambda d: d.set_child_lock(False), f"{fan.COMMAND_SET_CHILD_LOCK}02"),
+        (lambda d: d.set_display(True), f"{fan.COMMAND_SET_DISPLAY_LIGHT}01FFFF"),
+        (lambda d: d.set_display(False), f"{fan.COMMAND_SET_DISPLAY_LIGHT}02FFFF"),
+        (lambda d: d.set_sound(True), f"{fan.COMMAND_SET_SOUND}64"),
+        (lambda d: d.set_sound(False), f"{fan.COMMAND_SET_SOUND}00"),
+        (lambda d: d.set_auto_recenter(True), f"{fan.COMMAND_SET_AUTO_RECENTER}0101"),
+        (lambda d: d.set_auto_recenter(False), f"{fan.COMMAND_SET_AUTO_RECENTER}0202"),
+    ],
+)
+async def test_standing_fan_extra_setter_commands(invoke, expected_cmd):
+    standing_fan = create_standing_fan_for_testing()
+    await invoke(standing_fan)
+    standing_fan._send_command.assert_called_once()
+    assert standing_fan._send_command.call_args[0][0] == expected_cmd
+
+
+@pytest.mark.parametrize(
+    ("getter", "key", "value"),
+    [
+        (
+            lambda d: d.get_horizontal_oscillation_angle(),
+            "oscillating_horizontal_angle",
+            60,
+        ),
+        (
+            lambda d: d.get_vertical_oscillation_angle(),
+            "oscillating_vertical_angle",
+            95,
+        ),
+        (lambda d: d.is_charging(), "charging", True),
+        (lambda d: d.get_child_lock(), "child_lock", True),
+        (lambda d: d.get_display(), "display", False),
+        (lambda d: d.get_sound(), "sound", True),
+        (lambda d: d.get_auto_recenter(), "auto_recenter", True),
+    ],
+)
+def test_standing_fan_cached_getters(getter, key, value):
+    standing_fan = create_standing_fan_for_testing({key: value})
+    assert getter(standing_fan) == value
+
+
+@pytest.mark.parametrize(
+    ("battery_byte", "charging", "battery"),
+    [(0xD5, True, 85), (0x55, False, 85)],
+)
+def test_process_standing_fan_charging(battery_byte, charging, battery):
+    mfr_data = bytes([0, 1, 2, 3, 4, 5, 0x01, 0x80, battery_byte, 0x32])
+    result = process_standing_fan(None, mfr_data)
+    assert result["charging"] is charging
+    assert result["battery"] == battery
+
+
+def test_process_standing_fan_charging_short_payload():
+    assert process_standing_fan(None, None) == {}
+    assert process_standing_fan(None, b"\x00") == {}

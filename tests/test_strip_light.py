@@ -14,6 +14,7 @@ from . import (
     FLOOR_LAMP_INFO,
     PERMANENT_OUTDOOR_LIGHT_INFO,
     RGBIC_NEON_LIGHT_INFO,
+    RGBICWW_CEILING_LIGHT_INFO,
     RGBICWW_FLOOR_LAMP_INFO,
     RGBICWW_STRIP_LIGHT_INFO,
     STRIP_LIGHT_3_INFO,
@@ -28,6 +29,7 @@ ALL_LIGHT_CASES = [
     (RGBICWW_FLOOR_LAMP_INFO, light_strip.SwitchbotRgbicLight),
     (PERMANENT_OUTDOOR_LIGHT_INFO, light_strip.SwitchbotPermanentOutdoorLight),
     (RGBIC_NEON_LIGHT_INFO, light_strip.SwitchbotRgbicNeonLight),
+    (RGBICWW_CEILING_LIGHT_INFO, light_strip.SwitchbotRgbicwwCeilingLight),
 ]
 
 # RGB + color-temp devices. Excludes brightness-only lights (CWL) and
@@ -53,6 +55,7 @@ def expected_effects(device_case):
         SwitchbotModel.FLOOR_LAMP: ("christmas", "halloween", "sunset"),
         SwitchbotModel.RGBICWW_STRIP_LIGHT: ("romance", "energy", "heartbeat"),
         SwitchbotModel.RGBICWW_FLOOR_LAMP: ("romance", "energy", "heartbeat"),
+        SwitchbotModel.RGBICWW_CEILING_LIGHT: ("romance", "energy", "heartbeat"),
         SwitchbotModel.PERMANENT_OUTDOOR_LIGHT: ("romance", "energy", "heartbeat"),
     }
     return EXPECTED[adv_info.modelName]
@@ -192,6 +195,14 @@ async def test_get_basic_info_returns_none(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "device_case",
+    [
+        case
+        for case in RGB_LIGHT_CASES
+        if case[1] is not light_strip.SwitchbotRgbicwwCeilingLight
+    ],
+)
 @pytest.mark.parametrize(
     ("info_data", "result"),
     [
@@ -375,6 +386,10 @@ async def test_set_effect_normalizes_case(device_case):
         ),
         (light_strip.SwitchbotRgbicNeonLight, SwitchbotModel.RGBIC_NEON_ROPE_LIGHT),
         (light_strip.SwitchbotCandleWarmerLamp, SwitchbotModel.CANDLE_WARMER_LAMP),
+        (
+            light_strip.SwitchbotRgbicwwCeilingLight,
+            SwitchbotModel.RGBICWW_CEILING_LIGHT,
+        ),
     ],
 )
 def test_default_model_classvar(dev_cls, expected_model):
@@ -473,3 +488,120 @@ async def test_permanent_outdoor_light_color_mode(
         init_data={"color_mode": color_mode_value},
     )
     assert device.color_mode == expected_color_mode
+
+
+@pytest.mark.asyncio
+async def test_rgbicww_ceiling_light_main_sub_light_state() -> None:
+    """Test the main (warm-white) sub-light state surface."""
+    device = create_device_for_command_testing(
+        RGBICWW_CEILING_LIGHT_INFO, light_strip.SwitchbotRgbicwwCeilingLight
+    )
+    assert device.is_main_on is True
+    assert device.main_brightness == 32
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "expected_command_attr"),
+    [
+        ("turn_on_main", "_turn_on_main_command"),
+        ("turn_off_main", "_turn_off_main_command"),
+        ("turn_on_color", "_turn_on_color_command"),
+        ("turn_off_color", "_turn_off_color_command"),
+    ],
+)
+async def test_rgbicww_ceiling_light_sub_light_power(
+    method: str, expected_command_attr: str
+) -> None:
+    """Test the per-sub-light power commands."""
+    device = create_device_for_command_testing(
+        RGBICWW_CEILING_LIGHT_INFO, light_strip.SwitchbotRgbicwwCeilingLight
+    )
+    await getattr(device, method)()
+    device._send_command.assert_called_with(getattr(device, expected_command_attr))
+
+
+@pytest.mark.asyncio
+async def test_rgbicww_ceiling_light_set_main_brightness() -> None:
+    """Test setting main (warm-white) sub-light brightness."""
+    device = create_device_for_command_testing(
+        RGBICWW_CEILING_LIGHT_INFO, light_strip.SwitchbotRgbicwwCeilingLight
+    )
+    await device.set_main_brightness(75)
+    device._send_command.assert_called_with(
+        device._set_main_brightness_command.format("4B")
+    )
+
+
+@pytest.mark.asyncio
+async def test_rgbicww_ceiling_light_set_main_color_temp() -> None:
+    """Test setting main (warm-white) sub-light color temperature."""
+    device = create_device_for_command_testing(
+        RGBICWW_CEILING_LIGHT_INFO, light_strip.SwitchbotRgbicwwCeilingLight
+    )
+    await device.set_main_color_temp(3000)
+    device._send_command.assert_called_with(
+        device._set_main_color_temp_command.format("0BB8")
+    )
+
+
+@pytest.mark.asyncio
+async def test_rgbicww_ceiling_light_color_modes() -> None:
+    """Test the supported color modes set."""
+    device = create_device_for_command_testing(
+        RGBICWW_CEILING_LIGHT_INFO, light_strip.SwitchbotRgbicwwCeilingLight
+    )
+    assert device.color_modes == {ColorMode.RGB, ColorMode.COLOR_TEMP}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("color_mode_value", "expected_color_mode"),
+    [
+        (1, ColorMode.EFFECT),  # SEGMENTED
+        (2, ColorMode.RGB),  # COLOR
+        (3, ColorMode.EFFECT),  # SCENE
+        (4, ColorMode.EFFECT),  # MUSIC
+        (5, ColorMode.EFFECT),  # CONTROLLER
+        (6, ColorMode.COLOR_TEMP),  # WARMWHITE
+        (7, ColorMode.EFFECT),  # EFFECT
+        (10, ColorMode.OFF),  # UNKNOWN
+    ],
+)
+async def test_rgbicww_ceiling_light_color_mode(
+    color_mode_value, expected_color_mode
+) -> None:
+    """Test color_mode mapping for the ceiling light."""
+    device = create_device_for_command_testing(
+        RGBICWW_CEILING_LIGHT_INFO,
+        light_strip.SwitchbotRgbicwwCeilingLight,
+        init_data={"color_mode": color_mode_value},
+    )
+    assert device.color_mode == expected_color_mode
+
+
+@pytest.mark.asyncio
+async def test_rgbicww_ceiling_light_get_basic_info_with_main_state() -> None:
+    """
+    Test that the ceiling light's get_basic_info reads RGB over GATT.
+
+    Power/brightness/mode/color-temp come from the advertisement, not GATT,
+    so they are not part of the get_basic_info result.
+    """
+    device = create_device_for_command_testing(
+        RGBICWW_CEILING_LIGHT_INFO, light_strip.SwitchbotRgbicwwCeilingLight
+    )
+    device._send_command = AsyncMock(
+        side_effect=[b"\x01\x01\n", b"\x01\x80NK\xff:\xa0\x19d\xff\x02"]
+    )
+    device._check_command_result = MagicMock(side_effect=[True, True])
+
+    info = await device.get_basic_info()
+
+    assert info["r"] == 75
+    assert info["g"] == 255
+    assert info["b"] == 58
+    assert info["firmware"] == 1.0
+    # Power state must not be sourced from GATT (advertisement is authoritative).
+    assert "isOn" not in info
+    assert "main_isOn" not in info

@@ -13,6 +13,7 @@ from switchbot.adv_parser import (
     parse_advertisement_data,
     populate_model_to_mac_cache,
 )
+from switchbot.adv_parsers.fan import process_circulator_fan_pro
 from switchbot.const.lock import LockStatus
 from switchbot.models import SwitchBotAdvertisement
 
@@ -1513,9 +1514,16 @@ def test_leak_passive():
     assert result == SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
-            "data": {},
+            "data": {
+                "leak": False,
+                "tampered": False,
+                "battery": 78,
+                "low_battery": False,
+            },
             "isEncrypted": False,
             "model": "&",
+            "modelFriendlyName": "Leak Detector",
+            "modelName": SwitchbotModel.LEAK,
             "rawAdvData": None,
         },
         device=ble_device,
@@ -1702,6 +1710,53 @@ def test_remote_passive() -> None:
         rssi=-97,
         active=False,
     )
+
+
+def test_universal_remote_active() -> None:
+    """Test Universal Remote active scan parsing."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x00\x50\x00\x00\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"'\x00"},
+        service_uuids=["cba20d00-224d-11e6-9fb8-0002a5d5c51b"],
+        rssi=-66,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "data": {
+                "battery": 80,
+                "charging": False,
+            },
+            "isEncrypted": False,
+            "model": "'",
+            "modelFriendlyName": "Universal Remote",
+            "modelName": SwitchbotModel.UNIVERSAL_REMOTE,
+            "rawAdvData": b"'\x00",
+        },
+        device=ble_device,
+        rssi=-66,
+        active=True,
+    )
+
+
+def test_universal_remote_charging() -> None:
+    """Test Universal Remote reports the charging bit from byte 14."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x00\xb7\x00\x00\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"'\x00"},
+        service_uuids=["cba20d00-224d-11e6-9fb8-0002a5d5c51b"],
+        rssi=-66,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result is not None
+    assert result.data["data"] == {"battery": 55, "charging": True}
 
 
 def test_parse_advertisement_data_hubmini_matter():
@@ -1907,6 +1962,98 @@ def test_circulator_fan_passive() -> None:
         rssi=-97,
         active=False,
     )
+
+
+def test_circulator_fan_pro_active() -> None:
+    """
+    Test parsing Circulator Fan Pro (W1160) with active data.
+
+    Real W1160 capture (fan on, light off, no swing). The Pro shares the W1071
+    Modern Ceiling Fan broadcast layout (battery at offset 7, fan state at 8,
+    speed at 9, CCT light at 10, color temp at 11-12) and is routed by its own
+    4-byte service-data suffix (0x00 0x11 0xB3 0x40).
+    """
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a\xd9\x98\x0b\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00Y\x00\x11\xb3@"
+        },
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.CIRCULATOR_FAN_PRO
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b"\x00\x00Y\x00\x11\xb3@",
+            "data": {
+                "sequence_number": 154,
+                "isOn": True,
+                "mode": "normal",
+                "night_light_is_on": False,
+                "night_light_level": 0,
+                "oscillating": False,
+                "oscillating_horizontal": False,
+                "oscillating_vertical": False,
+                "battery": 89,
+                "charging": True,
+                "speed": 11,
+            },
+            "isEncrypted": False,
+            "model": b"\x00\x11\xb3@",
+            "modelFriendlyName": "Circulator Fan Pro",
+            "modelName": SwitchbotModel.CIRCULATOR_FAN_PRO,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+def test_circulator_fan_pro_routes_by_service_data_suffix() -> None:
+    """The Pro is identified by its service-data suffix without an explicit model."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a\xd9\x98\x0b\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00Y\x00\x11\xb3@"
+        },
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result is not None
+    assert result.data["modelName"] == SwitchbotModel.CIRCULATOR_FAN_PRO
+    assert result.data["modelFriendlyName"] == "Circulator Fan Pro"
+
+
+@pytest.mark.parametrize(
+    ("mfr_data", "is_on", "level"),
+    [
+        # state byte (offset 8): 0x98 off, 0x94 on/high (L1), 0x9c on/low (L2)
+        (b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a\xd9\x98\x0b\x00\x00\x00\x00\x00\x00", False, 0),
+        (b"\xb0\xe9\xfe\xfd\xc0\xb1\x39\x64\x94\x0b\x00\x00\x00\x00\x00\x00", True, 1),
+        (b"\xb0\xe9\xfe\xfd\xc0\xb1\x3b\xe4\x9c\x0b\x00\x00\x00\x00\x00\x00", True, 2),
+    ],
+)
+def test_circulator_fan_pro_night_light(
+    mfr_data: bytes, is_on: bool, level: int
+) -> None:
+    """The Pro night light is parsed from the fan-state byte (bit2 on, bit3 level)."""
+    data = process_circulator_fan_pro(None, mfr_data)
+    assert data["night_light_is_on"] is is_on
+    assert data["night_light_level"] == level
+
+
+@pytest.mark.parametrize("mfr_data", [None, b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a"])
+def test_circulator_fan_pro_short_data(mfr_data: bytes | None) -> None:
+    """Short or missing manufacturer data yields an empty parse."""
+    assert process_circulator_fan_pro(None, mfr_data) == {}
 
 
 def test_circulator_fan_with_empty_data() -> None:
@@ -2867,6 +3014,56 @@ def test_hub3_with_empty_data() -> None:
             "Lock Pro Wifi",
             SwitchbotModel.LOCK_PRO_WIFI,
         ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x11\x22\x33\x2a\x88\x18\x64\x00\x91",
+            b"\x00\x80\x64\x00\x11\x9f\xb8",
+            {
+                "sequence_number": 42,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": True,
+                "door_open_from_secondary_lock": False,
+                "double_lock_mode": False,
+                "is_secondary_lock": False,
+                "manual_unlock_linkage": False,
+                "unclosed_alarm": True,
+                "unlocked_alarm": False,
+                "auto_lock_paused": True,
+                "night_latch": False,
+                "power_alarm": True,
+                "battery_status": 1,
+            },
+            b"\x00\x11\x9f\xb8",
+            "Lock Ultra Max",
+            SwitchbotModel.LOCK_ULTRA_MAX,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x44\x55\x66\x2b\x10\x00\x50\x00\x00",
+            b"\x00\x80\x50\x01\x11\x9f\xb8",
+            {
+                "sequence_number": 43,
+                "battery": 80,
+                "calibration": False,
+                "status": LockStatus.LOCKING,
+                "update_from_secondary_lock": False,
+                "door_open": False,
+                "door_open_from_secondary_lock": False,
+                "double_lock_mode": False,
+                "is_secondary_lock": False,
+                "manual_unlock_linkage": False,
+                "unclosed_alarm": False,
+                "unlocked_alarm": False,
+                "auto_lock_paused": False,
+                "night_latch": False,
+                "power_alarm": False,
+                "battery_status": 0,
+            },
+            b"\x01\x11\x9f\xb8",
+            "Lock Ultra Max",
+            SwitchbotModel.LOCK_ULTRA_MAX,
+        ),
     ],
 )
 def test_lock_active(test_case: AdvTestCase) -> None:
@@ -3053,6 +3250,31 @@ def test_lock_active(test_case: AdvTestCase) -> None:
             "Lock Pro Wifi",
             SwitchbotModel.LOCK_PRO_WIFI,
         ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x11\x22\x33\x2a\x88\x18\x64\x00\x91",
+            b"\x00\x80\x64\x00\x11\x9f\xb8",
+            {
+                "sequence_number": 42,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": True,
+                "door_open_from_secondary_lock": False,
+                "double_lock_mode": False,
+                "is_secondary_lock": False,
+                "manual_unlock_linkage": False,
+                "unclosed_alarm": True,
+                "unlocked_alarm": False,
+                "auto_lock_paused": True,
+                "night_latch": False,
+                "power_alarm": True,
+                "battery_status": 1,
+            },
+            b"\x00\x11\x9f\xb8",
+            "Lock Ultra Max",
+            SwitchbotModel.LOCK_ULTRA_MAX,
+        ),
     ],
 )
 def test_lock_passive(test_case: AdvTestCase) -> None:
@@ -3137,6 +3359,14 @@ def test_lock_passive(test_case: AdvTestCase) -> None:
             b"\x00\x10\xff\x90",
             "Lock Pro Wifi",
             SwitchbotModel.LOCK_PRO_WIFI,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x80\x64\x00\x11\x9f\xb8",
+            {},
+            b"\x00\x11\x9f\xb8",
+            "Lock Ultra Max",
+            SwitchbotModel.LOCK_ULTRA_MAX,
         ),
     ],
 )
@@ -3702,6 +3932,24 @@ def test_humidifer_with_empty_data() -> None:
             SwitchbotModel.RGBIC_NEON_WIRE_ROPE_LIGHT,
         ),
         AdvTestCase(
+            b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00\xa0',
+            b"\x00\x00\x00\x00\x11\xbb\x10",
+            {
+                "sequence_number": 12,
+                "isOn": True,
+                "brightness": 30,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 2,
+                "cw": 4410,
+                "main_isOn": True,
+                "main_brightness": 32,
+            },
+            b"\x00\x11\xbb\x10",
+            "RGBICWW Ceiling Light",
+            SwitchbotModel.RGBICWW_CEILING_LIGHT,
+        ),
+        AdvTestCase(
             b"\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15",
             b"\x00\x00M\x00\x10\xfb\xa8",
             {
@@ -3729,6 +3977,12 @@ def test_humidifer_with_empty_data() -> None:
                 "motion_detected": True,
                 "temp_alarm": 0,
                 "temperature": 25.5,
+                "on_keystate": 0,
+                "off_keystate": 0,
+                "on_keystate_mode": 0,
+                "on_keystate_counter": 0,
+                "off_keystate_mode": 0,
+                "off_keystate_counter": 0,
             },
             b"\x00\x10\xf3\xd8",
             "Climate Panel",
@@ -3747,6 +4001,36 @@ def test_humidifer_with_empty_data() -> None:
                 "motion_detected": True,
                 "temp_alarm": 0,
                 "temperature": 25.9,
+                "on_keystate": 0,
+                "off_keystate": 0,
+                "on_keystate_mode": 0,
+                "on_keystate_counter": 0,
+                "off_keystate_mode": 0,
+                "off_keystate_counter": 0,
+            },
+            b"\x00\x10\xf3\xd8",
+            "Climate Panel",
+            SwitchbotModel.CLIMATE_PANEL,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x84\x38\x05\x06\x14\x05\x99\x2d\x00\x00\x25\x62\xd4\x00\x0c\x04\x00",
+            b"\x00 _\x00\x10\xf3\xd8@",
+            {
+                "battery": 20,
+                "humidity": 45,
+                "sequence_number": 6,
+                "humidity_alarm": 0,
+                "isOn": False,
+                "is_light": True,
+                "motion_detected": True,
+                "temp_alarm": 0,
+                "temperature": 25.5,
+                "on_keystate": 37,
+                "off_keystate": 98,
+                "on_keystate_mode": 1,
+                "on_keystate_counter": 5,
+                "off_keystate_mode": 3,
+                "off_keystate_counter": 2,
             },
             b"\x00\x10\xf3\xd8",
             "Climate Panel",
@@ -4136,6 +4420,24 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.RGBIC_NEON_WIRE_ROPE_LIGHT,
         ),
         AdvTestCase(
+            b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00\xa0',
+            None,
+            {
+                "sequence_number": 12,
+                "isOn": True,
+                "brightness": 30,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 2,
+                "cw": 4410,
+                "main_isOn": True,
+                "main_brightness": 32,
+            },
+            b"\x00\x11\xbb\x10",
+            "RGBICWW Ceiling Light",
+            SwitchbotModel.RGBICWW_CEILING_LIGHT,
+        ),
+        AdvTestCase(
             b"\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15",
             None,
             {
@@ -4163,6 +4465,12 @@ def test_adv_active(test_case: AdvTestCase) -> None:
                 "motion_detected": True,
                 "temp_alarm": 0,
                 "temperature": 26.6,
+                "on_keystate": 0,
+                "off_keystate": 0,
+                "on_keystate_mode": 0,
+                "on_keystate_counter": 0,
+                "off_keystate_mode": 0,
+                "off_keystate_counter": 0,
             },
             b"\x00\x10\xf3\xd8",
             "Climate Panel",
@@ -4433,6 +4741,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
             b"\x00\x10\xd0\xb4",
             "RGBICWW Floor Lamp",
             SwitchbotModel.RGBICWW_FLOOR_LAMP,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x00\x00\x00\x11\xbb\x10",
+            {},
+            b"\x00\x11\xbb\x10",
+            "RGBICWW Ceiling Light",
+            SwitchbotModel.RGBICWW_CEILING_LIGHT,
         ),
         AdvTestCase(
             None,
