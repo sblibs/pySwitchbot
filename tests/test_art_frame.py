@@ -133,6 +133,7 @@ async def test_next_image(
     current_index: int, all_images_index: list[int], expected_cmd: str
 ) -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
+    device._get_current_image_index = AsyncMock()
 
     with (
         patch.object(device, "get_current_image_index", return_value=current_index),
@@ -157,6 +158,7 @@ async def test_prev_image(
     current_index: int, all_images_index: list[int], expected_cmd: str
 ) -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
+    device._get_current_image_index = AsyncMock()
 
     with (
         patch.object(device, "get_current_image_index", return_value=current_index),
@@ -171,6 +173,7 @@ async def test_prev_image(
 @pytest.mark.asyncio
 async def test_set_image_with_invalid_index() -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
+    device._get_current_image_index = AsyncMock()
 
     with (
         patch.object(device, "get_total_images", return_value=3),
@@ -185,6 +188,7 @@ async def test_set_image_with_invalid_index() -> None:
 @pytest.mark.asyncio
 async def test_set_image_with_valid_index() -> None:
     device = create_device_for_command_testing(ART_FRAME_INFO)
+    device._get_current_image_index = AsyncMock()
 
     with (
         patch.object(device, "get_total_images", return_value=3),

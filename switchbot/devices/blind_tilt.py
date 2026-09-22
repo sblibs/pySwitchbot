@@ -111,6 +111,8 @@ class SwitchbotBlindTilt(SwitchbotBaseCover, SwitchbotSequenceDevice):
         """Get device basic settings."""
         if not (_data := await self._get_basic_info()):
             return None
+        if len(_data) < 8:
+            return None
 
         _tilt = max(min(_data[6], 100), 0)
         _moving = bool(_data[5] & 0b00000011)
@@ -150,7 +152,7 @@ class SwitchbotBlindTilt(SwitchbotBaseCover, SwitchbotSequenceDevice):
             _LOGGER.error("%s: Unsuccessful, no result from device", self.name)
             return None
 
-        if _data in (b"\x07", b"\x00"):
+        if len(_data) < 2:
             _LOGGER.error("%s: Unsuccessful, please try again", self.name)
             return None
 

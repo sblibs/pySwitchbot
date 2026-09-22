@@ -268,6 +268,8 @@ class SwitchbotLightStrip(SwitchbotSequenceBaseLight):
             return None
 
         _version_info, _data = res
+        if len(_data) < 11 or len(_version_info) < 3:
+            return None
         self._state["r"] = _data[3]
         self._state["g"] = _data[4]
         self._state["b"] = _data[5]
@@ -321,6 +323,8 @@ class SwitchbotCandleWarmerLamp(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         ):
             return None
         _version_info, _data = res
+        if len(_data) < 3 or len(_version_info) < 3:
+            return None
         return {
             "isOn": bool(_data[1] & 0b10000000),
             "brightness": _data[2] & 0b01111111,
