@@ -9,6 +9,7 @@ from .device import (
     DEVICE_SET_EXTENDED_KEY,
     DEVICE_SET_MODE_KEY,
     SwitchbotDeviceOverrideStateDuringConnection,
+    SwitchbotOperationError,
     update_after_operation,
 )
 
@@ -90,6 +91,18 @@ class Switchbot(SwitchbotDeviceOverrideStateDuringConnection):
         result = await self._send_command(DEVICE_SET_MODE_KEY + strength_key + mode_key)
         return self._check_command_result(result, 0, {1})
 
+    async def set_inverse_direction(self, inverse: bool) -> bool:
+        """Set the Bot's inverse direction while preserving its other mode settings."""
+        if not (settings := await self.get_basic_info()):
+            raise SwitchbotOperationError(
+                f"{self.name}: Unable to get current Bot mode settings"
+            )
+        return await self.set_switch_mode(
+            switch_mode=settings["switchMode"],
+            strength=settings["strength"],
+            inverse=inverse,
+        )
+
     @update_after_operation
     async def set_long_press(self, duration: int = 0) -> bool:
         """Set bot long press duration."""
@@ -121,3 +134,7 @@ class Switchbot(SwitchbotDeviceOverrideStateDuringConnection):
         if self._inverse:
             return not value
         return value
+
+    def inverse_direction(self) -> bool | None:
+        """Return the cached inverse direction setting."""
+        return self._get_adv_value("inverseDirection")
