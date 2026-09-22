@@ -907,6 +907,7 @@ async def test_get_quick_key():
         retry=device._retry_count,
     )
     assert result == {
+        "raw": 0xCA,
         "enabled": True,
         "double_press": False,
         "function": QuickKeyFunction.LOCK_AND_UNLOCK,
@@ -980,11 +981,50 @@ async def test_get_quick_key_short_response():
 
 @pytest.mark.asyncio
 async def test_get_quick_key_unknown_function():
-    """An undefined 2-bit function value (0b11) returns None instead of raising."""
+    """An undefined 2-bit function value keeps the bits that are unambiguous."""
     device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
     # 0xcb = enabled, single press, function bits 0b11 (undefined)
     with patch.object(device, "_send_command", return_value=b"\x01\xcb"):
-        assert await device.get_quick_key() is None
+        assert await device.get_quick_key() == {
+            "raw": 0xCB,
+            "enabled": True,
+            "double_press": False,
+            "function": None,
+        }
+
+
+@pytest.mark.asyncio
+async def test_get_quick_key_high_bits_are_not_validated():
+    """A lock reporting only bit 7 parses the same as one reporting bits 7-6."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    # 0x8a has the same low nibble as the 0xca above, with bit 6 clear. Both were
+    # reported by real Lock Ultras; the high bits are status flags, not settings.
+    with patch.object(
+        device, "_send_command", return_value=b"\x01\x8a\x00\x00\x00\x00"
+    ):
+        assert await device.get_quick_key() == {
+            "raw": 0x8A,
+            "enabled": True,
+            "double_press": False,
+            "function": QuickKeyFunction.LOCK_AND_UNLOCK,
+        }
+
+
+@pytest.mark.asyncio
+async def test_set_quick_key_short_echo():
+    """A success status with a truncated echo returns False."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(device, "_send_command", return_value=b"\x01"):
+        assert await device.set_quick_key(enabled=True) is False
+
+
+@pytest.mark.asyncio
+async def test_set_quick_key_echo_mismatch():
+    """The lock acknowledging but echoing different bits returns False."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    # asked for enabled (0x08 set), lock echoes it clear
+    with patch.object(device, "_send_command", return_value=b"\x01\xc2"):
+        assert await device.set_quick_key(enabled=True) is False
 
 
 @pytest.mark.asyncio
