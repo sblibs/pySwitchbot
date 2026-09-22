@@ -11,7 +11,7 @@ from .test_adv_parser import generate_ble_device
 
 def create_device_for_command_testing(position=50, calibration=True):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    base_cover_device = base_cover.SwitchbotBaseCover(False, ble_device)
+    base_cover_device = base_cover.SwitchbotBaseCover(ble_device, reverse=False)
     base_cover_device.update_from_advertisement(
         make_advertisement_data(ble_device, True, position, calibration)
     )
@@ -50,7 +50,7 @@ def make_advertisement_data(
 @pytest.mark.asyncio
 async def test_send_multiple_commands():
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    base_cover_device = base_cover.SwitchbotBaseCover(False, ble_device)
+    base_cover_device = base_cover.SwitchbotBaseCover(ble_device, reverse=False)
     base_cover_device.update_from_advertisement(
         make_advertisement_data(ble_device, True, 50, True)
     )
@@ -149,3 +149,27 @@ async def test_get_extended_info_adv_returns_device1_charge_states(data_value, r
     )
     ext_result = await base_cover_device.get_extended_info_adv()
     assert ext_result["device1"]["stateOfCharge"] == result
+
+
+def test_reverse_accepts_legacy_positional_arg():
+    """Legacy callers passed ``reverse`` as the first positional arg."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    device = base_cover.SwitchbotBaseCover(True, ble_device)
+    assert device.is_reversed() is True
+    assert device._device is ble_device
+
+
+def test_reverse_accepts_kwarg():
+    """Modern callers pass ``reverse`` as a kwarg (required for cooperative MRO)."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    device = base_cover.SwitchbotBaseCover(ble_device, reverse=True)
+    assert device.is_reversed() is True
+    assert device._device is ble_device
+
+
+def test_reverse_defaults_to_false():
+    """When ``reverse`` is omitted entirely it defaults to False."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    device = base_cover.SwitchbotBaseCover(ble_device)
+    assert device.is_reversed() is False
+    assert device._device is ble_device
