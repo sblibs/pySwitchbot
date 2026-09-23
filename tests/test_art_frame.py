@@ -226,9 +226,7 @@ async def test_random_image_with_none_current() -> None:
     ):
         await device.random_image()
         sent = device._send_command.await_args.args[0]
-        assert sent in {
-            COMMAND_SET_IMAGE.format(f"{idx:02X}") for idx in (1, 100)
-        }
+        assert sent in {COMMAND_SET_IMAGE.format(f"{idx:02X}") for idx in (1, 100)}
 
 
 @pytest.mark.asyncio
