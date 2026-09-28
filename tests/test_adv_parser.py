@@ -5083,7 +5083,7 @@ def test_weather_station_empty_data() -> None:
 
 
 def test_weather_station_positive_battery_and_empty_data() -> None:
-    """Test Weather Station with postive battery and empty/zero data returns empty dict."""
+    """Test Weather Station with positive battery and empty/zero data returns empty dict."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     adv_data = generate_advertisement_data(
         manufacturer_data={
