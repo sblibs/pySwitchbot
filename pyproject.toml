@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "PySwitchbot"
-version = "2.9.0"
+version = "2.9.1"
 description = "A library to communicate with Switchbot"
 authors = ["Daniel Hjelseth Hoyer"]
 license = "MIT"

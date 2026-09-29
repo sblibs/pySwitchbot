@@ -2,6 +2,27 @@
 
 <!-- version list -->
 
+## v2.9.1 (2026-09-29)
+
+### Bug Fixes
+
+- Add support for zero data with non-zero battery from Meter
+  ([#571](https://github.com/sblibs/pySwitchbot/pull/571),
+  [`c8535bf`](https://github.com/sblibs/pySwitchbot/commit/c8535bf312b4b1543a5d4a13e613cf238eedcd98))
+
+### Chores
+
+- **deps**: Bump bleak-retry-connector from 4.7.0 to 4.7.1
+  ([#569](https://github.com/sblibs/pySwitchbot/pull/569),
+  [`d5633d4`](https://github.com/sblibs/pySwitchbot/commit/d5633d40e7dadab1dd2bf0e9f06b7fdecf337b4b))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#570](https://github.com/sblibs/pySwitchbot/pull/570),
+  [`47d50a3`](https://github.com/sblibs/pySwitchbot/commit/47d50a393e8ba8fadf4a7ddf4ca5b9a0007f9d66))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#567](https://github.com/sblibs/pySwitchbot/pull/567),
+  [`0f2f49b`](https://github.com/sblibs/pySwitchbot/commit/0f2f49b5eb6f57bf8510953c004dca08a450fa58))
+
+
 ## v2.9.0 (2026-09-15)
 
 ### Bug Fixes
