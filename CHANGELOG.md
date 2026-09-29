@@ -2,6 +2,29 @@
 
 <!-- version list -->
 
+## v2.10.0 (2026-09-29)
+
+### Bug Fixes
+
+- **art_frame**: Raise RuntimeError when no image differs from current
+  ([#568](https://github.com/sblibs/pySwitchbot/pull/568),
+  [`b8b871e`](https://github.com/sblibs/pySwitchbot/commit/b8b871e5a7cb893a40adf69206d0b862565df848))
+
+- **art_frame**: Use secrets.choice to satisfy ruff S311
+  ([#568](https://github.com/sblibs/pySwitchbot/pull/568),
+  [`b8b871e`](https://github.com/sblibs/pySwitchbot/commit/b8b871e5a7cb893a40adf69206d0b862565df848))
+
+### Chores
+
+- **pre-commit.ci**: Auto fixes ([#568](https://github.com/sblibs/pySwitchbot/pull/568),
+  [`b8b871e`](https://github.com/sblibs/pySwitchbot/commit/b8b871e5a7cb893a40adf69206d0b862565df848))
+
+### Features
+
+- **art_frame**: Add random_image method ([#568](https://github.com/sblibs/pySwitchbot/pull/568),
+  [`b8b871e`](https://github.com/sblibs/pySwitchbot/commit/b8b871e5a7cb893a40adf69206d0b862565df848))
+
+
 ## v2.9.1 (2026-09-29)
 
 ### Bug Fixes
