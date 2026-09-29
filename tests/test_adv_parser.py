@@ -937,6 +937,30 @@ def test_wosensor_active_zero_data():
     )
 
 
+def test_wosensor_active_positive_battery_and_zero_data():
+    """Test parsing wosensor with active data and positive battery but all other values are zero."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"T\x00P\x00\x00\x00"},
+        tx_power=-127,
+        rssi=-50,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "data": {},
+            "isEncrypted": False,
+            "model": "T",
+            "rawAdvData": b"T\x00P\x00\x00\x00",
+        },
+        device=ble_device,
+        rssi=-50,
+        active=True,
+    )
+
+
 def test_wohub2_passive_and_active():
     """Test parsing wosensor as passive with active data as well."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
@@ -5047,6 +5071,23 @@ def test_weather_station_empty_data() -> None:
     adv_data = generate_advertisement_data(
         manufacturer_data={
             2409: b"\xaa\xbb\xcc\xdd\xee\xff\x01\x00\x00\x80\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00\x00\x00\x10\x53\xb0"
+        },
+        rssi=-67,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result is not None
+    assert result.data["data"] == {}
+
+
+def test_weather_station_positive_battery_and_empty_data() -> None:
+    """Test Weather Station with positive battery and empty/zero data returns empty dict."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x01P\x00\x80\x00\x00\x00\x00\x00\x00"
         },
         service_data={
             "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00\x00\x00\x10\x53\xb0"
