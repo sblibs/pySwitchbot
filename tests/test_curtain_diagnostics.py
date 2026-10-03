@@ -237,3 +237,15 @@ async def test_speed_command_bytes(reverse, speed):
     )
     assert await device.stop()
     device._send_multiple_commands.assert_awaited_with(["570f45010001", "570f450100ff"])
+
+
+@pytest.mark.asyncio
+async def test_invalid_chain_percentages_remain_unknown():
+    device, replies = diagnostic_device()
+    replies[CURTAIN_EXT_CHAIN_INFO_KEY] = bytes([1, 0, 0, 2, 127, 127, 127, 127])
+    info = await device.get_extended_chain_info()
+    assert info["chainLength"] == 2
+    for slot in ("device0", "device1"):
+        assert info[slot]["position"] is None
+        assert info[slot]["battery"] is None
+    assert "chain" in device.diagnostic_timestamps
