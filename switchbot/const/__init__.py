@@ -5,6 +5,7 @@ from __future__ import annotations
 from ..enum import StrEnum
 from .air_purifier import AirPurifierMode, AirQualityLevel
 from .climate import ClimateAction, ClimateMode, SmartThermostatRadiatorMode
+from .curtain import CurtainChargingState
 from .evaporative_humidifier import (
     HumidifierAction,
     HumidifierMode,
@@ -142,6 +143,7 @@ __all__ = [
     "ClimateAction",
     "ClimateMode",
     "ColorMode",
+    "CurtainChargingState",
     "FanMode",
     "HorizontalOscillationAngle",
     "HumidifierAction",

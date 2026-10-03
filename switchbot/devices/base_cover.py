@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import logging
+import time
 from abc import abstractmethod
 from typing import Any
 
+from ..const.curtain import CURTAIN_CHARGING_STATES, CurtainChargingState
 from .device import REQ_HEADER, SwitchbotDevice, update_after_operation
 
 # Cover keys
@@ -40,6 +42,7 @@ class SwitchbotBaseCover(SwitchbotDevice):
         self._settings: dict[str, Any] = {}
         self.ext_info_sum: dict[str, Any] = {}
         self.ext_info_adv: dict[str, Any] = {}
+        self.diagnostic_timestamps: dict[str, float] = {}
         self._is_opening: bool = False
         self._is_closing: bool = False
 
@@ -74,38 +77,42 @@ class SwitchbotBaseCover(SwitchbotDevice):
     async def get_extended_info_adv(self) -> dict[str, Any] | None:
         """Get advance page info for device chain."""
         _data = await self._send_command(key=COVER_EXT_ADV_KEY)
-        if not _data:
-            _LOGGER.error("%s: Unsuccessful, no result from device", self.name)
+        if not self._valid_diagnostic_response(_data, 7):
             return None
 
-        if _data in (b"\x07", b"\x00"):
-            _LOGGER.error("%s: Unsuccessful, please try again", self.name)
-            return None
-
-        _state_of_charge = [
-            "not_charging",
-            "charging_by_adapter",
-            "charging_by_solar",
-            "fully_charged",
-            "solar_not_charging",
-            "charging_error",
-        ]
-
-        self.ext_info_adv["device0"] = {
-            "battery": _data[1],
-            "firmware": _data[2] / 10.0,
-            "stateOfCharge": _state_of_charge[_data[3]],
-        }
-
-        # If grouped curtain device present.
-        if _data[4]:
-            self.ext_info_adv["device1"] = {
-                "battery": _data[4],
-                "firmware": _data[5] / 10.0,
-                "stateOfCharge": _state_of_charge[_data[6]],
+        snapshot = {}
+        for slot in range(2 if self._get_chain_length() == 2 else 1):
+            offset = 1 + slot * 3
+            raw_state = _data[offset + 2]
+            charging_state = CURTAIN_CHARGING_STATES.get(raw_state)
+            legacy_state = {
+                CurtainChargingState.ADAPTER_FULL: "fully_charged",
+                CurtainChargingState.SOLAR_FULL: "fully_charged",
+                CurtainChargingState.HARDWARE_ERROR: "charging_error",
+            }.get(charging_state, charging_state)
+            snapshot[f"device{slot}"] = {
+                "battery": _data[offset] if _data[offset] <= 100 else None,
+                "firmware": _data[offset + 1] / 10.0,
+                "stateOfCharge": str(legacy_state)
+                if legacy_state is not None
+                else None,
+                "chargingState": charging_state,
+                "chargingStateRaw": raw_state,
             }
-
+        self.ext_info_adv = snapshot
+        self.diagnostic_timestamps["advanced"] = time.monotonic()
         return self.ext_info_adv
+
+    def _get_chain_length(self) -> int | None:
+        return self.parsed_data.get("chainLength", self.parsed_data.get("deviceChain"))
+
+    @staticmethod
+    def _valid_diagnostic_response(data: bytes | None, minimum_length: int) -> bool:
+        return (
+            isinstance(data, (bytes, bytearray))
+            and len(data) >= minimum_length
+            and data[0] == 1
+        )
 
     def get_light_level(self) -> Any:
         """Return cached light level."""
