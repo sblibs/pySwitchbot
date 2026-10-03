@@ -141,7 +141,7 @@ async def test_device_active_not_in_motion(reverse_mode):
         make_advertisement_data(ble_device, False, 0)
     )
 
-    basic_info = bytes([0, 0, 0, 0, 0, 0, 100, 0])
+    basic_info = bytes([1, 0, 0, 0, 0, 0, 100, 0])
 
     async def custom_implementation():
         return basic_info
@@ -164,7 +164,7 @@ async def test_device_active_opening(reverse_mode):
         make_advertisement_data(ble_device, True, 0)
     )
 
-    basic_info = bytes([0, 0, 0, 0, 0, 67, 10, 0])
+    basic_info = bytes([1, 0, 0, 0, 0, 67, 10, 0])
 
     async def custom_implementation():
         return basic_info
@@ -187,7 +187,7 @@ async def test_device_active_closing(reverse_mode):
         make_advertisement_data(ble_device, True, 100)
     )
 
-    basic_info = bytes([0, 0, 0, 0, 0, 67, 90, 0])
+    basic_info = bytes([1, 0, 0, 0, 0, 67, 90, 0])
 
     async def custom_implementation():
         return basic_info
@@ -210,7 +210,7 @@ async def test_device_active_opening_then_stop(reverse_mode):
         make_advertisement_data(ble_device, True, 0)
     )
 
-    basic_info = bytes([0, 0, 0, 0, 0, 67, 10, 0])
+    basic_info = bytes([1, 0, 0, 0, 0, 67, 10, 0])
 
     async def custom_implementation():
         return basic_info
@@ -219,7 +219,7 @@ async def test_device_active_opening_then_stop(reverse_mode):
 
     await curtain_device.get_basic_info()
 
-    basic_info = bytes([0, 0, 0, 0, 0, 0, 10, 0])
+    basic_info = bytes([1, 0, 0, 0, 0, 0, 10, 0])
 
     await curtain_device.get_basic_info()
 
@@ -237,7 +237,7 @@ async def test_device_active_closing_then_stop(reverse_mode):
         make_advertisement_data(ble_device, True, 100)
     )
 
-    basic_info = bytes([0, 0, 0, 0, 0, 67, 90, 0])
+    basic_info = bytes([1, 0, 0, 0, 0, 67, 90, 0])
 
     async def custom_implementation():
         return basic_info
@@ -246,7 +246,7 @@ async def test_device_active_closing_then_stop(reverse_mode):
 
     await curtain_device.get_basic_info()
 
-    basic_info = bytes([0, 0, 0, 0, 0, 0, 90, 0])
+    basic_info = bytes([1, 0, 0, 0, 0, 0, 90, 0])
 
     await curtain_device.get_basic_info()
 
@@ -271,10 +271,10 @@ async def test_get_basic_info_returns_none_when_no_data():
     ("data", "result"),
     [
         (
-            bytes([0, 1, 10, 2, 255, 255, 50, 4]),
+            bytes([1, 1, 10, 2, 255, 255, 50, 4]),
             [1, 1, 2, "right_to_left", 1, 1, 50, 4],
         ),
-        (bytes([0, 1, 10, 2, 0, 0, 50, 4]), [1, 1, 2, "left_to_right", 0, 0, 50, 4]),
+        (bytes([1, 1, 10, 2, 0, 0, 50, 4]), [1, 1, 2, "left_to_right", 0, 0, 50, 4]),
     ],
 )
 async def test_get_basic_info(data, result):
@@ -375,8 +375,8 @@ async def test_get_extended_info_summary_returns_none_when_bad_data(data_value):
 @pytest.mark.parametrize(
     ("data", "result"),
     [
-        ([0, 0, 0], [True, False, False, "right_to_left"]),
-        ([255, 255, 0], [False, True, True, "left_to_right"]),
+        ([1, 0, 0], [True, False, False, "right_to_left"]),
+        ([1, 255, 0], [False, True, True, "left_to_right"]),
     ],
 )
 async def test_get_extended_info_summary_returns_device0(data, result):
@@ -394,12 +394,13 @@ async def test_get_extended_info_summary_returns_device0(data, result):
 @pytest.mark.parametrize(
     ("data", "result"),
     [
-        ([0, 0, 1], [True, False, False, "right_to_left"]),
-        ([255, 255, 255], [False, True, True, "left_to_right"]),
+        ([1, 0, 1], [True, False, False, "right_to_left"]),
+        ([1, 255, 255], [False, True, True, "left_to_right"]),
     ],
 )
 async def test_get_extended_info_summary_returns_device1(data, result):
     curtain_device = create_device_for_command_testing()
+    curtain_device._basic_info = {"chainLength": 2}
     curtain_device._send_command = AsyncMock(return_value=bytes(data))
     ext_result = await curtain_device.get_extended_info_summary()
     assert ext_result["device1"]["openDirectionDefault"] == result[0]
