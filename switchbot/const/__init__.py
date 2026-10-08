@@ -65,7 +65,7 @@ class SwitchbotModel(StrEnum):
     CURTAIN = "WoCurtain"
     CURTAIN_3 = "WoCurtain3"
     HUMIDIFIER = "WoHumi"
-    # Deprecated compatibility symbol; use PLUG_MINI_US or PLUG_MINI_JP.
+    # Deprecated import-only symbol; use PLUG_MINI_US or PLUG_MINI_JP to parse.
     PLUG_MINI = "WoPlug"
     PLUG_MINI_US = "WoPlugUS"
     PLUG_MINI_JP = "WoPlugJP"

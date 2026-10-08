@@ -120,6 +120,40 @@ def test_hub_mini_is_not_parsed_as_hub_mini_matter() -> None:
     assert "m" not in SUPPORTED_TYPES
 
 
+def test_deprecated_plug_mini_is_not_a_parsing_hint() -> None:
+    """The legacy symbol does not select a regional Plug Mini parser."""
+    ble_device = generate_ble_device("AA:BB:CC:DD:EE:FF")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: bytes.fromhex("AABBCCDDEEFF0080003C000A")},
+    )
+
+    assert (
+        parse_advertisement_data(ble_device, adv_data, SwitchbotModel.PLUG_MINI) is None
+    )
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        pytest.param(SwitchbotModel.PLUG_MINI_US, id="us"),
+        pytest.param(SwitchbotModel.PLUG_MINI_JP, id="jp"),
+    ],
+)
+def test_regional_plug_mini_passive_parsing(model: SwitchbotModel) -> None:
+    """Regional model hints identify passive Plug Mini advertisements."""
+    ble_device = generate_ble_device("AA:BB:CC:DD:EE:FF")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: bytes.fromhex("AABBCCDDEEFF0080003C000A")},
+    )
+
+    result = parse_advertisement_data(ble_device, adv_data, model)
+
+    assert result is not None
+    assert result.data["modelName"] is model
+    assert result.data["data"]["isOn"] is True
+    assert result.active is False
+
+
 def test_parse_advertisement_data_curtain():
     """Test parse_advertisement_data for curtain."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
