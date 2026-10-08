@@ -10,7 +10,11 @@ import aiohttp
 import pytest
 
 from switchbot import fetch_cloud_devices, fetch_cloud_devices_by_token
-from switchbot.adv_parser import _MODEL_TO_MAC_CACHE, populate_model_to_mac_cache
+from switchbot.adv_parser import (
+    _MODEL_TO_MAC_CACHE,
+    parse_advertisement_data,
+    populate_model_to_mac_cache,
+)
 from switchbot.const import (
     SwitchbotAccountConnectionError,
     SwitchbotApiError,
@@ -18,6 +22,7 @@ from switchbot.const import (
     SwitchbotModel,
 )
 from switchbot.devices.device import (
+    API_MODEL_TO_ENUM,
     SwitchbotBaseDevice,
     SwitchbotDevice,
     SwitchbotEncryptedDevice,
@@ -25,7 +30,97 @@ from switchbot.devices.device import (
     _masked_device_id,
 )
 
-from .test_adv_parser import generate_ble_device
+from .test_adv_parser import generate_advertisement_data, generate_ble_device
+
+
+@pytest.mark.parametrize(
+    ("api_model", "expected_model"),
+    [
+        ("WoCurtain", SwitchbotModel.CURTAIN),
+        ("WoCurtain3", SwitchbotModel.CURTAIN_3),
+        ("WoPlugUS", SwitchbotModel.PLUG_MINI_US),
+        ("WoPlugJP", SwitchbotModel.PLUG_MINI_JP),
+        ("WoMeter", SwitchbotModel.METER),
+        ("WoMeterPlus", SwitchbotModel.METER_PLUS),
+        ("W1079000", SwitchbotModel.METER_PRO),
+        ("W1079001", SwitchbotModel.METER_PRO_CO2),
+        ("WoIOSensor", SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER),
+        ("WoCeiling", SwitchbotModel.CEILING_LIGHT),
+        ("WoCeilingPro", SwitchbotModel.CEILING_LIGHT_PRO),
+        ("WoLinkMini", SwitchbotModel.HUB_MINI),
+        ("WoLinkMatter", SwitchbotModel.HUBMINI_MATTER),
+    ],
+)
+def test_api_model_mapping(api_model: str, expected_model: SwitchbotModel) -> None:
+    """Test API model names map to the exact physical product."""
+    assert API_MODEL_TO_ENUM[api_model] is expected_model
+
+
+def test_legacy_plug_is_not_mapped_to_plug_mini() -> None:
+    """Test the legacy Plug is not identified as a Plug Mini."""
+    assert "WoPlug" not in API_MODEL_TO_ENUM
+    assert SwitchbotModel.PLUG_MINI not in API_MODEL_TO_ENUM.values()
+
+
+def test_deprecated_model_aliases() -> None:
+    """Test old model names remain as compatibility aliases."""
+    assert SwitchbotModel.IO_METER is SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER
+    assert SwitchbotModel.METER_PRO_C is SwitchbotModel.METER_PRO_CO2
+    assert SwitchbotModel.IO_METER.name == "INDOOR_OUTDOOR_THERMO_HYGROMETER"
+    assert SwitchbotModel.METER_PRO_C.name == "METER_PRO_CO2"
+    assert SwitchbotModel["IO_METER"] is SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER
+    assert SwitchbotModel["METER_PRO_C"] is SwitchbotModel.METER_PRO_CO2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("api_model", "expected_model", "can_parse"),
+    [
+        pytest.param("WoLinkMini", SwitchbotModel.HUB_MINI, False, id="ordinary"),
+        pytest.param("WoLinkMatter", SwitchbotModel.HUBMINI_MATTER, True, id="matter"),
+    ],
+)
+async def test_hub_mini_cloud_cache_parsing(
+    mock_user_info: dict[str, Any],
+    api_model: str,
+    expected_model: SwitchbotModel,
+    can_parse: bool,
+) -> None:
+    """Cloud hints distinguish ordinary Hub Mini from Matter during parsing."""
+    mac_address = "E6:A1:CD:1F:5B:65"
+    device_response = {
+        "Items": [
+            {
+                "device_mac": "e6a1cd1f5b65",
+                "device_detail": {"device_type": api_model},
+            }
+        ]
+    }
+    ble_device = generate_ble_device(mac_address)
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xe6\xa1\xcd\x1f[e\x00\x00\x00\x00\x00\x00\x14\x01\x985\x00"
+        },
+    )
+
+    with (
+        patch.dict(_MODEL_TO_MAC_CACHE, {}, clear=True),
+        patch.object(
+            SwitchbotBaseDevice, "_async_get_user_info", return_value=mock_user_info
+        ),
+        patch.object(SwitchbotBaseDevice, "api_request", return_value=device_response),
+    ):
+        session = MagicMock(spec=aiohttp.ClientSession)
+        devices = await fetch_cloud_devices_by_token(session, "test-token")
+
+        assert devices == {mac_address: expected_model}
+        assert _MODEL_TO_MAC_CACHE[mac_address] is expected_model
+        assert (parse_advertisement_data(ble_device, adv_data) is not None) is can_parse
+
+
+def test_hubmini_matter_model_name() -> None:
+    """Preserve the existing Hub Mini Matter enum name."""
+    assert SwitchbotModel.HUBMINI_MATTER.name == "HUBMINI_MATTER"
 
 
 @pytest.fixture
