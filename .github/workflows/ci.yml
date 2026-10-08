@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up uv
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
       - name: Install poetry
@@ -62,7 +62,7 @@ jobs:
       - name: Test with Pytest
         run: poetry run pytest --cov=switchbot --cov-report=xml --durations=30 tests
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -91,7 +91,7 @@ jobs:
         run: git switch -C "$BRANCH"
 
       - name: Test release
-        uses: python-semantic-release/python-semantic-release@9a026e9303981c866c3425723009becb2437c757 # v10.6.2
+        uses: python-semantic-release/python-semantic-release@b700dbeb1f431a0fcc30a79f3f0869407fe07278 # v10.7.0
         with:
           no_operation_mode: true
 
@@ -139,7 +139,7 @@ jobs:
         run: git switch -C "$BRANCH"
 
       - name: Release
-        uses: python-semantic-release/python-semantic-release@9a026e9303981c866c3425723009becb2437c757 # v10.6.2
+        uses: python-semantic-release/python-semantic-release@b700dbeb1f431a0fcc30a79f3f0869407fe07278 # v10.7.0
         id: release
         with:
           github_token: ${{ steps.app-token.outputs.token }}
