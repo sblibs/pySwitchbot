@@ -18,6 +18,7 @@ from switchbot.const import (
     SwitchbotModel,
 )
 from switchbot.devices.device import (
+    API_MODEL_TO_ENUM,
     SwitchbotBaseDevice,
     SwitchbotDevice,
     SwitchbotEncryptedDevice,
@@ -26,6 +27,46 @@ from switchbot.devices.device import (
 )
 
 from .test_adv_parser import generate_ble_device
+
+
+@pytest.mark.parametrize(
+    ("api_model", "expected_model"),
+    [
+        ("WoCurtain", SwitchbotModel.CURTAIN),
+        ("WoCurtain3", SwitchbotModel.CURTAIN_3),
+        ("WoPlugUS", SwitchbotModel.PLUG_MINI_US),
+        ("WoPlugJP", SwitchbotModel.PLUG_MINI_JP),
+        ("WoMeter", SwitchbotModel.METER),
+        ("WoMeterPlus", SwitchbotModel.METER_PLUS),
+        ("W1079000", SwitchbotModel.METER_PRO),
+        ("W1079001", SwitchbotModel.METER_PRO_CO2),
+        ("WoIOSensor", SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER),
+        ("WoCeiling", SwitchbotModel.CEILING_LIGHT),
+        ("WoCeilingPro", SwitchbotModel.CEILING_LIGHT_PRO),
+        ("WoLinkMini", SwitchbotModel.HUB_MINI),
+        ("WoLinkMatter", SwitchbotModel.HUBMINI_MATTER),
+    ],
+)
+def test_api_model_mapping(api_model: str, expected_model: SwitchbotModel) -> None:
+    """Test API model names map to the exact physical product."""
+    assert API_MODEL_TO_ENUM[api_model] is expected_model
+
+
+def test_legacy_plug_is_not_mapped_to_plug_mini() -> None:
+    """Test the legacy Plug is not identified as a Plug Mini."""
+    assert "WoPlug" not in API_MODEL_TO_ENUM
+    assert SwitchbotModel.PLUG_MINI not in API_MODEL_TO_ENUM.values()
+
+
+def test_deprecated_model_aliases() -> None:
+    """Test old model names remain as compatibility aliases."""
+    assert SwitchbotModel.IO_METER is SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER
+    assert SwitchbotModel.METER_PRO_C is SwitchbotModel.METER_PRO_CO2
+
+
+def test_hubmini_matter_model_name() -> None:
+    """Preserve the existing Hub Mini Matter enum name."""
+    assert SwitchbotModel.HUBMINI_MATTER.name == "HUBMINI_MATTER"
 
 
 @pytest.fixture

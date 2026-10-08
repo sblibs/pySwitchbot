@@ -65,27 +65,28 @@ def _extract_region(userinfo: dict[str, Any]) -> str:
 API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "WoHand": SwitchbotModel.BOT,
     "WoCurtain": SwitchbotModel.CURTAIN,
-    "WoCurtain3": SwitchbotModel.CURTAIN,  # Curtain3
+    "WoCurtain3": SwitchbotModel.CURTAIN_3,
     "WoHumi": SwitchbotModel.HUMIDIFIER,
     "WoHumi2": SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
-    "WoPlug": SwitchbotModel.PLUG_MINI,
-    "WoPlugUS": SwitchbotModel.PLUG_MINI,
+    "WoPlugUS": SwitchbotModel.PLUG_MINI_US,
+    "WoPlugJP": SwitchbotModel.PLUG_MINI_JP,
     "WoContact": SwitchbotModel.CONTACT_SENSOR,
     "WoStrip": SwitchbotModel.LIGHT_STRIP,
     "WoMeter": SwitchbotModel.METER,
-    "WoMeterPlus": SwitchbotModel.METER,  # Meter Plus
+    "WoMeterPlus": SwitchbotModel.METER_PLUS,
     "WoPresence": SwitchbotModel.MOTION_SENSOR,
     "WoBulb": SwitchbotModel.COLOR_BULB,
     "WoCeiling": SwitchbotModel.CEILING_LIGHT,
-    "WoCeilingPro": SwitchbotModel.CEILING_LIGHT,  # Ceiling Light Pro
+    "WoCeilingPro": SwitchbotModel.CEILING_LIGHT_PRO,
     "WoLock": SwitchbotModel.LOCK,
     "WoLockPro": SwitchbotModel.LOCK_PRO,
     "WoLockLite": SwitchbotModel.LOCK_LITE,
     "WoBlindTilt": SwitchbotModel.BLIND_TILT,
-    "WoIOSensor": SwitchbotModel.IO_METER,  # Outdoor Meter
+    "WoIOSensor": SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER,
     "WoButton": SwitchbotModel.REMOTE,  # Remote button
     "WoUniversalRemote": SwitchbotModel.UNIVERSAL_REMOTE,  # Universal Remote
-    "WoLinkMini": SwitchbotModel.HUBMINI_MATTER,  # Hub Mini
+    "WoLinkMini": SwitchbotModel.HUB_MINI,
+    "WoLinkMatter": SwitchbotModel.HUBMINI_MATTER,
     "WoFan2": SwitchbotModel.CIRCULATOR_FAN,
     "WoHub2": SwitchbotModel.HUB2,
     "WoRollerShade": SwitchbotModel.ROLLER_SHADE,
@@ -104,7 +105,7 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "W1083001": SwitchbotModel.RELAY_SWITCH_2PM,
     "W1083002": SwitchbotModel.RELAY_SWITCH_1,  # Relay Switch 1
     "W1079000": SwitchbotModel.METER_PRO,  # Meter Pro (another variant)
-    "W1079001": SwitchbotModel.METER_PRO_C,
+    "W1079001": SwitchbotModel.METER_PRO_CO2,
     "W1101000": SwitchbotModel.PRESENCE_SENSOR,
     "W1091000": SwitchbotModel.LOCK_ULTRA,
     "W1096000": SwitchbotModel.HUB3,

@@ -10,6 +10,7 @@ from bleak.backends.scanner import AdvertisementData
 from switchbot import HumidifierMode, SwitchbotModel
 from switchbot.adv_parser import (
     _MODEL_TO_MAC_CACHE,
+    SUPPORTED_TYPES,
     parse_advertisement_data,
     populate_model_to_mac_cache,
 )
@@ -66,6 +67,59 @@ def generate_advertisement_data(**kwargs: Any) -> AdvertisementData:
     return AdvertisementData(**new)
 
 
+@pytest.mark.parametrize(
+    ("model_char", "expected_model", "expected_name"),
+    [
+        ("c", SwitchbotModel.CURTAIN, "Curtain"),
+        ("C", SwitchbotModel.CURTAIN, "Curtain"),
+        ("{", SwitchbotModel.CURTAIN_3, "Curtain 3"),
+        ("[", SwitchbotModel.CURTAIN_3, "Curtain 3"),
+        ("T", SwitchbotModel.METER, "Meter"),
+        ("t", SwitchbotModel.METER, "Meter"),
+        ("i", SwitchbotModel.METER_PLUS, "Meter Plus"),
+        ("I", SwitchbotModel.METER_PLUS, "Meter Plus"),
+        (
+            "w",
+            SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER,
+            "Indoor/Outdoor Thermo-Hygrometer",
+        ),
+        (
+            "W",
+            SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER,
+            "Indoor/Outdoor Thermo-Hygrometer",
+        ),
+        ("4", SwitchbotModel.METER_PRO, "Meter Pro"),
+        (b"\x14", SwitchbotModel.METER_PRO, "Meter Pro"),
+        ("5", SwitchbotModel.METER_PRO_CO2, "Meter Pro CO2"),
+        (b"\x15", SwitchbotModel.METER_PRO_CO2, "Meter Pro CO2"),
+        ("g", SwitchbotModel.PLUG_MINI_US, "Plug Mini (US)"),
+        ("G", SwitchbotModel.PLUG_MINI_US, "Plug Mini (US)"),
+        ("j", SwitchbotModel.PLUG_MINI_JP, "Plug Mini (JP)"),
+        ("J", SwitchbotModel.PLUG_MINI_JP, "Plug Mini (JP)"),
+        ("q", SwitchbotModel.CEILING_LIGHT, "Ceiling Light"),
+        ("Q", SwitchbotModel.CEILING_LIGHT, "Ceiling Light"),
+        ("n", SwitchbotModel.CEILING_LIGHT_PRO, "Ceiling Light Pro"),
+        ("N", SwitchbotModel.CEILING_LIGHT_PRO, "Ceiling Light Pro"),
+        ("%", SwitchbotModel.HUBMINI_MATTER, "HubMini Matter"),
+        (b"\x05", SwitchbotModel.HUBMINI_MATTER, "HubMini Matter"),
+    ],
+)
+def test_supported_type_model_mapping(
+    model_char: str | bytes,
+    expected_model: SwitchbotModel,
+    expected_name: str,
+) -> None:
+    """Test that BLE model identifiers map to a single product."""
+    assert SUPPORTED_TYPES[model_char]["modelName"] is expected_model
+    assert SUPPORTED_TYPES[model_char]["modelFriendlyName"] == expected_name
+
+
+def test_hub_mini_is_not_parsed_as_hub_mini_matter() -> None:
+    """Test that regular Hub Mini identifiers are not treated as Matter."""
+    assert "M" not in SUPPORTED_TYPES
+    assert "m" not in SUPPORTED_TYPES
+
+
 def test_parse_advertisement_data_curtain():
     """Test parse_advertisement_data for curtain."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
@@ -120,8 +174,8 @@ def test_parse_advertisement_data_curtain_passive():
                 "deviceChain": 1,
             },
             "isEncrypted": False,
-            "model": "{",
-            "modelFriendlyName": "Curtain 3",
+            "model": "c",
+            "modelFriendlyName": "Curtain",
             "modelName": SwitchbotModel.CURTAIN,
         },
         device=ble_device,
@@ -152,8 +206,8 @@ def test_parse_advertisement_data_curtain_passive_12_bytes():
                 "deviceChain": 1,
             },
             "isEncrypted": False,
-            "model": "{",
-            "modelFriendlyName": "Curtain 3",
+            "model": "c",
+            "modelFriendlyName": "Curtain",
             "modelName": SwitchbotModel.CURTAIN,
         },
         device=ble_device,
@@ -391,7 +445,7 @@ def test_parse_advertisement_data_curtain3():
             "isEncrypted": False,
             "model": "{",
             "modelFriendlyName": "Curtain 3",
-            "modelName": SwitchbotModel.CURTAIN,
+            "modelName": SwitchbotModel.CURTAIN_3,
         },
         device=ble_device,
         rssi=-80,
@@ -409,7 +463,7 @@ def test_parse_advertisement_data_curtain3_passive():
         service_data={},
         rssi=-80,
     )
-    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.CURTAIN)
+    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.CURTAIN_3)
     assert result == SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
@@ -425,7 +479,7 @@ def test_parse_advertisement_data_curtain3_passive():
             "isEncrypted": False,
             "model": "{",
             "modelFriendlyName": "Curtain 3",
-            "modelName": SwitchbotModel.CURTAIN,
+            "modelName": SwitchbotModel.CURTAIN_3,
         },
         device=ble_device,
         rssi=-80,
@@ -902,8 +956,8 @@ def test_wosensor_passive_only():
                 "temperature": 24.6,
             },
             "isEncrypted": False,
-            "model": "i",
-            "modelFriendlyName": "Meter Plus",
+            "model": "T",
+            "modelFriendlyName": "Meter",
             "modelName": SwitchbotModel.METER,
             "rawAdvData": None,
         },
@@ -1018,8 +1072,8 @@ def test_woiosensor_passive_and_active():
             },
             "isEncrypted": False,
             "model": "w",
-            "modelFriendlyName": "Indoor/Outdoor Meter",
-            "modelName": SwitchbotModel.IO_METER,
+            "modelFriendlyName": "Indoor/Outdoor Thermo-Hygrometer",
+            "modelName": SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER,
             "rawAdvData": b"w\x00\xe4",
         },
         device=ble_device,
@@ -1050,8 +1104,8 @@ def test_woiosensor_passive_only():
             },
             "isEncrypted": False,
             "model": "w",
-            "modelFriendlyName": "Indoor/Outdoor Meter",
-            "modelName": SwitchbotModel.IO_METER,
+            "modelFriendlyName": "Indoor/Outdoor Thermo-Hygrometer",
+            "modelName": SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER,
             "rawAdvData": None,
         },
         device=ble_device,
@@ -4950,7 +5004,7 @@ def test_parse_advertisement_with_mac_cache_curtain() -> None:
     result_with_cache = parse_advertisement_data(ble_device, adv_data)
     assert result_with_cache is not None
     assert result_with_cache.data["modelName"] == SwitchbotModel.CURTAIN
-    assert result_with_cache.data["modelFriendlyName"] == "Curtain 3"
+    assert result_with_cache.data["modelFriendlyName"] == "Curtain"
     assert result_with_cache.active is False
 
     # Clean up
