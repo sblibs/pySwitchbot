@@ -1,21 +1,25 @@
 """Keypad Vision (Pro) device handling."""
 
+from __future__ import annotations
+
 import logging
-import re
 from typing import Any
 
 from bleak.backends.device import BLEDevice
 
 from ..const import SwitchbotModel
-from .device import SwitchbotEncryptedDevice, SwitchbotSequenceDevice
-
-PASSWORD_RE = re.compile(r"^\d{6,12}$")
-COMMAND_GET_PASSWORD_COUNT = "570F530100"
+from .base_keypad import (
+    COMMAND_GET_PASSWORD_COUNT,
+    PASSWORD_RE,
+    SwitchbotBaseKeypad,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
+__all__ = ["COMMAND_GET_PASSWORD_COUNT", "PASSWORD_RE", "SwitchbotKeypadVision"]
 
-class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
+
+class SwitchbotKeypadVision(SwitchbotBaseKeypad):
     """Representation of a Switchbot Keypad Vision (Pro) device."""
 
     def __init__(
@@ -45,6 +49,12 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
         if not (_data := await self._get_basic_info()):
+            return None
+        if len(_data) < 15:
+            _LOGGER.error(
+                "Received truncated or malformed basic info data: %s",
+                _data.hex(),
+            )
             return None
         _LOGGER.debug("Raw model %s basic info data: %s", self._model, _data.hex())
 
@@ -79,89 +89,29 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         _LOGGER.debug("%s basic info: %s", self._model, result)
         return result
 
-    def _check_password_rules(self, password: str) -> None:
-        """Check if the password compliant with the rules."""
-        if not PASSWORD_RE.fullmatch(password):
-            raise ValueError("Password must be 6-12 digits.")
-
-    def _build_password_payload(self, password: str) -> bytes:
-        """Build password payload."""
-        pwd_bytes = bytes(int(ch) for ch in password)
-        pwd_length = len(pwd_bytes)
-
-        payload = bytearray()
-        payload.append(0xFF)
-        payload.append(0x00)
-        payload.append(pwd_length)
-        payload.extend(pwd_bytes)
-
-        return bytes(payload)
-
-    def _build_add_password_cmd(self, password: str) -> list[str]:
-        """Build command to add a password."""
-        cmd_header = bytes.fromhex("570F520202")
-
-        payload = self._build_password_payload(password)
-
-        max_payload = 11
-
-        chunks = [
-            payload[i : i + max_payload] for i in range(0, len(payload), max_payload)
-        ]
-        total = len(chunks)
-        cmds: list[str] = []
-
-        for idx, chunk in enumerate(chunks):
-            packet_info = ((total & 0x0F) << 4) | (idx & 0x0F)
-
-            cmd = bytearray()
-            cmd.extend(cmd_header)
-            cmd.append(packet_info)
-            cmd.extend(chunk)
-
-            cmds.append(cmd.hex().upper())
-
-        _LOGGER.debug(
-            "device: %s add password commands: %s", self._device.address, cmds
-        )
-
-        return cmds
+    def _parse_password_count(self, data: bytes) -> dict[str, int] | None:
+        """Parse password count data."""
+        result = super()._parse_password_count(data)
+        if result is None:
+            return None
+        if self._model == SwitchbotModel.KEYPAD_VISION_PRO:
+            if len(data) < 8:
+                _LOGGER.error(
+                    "Received truncated password count data for %s: %s",
+                    self._model,
+                    data.hex(),
+                )
+                return None
+            result.update(
+                {
+                    "face": data[6],
+                    "palm_vein": data[7],
+                }
+            )
+        return result
 
     async def add_password(self, password: str) -> bool:
         """Add a password to the Keypad Vision (Pro)."""
         self._check_password_rules(password)
         cmds = self._build_add_password_cmd(password)
         return await self._send_command_sequence(cmds)
-
-    async def get_password_count(self) -> dict[str, int] | None:
-        """Get the number of passwords stored in the Keypad Vision (Pro)."""
-        if not (_data := await self._send_command(COMMAND_GET_PASSWORD_COUNT)):
-            return None
-        _LOGGER.debug("Raw model %s password count data: %s", self._model, _data.hex())
-
-        pin = _data[1]
-        nfc = _data[2]
-        fingerprint = _data[3]
-        duress_pin = _data[4]
-        duress_fingerprint = _data[5]
-
-        result = {
-            "pin": pin,
-            "nfc": nfc,
-            "fingerprint": fingerprint,
-            "duress_pin": duress_pin,
-            "duress_fingerprint": duress_fingerprint,
-        }
-
-        if self._model == SwitchbotModel.KEYPAD_VISION_PRO:
-            face = _data[6]
-            palm_vein = _data[7]
-            result.update(
-                {
-                    "face": face,
-                    "palm_vein": palm_vein,
-                }
-            )
-
-        _LOGGER.debug("%s password count: %s", self._model, result)
-        return result

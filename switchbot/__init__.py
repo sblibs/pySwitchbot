@@ -36,6 +36,7 @@ from .const import (
 )
 from .devices.air_purifier import SwitchbotAirPurifier
 from .devices.art_frame import SwitchbotArtFrame
+from .devices.base_keypad import SwitchbotBaseKeypad
 from .devices.base_light import SwitchbotBaseLight
 from .devices.blind_tilt import SwitchbotBlindTilt
 from .devices.bot import Switchbot
@@ -56,6 +57,7 @@ from .devices.fan import (
     SwitchbotStandingFan,
 )
 from .devices.humidifier import SwitchbotHumidifier
+from .devices.keypad import SwitchbotKeypad
 from .devices.keypad_vision import SwitchbotKeypadVision
 from .devices.light_strip import (
     SwitchbotCandleWarmerLamp,
@@ -118,6 +120,7 @@ __all__ = [
     "SwitchbotApiError",
     "SwitchbotArtFrame",
     "SwitchbotAuthenticationError",
+    "SwitchbotBaseKeypad",
     "SwitchbotBaseLight",
     "SwitchbotBlindTilt",
     "SwitchbotBulb",
@@ -131,6 +134,7 @@ __all__ = [
     "SwitchbotFan",
     "SwitchbotGarageDoorOpener",
     "SwitchbotHumidifier",
+    "SwitchbotKeypad",
     "SwitchbotKeypadVision",
     "SwitchbotLightStrip",
     "SwitchbotLock",
