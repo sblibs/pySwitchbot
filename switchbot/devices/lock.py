@@ -9,7 +9,7 @@ from typing import Any
 from bleak.backends.device import BLEDevice
 
 from ..const import SwitchbotModel
-from ..const.lock import LockStatus
+from ..const.lock import LockStatus, QuickKeyFunction
 from .device import (
     SwitchbotEncryptedDevice,
     SwitchbotOperationError,
@@ -60,6 +60,28 @@ COMMAND_LOCK = {
 COMMAND_HALF_LOCK = {
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000008",
 }
+
+# Quick Key, a Lock Ultra setting. All three of
+# its settings (enabled / single-vs-double press / function) live in a single config
+# byte: read it with 0x4f, masked-write it with 0x4e. Lock Ultra only (untested on
+# other lock models).
+COMMAND_GET_QUICK_KEY = {
+    SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4f0401",
+}
+# Append "<mask><value>ff" (each one hex byte) for a masked write.
+COMMAND_SET_QUICK_KEY_PREFIX = {
+    SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e040100",
+}
+# Quick Key config-byte layout. Only the low nibble carries Quick Key settings.
+# Bits 7-6 are undecoded status flags and are NOT constant across locks: one Lock
+# Ultra reports both set (0xCx), another reports only bit 7 (0x8x) with the same low
+# nibble and identical behaviour. Nothing here validates them, and the raw byte is
+# returned so a caller can surface it when a lock behaves unexpectedly.
+QUICK_KEY_ENABLED_BIT = 0x08
+QUICK_KEY_DOUBLE_PRESS_BIT = 0x04
+QUICK_KEY_FUNCTION_MASK = 0x03
+# The 2-bit function field has 4 possible values but only 3 are defined.
+QUICK_KEY_FUNCTION_VALUES = frozenset(f.value for f in QuickKeyFunction)
 
 COMMAND_ENABLE_NOTIFICATIONS = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0e01001e00008101",
@@ -146,6 +168,108 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             COMMAND_HALF_LOCK[self._model],
             {LockStatus.HALF_LOCKED, LockStatus.LOCKING},
         )
+
+    async def get_quick_key(self) -> dict[str, Any] | None:
+        """
+        Return the Quick Key settings (Lock Ultra only).
+
+        Returns
+        -------
+        ``{"raw": int, "enabled": bool, "double_press": bool,
+        "function": QuickKeyFunction | None}``, or ``None`` if it can't be read.
+
+        ``raw`` is the config byte exactly as the lock reported it. ``function`` is
+        ``None`` if the lock reports the one undefined value of the 2-bit function
+        field; the other fields are still valid in that case.
+
+        """
+        if self._model not in COMMAND_GET_QUICK_KEY:
+            raise SwitchbotOperationError(
+                f"Quick Key is not supported on {self._model}"
+            )
+        result = await self._send_command(
+            key=COMMAND_GET_QUICK_KEY[self._model], retry=self._retry_count
+        )
+        if not self._check_command_result(result, 0, COMMAND_RESULT_EXPECTED_VALUES):
+            _LOGGER.error("Failed to read Quick Key settings: %s", result)
+            return None
+        if len(result) < 2:
+            _LOGGER.error("Invalid Quick Key response: %s", result)
+            return None
+        return self._parse_quick_key(result[1])
+
+    @staticmethod
+    def _parse_quick_key(cfg: int) -> dict[str, Any]:
+        """Parse the Quick Key config byte."""
+        func_bits = cfg & QUICK_KEY_FUNCTION_MASK
+        if func_bits in QUICK_KEY_FUNCTION_VALUES:
+            function = QuickKeyFunction(func_bits)
+        else:
+            # The 2-bit field has one undefined value. Keep the enable and trigger
+            # bits, which are unambiguous, rather than discarding a byte that is
+            # mostly readable.
+            _LOGGER.warning(
+                "Unknown Quick Key function value: %#04x (config byte %#04x)",
+                func_bits,
+                cfg,
+            )
+            function = None
+        return {
+            "raw": cfg,
+            "enabled": bool(cfg & QUICK_KEY_ENABLED_BIT),
+            "double_press": bool(cfg & QUICK_KEY_DOUBLE_PRESS_BIT),
+            "function": function,
+        }
+
+    async def set_quick_key(
+        self,
+        *,
+        enabled: bool | None = None,
+        double_press: bool | None = None,
+        function: QuickKeyFunction | None = None,
+    ) -> bool:
+        """
+        Update one or more Quick Key settings (Lock Ultra only).
+
+        Only the fields you pass are changed (a masked write); the others keep their
+        current value. Returns ``True`` if the lock acknowledges with the requested
+        bits set.
+        """
+        if self._model not in COMMAND_SET_QUICK_KEY_PREFIX:
+            raise SwitchbotOperationError(
+                f"Quick Key is not supported on {self._model}"
+            )
+        mask = 0
+        value = 0
+        if enabled is not None:
+            mask |= QUICK_KEY_ENABLED_BIT
+            value |= QUICK_KEY_ENABLED_BIT if enabled else 0
+        if double_press is not None:
+            mask |= QUICK_KEY_DOUBLE_PRESS_BIT
+            value |= QUICK_KEY_DOUBLE_PRESS_BIT if double_press else 0
+        if function is not None:
+            mask |= QUICK_KEY_FUNCTION_MASK
+            value |= function.value
+        if not mask:
+            raise ValueError("set_quick_key requires at least one setting to change")
+        command = f"{COMMAND_SET_QUICK_KEY_PREFIX[self._model]}{mask:02x}{value:02x}ff"
+        result = await self._send_command(key=command, retry=self._retry_count)
+        if not self._check_command_result(result, 0, COMMAND_RESULT_EXPECTED_VALUES):
+            _LOGGER.error("Failed to set Quick Key settings: %s", result)
+            return False
+        # The lock echoes the resulting config byte; confirm our bits stuck. A
+        # truncated echo and a refused bit are different problems, so say which.
+        if len(result) < 2:
+            _LOGGER.error("Invalid Quick Key write response: %s", result)
+            return False
+        if (result[1] & mask) != (value & mask):
+            _LOGGER.error(
+                "Quick Key write not applied: requested %#04x, lock reported %#04x",
+                value & mask,
+                result[1] & mask,
+            )
+            return False
+        return True
 
     def _parse_basic_data(self, basic_data: bytes) -> dict[str, Any]:
         """Parse basic data from lock."""
