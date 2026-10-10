@@ -1,5 +1,7 @@
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Any
 
+from ..const.meter_pro import MeterProWeatherIcon
 from ..helpers import parse_uint24_be
 from .device import SwitchbotDevice, SwitchbotOperationError
 
@@ -10,6 +12,44 @@ MAX_TIME_OFFSET = (1 << 24) - 1
 COMMAND_GET_DEVICE_DATETIME = "570f6901"
 COMMAND_SET_DEVICE_DATETIME = "57000503"
 COMMAND_SET_DISPLAY_FORMAT = "570f680505"
+COMMAND_GET_WEATHER = "570f6906"
+COMMAND_SET_WEATHER = "570f680601"
+
+
+def _weather_decimal(value: float, name: str) -> Decimal:
+    if isinstance(value, bool):
+        raise TypeError(f"{name} must be a number, not a boolean")
+    try:
+        number = Decimal(str(value))
+    except InvalidOperation as exc:
+        raise ValueError(f"Invalid {name}") from exc
+    if not number.is_finite():
+        raise ValueError(f"{name} must be finite")
+    return number
+
+
+def _encode_weather_temperature(temperature_c: float) -> bytes:
+    temperature = _weather_decimal(temperature_c, "Temperature")
+    if abs(temperature) > Decimal("127.9"):
+        raise ValueError("Temperature must be -127.9..127.9 C")
+    temperature = temperature.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+    integer, decimal = divmod(int(abs(temperature) * 10), 10)
+    return bytes((decimal, integer | (0x80 if temperature >= 0 else 0)))
+
+
+def _encode_weather_humidity(humidity: float) -> int:
+    relative_humidity = _weather_decimal(humidity, "humidity")
+    if not 1 <= relative_humidity <= 99:
+        raise ValueError("humidity must be 1..99%")
+    return int(relative_humidity.quantize(Decimal(1), rounding=ROUND_HALF_UP))
+
+
+def _encode_weather_icon(icon: MeterProWeatherIcon) -> MeterProWeatherIcon:
+    if isinstance(icon, MeterProWeatherIcon):
+        return icon
+    if isinstance(icon, bool) or not isinstance(icon, int):
+        raise TypeError("Weather icon must be a MeterProWeatherIcon or integer")
+    return MeterProWeatherIcon(icon)
 
 
 class SwitchbotMeterPro(SwitchbotDevice):
@@ -174,3 +214,88 @@ class SwitchbotMeterPro(SwitchbotDevice):
 
 class SwitchbotMeterProCO2(SwitchbotMeterPro):
     """API to control Switchbot Meter Pro CO2."""
+
+    def _parse_weather(self, result: bytes | None) -> dict[str, Any]:
+        result = self._validate_result("get_weather", result, min_length=5)
+        # The protocol documents five bytes; tested CO2 firmware returns seventeen.
+        if len(result) not in (5, 17):
+            raise SwitchbotOperationError(
+                f"{self.name}: Unknown weather response length"
+            )
+        try:
+            icon = MeterProWeatherIcon(result[1])
+        except ValueError as exc:
+            raise SwitchbotOperationError(f"{self.name}: Unknown weather icon") from exc
+        if result[2] & 0x0F > 9 or result[4] & 0x7F > 99:
+            raise SwitchbotOperationError(f"{self.name}: Invalid weather measurements")
+        network_data = bytes(result[2:5])
+        magnitude = (network_data[1] & 0x7F) + (network_data[0] & 0x0F) / 10
+        return {
+            "icon": icon,
+            "temperature_c": magnitude if network_data[1] & 0x80 else -magnitude,
+            "humidity": network_data[2] & 0x7F,
+            "fahrenheit_display": bool(network_data[2] & 0x80),
+            "network_data": network_data,
+        }
+
+    async def get_weather(self) -> dict[str, Any]:
+        """Read the weather icon and network temperature/humidity."""
+        return self._parse_weather(await self._send_command(COMMAND_GET_WEATHER))
+
+    async def _weather_command_locked(self, key: str) -> bytes | None:
+        command = bytearray.fromhex(self._commandkey(key))
+        # A lost ACK can follow a successful write; do not replay stale readings.
+        return await self._send_command_locked_with_retry(key, command, 0, 1)
+
+    async def set_weather(
+        self,
+        icon: MeterProWeatherIcon | None = None,
+        *,
+        temperature_c: float | None = None,
+        humidity: float | None = None,
+    ) -> None:
+        """
+        Set supplied weather fields and verify them; preserve omitted fields.
+
+        This does not change display sources or paired external sensor data.
+        Updates from other clients can race with the read/write sequence.
+        """
+        if icon is None and temperature_c is None and humidity is None:
+            raise SwitchbotOperationError(
+                f"{self.name}: Supply at least one weather field"
+            )
+        try:
+            icon = _encode_weather_icon(icon) if icon is not None else None
+            temperature = (
+                _encode_weather_temperature(temperature_c)
+                if temperature_c is not None
+                else None
+            )
+            relative_humidity = (
+                _encode_weather_humidity(humidity) if humidity is not None else None
+            )
+        except (ValueError, TypeError) as exc:
+            raise SwitchbotOperationError(f"{self.name}: {exc}") from exc
+        async with self._operation_lock:
+            before = self._parse_weather(
+                await self._weather_command_locked(COMMAND_GET_WEATHER)
+            )
+            icon = before["icon"] if icon is None else icon
+            network = bytearray(before["network_data"])
+            if temperature is not None:
+                network[0] = (network[0] & 0xF0) | temperature[0]
+                network[1] = temperature[1]
+            if relative_humidity is not None:
+                network[2] = (network[2] & 0x80) | relative_humidity
+            # Six-byte writes reset network readings; omit only external blocks.
+            payload = f"{COMMAND_SET_WEATHER}{icon.value:02x}{network.hex()}"
+            self._validate_result(
+                "set_weather", await self._weather_command_locked(payload)
+            )
+            after = self._parse_weather(
+                await self._weather_command_locked(COMMAND_GET_WEATHER)
+            )
+            if after["icon"] != icon or after["network_data"] != network:
+                raise SwitchbotOperationError(
+                    f"{self.name}: Weather readback mismatch; no rollback attempted"
+                )
