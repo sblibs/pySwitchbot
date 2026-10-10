@@ -184,3 +184,42 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
+## Curtain 3 diagnostics
+
+Curtain movement already accepts a speed byte: `255` for normal movement and
+`1` for silent movement on Curtain 3. Existing movement APIs remain unchanged.
+
+Diagnostics are opt-in and use the caller's update loop; the library creates no
+background polling task:
+
+```python
+curtain.set_diagnostics_interval(900)
+if curtain.poll_needed(seconds_since_last_poll):
+    await curtain.update()
+
+# Or explicitly refresh, independently of the configured interval:
+success = await curtain.refresh_diagnostics()
+curtain.set_diagnostics_interval(None)  # Disable periodic diagnostics.
+```
+
+Automatic extended reads are deferred while moving and only enabled for
+Curtain 3. Explicit refreshes fetch basic, chain, summary, and advanced pages;
+rejected or malformed responses return `False`, and transport errors propagate.
+Optional reads during ordinary updates cannot fail a successful movement action.
+Failed attempts are retried after the configured interval.
+
+`diagnostic_timestamps` contains the last successful read time for each page
+(`basic`, `chain`, `summary`, `advanced`), using the process's monotonic clock.
+Failed reads retain previous values and timestamps. Consumers must check their
+age before presenting cached information as current; advertisements do not
+refresh these timestamps.
+
+Advanced information retains `stateOfCharge` and adds `chargingState`, a
+`CurtainChargingState` enum, and `chargingStateRaw`, the device's numeric code.
+Adapter-full and solar-full are distinct enum states but retain the legacy
+`fully_charged` string. Code 5 means solar connected without charging; code 6
+means hardware error. Unknown codes return `None` while retaining their raw value.
+
+The charging mapping follows the [published Curtain 3 BLE specification](https://github.com/OpenWonderLabs/SwitchBotAPI-BLE/blob/latest/devicetypes/curtain3.md).
+Hardware verification, including solar-equipped curtains, is still required.
