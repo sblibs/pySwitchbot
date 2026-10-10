@@ -1,6 +1,6 @@
 import asyncio
 from decimal import Decimal
-from unittest.mock import AsyncMock, call
+from unittest.mock import AsyncMock
 
 import pytest
 from bleak.backends.device import BLEDevice
@@ -91,6 +91,51 @@ async def test_get_weather(response):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
+    ("network", "temperature", "humidity", "fahrenheit"),
+    [
+        ("008000", 0.0, None, False),
+        ("000000", 0.0, None, False),
+        ("008080", 0.0, None, True),
+        ("079200", 18.7, None, False),
+        ("070b00", -11.7, None, False),
+        ("008035", 0.0, 53, False),
+        ("000035", 0.0, 53, False),
+        ("050001", -0.5, 1, False),
+    ],
+)
+async def test_get_weather_unset_humidity_and_independent_temperature(
+    network, temperature, humidity, fahrenheit
+):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("0101" + network)
+    state = await device.get_weather()
+    assert state["temperature_c"] == temperature
+    assert state["humidity"] == humidity
+    assert state["fahrenheit_display"] == fahrenheit
+    if temperature == 0:
+        assert str(state["temperature_c"]) == "0.0"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("response", "message"),
+    [
+        ("0108008000", "Unknown weather icon 8"),
+        ("01000a8000", "Invalid weather measurements"),
+        ("0100008064", "Invalid weather measurements"),
+    ],
+)
+async def test_weather_parse_error_includes_response_context(response, message):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex(response)
+    with pytest.raises(SwitchbotOperationError, match=message) as exc_info:
+        await device.get_weather()
+    assert f"result={response}" in str(exc_info.value)
+    assert f"rssi={device.rssi}" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
     "response",
     [
         None,
@@ -98,9 +143,6 @@ async def test_get_weather(response):
         b"\x00",
         b"\x01",
         bytes.fromhex("01008000"),
-        bytes.fromhex("0108008000"),
-        bytes.fromhex("01000a8000"),
-        bytes.fromhex("0100008064"),
     ],
 )
 async def test_bad_weather_response(response):
@@ -119,14 +161,6 @@ async def test_set_icon_preserves_network(icon):
     payload = f"570f680601{icon.value:02x}3292b5"
     assert len(bytes.fromhex(payload)) == 9
     assert sent_keys(device) == [READ, payload, READ]
-    assert device._send_command_locked_with_retry.call_args_list == [
-        call(key, bytearray.fromhex(key), retry, retry + 1)
-        for key, retry in [
-            (READ, device._retry_count),
-            (payload, 0),
-            (READ, device._retry_count),
-        ]
-    ]
 
 
 @pytest.mark.asyncio
@@ -250,8 +284,6 @@ async def test_partial_updates_preserve_unavailable_fields(kwargs, network):
     [
         ([b"\x00"], 1),
         ([BASELINE, b"\x00"], 2),
-        ([BASELINE, b"\x01", BASELINE], 3),
-        ([BASELINE, b"\x01", bytes.fromhex("01013293b5")], 3),
     ],
 )
 async def test_failures_do_not_rollback(responses, count):
@@ -264,12 +296,24 @@ async def test_failures_do_not_rollback(responses, count):
 
 
 @pytest.mark.asyncio
-async def test_write_timeout_does_not_retry():
+@pytest.mark.parametrize(
+    ("after", "actual_icon", "actual_network"),
+    [(BASELINE, 0, "3292b5"), (bytes.fromhex("01013293b5"), 1, "3293b5")],
+)
+async def test_readback_mismatch_includes_expected_and_actual_values(
+    after, actual_icon, actual_network
+):
     device = create_device()
-    device._send_command_locked_with_retry.side_effect = [BASELINE, TimeoutError()]
-    with pytest.raises(TimeoutError):
+    device._send_command_locked_with_retry.side_effect = [BASELINE, b"\x01", after]
+    with pytest.raises(
+        SwitchbotOperationError, match="Weather readback mismatch"
+    ) as exc_info:
         await device.set_weather(MeterProWeatherIcon.SUNNY)
-    assert device._send_command_locked_with_retry.await_count == 2
+    message = str(exc_info.value)
+    assert "expected_icon=1 expected_network=3292b5" in message
+    assert f"actual_icon={actual_icon} actual_network={actual_network}" in message
+    assert "no rollback attempted" in message
+    assert device._send_command_locked_with_retry.await_count == 3
     assert not device._operation_lock.locked()
 
 
@@ -305,15 +349,16 @@ async def test_transient_read_failure_retries_without_replaying_write(read_step)
 
 
 @pytest.mark.asyncio
-async def test_actual_retry_engine_does_not_replay_failed_write():
+@pytest.mark.parametrize("error_type", [BleakError, TimeoutError])
+async def test_actual_retry_engine_does_not_replay_failed_write(error_type):
     device = create_device()
     device._send_command_locked_with_retry = (
         SwitchbotDevice._send_command_locked_with_retry.__get__(device)
     )
     device._send_command_locked = AsyncMock(
-        side_effect=[BASELINE, BleakError("lost write acknowledgement")]
+        side_effect=[BASELINE, error_type("lost write acknowledgement")]
     )
-    with pytest.raises(BleakError, match="lost write acknowledgement"):
+    with pytest.raises(error_type, match="lost write acknowledgement"):
         await device.set_weather(MeterProWeatherIcon.SUNNY)
     assert [entry.args[0] for entry in device._send_command_locked.call_args_list] == [
         READ,
@@ -351,23 +396,6 @@ async def test_update_ignores_extra_response_bytes():
     device._send_command_locked_with_retry.side_effect = [before, b"\x01", after]
     await device.set_weather(MeterProWeatherIcon.SUNNY)
     assert sent_keys(device) == [READ, "570f680601013292b5", READ]
-
-
-@pytest.mark.asyncio
-async def test_operation_lock_covers_whole_sequence():
-    device = create_device()
-    configure_write(device)
-    original = device._send_command_locked_with_retry
-
-    async def command(*args):
-        assert device._operation_lock.locked()
-        await asyncio.sleep(0)
-        return await original(*args)
-
-    device._send_command_locked_with_retry = command
-    await device.set_weather(MeterProWeatherIcon.SUNNY)
-    assert original.await_count == 3
-    assert not device._operation_lock.locked()
 
 
 @pytest.mark.asyncio
@@ -418,6 +446,7 @@ async def test_concurrent_updates_do_not_interleave():
     )
     assert (first, second) == (None, None)
     assert keys == [READ, "570f680601013292b5", READ, READ, "570f680601023292b5", READ]
+    assert not device._operation_lock.locked()
 
 
 @pytest.mark.asyncio

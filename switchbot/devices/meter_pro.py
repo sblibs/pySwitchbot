@@ -220,21 +220,28 @@ class SwitchbotMeterProCO2(SwitchbotMeterPro):
         try:
             icon = MeterProWeatherIcon(result[1])
         except ValueError as exc:
-            raise SwitchbotOperationError(f"{self.name}: Unknown weather icon") from exc
+            raise SwitchbotOperationError(
+                f"{self.name}: Unknown weather icon {result[1]} "
+                f"(result={result.hex()} rssi={self.rssi})"
+            ) from exc
         if result[2] & 0x0F > 9 or result[4] & 0x7F > 99:
-            raise SwitchbotOperationError(f"{self.name}: Invalid weather measurements")
+            raise SwitchbotOperationError(
+                f"{self.name}: Invalid weather measurements "
+                f"(result={result.hex()} rssi={self.rssi})"
+            )
         return icon, bytes(result[2:5])
 
     async def get_weather(self) -> dict[str, Any]:
-        """Read the weather icon and network temperature/humidity."""
+        """Read network weather; unset humidity is None, temperature is independent."""
         icon, network_data = self._parse_weather(
             await self._send_command(COMMAND_GET_WEATHER)
         )
         magnitude = (network_data[1] & 0x7F) + (network_data[0] & 0x0F) / 10
+        temperature = magnitude if network_data[1] & 0x80 else -magnitude
         return {
             "icon": icon,
-            "temperature_c": magnitude if network_data[1] & 0x80 else -magnitude,
-            "humidity": network_data[2] & 0x7F,
+            "temperature_c": temperature if magnitude else 0.0,
+            "humidity": (network_data[2] & 0x7F) or None,
             "fahrenheit_display": bool(network_data[2] & 0x80),
         }
 
@@ -299,5 +306,8 @@ class SwitchbotMeterProCO2(SwitchbotMeterPro):
             )
             if updated_icon != icon or updated_network != network:
                 raise SwitchbotOperationError(
-                    f"{self.name}: Weather readback mismatch; no rollback attempted"
+                    f"{self.name}: Weather readback mismatch; no rollback attempted "
+                    f"(expected_icon={icon.value} expected_network={network.hex()} "
+                    f"actual_icon={updated_icon.value} actual_network={updated_network.hex()} "
+                    f"rssi={self.rssi})"
                 )
