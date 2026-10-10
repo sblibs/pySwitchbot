@@ -48,6 +48,8 @@ class SwitchbotBulb(SwitchbotSequenceBaseLight):
         ):
             return None
         _version_info, _data = res
+        if len(_data) < 11 or len(_version_info) < 3:
+            return None
 
         self._state["r"] = _data[3]
         self._state["g"] = _data[4]
