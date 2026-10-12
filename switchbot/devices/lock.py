@@ -57,6 +57,9 @@ COMMAND_LOCK = {
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e0101000000",
 }
+COMMAND_BATTERY_BAYS = {
+    SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4f0409",
+}
 COMMAND_HALF_LOCK = {
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000008",
 }
@@ -198,9 +201,14 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         _LOGGER.debug(
             "basic_data: %s, address: %s", basic_data.hex(), self._device.address
         )
-        return self._parse_lock_data(
+        result = self._parse_lock_data(
             lock_raw_data[1:], self._model
         ) | self._parse_basic_data(basic_data)
+        if self._model in COMMAND_BATTERY_BAYS and (
+            bays_data := await self._get_battery_bays()
+        ):
+            result |= self._parse_battery_bays(bays_data)
+        return result
 
     def is_calibrated(self) -> Any:
         """Return True if lock is calibrated."""
@@ -245,6 +253,27 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             return None
 
         return _data
+
+    async def _get_battery_bays(self) -> bytes | None:
+        """Return battery bays info of device."""
+        _data = await self._send_command(
+            key=COMMAND_BATTERY_BAYS[self._model], retry=self._retry_count
+        )
+        if not self._check_command_result(_data, 0, COMMAND_RESULT_EXPECTED_VALUES):
+            _LOGGER.warning("Unable to read battery bays")
+            return None
+        if len(_data) < 3:
+            _LOGGER.warning("Invalid battery bays data received: %s", _data.hex())
+            return None
+        return _data
+
+    @staticmethod
+    def _parse_battery_bays(data: bytes) -> dict[str, int | None]:
+        """Parse battery bays data, None for an empty bay."""
+        return {
+            "left_battery": data[1] & 0b01111111 if data[1] & 0b10000000 else None,
+            "right_battery": data[2] & 0b01111111 if data[2] & 0b10000000 else None,
+        }
 
     async def _enable_notifications(self) -> bool:
         result = await self._send_command(COMMAND_ENABLE_NOTIFICATIONS[self._model])

@@ -166,6 +166,7 @@ async def test_get_basic_info(model: str):
     with (
         patch.object(device, "_get_lock_info", return_value=lock_data),
         patch.object(device, "_get_basic_info", return_value=basic_data),
+        patch.object(device, "_get_battery_bays", return_value=None),
     ):
         result = await device.get_basic_info()
         assert result is not None
@@ -173,6 +174,7 @@ async def test_get_basic_info(model: str):
         assert "firmware" in result
         assert "calibration" in result
         assert "status" in result
+        assert "left_battery" not in result
 
 
 @pytest.mark.asyncio
@@ -219,6 +221,64 @@ async def test_get_basic_info_no_basic_data(model: str):
     ):
         result = await device.get_basic_info()
         assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_basic_info_lock_pro_battery_bays():
+    """Test get_basic_info reads both battery bays on the Lock Pro."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_PRO)
+    with (
+        patch.object(
+            device, "_get_lock_info", return_value=b"\x00\x80\x00\x00\x00\x00\x00\x00"
+        ),
+        patch.object(device, "_get_basic_info", return_value=b"\x00\x64\x01"),
+        patch.object(
+            device, "_send_command", return_value=bytes.fromhex("01e4cd0000")
+        ) as mock_send,
+    ):
+        result = await device.get_basic_info()
+    mock_send.assert_awaited_once_with(key="570f4f0409", retry=device._retry_count)
+    assert result["left_battery"] == 100
+    assert result["right_battery"] == 77
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("reply", [b"\x00", b"\x01\xe4"])
+async def test_get_battery_bays_bad_reply(reply: bytes):
+    """Test _get_battery_bays rejects failed and short replies."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_PRO)
+    with patch.object(device, "_send_command", return_value=reply):
+        assert await device._get_battery_bays() is None
+
+
+@pytest.mark.asyncio
+async def test_get_basic_info_lock_pro_without_battery_bays():
+    """Test get_basic_info still succeeds when the bays read is refused."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_PRO)
+    with (
+        patch.object(
+            device, "_get_lock_info", return_value=b"\x00\x80\x00\x00\x00\x00\x00\x00"
+        ),
+        patch.object(device, "_get_basic_info", return_value=b"\x00\x64\x01"),
+        patch.object(device, "_send_command", return_value=b"\x00"),
+    ):
+        result = await device.get_basic_info()
+    assert result is not None
+    assert result["battery"] == 100
+    assert "left_battery" not in result
+
+
+@pytest.mark.parametrize(
+    ("data", "expected"),
+    [
+        (bytes.fromhex("01e4cd0000"), {"left_battery": 100, "right_battery": 77}),
+        (bytes.fromhex("01e4000000"), {"left_battery": 100, "right_battery": None}),
+        (bytes.fromhex("0100b20000"), {"left_battery": None, "right_battery": 50}),
+    ],
+)
+def test_parse_battery_bays(data: bytes, expected: dict[str, int | None]):
+    """Test _parse_battery_bays reports None for an empty bay."""
+    assert lock.SwitchbotLock._parse_battery_bays(data) == expected
 
 
 def test_parse_basic_data():
