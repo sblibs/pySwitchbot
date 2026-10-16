@@ -10,6 +10,19 @@ source .venv/bin/activate
 pip install .
 ```
 
+## Air purifier filter reset
+
+After replacing the filter, call `await purifier.reset_filter_usage()` on a
+configured `SwitchbotAirPurifier` instance. The method uses the device's
+encrypted BLE connection, sends the reset command without automatic retries,
+and reads back the used-hours counter. It returns `True` and refreshes the
+cached `filter element working time` only after the device reports zero.
+
+Failed commands or an unconfirmed reset raise `SwitchbotOperationError`. If a
+reply is lost, check the device before retrying: the reset may already have
+been applied. This resets the device counter and does not restore its previous
+value.
+
 ## OAuth account access
 
 pySwitchbot provides helpers for SwitchBot's authorization-code flow. The
