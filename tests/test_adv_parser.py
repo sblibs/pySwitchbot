@@ -15,6 +15,7 @@ from switchbot.adv_parser import (
     populate_model_to_mac_cache,
 )
 from switchbot.adv_parsers.fan import process_circulator_fan_pro
+from switchbot.adv_parsers.lock import process_wolock_pro, process_wolock_pro_wifi
 from switchbot.const.lock import LockStatus
 from switchbot.models import SwitchBotAdvertisement
 
@@ -3020,9 +3021,12 @@ def test_hub3_with_empty_data() -> None:
                 "door_open_from_secondary_lock": False,
                 "double_lock_mode": False,
                 "is_secondary_lock": False,
-                "left_battery_compartment_alarm": 0,
-                "right_battery_compartment_alarm": 0,
+                "battery_charging": False,
+                "left_battery_compartment_alarm": False,
+                "right_battery_compartment_alarm": False,
                 "low_temperature_alarm": False,
+                "power_alarm": False,
+                "door_magnet_alarm": False,
                 "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
                 "unlocked_alarm": False,
@@ -3113,8 +3117,8 @@ def test_hub3_with_empty_data() -> None:
                 "door_open_from_secondary_lock": False,
                 "double_lock_mode": False,
                 "is_secondary_lock": False,
-                "left_battery_compartment_alarm": 0,
-                "right_battery_compartment_alarm": 0,
+                "left_battery_compartment_alarm": False,
+                "right_battery_compartment_alarm": False,
                 "low_temperature_alarm": False,
                 "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
@@ -3256,9 +3260,12 @@ def test_lock_active(test_case: AdvTestCase) -> None:
                 "door_open_from_secondary_lock": False,
                 "double_lock_mode": False,
                 "is_secondary_lock": False,
-                "left_battery_compartment_alarm": 0,
-                "right_battery_compartment_alarm": 0,
+                "battery_charging": False,
+                "left_battery_compartment_alarm": False,
+                "right_battery_compartment_alarm": False,
                 "low_temperature_alarm": False,
+                "power_alarm": False,
+                "door_magnet_alarm": False,
                 "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
                 "unlocked_alarm": False,
@@ -3349,8 +3356,8 @@ def test_lock_active(test_case: AdvTestCase) -> None:
                 "door_open_from_secondary_lock": False,
                 "double_lock_mode": False,
                 "is_secondary_lock": False,
-                "left_battery_compartment_alarm": 0,
-                "right_battery_compartment_alarm": 0,
+                "left_battery_compartment_alarm": False,
+                "right_battery_compartment_alarm": False,
                 "low_temperature_alarm": False,
                 "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
@@ -5227,3 +5234,27 @@ def test_with_special_manufacturer_data_length() -> None:
     )
     result = parse_advertisement_data(ble_device, adv_data)
     assert result.data["modelName"] == SwitchbotModel.HUMIDIFIER
+
+
+def test_lock_pro_alarm_bits() -> None:
+    """Test Lock Pro charging and alarm bits."""
+    mfr_data = bytes.fromhex("fb7d6962d3de2a8a00e4003e")
+    result = process_wolock_pro(b"$\x80d", mfr_data)
+    assert result["battery"] == 100
+    assert result["battery_charging"] is True
+    assert result["low_temperature_alarm"] is True
+    assert result["power_alarm"] is True
+    assert result["door_magnet_alarm"] is True
+    assert result["left_battery_compartment_alarm"] is True
+    assert result["right_battery_compartment_alarm"] is True
+    assert result["unclosed_alarm"] is False
+    assert result["unlocked_alarm"] is False
+
+
+def test_lock_pro_wifi_omits_lock_pro_only_bits() -> None:
+    """Test Lock Pro Wifi does not report bits only decoded for the Lock Pro."""
+    result = process_wolock_pro_wifi(None, bytes.fromhex("fb7d6962d3de2a8a00e4003e"))
+    assert result["left_battery_compartment_alarm"] is True
+    assert "battery_charging" not in result
+    assert "power_alarm" not in result
+    assert "door_magnet_alarm" not in result
