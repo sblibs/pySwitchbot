@@ -2,6 +2,31 @@
 
 <!-- version list -->
 
+## v3.1.0 (2026-10-16)
+
+### Chores
+
+- **deps**: Bump cryptography from 49.0.0 to 50.0.2
+  ([#577](https://github.com/sblibs/pySwitchbot/pull/577),
+  [`647e27d`](https://github.com/sblibs/pySwitchbot/commit/647e27d2555821eb074a0a7ede29d80952a9c8ec))
+
+### Documentation
+
+- Document air purifier filter usage reset ([#583](https://github.com/sblibs/pySwitchbot/pull/583),
+  [`1e233ab`](https://github.com/sblibs/pySwitchbot/commit/1e233abc9d7759d81e097414426b648058e35736))
+
+### Features
+
+- **air-purifier**: Add verified filter usage reset
+  ([#583](https://github.com/sblibs/pySwitchbot/pull/583),
+  [`1e233ab`](https://github.com/sblibs/pySwitchbot/commit/1e233abc9d7759d81e097414426b648058e35736))
+
+### Testing
+
+- Cover purifier filter reset verification ([#583](https://github.com/sblibs/pySwitchbot/pull/583),
+  [`1e233ab`](https://github.com/sblibs/pySwitchbot/commit/1e233abc9d7759d81e097414426b648058e35736))
+
+
 ## v3.0.0 (2026-10-08)
 
 ### Bug Fixes
