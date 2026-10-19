@@ -1,8 +1,77 @@
 """Tests for helper functions."""
 
+import asyncio
+import gc
+import logging
+
 import pytest
 
-from switchbot.helpers import parse_power_data
+from switchbot.helpers import (
+    _BACKGROUND_TASKS,
+    create_background_task,
+    parse_power_data,
+)
+
+
+async def _drain_background_task(task: asyncio.Task) -> list[dict]:
+    """Let a background task finish and collect unhandled-exception reports."""
+    loop = asyncio.get_running_loop()
+    reports: list[dict] = []
+    loop.set_exception_handler(lambda _loop, context: reports.append(context))
+    try:
+        await asyncio.wait([task])
+        await asyncio.sleep(0)
+        del task
+        gc.collect()
+        await asyncio.sleep(0)
+    finally:
+        loop.set_exception_handler(None)
+    return reports
+
+
+@pytest.mark.asyncio
+async def test_background_task_failure_is_logged(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test a failed background task is logged instead of left unretrieved."""
+
+    async def _fail() -> None:
+        raise TimeoutError
+
+    caplog.set_level(logging.DEBUG, logger="switchbot.helpers")
+
+    reports = await _drain_background_task(create_background_task(_fail()))
+
+    assert reports == []
+    assert not _BACKGROUND_TASKS
+    assert "failed" in caplog.text
+    assert "TimeoutError" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_background_task_cancelled() -> None:
+    """Test a cancelled background task is dropped without errors."""
+    task = create_background_task(asyncio.sleep(10))
+    await asyncio.sleep(0)
+    task.cancel()
+
+    reports = await _drain_background_task(task)
+
+    assert reports == []
+    assert not _BACKGROUND_TASKS
+
+
+@pytest.mark.asyncio
+async def test_background_task_success() -> None:
+    """Test a successful background task is dropped from the set."""
+
+    async def _ok() -> int:
+        return 1
+
+    reports = await _drain_background_task(create_background_task(_ok()))
+
+    assert reports == []
+    assert not _BACKGROUND_TASKS
 
 
 def test_parse_power_data_basic():

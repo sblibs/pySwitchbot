@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import struct
 from collections.abc import Coroutine
 from typing import Any, TypeVar
+
+_LOGGER = logging.getLogger(__name__)
 
 _R = TypeVar("_R")
 
@@ -18,8 +21,17 @@ def create_background_task(target: Coroutine[Any, Any, _R]) -> asyncio.Task[_R]:
     """Create a background task."""
     task = asyncio.create_task(target)
     _BACKGROUND_TASKS.add(task)
-    task.add_done_callback(_BACKGROUND_TASKS.remove)
+    task.add_done_callback(_background_task_done)
     return task
+
+
+def _background_task_done(task: asyncio.Task[Any]) -> None:
+    """Drop a finished background task and log its failure, if any."""
+    _BACKGROUND_TASKS.discard(task)
+    if task.cancelled():
+        return
+    if exc := task.exception():
+        _LOGGER.debug("Background task %s failed", task.get_name(), exc_info=exc)
 
 
 def parse_power_data(
