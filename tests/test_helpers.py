@@ -17,6 +17,7 @@ async def _drain_background_task(task: asyncio.Task) -> list[dict]:
     """Let a background task finish and collect unhandled-exception reports."""
     loop = asyncio.get_running_loop()
     reports: list[dict] = []
+    previous_handler = loop.get_exception_handler()
     loop.set_exception_handler(lambda _loop, context: reports.append(context))
     try:
         await asyncio.wait([task])
@@ -25,27 +26,43 @@ async def _drain_background_task(task: asyncio.Task) -> list[dict]:
         gc.collect()
         await asyncio.sleep(0)
     finally:
-        loop.set_exception_handler(None)
+        loop.set_exception_handler(previous_handler)
     return reports
 
 
+async def _update() -> None:
+    raise TimeoutError
+
+
+async def _parse() -> None:
+    raise IndexError("index out of range")
+
+
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("coro_func", "level", "exc_name"),
+    [
+        pytest.param(_update, logging.DEBUG, "TimeoutError", id="transient"),
+        pytest.param(_parse, logging.ERROR, "IndexError", id="unexpected"),
+    ],
+)
 async def test_background_task_failure_is_logged(
     caplog: pytest.LogCaptureFixture,
+    coro_func,
+    level: int,
+    exc_name: str,
 ) -> None:
     """Test a failed background task is logged instead of left unretrieved."""
-
-    async def _fail() -> None:
-        raise TimeoutError
-
     caplog.set_level(logging.DEBUG, logger="switchbot.helpers")
 
-    reports = await _drain_background_task(create_background_task(_fail()))
+    reports = await _drain_background_task(create_background_task(coro_func()))
 
     assert reports == []
     assert not _BACKGROUND_TASKS
-    assert "failed" in caplog.text
-    assert "TimeoutError" in caplog.text
+    [record] = caplog.records
+    assert record.levelno == level
+    assert record.getMessage() == f"Background task {coro_func.__name__} failed"
+    assert record.exc_info[0].__name__ == exc_name
 
 
 @pytest.mark.asyncio

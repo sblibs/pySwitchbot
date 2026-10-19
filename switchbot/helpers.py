@@ -6,7 +6,13 @@ import struct
 from collections.abc import Coroutine
 from typing import Any, TypeVar
 
+from bleak.exc import BleakError
+
 _LOGGER = logging.getLogger(__name__)
+
+# Background tasks are opportunistic refreshes, so a dropped BLE exchange is
+# expected and retried on the next advertisement or poll.
+_TRANSIENT_EXCEPTIONS = (TimeoutError, BleakError, EOFError, BrokenPipeError)
 
 _R = TypeVar("_R")
 
@@ -28,10 +34,13 @@ def create_background_task(target: Coroutine[Any, Any, _R]) -> asyncio.Task[_R]:
 def _background_task_done(task: asyncio.Task[Any]) -> None:
     """Drop a finished background task and log its failure, if any."""
     _BACKGROUND_TASKS.discard(task)
-    if task.cancelled():
+    if task.cancelled() or (exc := task.exception()) is None:
         return
-    if exc := task.exception():
-        _LOGGER.debug("Background task %s failed", task.get_name(), exc_info=exc)
+    name = getattr(task.get_coro(), "__qualname__", task.get_name())
+    if isinstance(exc, _TRANSIENT_EXCEPTIONS):
+        _LOGGER.debug("Background task %s failed", name, exc_info=exc)
+    else:
+        _LOGGER.error("Background task %s failed", name, exc_info=exc)
 
 
 def parse_power_data(
