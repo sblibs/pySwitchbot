@@ -133,6 +133,8 @@ class SwitchbotSmartThermostatRadiator(
         """Get device basic settings."""
         if not (_data := await self._get_basic_info()):
             return None
+        if len(_data) < 15:
+            return None
         _LOGGER.debug("data: %s", _data)
 
         battery = _data[1]
