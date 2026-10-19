@@ -54,11 +54,12 @@ async def test_background_task_failure_is_logged(
 ) -> None:
     """Test a failed background task is logged instead of left unretrieved."""
     caplog.set_level(logging.DEBUG, logger="switchbot.helpers")
+    pending = set(_BACKGROUND_TASKS)
 
     reports = await _drain_background_task(create_background_task(coro_func()))
 
     assert reports == []
-    assert not _BACKGROUND_TASKS
+    assert pending == _BACKGROUND_TASKS
     [record] = caplog.records
     assert record.levelno == level
     assert record.getMessage() == f"Background task {coro_func.__name__} failed"
@@ -75,7 +76,7 @@ async def test_background_task_cancelled() -> None:
     reports = await _drain_background_task(task)
 
     assert reports == []
-    assert not _BACKGROUND_TASKS
+    assert task not in _BACKGROUND_TASKS
 
 
 @pytest.mark.asyncio
@@ -85,10 +86,12 @@ async def test_background_task_success() -> None:
     async def _ok() -> int:
         return 1
 
+    pending = set(_BACKGROUND_TASKS)
+
     reports = await _drain_background_task(create_background_task(_ok()))
 
     assert reports == []
-    assert not _BACKGROUND_TASKS
+    assert pending == _BACKGROUND_TASKS
 
 
 def test_parse_power_data_basic():
