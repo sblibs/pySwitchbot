@@ -49,38 +49,40 @@ class SwitchbotHumidifier(SwitchbotDevice):
         level = self.get_target_humidity() or 128
         result = await self._send_command(self._generate_command(on=state, level=level))
         ret = self._check_command_result(result, 0, {0x01})
-        self._override_state({"isOn": state, "level": level})
-        self._fire_callbacks()
+        if ret:
+            self._override_state({"isOn": state, "level": level})
+            self._fire_callbacks()
         return ret
 
     async def turn_on(self) -> bool:
         """Turn device on."""
-        await self._async_set_state(True)
+        return await self._async_set_state(True)
 
     async def turn_off(self) -> bool:
         """Turn device off."""
-        await self._async_set_state(False)
+        return await self._async_set_state(False)
 
     async def set_level(self, level: int) -> bool:
         """Set level."""
         assert 1 <= level <= 100, "Level must be between 1 and 100"
-        await self._set_level(level)
+        return await self._set_level(level)
 
     async def _set_level(self, level: int) -> bool:
         """Set level."""
         result = await self._send_command(self._generate_command(level=level))
         ret = self._check_command_result(result, 0, {0x01})
-        self._override_state({"level": level})
-        self._fire_callbacks()
+        if ret:
+            self._override_state({"level": level})
+            self._fire_callbacks()
         return ret
 
     async def async_set_auto(self) -> bool:
         """Set auto mode."""
-        await self._set_level(128)
+        return await self._set_level(128)
 
     async def async_set_manual(self) -> bool:
         """Set manual mode."""
-        await self._set_level(50)
+        return await self._set_level(50)
 
     def is_auto(self) -> bool:
         """Return auto state from cache."""
