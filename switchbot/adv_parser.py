@@ -20,7 +20,11 @@ from .adv_parsers.ceiling_light import process_woceiling
 from .adv_parsers.climate_panel import process_climate_panel
 from .adv_parsers.contact import process_wocontact
 from .adv_parsers.curtain import process_wocurtain
-from .adv_parsers.fan import process_fan, process_standing_fan
+from .adv_parsers.fan import (
+    process_circulator_fan_pro,
+    process_fan,
+    process_standing_fan,
+)
 from .adv_parsers.hub2 import process_wohub2
 from .adv_parsers.hub3 import process_hub3
 from .adv_parsers.hubmini_matter import process_hubmini_matter
@@ -51,7 +55,7 @@ from .adv_parsers.relay_switch import (
     process_relay_switch_2pm,
     process_relay_switch_common_data,
 )
-from .adv_parsers.remote import process_woremote
+from .adv_parsers.remote import process_woremote, process_wouniversal_remote
 from .adv_parsers.roller_shade import process_worollershade
 from .adv_parsers.smart_thermostat_radiator import process_smart_thermostat_radiator
 from .adv_parsers.vacuum import process_vacuum, process_vacuum_k
@@ -125,13 +129,13 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "manufacturer_id": 2409,
     },
     "{": {
-        "modelName": SwitchbotModel.CURTAIN,
+        "modelName": SwitchbotModel.CURTAIN_3,
         "modelFriendlyName": "Curtain 3",
         "func": process_wocurtain,
         "manufacturer_id": 2409,
     },
     "[": {
-        "modelName": SwitchbotModel.CURTAIN,
+        "modelName": SwitchbotModel.CURTAIN_3,
         "modelFriendlyName": "Curtain 3",
         "func": process_wocurtain,
         "manufacturer_id": 2409,
@@ -149,25 +153,25 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "manufacturer_id": 2409,
     },
     "w": {
-        "modelName": SwitchbotModel.IO_METER,
-        "modelFriendlyName": "Indoor/Outdoor Meter",
+        "modelName": SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER,
+        "modelFriendlyName": "Indoor/Outdoor Thermo-Hygrometer",
         "func": process_wosensorth,
         "manufacturer_id": 2409,
     },
     "W": {
-        "modelName": SwitchbotModel.IO_METER,
-        "modelFriendlyName": "Indoor/Outdoor Meter",
+        "modelName": SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER,
+        "modelFriendlyName": "Indoor/Outdoor Thermo-Hygrometer",
         "func": process_wosensorth,
         "manufacturer_id": 2409,
     },
     "i": {
-        "modelName": SwitchbotModel.METER,
+        "modelName": SwitchbotModel.METER_PLUS,
         "modelFriendlyName": "Meter Plus",
         "func": process_wosensorth,
         "manufacturer_id": 2409,
     },
     "I": {
-        "modelName": SwitchbotModel.METER,
+        "modelName": SwitchbotModel.METER_PLUS,
         "modelFriendlyName": "Meter Plus",
         "func": process_wosensorth,
         "manufacturer_id": 2409,
@@ -197,13 +201,13 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "manufacturer_id": 2409,
     },
     "5": {
-        "modelName": SwitchbotModel.METER_PRO_C,
+        "modelName": SwitchbotModel.METER_PRO_CO2,
         "modelFriendlyName": "Meter Pro CO2",
         "func": process_wosensorth_c,
         "manufacturer_id": 2409,
     },
     b"\x15": {
-        "modelName": SwitchbotModel.METER_PRO_C,
+        "modelName": SwitchbotModel.METER_PRO_CO2,
         "modelFriendlyName": "Meter Pro CO2",
         "func": process_wosensorth_c,
         "manufacturer_id": 2409,
@@ -221,25 +225,25 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "manufacturer_id": 2409,
     },
     "g": {
-        "modelName": SwitchbotModel.PLUG_MINI,
-        "modelFriendlyName": "Plug Mini",
+        "modelName": SwitchbotModel.PLUG_MINI_US,
+        "modelFriendlyName": "Plug Mini (US)",
         "func": process_woplugmini,
         "manufacturer_id": 2409,
     },
     "G": {
-        "modelName": SwitchbotModel.PLUG_MINI,
-        "modelFriendlyName": "Plug Mini",
+        "modelName": SwitchbotModel.PLUG_MINI_US,
+        "modelFriendlyName": "Plug Mini (US)",
         "func": process_woplugmini,
         "manufacturer_id": 2409,
     },
     "j": {
-        "modelName": SwitchbotModel.PLUG_MINI,
+        "modelName": SwitchbotModel.PLUG_MINI_JP,
         "modelFriendlyName": "Plug Mini (JP)",
         "func": process_woplugmini,
         "manufacturer_id": 2409,
     },
     "J": {
-        "modelName": SwitchbotModel.PLUG_MINI,
+        "modelName": SwitchbotModel.PLUG_MINI_JP,
         "modelFriendlyName": "Plug Mini (JP)",
         "func": process_woplugmini,
         "manufacturer_id": 2409,
@@ -269,13 +273,13 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "manufacturer_id": 2409,
     },
     "n": {
-        "modelName": SwitchbotModel.CEILING_LIGHT,
+        "modelName": SwitchbotModel.CEILING_LIGHT_PRO,
         "modelFriendlyName": "Ceiling Light Pro",
         "func": process_woceiling,
         "manufacturer_id": 2409,
     },
     "N": {
-        "modelName": SwitchbotModel.CEILING_LIGHT,
+        "modelName": SwitchbotModel.CEILING_LIGHT_PRO,
         "modelFriendlyName": "Ceiling Light Pro",
         "func": process_woceiling,
         "manufacturer_id": 2409,
@@ -401,6 +405,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelFriendlyName": "Remote",
         "func": process_woremote,
         "manufacturer_id": 89,
+    },
+    "\x07": {
+        "modelName": SwitchbotModel.UNIVERSAL_REMOTE,
+        "modelFriendlyName": "Universal Remote",
+        "func": process_wouniversal_remote,
+        "manufacturer_id": 2409,
+    },
+    "'": {
+        "modelName": SwitchbotModel.UNIVERSAL_REMOTE,
+        "modelFriendlyName": "Universal Remote",
+        "func": process_wouniversal_remote,
+        "manufacturer_id": 2409,
     },
     ",": {
         "modelName": SwitchbotModel.ROLLER_SHADE,
@@ -678,6 +694,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_rgbic_light,
         "manufacturer_id": 2409,
     },
+    b"\x00\x11\xbe\xf8": {
+        "modelName": SwitchbotModel.RGBICWW_LIGHT_BARS,
+        "modelFriendlyName": "RGBICWW Light Bars",
+        "func": process_rgbic_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\xbe\xf8": {
+        "modelName": SwitchbotModel.RGBICWW_LIGHT_BARS,
+        "modelFriendlyName": "RGBICWW Light Bars",
+        "func": process_rgbic_light,
+        "manufacturer_id": 2409,
+    },
     b"\x00\x11\xbb\x10": {
         "modelName": SwitchbotModel.RGBICWW_CEILING_LIGHT,
         "modelFriendlyName": "RGBICWW Ceiling Light",
@@ -688,6 +716,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.RGBICWW_CEILING_LIGHT,
         "modelFriendlyName": "RGBICWW Ceiling Light",
         "func": process_rgbicww_ceiling_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x11\xb3@": {
+        "modelName": SwitchbotModel.CIRCULATOR_FAN_PRO,
+        "modelFriendlyName": "Circulator Fan Pro",
+        "func": process_circulator_fan_pro,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\xb3@": {
+        "modelName": SwitchbotModel.CIRCULATOR_FAN_PRO,
+        "modelFriendlyName": "Circulator Fan Pro",
+        "func": process_circulator_fan_pro,
         "manufacturer_id": 2409,
     },
     b"\x00\x10\xd0\xb7": {
@@ -856,6 +896,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.LOCK_PRO_WIFI,
         "modelFriendlyName": "Lock Pro Wifi",
         "func": process_wolock_pro,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x11\x9f\xb8": {
+        "modelName": SwitchbotModel.LOCK_ULTRA_MAX,
+        "modelFriendlyName": "Lock Ultra Max",
+        "func": process_lock2,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\x9f\xb8": {
+        "modelName": SwitchbotModel.LOCK_ULTRA_MAX,
+        "modelFriendlyName": "Lock Ultra Max",
+        "func": process_lock2,
         "manufacturer_id": 2409,
     },
     b"\x00\x11\x07\x60": {

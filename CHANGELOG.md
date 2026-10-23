@@ -2,6 +2,275 @@
 
 <!-- version list -->
 
+## v3.1.0 (2026-10-16)
+
+### Chores
+
+- **deps**: Bump cryptography from 49.0.0 to 50.0.2
+  ([#577](https://github.com/sblibs/pySwitchbot/pull/577),
+  [`647e27d`](https://github.com/sblibs/pySwitchbot/commit/647e27d2555821eb074a0a7ede29d80952a9c8ec))
+
+### Documentation
+
+- Document air purifier filter usage reset ([#583](https://github.com/sblibs/pySwitchbot/pull/583),
+  [`1e233ab`](https://github.com/sblibs/pySwitchbot/commit/1e233abc9d7759d81e097414426b648058e35736))
+
+### Features
+
+- **air-purifier**: Add verified filter usage reset
+  ([#583](https://github.com/sblibs/pySwitchbot/pull/583),
+  [`1e233ab`](https://github.com/sblibs/pySwitchbot/commit/1e233abc9d7759d81e097414426b648058e35736))
+
+### Testing
+
+- Cover purifier filter reset verification ([#583](https://github.com/sblibs/pySwitchbot/pull/583),
+  [`1e233ab`](https://github.com/sblibs/pySwitchbot/commit/1e233abc9d7759d81e097414426b648058e35736))
+
+
+## v3.0.0 (2026-10-08)
+
+### Bug Fixes
+
+- Clarify model compatibility and cover cloud parsing
+  ([#579](https://github.com/sblibs/pySwitchbot/pull/579),
+  [`8c39323`](https://github.com/sblibs/pySwitchbot/commit/8c393236b0c5bf7c15b21ea05f439129073fba7e))
+
+### Chores
+
+- **ci**: Bump the github-actions group with 3 updates
+  ([#573](https://github.com/sblibs/pySwitchbot/pull/573),
+  [`c31a5cf`](https://github.com/sblibs/pySwitchbot/commit/c31a5cfcaf408cf16e554e860747c220d291677e))
+
+- **deps**: Bump multidict from 6.7.1 to 6.9.1
+  ([#580](https://github.com/sblibs/pySwitchbot/pull/580),
+  [`2c80055`](https://github.com/sblibs/pySwitchbot/commit/2c800554704ed19a75ce63593b706848adfffb60))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#578](https://github.com/sblibs/pySwitchbot/pull/578),
+  [`afa332e`](https://github.com/sblibs/pySwitchbot/commit/afa332e33c7afc995c564ae9e8583d7d2bb8bb45))
+
+### Features
+
+- Distinguish SwitchBot product models ([#579](https://github.com/sblibs/pySwitchbot/pull/579),
+  [`8c39323`](https://github.com/sblibs/pySwitchbot/commit/8c393236b0c5bf7c15b21ea05f439129073fba7e))
+
+### Breaking Changes
+
+- Product-specific modelName values replace shared identities for Curtain 3, Meter Plus, Plug Mini
+  US/JP, Ceiling Light Pro, and ordinary Hub Mini. METER_PRO_C and IO_METER now expose the new
+  canonical .name strings. PLUG_MINI remains importable but no longer selects a BLE parser; use
+  PLUG_MINI_US or PLUG_MINI_JP. Coordinate the major release with downstream model mappings and
+  configuration migrations.
+
+
+## v2.10.0 (2026-09-29)
+
+### Bug Fixes
+
+- **art_frame**: Raise RuntimeError when no image differs from current
+  ([#568](https://github.com/sblibs/pySwitchbot/pull/568),
+  [`b8b871e`](https://github.com/sblibs/pySwitchbot/commit/b8b871e5a7cb893a40adf69206d0b862565df848))
+
+- **art_frame**: Use secrets.choice to satisfy ruff S311
+  ([#568](https://github.com/sblibs/pySwitchbot/pull/568),
+  [`b8b871e`](https://github.com/sblibs/pySwitchbot/commit/b8b871e5a7cb893a40adf69206d0b862565df848))
+
+### Chores
+
+- **pre-commit.ci**: Auto fixes ([#568](https://github.com/sblibs/pySwitchbot/pull/568),
+  [`b8b871e`](https://github.com/sblibs/pySwitchbot/commit/b8b871e5a7cb893a40adf69206d0b862565df848))
+
+### Features
+
+- **art_frame**: Add random_image method ([#568](https://github.com/sblibs/pySwitchbot/pull/568),
+  [`b8b871e`](https://github.com/sblibs/pySwitchbot/commit/b8b871e5a7cb893a40adf69206d0b862565df848))
+
+
+## v2.9.1 (2026-09-29)
+
+### Bug Fixes
+
+- Add support for zero data with non-zero battery from Meter
+  ([#571](https://github.com/sblibs/pySwitchbot/pull/571),
+  [`c8535bf`](https://github.com/sblibs/pySwitchbot/commit/c8535bf312b4b1543a5d4a13e613cf238eedcd98))
+
+### Chores
+
+- **deps**: Bump bleak-retry-connector from 4.7.0 to 4.7.1
+  ([#569](https://github.com/sblibs/pySwitchbot/pull/569),
+  [`d5633d4`](https://github.com/sblibs/pySwitchbot/commit/d5633d40e7dadab1dd2bf0e9f06b7fdecf337b4b))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#570](https://github.com/sblibs/pySwitchbot/pull/570),
+  [`47d50a3`](https://github.com/sblibs/pySwitchbot/commit/47d50a393e8ba8fadf4a7ddf4ca5b9a0007f9d66))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#567](https://github.com/sblibs/pySwitchbot/pull/567),
+  [`0f2f49b`](https://github.com/sblibs/pySwitchbot/commit/0f2f49b5eb6f57bf8510953c004dca08a450fa58))
+
+
+## v2.9.0 (2026-09-15)
+
+### Bug Fixes
+
+- Address OAuth review feedback ([#563](https://github.com/sblibs/pySwitchbot/pull/563),
+  [`3c2b1c0`](https://github.com/sblibs/pySwitchbot/commit/3c2b1c0423d3418f2d16fbc34c4f02805b275b06))
+
+- Address OAuth review follow-ups ([#563](https://github.com/sblibs/pySwitchbot/pull/563),
+  [`3c2b1c0`](https://github.com/sblibs/pySwitchbot/commit/3c2b1c0423d3418f2d16fbc34c4f02805b275b06))
+
+### Features
+
+- Add OAuth support for cloud APIs ([#563](https://github.com/sblibs/pySwitchbot/pull/563),
+  [`3c2b1c0`](https://github.com/sblibs/pySwitchbot/commit/3c2b1c0423d3418f2d16fbc34c4f02805b275b06))
+
+### Refactoring
+
+- Simplify encryption key delegation ([#563](https://github.com/sblibs/pySwitchbot/pull/563),
+  [`3c2b1c0`](https://github.com/sblibs/pySwitchbot/commit/3c2b1c0423d3418f2d16fbc34c4f02805b275b06))
+
+### Testing
+
+- Cover OAuth device error paths ([#563](https://github.com/sblibs/pySwitchbot/pull/563),
+  [`3c2b1c0`](https://github.com/sblibs/pySwitchbot/commit/3c2b1c0423d3418f2d16fbc34c4f02805b275b06))
+
+
+## v2.8.0 (2026-09-14)
+
+### Features
+
+- **ceiling_light**: Add night light mode support
+  ([#564](https://github.com/sblibs/pySwitchbot/pull/564),
+  [`e018f31`](https://github.com/sblibs/pySwitchbot/commit/e018f3165a1c06f0c5f9fa294b155ee0ad01880a))
+
+
+## v2.7.1 (2026-09-13)
+
+### Bug Fixes
+
+- **ceiling-light**: Ignore invalid color temperature
+  ([#557](https://github.com/sblibs/pySwitchbot/pull/557),
+  [`fbfcaa1`](https://github.com/sblibs/pySwitchbot/commit/fbfcaa12d8d1ae52d936e7d533095326b41e0c0e))
+
+### Chores
+
+- **ci**: Bump the github-actions group with 2 updates
+  ([#562](https://github.com/sblibs/pySwitchbot/pull/562),
+  [`4b4c98b`](https://github.com/sblibs/pySwitchbot/commit/4b4c98b3264ff3a1b42049a1d6bed0f579618693))
+
+- **deps**: Bump bleak-retry-connector from 4.6.3 to 4.7.0
+  ([#566](https://github.com/sblibs/pySwitchbot/pull/566),
+  [`c84a1d7`](https://github.com/sblibs/pySwitchbot/commit/c84a1d7fa1cb44fe5d582585a330be4309d4a9be))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#560](https://github.com/sblibs/pySwitchbot/pull/560),
+  [`d69e069`](https://github.com/sblibs/pySwitchbot/commit/d69e069ac41705cd875305b5e18cadaa6c2b683a))
+
+
+## v2.7.0 (2026-08-31)
+
+### Features
+
+- Add Lock Ultra Max support ([#558](https://github.com/sblibs/pySwitchbot/pull/558),
+  [`eefa4a7`](https://github.com/sblibs/pySwitchbot/commit/eefa4a701423a79369a0daaeb517d9692d43e00f))
+
+
+## v2.6.0 (2026-08-24)
+
+### Features
+
+- Add Circulator Fan Pro (W1160) support ([#508](https://github.com/sblibs/pySwitchbot/pull/508),
+  [`5c2e6c8`](https://github.com/sblibs/pySwitchbot/commit/5c2e6c881191b6a469bc4e2b74e0d338778e8576))
+
+
+## v2.5.0 (2026-08-24)
+
+### Chores
+
+- **deps**: Bump pyopenssl from 26.3.0 to 26.4.0
+  ([#553](https://github.com/sblibs/pySwitchbot/pull/553),
+  [`2c2cc77`](https://github.com/sblibs/pySwitchbot/commit/2c2cc772fc191caff8e6f27232c6d259785063b0))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#556](https://github.com/sblibs/pySwitchbot/pull/556),
+  [`97744a9`](https://github.com/sblibs/pySwitchbot/commit/97744a9d4de0d3024a6742b6ca2378983e242679))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#554](https://github.com/sblibs/pySwitchbot/pull/554),
+  [`d4723ac`](https://github.com/sblibs/pySwitchbot/commit/d4723ac7ca935e590ffddd57f7addf9afa36fb4b))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#552](https://github.com/sblibs/pySwitchbot/pull/552),
+  [`ad9998c`](https://github.com/sblibs/pySwitchbot/commit/ad9998c4448cc75f72e21b08fb5d5a60c260a260))
+
+### Features
+
+- Add Universal Remote Control support ([#520](https://github.com/sblibs/pySwitchbot/pull/520),
+  [`2736169`](https://github.com/sblibs/pySwitchbot/commit/273616902782a7e050858d9b71492e7b1f3b8c7d))
+
+- Expose Climate Panel keystate for HA automations
+  ([#537](https://github.com/sblibs/pySwitchbot/pull/537),
+  [`b592cbb`](https://github.com/sblibs/pySwitchbot/commit/b592cbb6bd708c85d52e913d0d33d778c6c9dcaa))
+
+
+## v2.4.1 (2026-08-07)
+
+### Bug Fixes
+
+- Allow API users to think about vertical oscillation "angle" in degrees.
+  ([#533](https://github.com/sblibs/pySwitchbot/pull/533),
+  [`fdd8b1c`](https://github.com/sblibs/pySwitchbot/commit/fdd8b1cdddd8fc91add1a2319e3c386f7336e467))
+
+
+## v2.4.0 (2026-08-07)
+
+### Bug Fixes
+
+- Standing fan night light not turning off (send 0x00 for OFF)
+  ([#547](https://github.com/sblibs/pySwitchbot/pull/547),
+  [`4ecabc8`](https://github.com/sblibs/pySwitchbot/commit/4ecabc840b3ad25708616a73691209df8e464e7e))
+
+- **ceiling-light**: Decode basic info color mode bit
+  ([#549](https://github.com/sblibs/pySwitchbot/pull/549),
+  [`8eeae5f`](https://github.com/sblibs/pySwitchbot/commit/8eeae5f2f4e23700b7b4e67e7efa0338d2051004))
+
+### Chores
+
+- Fix lint errors flagged by ruff 0.16 ([#551](https://github.com/sblibs/pySwitchbot/pull/551),
+  [`d9cb972`](https://github.com/sblibs/pySwitchbot/commit/d9cb972ecc05bd1cd60a582d04219573eb2b1f8b))
+
+- **ci**: Bump the github-actions group with 5 updates
+  ([#548](https://github.com/sblibs/pySwitchbot/pull/548),
+  [`5639cf2`](https://github.com/sblibs/pySwitchbot/commit/5639cf232f6159ac4251d718d3abb409131f678b))
+
+- **ci**: Bump the github-actions group with 5 updates
+  ([#535](https://github.com/sblibs/pySwitchbot/pull/535),
+  [`f8ba9e5`](https://github.com/sblibs/pySwitchbot/commit/f8ba9e57cf9d8eb8e831a86206f93d33ba1aad8f))
+
+- **deps**: Bump aiohttp from 3.14.1 to 3.14.3
+  ([#545](https://github.com/sblibs/pySwitchbot/pull/545),
+  [`d5aae8f`](https://github.com/sblibs/pySwitchbot/commit/d5aae8f9cb4fb35772b6cb7193e1386df2bdc20f))
+
+- **deps**: Bump bleak-retry-connector from 4.6.1 to 4.6.3
+  ([#544](https://github.com/sblibs/pySwitchbot/pull/544),
+  [`59d3533`](https://github.com/sblibs/pySwitchbot/commit/59d35335eca556126f76ff0780356bf0c1989c58))
+
+- **deps-dev**: Bump pytest-asyncio from 1.3.0 to 1.4.0
+  ([#530](https://github.com/sblibs/pySwitchbot/pull/530),
+  [`bbd3dbf`](https://github.com/sblibs/pySwitchbot/commit/bbd3dbfa8fdb5cb58b37732cb4afa84db8be7f70))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#539](https://github.com/sblibs/pySwitchbot/pull/539),
+  [`ab9d640`](https://github.com/sblibs/pySwitchbot/commit/ab9d640fb2268a2f5bc2fd64c0d9a8d04510850f))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#534](https://github.com/sblibs/pySwitchbot/pull/534),
+  [`4a4cfd5`](https://github.com/sblibs/pySwitchbot/commit/4a4cfd5238edb1f144482b180aa3a4f185b4fd63))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#529](https://github.com/sblibs/pySwitchbot/pull/529),
+  [`96f2379`](https://github.com/sblibs/pySwitchbot/commit/96f2379454b9eee3323bf58989e120743d10c31f))
+
+### Features
+
+- Add RGBICWW Light Bars (W1163000) support ([#540](https://github.com/sblibs/pySwitchbot/pull/540),
+  [`3e1ed89`](https://github.com/sblibs/pySwitchbot/commit/3e1ed8914f092a88f9ec1d3a69ea02da5b3eae16))
+
+- Support the sync-datetime protocol on the plain Meter Pro
+  ([#538](https://github.com/sblibs/pySwitchbot/pull/538),
+  [`0d72eac`](https://github.com/sblibs/pySwitchbot/commit/0d72eac251fd0ab852c384ce3079e9c86156f637))
+
+
 ## v2.3.0 (2026-06-22)
 
 ### Bug Fixes

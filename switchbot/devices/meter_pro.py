@@ -12,8 +12,8 @@ COMMAND_SET_DEVICE_DATETIME = "57000503"
 COMMAND_SET_DISPLAY_FORMAT = "570f680505"
 
 
-class SwitchbotMeterProCO2(SwitchbotDevice):
-    """API to control Switchbot Meter Pro CO2."""
+class SwitchbotMeterPro(SwitchbotDevice):
+    """API to control Switchbot Meter Pro (and Meter Pro CO2, which shares the same datetime protocol)."""
 
     async def get_time_offset(self) -> int:
         """
@@ -170,3 +170,7 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
                 f"{self.name}: Unexpected response len for {op_name}, wanted at least {min_length} (result={result.hex() if result else 'None'} rssi={self.rssi})"
             )
         return result
+
+
+class SwitchbotMeterProCO2(SwitchbotMeterPro):
+    """API to control Switchbot Meter Pro CO2."""

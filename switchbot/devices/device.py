@@ -39,15 +39,25 @@ from ..const import (
 from ..discovery import GetSwitchbotDevices
 from ..helpers import create_background_task
 from ..models import SwitchBotAdvertisement
-from ..utils import format_mac_upper
+from ..utils import extract_request_id, format_mac_upper
 
 _LOGGER = logging.getLogger(__name__)
 
 
+def _masked_device_id(device_id: str) -> str:
+    """Mask a device identifier while retaining a useful suffix."""
+    normalized = device_id.replace(":", "").replace("-", "").upper()
+    if not normalized:
+        return "unknown"
+    return f"****{normalized[-4:]}"
+
+
 def _extract_region(userinfo: dict[str, Any]) -> str:
     """Extract region from user info, defaulting to 'us'."""
-    if "botRegion" in userinfo and userinfo["botRegion"] != "":
-        return userinfo["botRegion"]
+    region = userinfo.get("botRegion")
+    if isinstance(region, str) and region:
+        return region
+    _LOGGER.warning("SwitchBot account region missing; defaulting to us")
     return "us"
 
 
@@ -55,26 +65,28 @@ def _extract_region(userinfo: dict[str, Any]) -> str:
 API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "WoHand": SwitchbotModel.BOT,
     "WoCurtain": SwitchbotModel.CURTAIN,
-    "WoCurtain3": SwitchbotModel.CURTAIN,  # Curtain3
+    "WoCurtain3": SwitchbotModel.CURTAIN_3,
     "WoHumi": SwitchbotModel.HUMIDIFIER,
     "WoHumi2": SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
-    "WoPlug": SwitchbotModel.PLUG_MINI,
-    "WoPlugUS": SwitchbotModel.PLUG_MINI,
+    "WoPlugUS": SwitchbotModel.PLUG_MINI_US,
+    "WoPlugJP": SwitchbotModel.PLUG_MINI_JP,
     "WoContact": SwitchbotModel.CONTACT_SENSOR,
     "WoStrip": SwitchbotModel.LIGHT_STRIP,
     "WoMeter": SwitchbotModel.METER,
-    "WoMeterPlus": SwitchbotModel.METER,  # Meter Plus
+    "WoMeterPlus": SwitchbotModel.METER_PLUS,
     "WoPresence": SwitchbotModel.MOTION_SENSOR,
     "WoBulb": SwitchbotModel.COLOR_BULB,
     "WoCeiling": SwitchbotModel.CEILING_LIGHT,
-    "WoCeilingPro": SwitchbotModel.CEILING_LIGHT,  # Ceiling Light Pro
+    "WoCeilingPro": SwitchbotModel.CEILING_LIGHT_PRO,
     "WoLock": SwitchbotModel.LOCK,
     "WoLockPro": SwitchbotModel.LOCK_PRO,
     "WoLockLite": SwitchbotModel.LOCK_LITE,
     "WoBlindTilt": SwitchbotModel.BLIND_TILT,
-    "WoIOSensor": SwitchbotModel.IO_METER,  # Outdoor Meter
+    "WoIOSensor": SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER,
     "WoButton": SwitchbotModel.REMOTE,  # Remote button
-    "WoLinkMini": SwitchbotModel.HUBMINI_MATTER,  # Hub Mini
+    "WoUniversalRemote": SwitchbotModel.UNIVERSAL_REMOTE,  # Universal Remote
+    "WoLinkMini": SwitchbotModel.HUB_MINI,
+    "WoLinkMatter": SwitchbotModel.HUBMINI_MATTER,
     "WoFan2": SwitchbotModel.CIRCULATOR_FAN,
     "WoHub2": SwitchbotModel.HUB2,
     "WoRollerShade": SwitchbotModel.ROLLER_SHADE,
@@ -93,7 +105,7 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "W1083001": SwitchbotModel.RELAY_SWITCH_2PM,
     "W1083002": SwitchbotModel.RELAY_SWITCH_1,  # Relay Switch 1
     "W1079000": SwitchbotModel.METER_PRO,  # Meter Pro (another variant)
-    "W1079001": SwitchbotModel.METER_PRO_C,
+    "W1079001": SwitchbotModel.METER_PRO_CO2,
     "W1101000": SwitchbotModel.PRESENCE_SENSOR,
     "W1091000": SwitchbotModel.LOCK_ULTRA,
     "W1096000": SwitchbotModel.HUB3,
@@ -102,7 +114,9 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "W1102001": SwitchbotModel.STRIP_LIGHT_3,
     "W1102003": SwitchbotModel.RGBICWW_STRIP_LIGHT,
     "W1102004": SwitchbotModel.RGBICWW_FLOOR_LAMP,
+    "W1163000": SwitchbotModel.RGBICWW_LIGHT_BARS,
     "W1162000": SwitchbotModel.RGBICWW_CEILING_LIGHT,
+    "W1160000": SwitchbotModel.CIRCULATOR_FAN_PRO,
     "W1104000": SwitchbotModel.PLUG_MINI_EU,
     "W1128000": SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
     "W1111000": SwitchbotModel.CLIMATE_PANEL,
@@ -262,6 +276,10 @@ class SwitchbotBaseDevice:
             return await cls.api_request(
                 session, "account", "account/api/v1/user/userinfo", {}, auth_headers
             )
+        except SwitchbotAuthenticationError:
+            raise
+        except SwitchbotApiError:
+            raise
         except Exception as err:
             raise SwitchbotAccountConnectionError(
                 f"Failed to retrieve SwitchBot Account user details: {err}"
@@ -305,8 +323,45 @@ class SwitchbotBaseDevice:
         except Exception as err:
             raise SwitchbotAuthenticationError(f"Authentication failed: {err}") from err
 
+        return await cls._async_get_devices(session, auth_headers)
+
+    @classmethod
+    async def get_devices_by_token(
+        cls,
+        session: aiohttp.ClientSession,
+        access_token: str,
+    ) -> dict[str, SwitchbotModel]:
+        """Get devices from SwitchBot API using an OAuth access token."""
+        started = time.monotonic()
+        _LOGGER.debug("Retrieving SwitchBot cloud devices using an OAuth token")
+        try:
+            devices = await cls._async_get_devices(
+                session, {"authorization": access_token}
+            )
+        except Exception:
+            _LOGGER.debug(
+                "SwitchBot OAuth cloud device retrieval failed; duration_ms=%s",
+                round((time.monotonic() - started) * 1000),
+            )
+            raise
+        _LOGGER.debug(
+            "SwitchBot OAuth cloud device retrieval finished; supported_devices=%s "
+            "duration_ms=%s",
+            len(devices),
+            round((time.monotonic() - started) * 1000),
+        )
+        return devices
+
+    @classmethod
+    async def _async_get_devices(
+        cls,
+        session: aiohttp.ClientSession,
+        auth_headers: dict[str, str],
+    ) -> dict[str, SwitchbotModel]:
+        """Get devices from SwitchBot API using authenticated headers."""
         userinfo = await cls._async_get_user_info(session, auth_headers)
         region = _extract_region(userinfo)
+        _LOGGER.debug("SwitchBot account region resolved to %s", region)
 
         try:
             device_info = await cls.api_request(
@@ -318,12 +373,21 @@ class SwitchbotBaseDevice:
                 },
                 auth_headers,
             )
+        except SwitchbotAuthenticationError:
+            raise
+        except SwitchbotApiError:
+            raise
         except Exception as err:
             raise SwitchbotAccountConnectionError(
                 f"Failed to retrieve devices from SwitchBot Account: {err}"
             ) from err
 
-        items: list[dict[str, Any]] = device_info["Items"]
+        items = device_info.get("Items")
+        if not isinstance(items, list) or not all(
+            isinstance(item, dict) for item in items
+        ):
+            raise SwitchbotApiError("Invalid device response from SwitchBot API")
+        _LOGGER.debug("SwitchBot cloud API returned %s device records", len(items))
         mac_to_model: dict[str, SwitchbotModel] = {}
 
         for item in items:
@@ -357,6 +421,7 @@ class SwitchbotBaseDevice:
                     item,
                 )
 
+        _LOGGER.debug("Mapped %s supported SwitchBot cloud devices", len(mac_to_model))
         return mac_to_model
 
     @classmethod
@@ -369,18 +434,46 @@ class SwitchbotBaseDevice:
         headers: dict | None = None,
     ) -> dict:
         url = f"https://{subdomain}.{SWITCHBOT_APP_API_BASE_URL}/{path}"
+        started = time.monotonic()
+        _LOGGER.debug("Requesting SwitchBot API endpoint %s", url)
         async with session.post(
             url,
             json=data,
             headers=headers,
             timeout=aiohttp.ClientTimeout(total=10),
         ) as result:
+            _LOGGER.debug(
+                "SwitchBot API endpoint %s returned HTTP status %s; duration_ms=%s "
+                "request_id=%s",
+                url,
+                result.status,
+                round((time.monotonic() - started) * 1000),
+                extract_request_id(result.headers) or "unavailable",
+            )
+            if result.status in (401, 403):
+                raise SwitchbotAuthenticationError(
+                    "Authentication rejected by SwitchBot API"
+                )
             if result.status > 299:
                 raise SwitchbotApiError(
                     f"Unexpected status code returned by SwitchBot API: {result.status}"
                 )
 
             response = await result.json()
+            body = response.get("body")
+            body_fields: list[str] | str = (
+                sorted(body) if isinstance(body, dict) else type(body).__name__
+            )
+            _LOGGER.debug(
+                (
+                    "SwitchBot API endpoint %s returned API status %s; "
+                    "response fields=%s; body fields=%s"
+                ),
+                url,
+                response.get("statusCode"),
+                sorted(response),
+                body_fields,
+            )
             if response["statusCode"] != 100:
                 raise SwitchbotApiError(
                     f"{response['message']}, status code: {response['statusCode']}"
@@ -1049,17 +1142,69 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
         password: str,
     ) -> dict:
         """Retrieve lock key from internal SwitchBot API."""
-        device_mac = device_mac.replace(":", "").replace("-", "").upper()
-
         try:
             auth_result = await cls._get_auth_result(session, username, password)
             auth_headers = {"authorization": auth_result["access_token"]}
         except Exception as err:
             raise SwitchbotAuthenticationError(f"Authentication failed: {err}") from err
 
+        return await cls._async_retrieve_encryption_key(
+            session, device_mac, auth_headers
+        )
+
+    @classmethod
+    async def async_retrieve_encryption_key_by_token(
+        cls,
+        session: aiohttp.ClientSession,
+        device_mac: str,
+        access_token: str,
+    ) -> dict:
+        """Retrieve an encryption key using an OAuth access token."""
+        started = time.monotonic()
+        masked_device = _masked_device_id(device_mac)
+        _LOGGER.debug(
+            "Retrieving a SwitchBot encryption key using an OAuth token; device=%s",
+            masked_device,
+        )
+        try:
+            key_details = await cls._async_retrieve_encryption_key(
+                session, device_mac, {"authorization": access_token}
+            )
+        except Exception:
+            _LOGGER.debug(
+                "SwitchBot OAuth encryption key retrieval failed; device=%s "
+                "duration_ms=%s",
+                masked_device,
+                round((time.monotonic() - started) * 1000),
+            )
+            raise
+        _LOGGER.debug(
+            "SwitchBot OAuth encryption key retrieval finished; device=%s "
+            "duration_ms=%s",
+            masked_device,
+            round((time.monotonic() - started) * 1000),
+        )
+        return key_details
+
+    @classmethod
+    async def _async_retrieve_encryption_key(
+        cls,
+        session: aiohttp.ClientSession,
+        device_mac: str,
+        auth_headers: dict[str, str],
+    ) -> dict:
+        """Retrieve an encryption key using authenticated headers."""
+        device_mac = device_mac.replace(":", "").replace("-", "").upper()
+
         userinfo = await cls._async_get_user_info(session, auth_headers)
         region = _extract_region(userinfo)
+        masked_device = _masked_device_id(device_mac)
 
+        _LOGGER.debug(
+            "SwitchBot encryption key account region resolved; region=%s device=%s",
+            region,
+            masked_device,
+        )
         try:
             device_info = await cls.api_request(
                 session,
@@ -1071,15 +1216,32 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
                 },
                 auth_headers,
             )
-
-            return {
-                "key_id": device_info["communicationKey"]["keyId"],
-                "encryption_key": device_info["communicationKey"]["key"],
-            }
+        except SwitchbotAuthenticationError:
+            raise
+        except SwitchbotApiError:
+            raise
         except Exception as err:
             raise SwitchbotAccountConnectionError(
                 f"Failed to retrieve encryption key from SwitchBot Account: {err}"
             ) from err
+
+        communication_key = device_info.get("communicationKey")
+        if not isinstance(communication_key, dict):
+            raise SwitchbotApiError(
+                "Invalid encryption key response from SwitchBot API"
+            )
+        key_id = communication_key.get("keyId")
+        encryption_key = communication_key.get("key")
+        if not isinstance(key_id, str) or not isinstance(encryption_key, str):
+            raise SwitchbotApiError(
+                "Invalid encryption key response from SwitchBot API"
+            )
+
+        _LOGGER.debug(
+            "SwitchBot encryption key retrieved successfully; device=%s",
+            masked_device,
+        )
+        return {"key_id": key_id, "encryption_key": encryption_key}
 
     @classmethod
     async def verify_encryption_key(
@@ -1333,3 +1495,11 @@ async def fetch_cloud_devices(
     """Fetch devices from SwitchBot API and return MAC to model mapping."""
     # Get devices from the API (which also populates the cache)
     return await SwitchbotBaseDevice.get_devices(session, username, password)
+
+
+async def fetch_cloud_devices_by_token(
+    session: aiohttp.ClientSession,
+    access_token: str,
+) -> dict[str, SwitchbotModel]:
+    """Fetch devices from SwitchBot API using an OAuth access token."""
+    return await SwitchbotBaseDevice.get_devices_by_token(session, access_token)
