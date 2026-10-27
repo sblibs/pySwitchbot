@@ -45,6 +45,7 @@ from switchbot.adv_parsers.lock import (
     process_locklite,
     process_wolock,
     process_wolock_pro,
+    process_wolock_pro_wifi,
 )
 from switchbot.adv_parsers.meter import process_wosensorth
 from switchbot.adv_parsers.motion import process_wopresence
@@ -178,6 +179,7 @@ def test_lock_parsers_short_mfr(mfr_data):
     assert process_wolock(None, mfr_data) == {}
     assert parse_common_data(mfr_data) == {}
     assert process_wolock_pro(None, mfr_data) == {}
+    assert process_wolock_pro_wifi(None, mfr_data) == {}
     assert process_lock2(None, mfr_data) == {}
 
 

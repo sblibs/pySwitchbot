@@ -44,6 +44,7 @@ from .adv_parsers.lock import (
     process_locklite,
     process_wolock,
     process_wolock_pro,
+    process_wolock_pro_wifi,
 )
 from .adv_parsers.meter import process_wosensorth, process_wosensorth_c
 from .adv_parsers.motion import process_wopresence
@@ -889,13 +890,13 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
     b"\x00\x10\xff\x90": {
         "modelName": SwitchbotModel.LOCK_PRO_WIFI,
         "modelFriendlyName": "Lock Pro Wifi",
-        "func": process_wolock_pro,
+        "func": process_wolock_pro_wifi,
         "manufacturer_id": 2409,
     },
     b"\x01\x10\xff\x90": {
         "modelName": SwitchbotModel.LOCK_PRO_WIFI,
         "modelFriendlyName": "Lock Pro Wifi",
-        "func": process_wolock_pro,
+        "func": process_wolock_pro_wifi,
         "manufacturer_id": 2409,
     },
     b"\x00\x11\x9f\xb8": {
