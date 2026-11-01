@@ -176,7 +176,9 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         Returns
         -------
         ``{"raw": int, "enabled": bool, "double_press": bool,
-        "function": QuickKeyFunction | None}``, or ``None`` if it can't be read.
+        "function": QuickKeyFunction | None}``, or ``None`` if the lock answers
+        with a non-success status or a truncated payload. Raises
+        ``SwitchbotOperationError`` if the lock does not answer at all.
 
         ``raw`` is the config byte exactly as the lock reported it. ``function`` is
         ``None`` if the lock reports the one undefined value of the 2-bit function
@@ -233,7 +235,9 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
         Only the fields you pass are changed (a masked write); the others keep their
         current value. Returns ``True`` if the lock acknowledges with the requested
-        bits set.
+        bits set, ``False`` if it answers with a non-success status, a truncated
+        echo or different bits. Raises ``SwitchbotOperationError`` if the lock does
+        not answer at all.
         """
         if self._model not in COMMAND_SET_QUICK_KEY_PREFIX:
             raise SwitchbotOperationError(
