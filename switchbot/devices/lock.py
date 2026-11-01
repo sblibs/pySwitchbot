@@ -177,8 +177,13 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         -------
         ``{"raw": int, "enabled": bool, "double_press": bool,
         "function": QuickKeyFunction | None}``, or ``None`` if the lock answers
-        with a non-success status or a truncated payload. Raises
-        ``SwitchbotOperationError`` if the lock does not answer at all.
+        with a non-success status or a truncated payload.
+
+        If the lock does not answer, the transport error propagates once the
+        retries are used up: ``TimeoutError`` when no notification arrives, or a
+        ``BleakError`` when the connection fails. ``SwitchbotOperationError`` is
+        raised when no response is produced at all, such as when encryption setup
+        fails.
 
         ``raw`` is the config byte exactly as the lock reported it. ``function`` is
         ``None`` if the lock reports the one undefined value of the 2-bit function
@@ -236,8 +241,13 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         Only the fields you pass are changed (a masked write); the others keep their
         current value. Returns ``True`` if the lock acknowledges with the requested
         bits set, ``False`` if it answers with a non-success status, a truncated
-        echo or different bits. Raises ``SwitchbotOperationError`` if the lock does
-        not answer at all.
+        echo or different bits.
+
+        If the lock does not answer, the transport error propagates once the
+        retries are used up: ``TimeoutError`` when no notification arrives, or a
+        ``BleakError`` when the connection fails. ``SwitchbotOperationError`` is
+        raised when no response is produced at all, such as when encryption setup
+        fails.
         """
         if self._model not in COMMAND_SET_QUICK_KEY_PREFIX:
             raise SwitchbotOperationError(

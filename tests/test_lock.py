@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -1017,6 +1018,47 @@ async def test_set_quick_key_multiple_fields():
     # mask = 0x08|0x04|0x03 = 0x0f ; value = 0x08|0x04|0x02 = 0x0e
     mock_send_command.assert_any_call(key=f"{prefix}0f0eff", retry=device._retry_count)
     assert result is True
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("kwargs", "mask_value", "echo"),
+    [
+        ({"enabled": False}, "0800", b"\x01\xc2"),
+        ({"double_press": False}, "0400", b"\x01\xca"),
+        ({"function": QuickKeyFunction.LOCK_ONLY}, "0300", b"\x01\xc8"),
+        (
+            {
+                "enabled": False,
+                "double_press": False,
+                "function": QuickKeyFunction.LOCK_ONLY,
+            },
+            "0f00",
+            b"\x01\xc0",
+        ),
+    ],
+)
+async def test_set_quick_key_false_and_zero_values(
+    kwargs: dict[str, Any], mask_value: str, echo: bytes
+):
+    """False and zero-valued settings still set their mask bits, unlike omitted ones."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(device, "_send_command", return_value=echo) as mock_send_command:
+        result = await device.set_quick_key(**kwargs)
+    prefix = lock.COMMAND_SET_QUICK_KEY_PREFIX[SwitchbotModel.LOCK_ULTRA]
+    mock_send_command.assert_any_call(
+        key=f"{prefix}{mask_value}ff", retry=device._retry_count
+    )
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_set_quick_key_disable_not_applied():
+    """A lock that keeps a bit set after it was asked to clear it returns False."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    # asked to disable (0x08 clear), lock echoes it still set
+    with patch.object(device, "_send_command", return_value=b"\x01\xca"):
+        assert await device.set_quick_key(enabled=False) is False
 
 
 @pytest.mark.asyncio
