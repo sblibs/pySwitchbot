@@ -195,6 +195,21 @@ async def test_get_basic_info_returns_none(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("basic_info", [b"", b"\x01", b"\x01\x80"])
+@pytest.mark.parametrize(("adv_info", "dev_cls"), ALL_LIGHT_CASES)
+async def test_get_basic_info_short_reply_returns_none(
+    basic_info, adv_info, dev_cls
+) -> None:
+    """A truncated status reply is dropped instead of raising IndexError."""
+    device = create_device_for_command_testing(adv_info, dev_cls)
+
+    device._send_command = AsyncMock(side_effect=[b"\x01\x01\n", basic_info])
+    device._check_command_result = MagicMock(side_effect=[True, True])
+
+    assert await device.get_basic_info() is None
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "device_case",
     [

@@ -89,7 +89,9 @@ class SwitchbotCeilingLight(SwitchbotSequenceBaseLight):
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
         if not (
-            res := await self._get_multi_commands_results(self._get_basic_info_command)
+            res := await self._get_multi_commands_results(
+                self._get_basic_info_command, min_data_length=5
+            )
         ):
             return None
         _version_info, _data = res
