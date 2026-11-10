@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v3.2.0 (2026-11-10)
+
+### Bug Fixes
+
+- **bot**: Preserve existing inverse mode behavior
+  ([#543](https://github.com/sblibs/pySwitchbot/pull/543),
+  [`ad37034`](https://github.com/sblibs/pySwitchbot/commit/ad370345d3bf0de8ffa8220dbf74008d0d62e0ff))
+
+### Features
+
+- **bot**: Add inverse direction controls ([#543](https://github.com/sblibs/pySwitchbot/pull/543),
+  [`ad37034`](https://github.com/sblibs/pySwitchbot/commit/ad370345d3bf0de8ffa8220dbf74008d0d62e0ff))
+
+
 ## v3.1.0 (2026-10-16)
 
 ### Chores
