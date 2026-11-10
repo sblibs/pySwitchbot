@@ -12,6 +12,21 @@ from switchbot.models import SwitchBotAdvertisement
 from .test_adv_parser import generate_ble_device
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("response", "expected"), [(b"\x01\x5f\x01", {}), (None, None)]
+)
+async def test_uwb_lock_basic_info_for_key_verification(response, expected):
+    device = create_device_for_command_testing(SwitchbotModel.UWB_LOCK)
+    with patch.object(device, "_get_basic_info", return_value=response):
+        assert await device.get_basic_info() == expected
+
+
+def test_uwb_lock_does_not_parse_connected_battery():
+    device = create_device_for_command_testing(SwitchbotModel.UWB_LOCK)
+    assert device._parse_basic_data(b"\x00\xf3\x01") == {}
+
+
 def create_device_for_command_testing(model: str, cls=lock.SwitchbotLock):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     return cls(ble_device, "ff", "ffffffffffffffffffffffffffffffff", model=model)
@@ -25,6 +40,7 @@ def create_device_for_command_testing(model: str, cls=lock.SwitchbotLock):
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
         SwitchbotModel.LOCK_ULTRA_MAX,
+        SwitchbotModel.UWB_LOCK,
         SwitchbotModel.LOCK_VISION,
         SwitchbotModel.LOCK_VISION_PRO,
         SwitchbotModel.LOCK_PRO_WIFI,
@@ -73,6 +89,7 @@ def test_default_model_classvar():
         (SwitchbotModel.LOCK_PRO, b"W\x0fN\x01\x01\x10\x85"),
         (SwitchbotModel.LOCK_ULTRA, b"W\x0fN\x01\x01\x10\x86"),
         (SwitchbotModel.LOCK_ULTRA_MAX, b"W\x0fN\x01\x01\x00\x00"),
+        (SwitchbotModel.UWB_LOCK, b"W\x0fN\x01\x01\x00\x00"),
         (SwitchbotModel.LOCK_VISION, b"W\x0fN\x01\x01\x00\x80"),
         (SwitchbotModel.LOCK_VISION_PRO, b"W\x0fN\x01\x01\x00\x80"),
         (SwitchbotModel.LOCK_PRO_WIFI, b"W\x0fN\x01\x01\x10\x82"),
@@ -103,6 +120,7 @@ async def test_lock(model: str, command: bytes):
         (SwitchbotModel.LOCK_PRO, b"W\x0fN\x01\x01\x10\x84"),
         (SwitchbotModel.LOCK_ULTRA, b"W\x0fN\x01\x01\x10\x83"),
         (SwitchbotModel.LOCK_ULTRA_MAX, b"W\x0fN\x01\x01\x00\x80"),
+        (SwitchbotModel.UWB_LOCK, b"W\x0fN\x01\x01\x00\x80"),
         (SwitchbotModel.LOCK_VISION, b"W\x0fN\x01\x01\x00\x80"),
         (SwitchbotModel.LOCK_VISION_PRO, b"W\x0fN\x01\x01\x00\x80"),
         (SwitchbotModel.LOCK_PRO_WIFI, b"W\x0fN\x01\x01\x10\x81"),
@@ -133,6 +151,7 @@ async def test_unlock(model: str, command: bytes):
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
         SwitchbotModel.LOCK_ULTRA_MAX,
+        SwitchbotModel.UWB_LOCK,
         SwitchbotModel.LOCK_VISION,
         SwitchbotModel.LOCK_VISION_PRO,
         SwitchbotModel.LOCK_PRO_WIFI,
@@ -881,6 +900,7 @@ async def test_half_lock_not_calibrated():
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA_MAX,
+        SwitchbotModel.UWB_LOCK,
         SwitchbotModel.LOCK_VISION,
         SwitchbotModel.LOCK_VISION_PRO,
         SwitchbotModel.LOCK_PRO_WIFI,
