@@ -221,6 +221,20 @@ async def test_get_basic_info_no_basic_data(model: str):
         assert result is None
 
 
+@pytest.mark.asyncio
+async def test_get_basic_info_unknown_lock_status(caplog: pytest.LogCaptureFixture):
+    """Ignore an unknown status in a lock info response."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with (
+        patch.object(device, "_get_lock_info", return_value=b"\x01\xf0\0\0\0\0\0"),
+        patch.object(device, "_get_basic_info", return_value=b"\x00\x64\x01"),
+        caplog.at_level(logging.DEBUG),
+    ):
+        assert await device.get_basic_info() is None
+    assert "Unknown lock status 14" in caplog.text
+    assert "f00000000000" in caplog.text
+
+
 def test_parse_basic_data():
     """Test _parse_basic_data method."""
     device = create_device_for_command_testing(SwitchbotModel.LOCK)
@@ -591,6 +605,47 @@ def test_update_lock_status(model: str):
         patch.object(device, "_fire_callbacks"),
     ):
         device._update_lock_status(data)
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        SwitchbotModel.LOCK_PRO,
+        SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_ULTRA_MAX,
+        SwitchbotModel.LOCK_PRO_WIFI,
+    ],
+)
+@pytest.mark.parametrize("status", range(8, 16))
+def test_notification_handler_unknown_lock_status(
+    model: SwitchbotModel, status: int, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Ignore unknown statuses without updating data or firing callbacks."""
+    device = create_device_for_command_testing(model)
+    notification = bytearray(b"\x0f\x00\x00\x00\x01\x02\x03\x04\x05\x06")
+    decrypted = bytes([0x80 | status << 3, 0, 0, 0, 0, 0])
+    with (
+        patch.object(
+            device, "_decrypt", side_effect=[decrypted, b"\x80\x00\x00\x00\x00\x00"]
+        ),
+        patch.object(device, "_update_parsed_data", return_value=True) as update,
+        patch.object(device, "_reset_disconnect_timer") as reset_timer,
+        patch.object(device, "_fire_callbacks") as fire_callbacks,
+        caplog.at_level(logging.DEBUG),
+    ):
+        device._notification_handler(0, notification)
+        update.assert_not_called()
+        reset_timer.assert_not_called()
+        fire_callbacks.assert_not_called()
+        assert f"Unknown lock status {status}" in caplog.text
+        assert decrypted.hex() in caplog.text
+        assert notification.hex() in caplog.text
+
+        device._notification_handler(0, notification)
+        update.assert_called_once()
+        assert update.call_args.args[0]["status"] is LockStatus.LOCKED
+        reset_timer.assert_called_once()
+        fire_callbacks.assert_called_once()
 
 
 @pytest.mark.parametrize(
