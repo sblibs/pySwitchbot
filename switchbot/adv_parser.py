@@ -49,7 +49,7 @@ from .adv_parsers.lock import (
 )
 from .adv_parsers.meter import process_wosensorth, process_wosensorth_c
 from .adv_parsers.motion import process_wopresence
-from .adv_parsers.plug import process_woplugmini
+from .adv_parsers.plug import process_outdoor_plug, process_woplugmini
 from .adv_parsers.presence_sensor import process_presence_sensor
 from .adv_parsers.relay_switch import (
     process_garage_door_opener,
@@ -958,6 +958,12 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.PLUG_MINI_IT,
         "modelFriendlyName": "Plug Mini (IT)",
         "func": process_relay_switch_1pm,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x12\x18\xd0": {
+        "modelName": SwitchbotModel.OUTDOOR_PLUG_EU,
+        "modelFriendlyName": "Outdoor Plug (EU)",
+        "func": process_outdoor_plug,
         "manufacturer_id": 2409,
     },
     b"\x00\x11\x07\x60": {

@@ -69,6 +69,7 @@ from .devices.light_strip import (
 )
 from .devices.lock import SwitchbotLock, SwitchbotLockUltra
 from .devices.meter_pro import SwitchbotMeterPro, SwitchbotMeterProCO2
+from .devices.outdoor_plug import SwitchbotOutdoorPlug
 from .devices.plug import SwitchbotPlugMini
 from .devices.relay_switch import (
     SwitchbotGarageDoorOpener,
@@ -141,6 +142,7 @@ __all__ = [
     "SwitchbotMeterProCO2",
     "SwitchbotModel",
     "SwitchbotOperationError",
+    "SwitchbotOutdoorPlug",
     "SwitchbotPermanentOutdoorLight",
     "SwitchbotPlugMini",
     "SwitchbotRelaySwitch",
