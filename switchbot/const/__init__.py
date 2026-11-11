@@ -141,6 +141,7 @@ class SwitchbotModel(StrEnum):
     LOCK_PRO_WIFI = "Lock Pro Wifi"
     LOCK_ULTRA_MAX = "Lock Ultra Max"
     UWB_LOCK = "UWB Lock"
+    LOCK_NANO = "Lock Nano"
     WEATHER_STATION = "Weather Station"
 
 
