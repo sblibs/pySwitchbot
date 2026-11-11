@@ -61,27 +61,12 @@ COMMAND_HALF_LOCK = {
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000008",
 }
 
-# Quick Key, a Lock Ultra setting. All three of
-# its settings (enabled / single-vs-double press / function) live in a single config
-# byte: read it with 0x4f, masked-write it with 0x4e. Lock Ultra only (untested on
-# other lock models).
 COMMAND_GET_QUICK_KEY = {
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4f0401",
 }
-# Append "<mask><value>ff" (each one hex byte) for a masked write.
 COMMAND_SET_QUICK_KEY_PREFIX = {
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e040100",
 }
-# Quick Key config-byte layout. Only the low nibble carries Quick Key settings.
-# Bits 7-6 are undecoded status flags and are NOT constant across locks: one Lock
-# Ultra reports both set (0xCx), another reports only bit 7 (0x8x) with the same low
-# nibble and identical behaviour. Nothing here validates them, and the raw byte is
-# returned so a caller can surface it when a lock behaves unexpectedly.
-QUICK_KEY_ENABLED_BIT = 0x08
-QUICK_KEY_DOUBLE_PRESS_BIT = 0x04
-QUICK_KEY_FUNCTION_MASK = 0x03
-# The 2-bit function field has 4 possible values but only 3 are defined.
-QUICK_KEY_FUNCTION_VALUES = frozenset(f.value for f in QuickKeyFunction)
 
 COMMAND_ENABLE_NOTIFICATIONS = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0e01001e00008101",
@@ -171,24 +156,26 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     async def get_quick_key(self) -> dict[str, Any] | None:
         """
-        Return the Quick Key settings (Lock Ultra only).
+        Read Quick Key and basic property settings from Lock Ultra.
 
-        Returns
-        -------
-        ``{"raw": int, "enabled": bool, "double_press": bool,
-        "function": QuickKeyFunction | None}``, or ``None`` if the lock answers
-        with a non-success status or a truncated payload.
+        Request: ``57 0f 4f 04 01``.
+        Response: status, config, secondary config, motor speed, secondary speed,
+        followed by model-specific data. Only the primary settings are returned.
 
-        If the lock does not answer, the transport error propagates once the
-        retries are used up: ``TimeoutError`` when no notification arrives, or a
-        ``BleakError`` when the connection fails. ``SwitchbotOperationError`` is
-        raised when no response is produced at all, such as when encryption setup
-        fails.
+        Config byte (also returned unchanged as ``raw``):
+          bit7: ``light`` (0 disabled, 1 enabled).
+          bit6: ``sound`` (0 disabled, 1 enabled).
+          bit5: reserved, available only through ``raw``.
+          bit4: ``manual_unlock_linkage`` (0 disabled, 1 enabled).
+          bit3: ``enabled`` (0 Quick Key disabled, 1 enabled).
+          bit2: ``double_press`` (0 single press, 1 double press).
+          bits1-0: ``function`` (00 lock only, 01 unlock only, 10 toggle).
 
-        ``raw`` is the config byte exactly as the lock reported it. ``function`` is
-        ``None`` if the lock reports the one undefined value of the 2-bit function
-        field; the other fields are still valid in that case.
-
+        ``motor_speed`` is 0 (high), 1 (normal), or 2 (quiet); it is ``None``
+        if absent from the response. An unknown ``function`` is ``None``.
+        Rejected responses or a missing config byte return ``None``.
+        Unsupported models or absent responses raise ``SwitchbotOperationError``;
+        transport errors, including ``TimeoutError`` and ``BleakError``, propagate.
         """
         if self._model not in COMMAND_GET_QUICK_KEY:
             raise SwitchbotOperationError(
@@ -203,87 +190,147 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if len(result) < 2:
             _LOGGER.error("Invalid Quick Key response: %s", result)
             return None
-        return self._parse_quick_key(result[1])
+        settings = self._parse_quick_key(result[1])
+        settings["motor_speed"] = result[3] if len(result) > 3 else None
+        return settings
 
     @staticmethod
-    def _parse_quick_key(cfg: int) -> dict[str, Any]:
-        """Parse the Quick Key config byte."""
-        func_bits = cfg & QUICK_KEY_FUNCTION_MASK
-        if func_bits in QUICK_KEY_FUNCTION_VALUES:
-            function = QuickKeyFunction(func_bits)
-        else:
-            # The 2-bit field has one undefined value. Keep the enable and trigger
-            # bits, which are unambiguous, rather than discarding a byte that is
-            # mostly readable.
+    def _parse_quick_key(config: int) -> dict[str, Any]:
+        """Decode the Quick Key fields of the config byte."""
+        function_bits = config & 0b11
+        try:
+            function = QuickKeyFunction(function_bits)
+        except ValueError:
             _LOGGER.warning(
                 "Unknown Quick Key function value: %#04x (config byte %#04x)",
-                func_bits,
-                cfg,
+                function_bits,
+                config,
             )
             function = None
         return {
-            "raw": cfg,
-            "enabled": bool(cfg & QUICK_KEY_ENABLED_BIT),
-            "double_press": bool(cfg & QUICK_KEY_DOUBLE_PRESS_BIT),
+            "raw": config,
+            "light": bool(config & (1 << 7)),
+            "sound": bool(config & (1 << 6)),
+            "manual_unlock_linkage": bool(config & (1 << 4)),
+            "enabled": bool(config & (1 << 3)),
+            "double_press": bool(config & (1 << 2)),
             "function": function,
         }
 
-    async def set_quick_key(
+    async def set_quick_key(  # noqa: PLR0913
         self,
         *,
+        light: bool | None = None,
+        sound: bool | None = None,
+        manual_unlock_linkage: bool | None = None,
         enabled: bool | None = None,
         double_press: bool | None = None,
         function: QuickKeyFunction | None = None,
+        motor_speed: int = 0xFF,
     ) -> bool:
         """
-        Update one or more Quick Key settings (Lock Ultra only).
+        Update any combination of Quick Key and basic properties on Lock Ultra.
 
-        Only the fields you pass are changed (a masked write); the others keep their
-        current value. Returns ``True`` if the lock acknowledges with the requested
-        bits set, ``False`` if it answers with a non-success status, a truncated
-        echo or different bits.
+        Command: ``57 0f 4e 04 01 00 <update> <value> <speed>``.
+        Target 00 uses the default behavior and can affect both grouped locks.
+        Property arguments default to ``None`` and motor speed to ``0xFF``,
+        leaving the corresponding settings unchanged.
 
-        If the lock does not answer, the transport error propagates once the
-        retries are used up: ``TimeoutError`` when no notification arrives, or a
-        ``BleakError`` when the connection fails. ``SwitchbotOperationError`` is
-        raised when no response is produced at all, such as when encryption setup
-        fails.
+        Update byte (1 selects the corresponding property for writing):
+          bit7: ``light``.
+          bit6: ``sound``.
+          bit5: reserved, always 0.
+          bit4: ``manual_unlock_linkage``.
+          bit3: ``enabled`` (Quick Key).
+          bit2: ``double_press`` (Quick Key trigger).
+          bit1: ``function`` (selects the complete two-bit function field).
+          bit0: unused, always 0.
+
+        The value byte follows the config layout documented in ``get_quick_key``.
+        ``False`` clears a boolean property; ``True`` sets it. Function values
+        occupy bits1-0: 00 lock only, 01 unlock only, 10 toggle.
+        Speed is 00 high, 01 normal, 02 quiet, or ff to preserve it (the default).
+
+        Return whether the status reports success (01 or low-battery 06) and the
+        config echo matches the requested properties. Failed status, missing
+        config, and each mismatching property are logged separately and return
+        ``False``. Speed is acknowledged only by status; no extra read is made.
+        No properties or invalid speed raises ``ValueError``. Communication
+        errors propagate.
+
+        Example: ``await device.set_quick_key(light=True, sound=False, enabled=True)``.
         """
         if self._model not in COMMAND_SET_QUICK_KEY_PREFIX:
             raise SwitchbotOperationError(
                 f"Quick Key is not supported on {self._model}"
             )
-        mask = 0
+        if motor_speed not in (0, 1, 2, 0xFF):
+            raise ValueError(
+                "motor_speed must be 0 (high), 1 (normal), 2 (quiet), or 0xFF (keep)"
+                f" (got {motor_speed!r})"
+            )
+        update_fields = 0
         value = 0
-        if enabled is not None:
-            mask |= QUICK_KEY_ENABLED_BIT
-            value |= QUICK_KEY_ENABLED_BIT if enabled else 0
-        if double_press is not None:
-            mask |= QUICK_KEY_DOUBLE_PRESS_BIT
-            value |= QUICK_KEY_DOUBLE_PRESS_BIT if double_press else 0
+        for setting, bit in (
+            (light, 7),
+            (sound, 6),
+            (manual_unlock_linkage, 4),
+            (enabled, 3),
+            (double_press, 2),
+        ):
+            if setting is not None:
+                update_fields |= 1 << bit
+                value |= int(setting) << bit
         if function is not None:
-            mask |= QUICK_KEY_FUNCTION_MASK
+            update_fields |= 1 << 1
             value |= function.value
-        if not mask:
+        if not update_fields and motor_speed == 0xFF:
             raise ValueError("set_quick_key requires at least one setting to change")
-        command = f"{COMMAND_SET_QUICK_KEY_PREFIX[self._model]}{mask:02x}{value:02x}ff"
+        command = (
+            f"{COMMAND_SET_QUICK_KEY_PREFIX[self._model]}"
+            f"{update_fields:02x}{value:02x}{motor_speed:02x}"
+        )
         result = await self._send_command(key=command, retry=self._retry_count)
         if not self._check_command_result(result, 0, COMMAND_RESULT_EXPECTED_VALUES):
-            _LOGGER.error("Failed to set Quick Key settings: %s", result)
-            return False
-        # The lock echoes the resulting config byte; confirm our bits stuck. A
-        # truncated echo and a refused bit are different problems, so say which.
-        if len(result) < 2:
-            _LOGGER.error("Invalid Quick Key write response: %s", result)
-            return False
-        if (result[1] & mask) != (value & mask):
             _LOGGER.error(
-                "Quick Key write not applied: requested %#04x, lock reported %#04x",
-                value & mask,
-                result[1] & mask,
+                "%s: Quick Key command failed (status=%#04x, response=%s)",
+                self.name,
+                result[0],
+                result.hex(),
             )
             return False
-        return True
+        if len(result) < 2:
+            _LOGGER.error(
+                "%s: Quick Key write response is missing config (status=%#04x, response=%s)",
+                self.name,
+                result[0],
+                result.hex(),
+            )
+            return False
+        confirmed = self._parse_quick_key(result[1])
+        requested = {
+            "light": light,
+            "sound": sound,
+            "manual_unlock_linkage": manual_unlock_linkage,
+            "enabled": enabled,
+            "double_press": double_press,
+            "function": function,
+        }
+        mismatches = [
+            (setting, expected, confirmed[setting])
+            for setting, expected in requested.items()
+            if expected is not None and confirmed[setting] != expected
+        ]
+        for setting, expected, reported in mismatches:
+            _LOGGER.error(
+                "%s: Quick Key %s was not applied (requested=%s, reported=%s, config=%#04x)",
+                self.name,
+                setting,
+                expected,
+                reported,
+                result[1],
+            )
+        return not mismatches
 
     def _parse_basic_data(self, basic_data: bytes) -> dict[str, Any]:
         """Parse basic data from lock."""
