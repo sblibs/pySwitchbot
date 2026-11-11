@@ -149,10 +149,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     def _parse_basic_data(self, basic_data: bytes) -> dict[str, Any]:
         """Parse basic data from lock."""
-        if self._model is SwitchbotModel.LOCK_ULTRA_MAX:
-            # Lock Ultra Max's basic-info response format is not documented.
-            # Its advertisement already carries the reliable battery and state
-            # data, so never overwrite that data with an unverified response.
+        if len(basic_data) < 3:
             return {}
         return {
             "battery": basic_data[1],
@@ -305,3 +302,20 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if model is SwitchbotModel.LOCK_ULTRA:
             result["half_lock_calibration"] = bool(data[1] & 0b00000001)
         return result
+
+
+class SwitchbotLockUltra(SwitchbotLock):
+    """SwitchBot Lock Ultra and Ultra Max, which share the Lock 2 basic-info format."""
+
+    _model = SwitchbotModel.LOCK_ULTRA
+
+    def _parse_basic_data(self, basic_data: bytes) -> dict[str, Any]:
+        """Read the active battery and firmware from a Lock 2 basic-info reply."""
+        if len(basic_data) < 4:
+            return {}
+        # Bit 7 of the main battery byte selects the backup battery.
+        battery = basic_data[2] if basic_data[1] & 0x80 else basic_data[1]
+        return {
+            "battery": battery,
+            "firmware": basic_data[3] / 10.0,
+        }

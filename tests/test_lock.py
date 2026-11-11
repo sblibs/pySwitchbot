@@ -3,19 +3,18 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from switchbot import SwitchbotModel
+from switchbot import SwitchbotLockUltra, SwitchbotModel
 from switchbot.const.lock import LockStatus
 from switchbot.devices import lock
 from switchbot.devices.device import SwitchbotOperationError
+from switchbot.models import SwitchBotAdvertisement
 
 from .test_adv_parser import generate_ble_device
 
 
-def create_device_for_command_testing(model: str):
+def create_device_for_command_testing(model: str, cls=lock.SwitchbotLock):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    return lock.SwitchbotLock(
-        ble_device, "ff", "ffffffffffffffffffffffffffffffff", model=model
-    )
+    return cls(ble_device, "ff", "ffffffffffffffffffffffffffffffff", model=model)
 
 
 @pytest.mark.parametrize(
@@ -49,6 +48,13 @@ def test_lock_init_with_invalid_model(model: str):
         ValueError, match="initializing SwitchbotLock with a non-lock model"
     ):
         create_device_for_command_testing(model)
+
+
+def test_ultra_direct_construction():
+    device = generate_ble_device("aa:bb:cc:dd:ee:ff", "lock")
+    assert (
+        SwitchbotLockUltra(device, "ff", "ff" * 16)._model is SwitchbotModel.LOCK_ULTRA
+    )
 
 
 def test_default_model_classvar():
@@ -153,6 +159,7 @@ async def test_unlock_without_unlatch(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_ULTRA_MAX,
         SwitchbotModel.LOCK_VISION,
         SwitchbotModel.LOCK_VISION_PRO,
         SwitchbotModel.LOCK_PRO_WIFI,
@@ -162,7 +169,7 @@ async def test_get_basic_info(model: str):
     """Test get_basic_info method."""
     device = create_device_for_command_testing(model)
     lock_data = b"\x00\x80\x00\x00\x00\x00\x00\x00"
-    basic_data = b"\x00\x64\x01"
+    basic_data = bytes.fromhex("01 64 01 21 14")
     with (
         patch.object(device, "_get_lock_info", return_value=lock_data),
         patch.object(device, "_get_basic_info", return_value=basic_data),
@@ -221,32 +228,91 @@ async def test_get_basic_info_no_basic_data(model: str):
         assert result is None
 
 
-def test_parse_basic_data():
+@pytest.mark.parametrize("battery", [100, 255])
+def test_parse_basic_data(battery):
     """Test _parse_basic_data method."""
     device = create_device_for_command_testing(SwitchbotModel.LOCK)
-    basic_data = b"\x00\x64\x01"
+    basic_data = bytes([0, battery, 1])
     result = device._parse_basic_data(basic_data)
-    assert result["battery"] == 100
+    assert result["battery"] == battery
     assert result["firmware"] == 0.1
 
 
-def test_lock_ultra_max_uses_advertisement_for_basic_data():
-    """Lock Ultra Max does not parse its undocumented basic-info response."""
-    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA_MAX)
-    assert device._parse_basic_data(b"\x00\xf3\x01") == {}
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "model", [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX]
+)
+@pytest.mark.parametrize(
+    ("basic_info", "battery", "firmware"),
+    [
+        ("01 4b 28 21 14", 75, 3.3),  # Main battery in use.
+        ("01 85 28 21 14", 40, 3.3),  # Backup battery in use.
+        ("01 f3 28 21 14", 40, 3.3),  # Byte 1 must never appear as 243%.
+        ("01 80 ff 21 14", 255, 3.3),  # Report the backup battery byte as received.
+        ("01 4b 28", 60, 2.1),  # Truncated reply: keep the last readings.
+    ],
+)
+async def test_lock2_basic_info(model, basic_info, battery, firmware):
+    device = create_device_for_command_testing(model, SwitchbotLockUltra)
+    device.update_from_advertisement(
+        SwitchBotAdvertisement(
+            device._device.address,
+            {"data": {"battery": 60, "firmware": 2.1}},
+            device._device,
+            -60,
+        )
+    )
+    with (
+        patch.object(
+            device, "_get_lock_info", return_value=bytes.fromhex("01 80 00 00 00 00 00")
+        ),
+        patch.object(device, "_get_basic_info", return_value=bytes.fromhex(basic_info)),
+    ):
+        await device.update()
+
+    assert device.get_battery_percent() == battery
+    assert device.parsed_data["firmware"] == firmware
+    assert device.get_lock_status() is LockStatus.LOCKED
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "model", [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX]
+)
+async def test_lock2_battery_after_lock(model):
+    device = create_device_for_command_testing(model, SwitchbotLockUltra)
+    device.update_from_advertisement(
+        SwitchBotAdvertisement(
+            device._device.address,
+            {"data": {"status": LockStatus.UNLOCKED}},
+            device._device,
+            -60,
+        )
+    )
+    with (
+        patch.object(device, "_enable_notifications", return_value=True),
+        patch.object(device, "_send_command", return_value=bytes.fromhex("01")),
+        patch.object(
+            device, "_get_basic_info", return_value=bytes.fromhex("01 f3 28 21 14")
+        ),
+    ):
+        assert await device.lock()
+
+    assert device.get_battery_percent() == 40
+    assert device.parsed_data["firmware"] == 3.3
 
 
 @pytest.mark.asyncio
 async def test_lock_ultra_max_verifies_encryption_key():
     """Lock Ultra Max verifies a valid encryption key."""
     lock_data = b"\x00\x80\x00\x00\x00\x00\x00\x00"
-    basic_data = b"\x00\x64\x01"
+    basic_data = bytes.fromhex("01 64 01 21 14")
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     with (
         patch.object(lock.SwitchbotLock, "_get_lock_info", return_value=lock_data),
         patch.object(lock.SwitchbotLock, "_get_basic_info", return_value=basic_data),
     ):
-        assert await lock.SwitchbotLock.verify_encryption_key(
+        assert await SwitchbotLockUltra.verify_encryption_key(
             ble_device,
             "ff",
             "ffffffffffffffffffffffffffffffff",
@@ -529,7 +595,7 @@ def test_notification_handler_not_enabled(model: str):
     with (
         patch.object(device, "_update_lock_status") as mock_update,
         patch.object(
-            device.__class__.__bases__[0], "_notification_handler"
+            lock.SwitchbotSequenceDevice, "_notification_handler"
         ) as mock_super,
     ):
         device._notification_handler(0, data)
