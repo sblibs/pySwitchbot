@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from switchbot import SwitchbotModel
+from switchbot import SwitchbotLockUltra, SwitchbotModel
 from switchbot.const.lock import LockStatus
 from switchbot.devices import lock
 from switchbot.devices.device import SwitchbotOperationError
@@ -50,6 +50,26 @@ def test_lock_init_with_invalid_model(model: str):
         ValueError, match="initializing SwitchbotLock with a non-lock model"
     ):
         create_device_for_command_testing(model)
+
+
+@pytest.mark.parametrize(
+    "model", [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX]
+)
+def test_ultra_constructor_dispatch(model):
+    device = generate_ble_device("aa:bb:cc:dd:ee:ff", "lock")
+    assert isinstance(create_device_for_command_testing(model), SwitchbotLockUltra)
+    positional = lock.SwitchbotLock(device, "ff", "ff" * 16, 0, model)
+    assert isinstance(positional, SwitchbotLockUltra)
+    assert positional._model is model
+
+
+def test_ultra_direct_construction():
+    device = generate_ble_device("aa:bb:cc:dd:ee:ff", "lock")
+    assert (
+        SwitchbotLockUltra(device, "ff", "ff" * 16)._model is SwitchbotModel.LOCK_ULTRA
+    )
+    with pytest.raises(ValueError, match="Ultra or Ultra Max"):
+        SwitchbotLockUltra(device, "ff", "ff" * 16, model=SwitchbotModel.LOCK_PRO)
 
 
 def test_default_model_classvar():
@@ -589,7 +609,7 @@ def test_notification_handler_not_enabled(model: str):
     with (
         patch.object(device, "_update_lock_status") as mock_update,
         patch.object(
-            device.__class__.__bases__[0], "_notification_handler"
+            lock.SwitchbotSequenceDevice, "_notification_handler"
         ) as mock_super,
     ):
         device._notification_handler(0, data)

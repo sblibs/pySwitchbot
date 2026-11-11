@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any
+from typing import Any, Self, cast
 
 from bleak.backends.device import BLEDevice
 
@@ -91,6 +91,23 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     _model = SwitchbotModel.LOCK
     _notifications_enabled: bool = False
 
+    def __new__(
+        cls,
+        device: BLEDevice | None = None,
+        key_id: str | None = None,
+        encryption_key: str | None = None,
+        interface: int = 0,
+        model: SwitchbotModel | None = None,
+        **kwargs: Any,
+    ) -> Self:
+        """Select the Ultra implementation for existing model-based callers."""
+        if model in (SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX):
+            if cls is SwitchbotLock:
+                return cast("Self", super().__new__(SwitchbotLockUltra))
+        elif model is not None and issubclass(cls, SwitchbotLockUltra):
+            raise ValueError("SwitchbotLockUltra requires an Ultra or Ultra Max model")
+        return super().__new__(cls)
+
     def __init__(
         self,
         device: BLEDevice,
@@ -149,22 +166,11 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     def _parse_basic_data(self, basic_data: bytes) -> dict[str, Any]:
         """Parse basic data from lock."""
-        is_lock2 = self._model in (
-            SwitchbotModel.LOCK_ULTRA,
-            SwitchbotModel.LOCK_ULTRA_MAX,
-        )
-        firmware_byte = 3 if is_lock2 else 2
-        if len(basic_data) <= firmware_byte:
+        if len(basic_data) < 3:
             return {}
-
-        battery = basic_data[1]
-        if is_lock2 and battery & 0x80:
-            # Bit 7 indicates that the backup battery is in use.
-            battery = basic_data[2]
-
-        result = {"firmware": basic_data[firmware_byte] / 10.0}
-        if battery <= 100:
-            result["battery"] = battery
+        result = {"firmware": basic_data[2] / 10.0}
+        if basic_data[1] <= 100:
+            result["battery"] = basic_data[1]
         return result
 
     async def _lock_unlock(
@@ -312,4 +318,21 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         }
         if model is SwitchbotModel.LOCK_ULTRA:
             result["half_lock_calibration"] = bool(data[1] & 0b00000001)
+        return result
+
+
+class SwitchbotLockUltra(SwitchbotLock):
+    """SwitchBot Lock Ultra and Ultra Max, which share the Lock 2 basic-info format."""
+
+    _model = SwitchbotModel.LOCK_ULTRA
+
+    def _parse_basic_data(self, basic_data: bytes) -> dict[str, Any]:
+        """Read the active battery and firmware from a Lock 2 basic-info reply."""
+        if len(basic_data) < 4:
+            return {}
+        # Bit 7 of the main battery byte selects the backup battery.
+        battery = basic_data[2] if basic_data[1] & 0x80 else basic_data[1]
+        result = {"firmware": basic_data[3] / 10.0}
+        if battery <= 100:
+            result["battery"] = battery
         return result
