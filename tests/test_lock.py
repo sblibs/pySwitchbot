@@ -12,11 +12,9 @@ from switchbot.models import SwitchBotAdvertisement
 from .test_adv_parser import generate_ble_device
 
 
-def create_device_for_command_testing(model: str):
+def create_device_for_command_testing(model: str, cls=lock.SwitchbotLock):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
-    return lock.SwitchbotLock(
-        ble_device, "ff", "ffffffffffffffffffffffffffffffff", model=model
-    )
+    return cls(ble_device, "ff", "ffffffffffffffffffffffffffffffff", model=model)
 
 
 @pytest.mark.parametrize(
@@ -52,24 +50,11 @@ def test_lock_init_with_invalid_model(model: str):
         create_device_for_command_testing(model)
 
 
-@pytest.mark.parametrize(
-    "model", [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX]
-)
-def test_ultra_constructor_dispatch(model):
-    device = generate_ble_device("aa:bb:cc:dd:ee:ff", "lock")
-    assert isinstance(create_device_for_command_testing(model), SwitchbotLockUltra)
-    positional = lock.SwitchbotLock(device, "ff", "ff" * 16, 0, model)
-    assert isinstance(positional, SwitchbotLockUltra)
-    assert positional._model is model
-
-
 def test_ultra_direct_construction():
     device = generate_ble_device("aa:bb:cc:dd:ee:ff", "lock")
     assert (
         SwitchbotLockUltra(device, "ff", "ff" * 16)._model is SwitchbotModel.LOCK_ULTRA
     )
-    with pytest.raises(ValueError, match="Ultra or Ultra Max"):
-        SwitchbotLockUltra(device, "ff", "ff" * 16, model=SwitchbotModel.LOCK_PRO)
 
 
 def test_default_model_classvar():
@@ -268,7 +253,7 @@ def test_parse_basic_data(battery):
     ],
 )
 async def test_lock2_basic_info(model, basic_info, battery, firmware):
-    device = create_device_for_command_testing(model)
+    device = create_device_for_command_testing(model, SwitchbotLockUltra)
     device.update_from_advertisement(
         SwitchBotAdvertisement(
             device._device.address,
@@ -295,7 +280,7 @@ async def test_lock2_basic_info(model, basic_info, battery, firmware):
     "model", [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX]
 )
 async def test_lock2_battery_after_lock(model):
-    device = create_device_for_command_testing(model)
+    device = create_device_for_command_testing(model, SwitchbotLockUltra)
     device.update_from_advertisement(
         SwitchBotAdvertisement(
             device._device.address,
@@ -327,7 +312,7 @@ async def test_lock_ultra_max_verifies_encryption_key():
         patch.object(lock.SwitchbotLock, "_get_lock_info", return_value=lock_data),
         patch.object(lock.SwitchbotLock, "_get_basic_info", return_value=basic_data),
     ):
-        assert await lock.SwitchbotLock.verify_encryption_key(
+        assert await SwitchbotLockUltra.verify_encryption_key(
             ble_device,
             "ff",
             "ffffffffffffffffffffffffffffffff",

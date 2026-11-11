@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, Self, cast
+from typing import Any
 
 from bleak.backends.device import BLEDevice
 
@@ -90,23 +90,6 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     _model = SwitchbotModel.LOCK
     _notifications_enabled: bool = False
-
-    def __new__(
-        cls,
-        device: BLEDevice | None = None,
-        key_id: str | None = None,
-        encryption_key: str | None = None,
-        interface: int = 0,
-        model: SwitchbotModel | None = None,
-        **kwargs: Any,
-    ) -> Self:
-        """Select the Ultra implementation for existing model-based callers."""
-        if model in (SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX):
-            if cls is SwitchbotLock:
-                return cast("Self", super().__new__(SwitchbotLockUltra))
-        elif model is not None and issubclass(cls, SwitchbotLockUltra):
-            raise ValueError("SwitchbotLockUltra requires an Ultra or Ultra Max model")
-        return super().__new__(cls)
 
     def __init__(
         self,
