@@ -7,6 +7,7 @@ from switchbot import SwitchbotModel
 from switchbot.const.lock import LockStatus
 from switchbot.devices import lock
 from switchbot.devices.device import SwitchbotOperationError
+from switchbot.models import SwitchBotAdvertisement
 
 from .test_adv_parser import generate_ble_device
 
@@ -153,6 +154,7 @@ async def test_unlock_without_unlatch(model: str):
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_ULTRA_MAX,
         SwitchbotModel.LOCK_VISION,
         SwitchbotModel.LOCK_VISION_PRO,
         SwitchbotModel.LOCK_PRO_WIFI,
@@ -162,7 +164,7 @@ async def test_get_basic_info(model: str):
     """Test get_basic_info method."""
     device = create_device_for_command_testing(model)
     lock_data = b"\x00\x80\x00\x00\x00\x00\x00\x00"
-    basic_data = b"\x00\x64\x01"
+    basic_data = bytes.fromhex("01 64 01 21 14")
     with (
         patch.object(device, "_get_lock_info", return_value=lock_data),
         patch.object(device, "_get_basic_info", return_value=basic_data),
@@ -230,17 +232,75 @@ def test_parse_basic_data():
     assert result["firmware"] == 0.1
 
 
-def test_lock_ultra_max_uses_advertisement_for_basic_data():
-    """Lock Ultra Max does not parse its undocumented basic-info response."""
-    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA_MAX)
-    assert device._parse_basic_data(b"\x00\xf3\x01") == {}
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "model", [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX]
+)
+@pytest.mark.parametrize(
+    ("basic_info", "battery", "firmware"),
+    [
+        ("01 4b 28 21 14", 75, 3.3),  # Main battery in use.
+        ("01 85 28 21 14", 40, 3.3),  # Backup battery in use.
+        ("01 f3 28 21 14", 40, 3.3),  # Byte 1 must never appear as 243%.
+        ("01 80 ff 21 14", 60, 3.3),  # Invalid active battery: keep advertisement.
+        ("01 4b 28", 60, 2.1),  # Truncated reply: keep the last readings.
+    ],
+)
+async def test_lock2_basic_info(model, basic_info, battery, firmware):
+    device = create_device_for_command_testing(model)
+    device.update_from_advertisement(
+        SwitchBotAdvertisement(
+            device._device.address,
+            {"data": {"battery": 60, "firmware": 2.1}},
+            device._device,
+            -60,
+        )
+    )
+    with (
+        patch.object(
+            device, "_get_lock_info", return_value=bytes.fromhex("01 80 00 00 00 00 00")
+        ),
+        patch.object(device, "_get_basic_info", return_value=bytes.fromhex(basic_info)),
+    ):
+        await device.update()
+
+    assert device.get_battery_percent() == battery
+    assert device.parsed_data["firmware"] == firmware
+    assert device.get_lock_status() is LockStatus.LOCKED
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "model", [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX]
+)
+async def test_lock2_battery_after_lock(model):
+    device = create_device_for_command_testing(model)
+    device.update_from_advertisement(
+        SwitchBotAdvertisement(
+            device._device.address,
+            {"data": {"status": LockStatus.UNLOCKED}},
+            device._device,
+            -60,
+        )
+    )
+    with (
+        patch.object(device, "_enable_notifications", return_value=True),
+        patch.object(device, "_send_command", return_value=bytes.fromhex("01")),
+        patch.object(
+            device, "_get_basic_info", return_value=bytes.fromhex("01 f3 28 21 14")
+        ),
+    ):
+        assert await device.lock()
+
+    assert device.get_battery_percent() == 40
+    assert device.parsed_data["firmware"] == 3.3
 
 
 @pytest.mark.asyncio
 async def test_lock_ultra_max_verifies_encryption_key():
     """Lock Ultra Max verifies a valid encryption key."""
     lock_data = b"\x00\x80\x00\x00\x00\x00\x00\x00"
-    basic_data = b"\x00\x64\x01"
+    basic_data = bytes.fromhex("01 64 01 21 14")
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     with (
         patch.object(lock.SwitchbotLock, "_get_lock_info", return_value=lock_data),

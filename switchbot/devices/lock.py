@@ -149,15 +149,23 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     def _parse_basic_data(self, basic_data: bytes) -> dict[str, Any]:
         """Parse basic data from lock."""
-        if self._model is SwitchbotModel.LOCK_ULTRA_MAX:
-            # Lock Ultra Max's basic-info response format is not documented.
-            # Its advertisement already carries the reliable battery and state
-            # data, so never overwrite that data with an unverified response.
+        is_lock2 = self._model in (
+            SwitchbotModel.LOCK_ULTRA,
+            SwitchbotModel.LOCK_ULTRA_MAX,
+        )
+        firmware_byte = 3 if is_lock2 else 2
+        if len(basic_data) <= firmware_byte:
             return {}
-        return {
-            "battery": basic_data[1],
-            "firmware": basic_data[2] / 10.0,
-        }
+
+        battery = basic_data[1]
+        if is_lock2 and battery & 0x80:
+            # Bit 7 indicates that the backup battery is in use.
+            battery = basic_data[2]
+
+        result = {"firmware": basic_data[firmware_byte] / 10.0}
+        if battery <= 100:
+            result["battery"] = battery
+        return result
 
     async def _lock_unlock(
         self, command: str, ignore_statuses: set[LockStatus]
