@@ -155,7 +155,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     def _parse_basic_data(self, basic_data: bytes) -> dict[str, Any]:
         """Parse basic data from lock."""
-        if self._model is SwitchbotModel.UWB_LOCK or len(basic_data) < 3:
+        if len(basic_data) < 3:
             return {}
         return {
             "battery": basic_data[1],
@@ -189,9 +189,6 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic status."""
-        if self._model is SwitchbotModel.UWB_LOCK:
-            # Validate encrypted communication without parsing undocumented fields.
-            return {} if await self._get_basic_info() else None
         lock_raw_data = await self._get_lock_info()
         if not lock_raw_data:
             return None
@@ -314,7 +311,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
 
 class SwitchbotLockUltra(SwitchbotLock):
-    """SwitchBot Lock Ultra and Ultra Max, which share the Lock 2 basic-info format."""
+    """SwitchBot locks that use the Lock 2 basic-info format."""
 
     _model = SwitchbotModel.LOCK_ULTRA
 

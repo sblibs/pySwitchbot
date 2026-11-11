@@ -14,17 +14,29 @@ from .test_adv_parser import generate_ble_device
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("response", "expected"), [(b"\x01\x5f\x01", {}), (None, None)]
+    ("replies", "valid"),
+    [
+        (
+            [bytes.fromhex("01 88 00 00 00 00 00"), bytes.fromhex("01 85 28 21 14")],
+            True,
+        ),
+        ([None], False),
+        ([bytes.fromhex("01 88 00 00 00 00 00"), None], False),
+    ],
 )
-async def test_uwb_lock_basic_info_for_key_verification(response, expected):
-    device = create_device_for_command_testing(SwitchbotModel.UWB_LOCK)
-    with patch.object(device, "_get_basic_info", return_value=response):
-        assert await device.get_basic_info() == expected
-
-
-def test_uwb_lock_does_not_parse_connected_battery():
-    device = create_device_for_command_testing(SwitchbotModel.UWB_LOCK)
-    assert device._parse_basic_data(b"\x00\xf3\x01") == {}
+async def test_uwb_lock_key_verification(replies, valid):
+    device = generate_ble_device("aa:bb:cc:dd:ee:ff", "UWB Lock")
+    with patch.object(SwitchbotLockUltra, "_send_command", side_effect=replies) as send:
+        assert (
+            await SwitchbotLockUltra.verify_encryption_key(
+                device, "ff", "ff" * 16, SwitchbotModel.UWB_LOCK
+            )
+            is valid
+        )
+    assert [args.kwargs["key"] for args in send.await_args_list] == [
+        "570f4f8107",
+        "5702",
+    ][: len(replies)]
 
 
 def create_device_for_command_testing(model: str, cls=lock.SwitchbotLock):
@@ -259,7 +271,8 @@ def test_parse_basic_data(battery):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "model", [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX]
+    "model",
+    [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX, SwitchbotModel.UWB_LOCK],
 )
 @pytest.mark.parametrize(
     ("basic_info", "battery", "firmware"),
@@ -296,7 +309,8 @@ async def test_lock2_basic_info(model, basic_info, battery, firmware):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "model", [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX]
+    "model",
+    [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX, SwitchbotModel.UWB_LOCK],
 )
 async def test_lock2_battery_after_lock(model):
     device = create_device_for_command_testing(model, SwitchbotLockUltra)
