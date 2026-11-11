@@ -243,12 +243,13 @@ async def test_get_basic_info_no_basic_data(model: str):
         assert result is None
 
 
-def test_parse_basic_data():
+@pytest.mark.parametrize("battery", [100, 255])
+def test_parse_basic_data(battery):
     """Test _parse_basic_data method."""
     device = create_device_for_command_testing(SwitchbotModel.LOCK)
-    basic_data = b"\x00\x64\x01"
+    basic_data = bytes([0, battery, 1])
     result = device._parse_basic_data(basic_data)
-    assert result["battery"] == 100
+    assert result["battery"] == battery
     assert result["firmware"] == 0.1
 
 
@@ -262,7 +263,7 @@ def test_parse_basic_data():
         ("01 4b 28 21 14", 75, 3.3),  # Main battery in use.
         ("01 85 28 21 14", 40, 3.3),  # Backup battery in use.
         ("01 f3 28 21 14", 40, 3.3),  # Byte 1 must never appear as 243%.
-        ("01 80 ff 21 14", 60, 3.3),  # Invalid active battery: keep advertisement.
+        ("01 80 ff 21 14", 255, 3.3),  # Report the backup battery byte as received.
         ("01 4b 28", 60, 2.1),  # Truncated reply: keep the last readings.
     ],
 )

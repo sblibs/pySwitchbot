@@ -168,10 +168,10 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         """Parse basic data from lock."""
         if len(basic_data) < 3:
             return {}
-        result = {"firmware": basic_data[2] / 10.0}
-        if basic_data[1] <= 100:
-            result["battery"] = basic_data[1]
-        return result
+        return {
+            "battery": basic_data[1],
+            "firmware": basic_data[2] / 10.0,
+        }
 
     async def _lock_unlock(
         self, command: str, ignore_statuses: set[LockStatus]
@@ -332,7 +332,7 @@ class SwitchbotLockUltra(SwitchbotLock):
             return {}
         # Bit 7 of the main battery byte selects the backup battery.
         battery = basic_data[2] if basic_data[1] & 0x80 else basic_data[1]
-        result = {"firmware": basic_data[3] / 10.0}
-        if battery <= 100:
-            result["battery"] = battery
-        return result
+        return {
+            "battery": battery,
+            "firmware": basic_data[3] / 10.0,
+        }
