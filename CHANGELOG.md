@@ -2,6 +2,32 @@
 
 <!-- version list -->
 
+## v3.2.1 (2026-11-11)
+
+### Bug Fixes
+
+- Correct battery and firmware readings for Lock Ultra and Ultra Max
+  ([#601](https://github.com/sblibs/pySwitchbot/pull/601),
+  [`13b132e`](https://github.com/sblibs/pySwitchbot/commit/13b132e8c6ea7fc86f1546cefe1202ab1fd38ad9))
+
+- Decode Ultra basic info in SwitchbotLockUltra
+  ([#601](https://github.com/sblibs/pySwitchbot/pull/601),
+  [`13b132e`](https://github.com/sblibs/pySwitchbot/commit/13b132e8c6ea7fc86f1546cefe1202ab1fd38ad9))
+
+- Parse Lock 2 battery and firmware for Ultra Max
+  ([#601](https://github.com/sblibs/pySwitchbot/pull/601),
+  [`13b132e`](https://github.com/sblibs/pySwitchbot/commit/13b132e8c6ea7fc86f1546cefe1202ab1fd38ad9))
+
+- Return the reported lock battery value ([#601](https://github.com/sblibs/pySwitchbot/pull/601),
+  [`13b132e`](https://github.com/sblibs/pySwitchbot/commit/13b132e8c6ea7fc86f1546cefe1202ab1fd38ad9))
+
+### Refactoring
+
+- Select the Ultra lock class at the call site
+  ([#601](https://github.com/sblibs/pySwitchbot/pull/601),
+  [`13b132e`](https://github.com/sblibs/pySwitchbot/commit/13b132e8c6ea7fc86f1546cefe1202ab1fd38ad9))
+
+
 ## v3.2.0 (2026-11-10)
 
 ### Bug Fixes
