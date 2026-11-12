@@ -35,6 +35,7 @@ from .const import (
     SwitchbotModel,
     VerticalOscillationAngle,
 )
+from .devices.ai_memory_frame import SwitchbotAIMemoryFrame
 from .devices.air_purifier import SwitchbotAirPurifier
 from .devices.art_frame import SwitchbotArtFrame
 from .devices.base_light import SwitchbotBaseLight
@@ -57,6 +58,7 @@ from .devices.fan import (
     SwitchbotStandingFan,
 )
 from .devices.humidifier import SwitchbotHumidifier
+from .devices.image_frame import SwitchbotImageFrame
 from .devices.keypad_vision import SwitchbotKeypadVision
 from .devices.light_strip import (
     SwitchbotCandleWarmerLamp,
@@ -115,6 +117,7 @@ __all__ = [
     "StripLightColorMode",
     "SwitchBotAdvertisement",
     "Switchbot",
+    "SwitchbotAIMemoryFrame",
     "SwitchbotAccountConnectionError",
     "SwitchbotAirPurifier",
     "SwitchbotApiError",
@@ -133,6 +136,7 @@ __all__ = [
     "SwitchbotFan",
     "SwitchbotGarageDoorOpener",
     "SwitchbotHumidifier",
+    "SwitchbotImageFrame",
     "SwitchbotKeypadVision",
     "SwitchbotLightStrip",
     "SwitchbotLock",
