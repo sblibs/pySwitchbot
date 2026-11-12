@@ -1,10 +1,11 @@
 import logging
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
 from switchbot import SwitchbotLockUltra, SwitchbotModel
-from switchbot.const.lock import LockStatus
+from switchbot.const.lock import LockStatus, QuickKeyFunction
 from switchbot.devices import lock
 from switchbot.devices.device import SwitchbotOperationError
 from switchbot.models import SwitchBotAdvertisement
@@ -957,3 +958,496 @@ async def test_lock_with_invalid_basic_data(model: str):
     ):
         result = await device.lock()
         assert result is True
+
+
+@pytest.mark.asyncio
+async def test_get_quick_key():
+    """Reading the Quick Key parses the config byte (Lock Ultra)."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    # 0xca = enabled, single press, Lock & Unlock
+    with patch.object(
+        device, "_send_command", return_value=b"\x01\xca\x00\x00\x00\x80"
+    ) as mock_send_command:
+        result = await device.get_quick_key()
+    mock_send_command.assert_any_call(
+        key="570f4f0401",
+        retry=device._retry_count,
+    )
+    assert result == {
+        "raw": 0xCA,
+        "light": True,
+        "sound": True,
+        "manual_unlock_linkage": False,
+        "enabled": True,
+        "double_press": False,
+        "function": QuickKeyFunction.LOCK_AND_UNLOCK,
+        "motor_speed": 0,
+    }
+
+
+@pytest.mark.asyncio
+async def test_get_quick_key_failure():
+    """A non-success status returns None."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(device, "_send_command", return_value=b"\x00"):
+        assert await device.get_quick_key() is None
+
+
+@pytest.mark.asyncio
+async def test_get_quick_key_zero_properties():
+    """A zero property byte means disabled, single press, and lock only."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(device, "_send_command", return_value=b"\x01\x00"):
+        assert await device.get_quick_key() == {
+            "raw": 0,
+            "light": False,
+            "sound": False,
+            "manual_unlock_linkage": False,
+            "enabled": False,
+            "double_press": False,
+            "function": QuickKeyFunction.LOCK_ONLY,
+            "motor_speed": None,
+        }
+
+
+@pytest.mark.asyncio
+async def test_set_quick_key_function_update_flag():
+    """Bit 1 selects the entire two-bit function field for writing."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(
+        device,
+        "_send_command",
+        return_value=b"\x01\xc9",  # echo 0xc9 = Unlock Only
+    ) as mock_send_command:
+        result = await device.set_quick_key(function=QuickKeyFunction.UNLOCK_ONLY)
+    mock_send_command.assert_awaited_once_with(
+        key="570f4e0401000201ff", retry=device._retry_count
+    )
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_set_quick_key_multiple_fields():
+    """Update all Quick Key fields while keeping the default target and speed."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(
+        device, "_send_command", return_value=b"\x01\xce"
+    ) as mock_send_command:
+        result = await device.set_quick_key(
+            enabled=True, double_press=True, function=QuickKeyFunction.LOCK_AND_UNLOCK
+        )
+    mock_send_command.assert_awaited_once_with(
+        key="570f4e0401000e0eff", retry=device._retry_count
+    )
+    assert result is True
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("kwargs", "flags_and_value"),
+    [
+        ({"enabled": False}, "0800"),
+        ({"double_press": False}, "0400"),
+        ({"function": QuickKeyFunction.LOCK_ONLY}, "0200"),
+        (
+            {
+                "enabled": False,
+                "double_press": False,
+                "function": QuickKeyFunction.LOCK_ONLY,
+            },
+            "0e00",
+        ),
+    ],
+)
+async def test_set_quick_key_false_and_zero_values(
+    kwargs: dict[str, Any], flags_and_value: str
+):
+    """Explicit false and zero values still select their fields for writing."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(
+        device, "_send_command", return_value=b"\x01\xc0"
+    ) as mock_send_command:
+        result = await device.set_quick_key(**kwargs)
+    mock_send_command.assert_awaited_once_with(
+        key=f"570f4e040100{flags_and_value}ff", retry=device._retry_count
+    )
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_set_quick_key_requires_a_field():
+    """Calling with nothing to change raises ValueError."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with pytest.raises(ValueError, match="at least one setting"):
+        await device.set_quick_key()
+
+
+@pytest.mark.asyncio
+async def test_quick_key_unsupported_model():
+    """Quick Key is Lock Ultra only; other models raise."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK)
+    with pytest.raises(SwitchbotOperationError):
+        await device.get_quick_key()
+    with pytest.raises(SwitchbotOperationError):
+        await device.set_quick_key(enabled=True)
+
+
+@pytest.mark.asyncio
+async def test_get_quick_key_short_response():
+    """A success status but a truncated payload returns None."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(device, "_send_command", return_value=b"\x01"):
+        assert await device.get_quick_key() is None
+
+
+@pytest.mark.asyncio
+async def test_get_quick_key_unknown_function():
+    """An undefined 2-bit function value keeps the bits that are unambiguous."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    # 0xcb = enabled, single press, function bits 0b11 (undefined)
+    with patch.object(device, "_send_command", return_value=b"\x01\xcb"):
+        assert await device.get_quick_key() == {
+            "raw": 0xCB,
+            "light": True,
+            "sound": True,
+            "manual_unlock_linkage": False,
+            "enabled": True,
+            "double_press": False,
+            "function": None,
+            "motor_speed": None,
+        }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("properties", "light", "sound"),
+    [
+        (0x0A, False, False),
+        (0x4A, False, True),
+        (0x8A, True, False),
+        (0xCA, True, True),
+    ],
+)
+async def test_get_quick_key_light_and_sound_settings(
+    properties: int, light: bool, sound: bool
+):
+    """Read light and sound independently of the original Quick Key fields."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(
+        device, "_send_command", return_value=bytes([1, properties, 0, 0, 0, 0])
+    ):
+        assert await device.get_quick_key() == {
+            "raw": properties,
+            "light": light,
+            "sound": sound,
+            "manual_unlock_linkage": False,
+            "enabled": True,
+            "double_press": False,
+            "function": QuickKeyFunction.LOCK_AND_UNLOCK,
+            "motor_speed": 0,
+        }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("response", "expected"),
+    [
+        (b"\x01", False),
+        (b"\x06", False),
+        (b"\x01\x08", True),
+        (b"\x06\x08", True),
+        (b"\x01\x00", False),
+        (b"\x06\x00", False),
+        (b"\x00", False),
+        (b"\x02", False),
+        (b"\x03", False),
+        (b"\x05", False),
+    ],
+)
+async def test_set_quick_key_command_status(response: bytes, expected: bool):
+    """Require a successful status and matching config without another read."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(
+        device, "_send_command", return_value=response
+    ) as mock_send_command:
+        assert await device.set_quick_key(enabled=True) is expected
+
+    mock_send_command.assert_awaited_once_with(
+        key="570f4e0401000808ff", retry=device._retry_count
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_quick_key_manual_unlock_linkage_and_motor_speed():
+    """Read primary properties and speed without using the secondary values."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(
+        device, "_send_command", return_value=bytes([1, 0xD9, 0xFF, 2, 0, 0])
+    ):
+        assert await device.get_quick_key() == {
+            "raw": 0xD9,
+            "light": True,
+            "sound": True,
+            "manual_unlock_linkage": True,
+            "enabled": True,
+            "double_press": False,
+            "function": QuickKeyFunction.UNLOCK_ONLY,
+            "motor_speed": 2,
+        }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("kwargs", "command", "config"),
+    [
+        ({"light": True}, "570f4e0401008080ff", 0xCA),
+        ({"light": False}, "570f4e0401008000ff", 0x4A),
+        ({"sound": True}, "570f4e0401004040ff", 0xCA),
+        ({"sound": False}, "570f4e0401004000ff", 0x8A),
+        ({"manual_unlock_linkage": True}, "570f4e0401001010ff", 0xDA),
+        ({"manual_unlock_linkage": False}, "570f4e0401001000ff", 0xCA),
+    ],
+)
+async def test_set_quick_key_independent_properties(
+    kwargs: dict[str, bool], command: str, config: int
+):
+    """Each basic property can be changed while retaining the Quick Key fields."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(
+        device, "_send_command", return_value=bytes([1, config])
+    ) as mock_send_command:
+        assert await device.set_quick_key(**kwargs) is True
+
+    mock_send_command.assert_awaited_once_with(key=command, retry=device._retry_count)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("kwargs", "command", "config"),
+    [
+        (
+            {
+                "light": True,
+                "sound": False,
+                "manual_unlock_linkage": True,
+                "enabled": False,
+                "double_press": True,
+                "function": QuickKeyFunction.UNLOCK_ONLY,
+            },
+            "570f4e040100de95ff",
+            0x95,
+        ),
+        (
+            {
+                "light": False,
+                "sound": False,
+                "manual_unlock_linkage": False,
+                "enabled": False,
+                "double_press": False,
+                "function": QuickKeyFunction.LOCK_ONLY,
+            },
+            "570f4e040100de00ff",
+            0x20,
+        ),
+    ],
+)
+async def test_set_quick_key_combines_all_properties(
+    kwargs: dict[str, Any], command: str, config: int
+):
+    """Combine all writable config fields without selecting reserved bits."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(
+        device, "_send_command", return_value=bytes([1, config])
+    ) as mock_send_command:
+        assert await device.set_quick_key(**kwargs) is True
+
+    mock_send_command.assert_awaited_once_with(key=command, retry=device._retry_count)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("motor_speed", [0, 1, 2])
+async def test_set_quick_key_motor_speed(motor_speed: int):
+    """Change speed alone with a single write command."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(
+        device,
+        "_send_command",
+        return_value=b"\x01\xca",
+    ) as mock_send_command:
+        assert await device.set_quick_key(motor_speed=motor_speed) is True
+
+    mock_send_command.assert_awaited_once_with(
+        key=f"570f4e0401000000{motor_speed:02x}", retry=device._retry_count
+    )
+
+
+@pytest.mark.asyncio
+async def test_set_quick_key_motor_speed_with_other_properties():
+    """Write speed and properties together without an additional read."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(
+        device,
+        "_send_command",
+        return_value=b"\x01\x5d",
+    ) as mock_send_command:
+        assert (
+            await device.set_quick_key(
+                light=False,
+                sound=True,
+                manual_unlock_linkage=True,
+                enabled=True,
+                double_press=True,
+                function=QuickKeyFunction.UNLOCK_ONLY,
+                motor_speed=2,
+            )
+            is True
+        )
+
+    mock_send_command.assert_awaited_once_with(
+        key="570f4e040100de5d02", retry=device._retry_count
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("motor_speed", [-1, 3, 0x100])
+async def test_set_quick_key_invalid_motor_speed(motor_speed: int):
+    """Invalid speeds fail before Bluetooth commands are sent."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with (
+        patch.object(device, "_send_command") as mock_send_command,
+        pytest.raises(ValueError, match="motor_speed must be"),
+    ):
+        await device.set_quick_key(motor_speed=motor_speed)
+
+    mock_send_command.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_set_quick_key_motor_speed_keep():
+    """Explicit 0xFF preserves speed without an additional read."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(
+        device, "_send_command", return_value=b"\x01\xca"
+    ) as mock_send_command:
+        assert await device.set_quick_key(light=True, motor_speed=0xFF) is True
+
+    mock_send_command.assert_awaited_once_with(
+        key="570f4e0401008080ff", retry=device._retry_count
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("kwargs", "config", "reported"),
+    [
+        ({"light": True}, 0x00, False),
+        ({"light": False}, 0x80, True),
+        ({"sound": True}, 0x00, False),
+        ({"manual_unlock_linkage": True}, 0x00, False),
+        ({"enabled": False}, 0x08, True),
+        ({"double_press": True}, 0x00, False),
+        ({"function": QuickKeyFunction.LOCK_ONLY}, 0x01, QuickKeyFunction.UNLOCK_ONLY),
+        ({"function": QuickKeyFunction.UNLOCK_ONLY}, 0x00, QuickKeyFunction.LOCK_ONLY),
+        ({"function": QuickKeyFunction.LOCK_AND_UNLOCK}, 0x03, None),
+    ],
+)
+async def test_set_quick_key_config_mismatch(
+    kwargs: dict[str, Any],
+    config: int,
+    reported: bool | QuickKeyFunction | None,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Identify the rejected field, requested value, and reported value."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(
+        device, "_send_command", return_value=bytes([1, config])
+    ) as mock_send_command:
+        assert await device.set_quick_key(**kwargs) is False
+
+    mock_send_command.assert_awaited_once()
+    setting, expected = next(iter(kwargs.items()))
+    assert (
+        f"Quick Key {setting} was not applied "
+        f"(requested={expected}, reported={reported}, config={config:#04x})"
+    ) in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_set_quick_key_multiple_config_mismatches(
+    caplog: pytest.LogCaptureFixture,
+):
+    """Report every mismatching field in a combined write."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(device, "_send_command", return_value=b"\x01\x00"):
+        assert (
+            await device.set_quick_key(
+                light=True,
+                sound=True,
+                manual_unlock_linkage=True,
+                enabled=True,
+                double_press=True,
+                function=QuickKeyFunction.UNLOCK_ONLY,
+            )
+            is False
+        )
+
+    messages = [
+        record.message
+        for record in caplog.records
+        if "was not applied" in record.message
+    ]
+    assert len(messages) == 6
+    for setting in (
+        "light",
+        "sound",
+        "manual_unlock_linkage",
+        "enabled",
+        "double_press",
+        "function",
+    ):
+        assert any(
+            f"Quick Key {setting} was not applied" in message for message in messages
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status", [0x00, 0x02, 0x03, 0x04, 0x05, 0x09, 0x0E])
+async def test_set_quick_key_failed_status_logs_code(
+    status: int, caplog: pytest.LogCaptureFixture
+):
+    """Keep the device status code in diagnostics for rejected commands."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(device, "_send_command", return_value=bytes([status])):
+        assert await device.set_quick_key(enabled=True) is False
+
+    assert (
+        f"Quick Key command failed (status={status:#04x}, response={status:02x})"
+        in caplog.text
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status", [0x01, 0x06])
+async def test_set_quick_key_missing_config_logs_status(
+    status: int, caplog: pytest.LogCaptureFixture
+):
+    """Distinguish a missing config from a rejected command."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with patch.object(device, "_send_command", return_value=bytes([status])):
+        assert await device.set_quick_key(enabled=True) is False
+
+    assert (
+        f"Quick Key write response is missing config (status={status:#04x}, response={status:02x})"
+    ) in caplog.text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("response", [None, b""])
+async def test_set_quick_key_absent_response_raises(response: bytes | None):
+    """Preserve the existing operation error for an absent response."""
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_ULTRA)
+    with (
+        patch.object(device, "_send_command", return_value=response),
+        pytest.raises(SwitchbotOperationError, match="Sending command failed"),
+    ):
+        await device.set_quick_key(enabled=True)
