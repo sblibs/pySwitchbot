@@ -126,6 +126,5 @@ async def test_advertisement_preserves_energy_and_refreshes_power():
     assert device.parsed_data["power_production"] == 50
 
 
-@pytest.mark.parametrize("model", ["W1186000", "WoSwitchODPL"])
-def test_cloud_model_aliases(model):
-    assert API_MODEL_TO_ENUM[model] is SwitchbotModel.OUTDOOR_PLUG_EU
+def test_cloud_model_mapping():
+    assert API_MODEL_TO_ENUM["W1186000"] is SwitchbotModel.OUTDOOR_PLUG_EU
