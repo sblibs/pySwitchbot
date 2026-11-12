@@ -133,6 +133,7 @@ class SwitchbotModel(StrEnum):
     S20_VACUUM = "S20 Vacuum"
     PRESENCE_SENSOR = "Presence Sensor"
     ART_FRAME = "Art Frame"
+    ART_FRAME_LUMA = "Art Frame Luma"
     KEYPAD_VISION = "Keypad Vision"
     KEYPAD_VISION_PRO = "Keypad Vision Pro"
     LOCK_VISION_PRO = "Lock Vision Pro"
