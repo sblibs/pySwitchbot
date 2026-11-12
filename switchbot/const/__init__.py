@@ -26,7 +26,7 @@ from .light import (
 )
 
 # Preserve old LockStatus export for backwards compatibility
-from .lock import LockStatus
+from .lock import LockStatus, QuickKeyFunction
 
 DEFAULT_RETRY_COUNT = 3
 DEFAULT_RETRY_TIMEOUT = 1
@@ -111,6 +111,7 @@ class SwitchbotModel(StrEnum):
     AIR_PURIFIER_TABLE_US = "Air Purifier Table US"
     AIR_PURIFIER_TABLE_JP = "Air Purifier Table JP"
     HUB3 = "Hub3"
+    HUB4 = "Hub4"
     LOCK_ULTRA = "Lock Ultra"
     LOCK_LITE = "Lock Lite"
     GARAGE_DOOR_OPENER = "Garage Door Opener"
@@ -161,6 +162,7 @@ __all__ = [
     "HumidifierWaterLevel",
     "LockStatus",
     "NightLightState",
+    "QuickKeyFunction",
     "SmartThermostatRadiatorMode",
     "StandingFanMode",
     "StripLightColorMode",

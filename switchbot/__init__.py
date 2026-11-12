@@ -25,6 +25,7 @@ from .const import (
     HumidifierWaterLevel,
     LockStatus,
     NightLightState,
+    QuickKeyFunction,
     SmartThermostatRadiatorMode,
     StandingFanMode,
     StripLightColorMode,
@@ -66,7 +67,7 @@ from .devices.light_strip import (
     SwitchbotRgbicwwCeilingLight,
     SwitchbotStripLight3,
 )
-from .devices.lock import SwitchbotLock
+from .devices.lock import SwitchbotLock, SwitchbotLockUltra
 from .devices.meter_pro import SwitchbotMeterPro, SwitchbotMeterProCO2
 from .devices.plug import SwitchbotPlugMini
 from .devices.relay_switch import (
@@ -108,6 +109,7 @@ __all__ = [
     "HumidifierWaterLevel",
     "LockStatus",
     "NightLightState",
+    "QuickKeyFunction",
     "SmartThermostatRadiatorMode",
     "StandingFanMode",
     "StripLightColorMode",
@@ -134,6 +136,7 @@ __all__ = [
     "SwitchbotKeypadVision",
     "SwitchbotLightStrip",
     "SwitchbotLock",
+    "SwitchbotLockUltra",
     "SwitchbotMeterPro",
     "SwitchbotMeterProCO2",
     "SwitchbotModel",

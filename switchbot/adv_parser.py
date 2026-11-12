@@ -27,6 +27,7 @@ from .adv_parsers.fan import (
 )
 from .adv_parsers.hub2 import process_wohub2
 from .adv_parsers.hub3 import process_hub3
+from .adv_parsers.hub4 import process_hub4
 from .adv_parsers.hubmini_matter import process_hubmini_matter
 from .adv_parsers.humidifier import process_evaporative_humidifier, process_wohumidifier
 from .adv_parsers.keypad import process_wokeypad
@@ -572,6 +573,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.HUB3,
         "modelFriendlyName": "Hub3",
         "func": process_hub3,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x12\x82\x48": {
+        "modelName": SwitchbotModel.HUB4,
+        "modelFriendlyName": "Hub4",
+        "func": process_hub4,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x12\x82\x48": {
+        "modelName": SwitchbotModel.HUB4,
+        "modelFriendlyName": "Hub4",
+        "func": process_hub4,
         "manufacturer_id": 2409,
     },
     "-": {
