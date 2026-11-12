@@ -111,6 +111,7 @@ class SwitchbotModel(StrEnum):
     AIR_PURIFIER_TABLE_US = "Air Purifier Table US"
     AIR_PURIFIER_TABLE_JP = "Air Purifier Table JP"
     HUB3 = "Hub3"
+    HUB4 = "Hub4"
     LOCK_ULTRA = "Lock Ultra"
     LOCK_LITE = "Lock Lite"
     GARAGE_DOOR_OPENER = "Garage Door Opener"
