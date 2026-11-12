@@ -2,6 +2,42 @@
 
 <!-- version list -->
 
+## v3.3.0 (2026-11-12)
+
+### Bug Fixes
+
+- **lock**: Document Quick Key transport errors and test false/zero writes
+  ([#515](https://github.com/sblibs/pySwitchbot/pull/515),
+  [`91354a1`](https://github.com/sblibs/pySwitchbot/commit/91354a189a2c8b0b8a84e3b27c6499450a7dd79a))
+
+- **lock**: Guard Quick Key parse + export QuickKeyFunction
+  ([#515](https://github.com/sblibs/pySwitchbot/pull/515),
+  [`91354a1`](https://github.com/sblibs/pySwitchbot/commit/91354a189a2c8b0b8a84e3b27c6499450a7dd79a))
+
+- **lock**: Return the raw Quick Key byte, parse partially, log write failures
+  ([#515](https://github.com/sblibs/pySwitchbot/pull/515),
+  [`91354a1`](https://github.com/sblibs/pySwitchbot/commit/91354a189a2c8b0b8a84e3b27c6499450a7dd79a))
+
+### Documentation
+
+- **lock**: Document Quick Key behaviour when the lock does not answer
+  ([#515](https://github.com/sblibs/pySwitchbot/pull/515),
+  [`91354a1`](https://github.com/sblibs/pySwitchbot/commit/91354a189a2c8b0b8a84e3b27c6499450a7dd79a))
+
+### Features
+
+- Add support for Hub4 ([#605](https://github.com/sblibs/pySwitchbot/pull/605),
+  [`9cc0324`](https://github.com/sblibs/pySwitchbot/commit/9cc03244c7b4e710c172735d1402e9f2b92e367a))
+
+- **lock**: Add Quick Key support for Lock Ultra
+  ([#515](https://github.com/sblibs/pySwitchbot/pull/515),
+  [`91354a1`](https://github.com/sblibs/pySwitchbot/commit/91354a189a2c8b0b8a84e3b27c6499450a7dd79a))
+
+- **lock**: Extend Quick Key settings with protocol-aligned writes
+  ([#515](https://github.com/sblibs/pySwitchbot/pull/515),
+  [`91354a1`](https://github.com/sblibs/pySwitchbot/commit/91354a189a2c8b0b8a84e3b27c6499450a7dd79a))
+
+
 ## v3.2.1 (2026-11-11)
 
 ### Bug Fixes
