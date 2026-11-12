@@ -30,6 +30,7 @@ from .adv_parsers.hub3 import process_hub3
 from .adv_parsers.hub4 import process_hub4
 from .adv_parsers.hubmini_matter import process_hubmini_matter
 from .adv_parsers.humidifier import process_evaporative_humidifier, process_wohumidifier
+from .adv_parsers.image_frame import process_image_frame
 from .adv_parsers.keypad import process_wokeypad
 from .adv_parsers.keypad_vision import process_keypad_vision, process_keypad_vision_pro
 from .adv_parsers.leak import process_leak
@@ -837,6 +838,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.PRESENCE_SENSOR,
         "modelFriendlyName": "Presence Sensor",
         "func": process_presence_sensor,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x12\x95\xd0": {
+        "modelName": SwitchbotModel.AI_MEMORY_FRAME,
+        "modelFriendlyName": "AI Memory Frame",
+        "func": process_image_frame,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x12\x95\xd0": {
+        "modelName": SwitchbotModel.AI_MEMORY_FRAME,
+        "modelFriendlyName": "AI Memory Frame",
+        "func": process_image_frame,
         "manufacturer_id": 2409,
     },
     b"\x00\x11>\x10": {
