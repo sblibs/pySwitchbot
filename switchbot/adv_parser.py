@@ -929,6 +929,12 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_relay_switch_1pm,
         "manufacturer_id": 2409,
     },
+    b"\x01\x12\x43\xc8": {
+        "modelName": SwitchbotModel.PLUG_MINI_IT,
+        "modelFriendlyName": "Plug Mini (IT)",
+        "func": process_relay_switch_1pm,
+        "manufacturer_id": 2409,
+    },
     b"\x00\x11\x07\x60": {
         "modelName": SwitchbotModel.STANDING_FAN,
         "modelFriendlyName": "Standing Fan",

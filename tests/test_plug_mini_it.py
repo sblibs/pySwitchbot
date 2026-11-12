@@ -5,11 +5,14 @@ from switchbot import SwitchbotModel, parse_advertisement_data
 from .test_adv_parser import generate_advertisement_data, generate_ble_device
 
 
+@pytest.mark.parametrize("pairing", [0, 1])
 @pytest.mark.parametrize("network", [0, 0x15, 0x75])
 @pytest.mark.parametrize(("status", "is_on"), [(0x01, False), (0x87, True)])
 @pytest.mark.parametrize("encrypted", [False, True])
-def test_plug_mini_it_advertisement(network, status, is_on, encrypted):
-    service = bytes([0x80 if encrypted else 0, 0, 0, 0, 0x12, 0x43, 0xC8, network])
+def test_plug_mini_it_advertisement(pairing, network, status, is_on, encrypted):
+    service = bytes(
+        [0x80 if encrypted else 0, 0, 0, pairing, 0x12, 0x43, 0xC8, network]
+    )
     manufacturer = (
         bytes.fromhex("010203040506")
         + bytes([99, status, 0, 0])
