@@ -117,6 +117,7 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "W1163000": SwitchbotModel.RGBICWW_LIGHT_BARS,
     "W1162000": SwitchbotModel.RGBICWW_CEILING_LIGHT,
     "W1160000": SwitchbotModel.CIRCULATOR_FAN_PRO,
+    "W1071000": SwitchbotModel.MODERN_CEILING_FAN,
     "W1104000": SwitchbotModel.PLUG_MINI_EU,
     "W1213000": SwitchbotModel.HUB4,
     "W1128000": SwitchbotModel.SMART_THERMOSTAT_RADIATOR,

@@ -100,6 +100,7 @@ class SwitchbotModel(StrEnum):
     HUBMINI_MATTER = "HubMini Matter"
     CIRCULATOR_FAN = "Circulator Fan"
     CIRCULATOR_FAN_PRO = "Circulator Fan Pro"
+    MODERN_CEILING_FAN = "Modern Ceiling Fan"
     STANDING_FAN = "Standing Fan"
     K20_VACUUM = "K20 Vacuum"
     S10_VACUUM = "S10 Vacuum"
