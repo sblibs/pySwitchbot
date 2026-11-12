@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v3.3.1 (2026-11-12)
+
+### Bug Fixes
+
+- Recognize Hub 4 cloud product ID ([#606](https://github.com/sblibs/pySwitchbot/pull/606),
+  [`6520f03`](https://github.com/sblibs/pySwitchbot/commit/6520f030cce8f725242161c1698befc38003d86a))
+
+
 ## v3.3.0 (2026-11-12)
 
 ### Bug Fixes
