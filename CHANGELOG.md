@@ -2,6 +2,23 @@
 
 <!-- version list -->
 
+## v3.5.0 (2026-11-13)
+
+### Bug Fixes
+
+- Map the UWB Lock cloud product ID ([#599](https://github.com/sblibs/pySwitchbot/pull/599),
+  [`980f726`](https://github.com/sblibs/pySwitchbot/commit/980f72658db4d73857ccaab28fb5594c126a84c1))
+
+- Use the Ultra basic-info path for UWB Lock
+  ([#599](https://github.com/sblibs/pySwitchbot/pull/599),
+  [`980f726`](https://github.com/sblibs/pySwitchbot/commit/980f72658db4d73857ccaab28fb5594c126a84c1))
+
+### Features
+
+- Add UWB Lock support ([#599](https://github.com/sblibs/pySwitchbot/pull/599),
+  [`980f726`](https://github.com/sblibs/pySwitchbot/commit/980f72658db4d73857ccaab28fb5594c126a84c1))
+
+
 ## v3.4.0 (2026-11-13)
 
 ### Bug Fixes
