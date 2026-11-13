@@ -42,6 +42,7 @@ from .adv_parsers.light_strip import (
 )
 from .adv_parsers.lock import (
     process_lock2,
+    process_lock_nano,
     process_locklite,
     process_wolock,
     process_wolock_pro,
@@ -921,6 +922,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.UWB_LOCK,
         "modelFriendlyName": "UWB Lock",
         "func": process_lock2,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x12\x24\x88": {
+        "modelName": SwitchbotModel.LOCK_NANO,
+        "modelFriendlyName": "Lock Nano",
+        "func": process_lock_nano,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x12\x24\x88": {
+        "modelName": SwitchbotModel.LOCK_NANO,
+        "modelFriendlyName": "Lock Nano",
+        "func": process_lock_nano,
         "manufacturer_id": 2409,
     },
     b"\x00\x11\x9f\xb8": {
