@@ -2,6 +2,23 @@
 
 <!-- version list -->
 
+## v3.7.0 (2026-11-13)
+
+### Bug Fixes
+
+- Limit lock status parsing changes to Lock Nano
+  ([#600](https://github.com/sblibs/pySwitchbot/pull/600),
+  [`5301540`](https://github.com/sblibs/pySwitchbot/commit/530154090a50349d95176f83123b8cf5acb0725c))
+
+- Recognize the Lock Nano cloud product ID ([#600](https://github.com/sblibs/pySwitchbot/pull/600),
+  [`5301540`](https://github.com/sblibs/pySwitchbot/commit/530154090a50349d95176f83123b8cf5acb0725c))
+
+### Features
+
+- Add Lock Nano support ([#600](https://github.com/sblibs/pySwitchbot/pull/600),
+  [`5301540`](https://github.com/sblibs/pySwitchbot/commit/530154090a50349d95176f83123b8cf5acb0725c))
+
+
 ## v3.6.0 (2026-11-13)
 
 ### Features
