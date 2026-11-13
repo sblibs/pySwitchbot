@@ -605,3 +605,43 @@ async def test_rgbicww_ceiling_light_get_basic_info_with_main_state() -> None:
     # Power state must not be sourced from GATT (advertisement is authoritative).
     assert "isOn" not in info
     assert "main_isOn" not in info
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("color_on", "main_on", "expected"),
+    [
+        (False, False, False),
+        (False, True, True),
+        (True, False, True),
+        (True, True, True),
+        (None, None, None),
+        (None, False, None),
+        (False, None, None),
+        (None, True, True),
+        (True, None, True),
+    ],
+)
+async def test_ceiling_any_light_on(
+    color_on: bool | None, main_on: bool | None, expected: bool | None
+) -> None:
+    device = create_device_for_command_testing(
+        RGBICWW_CEILING_LIGHT_INFO,
+        light_strip.SwitchbotRgbicwwCeilingLight,
+        init_data={"isOn": color_on, "main_isOn": main_on},
+    )
+    assert device.is_any_light_on is expected
+    assert device.on is color_on
+    assert device.is_main_on is main_on
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "command"), [("turn_on", "570F490101"), ("turn_off", "570F490102")]
+)
+async def test_ceiling_master_power_command(method: str, command: str) -> None:
+    device = create_device_for_command_testing(
+        RGBICWW_CEILING_LIGHT_INFO, light_strip.SwitchbotRgbicwwCeilingLight
+    )
+    await getattr(device, method)()
+    device._send_command.assert_awaited_once_with(command)
