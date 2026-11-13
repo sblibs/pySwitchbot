@@ -360,17 +360,12 @@ class SwitchbotCirculatorFanPro(SwitchbotEncryptedDevice, SwitchbotFan):
     _command_stop_vertical_oscillation: ClassVar[str] = "570f410229ff02"
 
     async def get_basic_info(self) -> dict[str, Any] | None:
-        """
-        Get device basic info.
-
-        The Pro carries all runtime state (fan + night light) in its
-        advertisement, so only the firmware is read here.
-        """
-        if not (_data1 := await self._get_basic_info(DEVICE_GET_BASIC_SETTINGS_KEY)):
+        """Verify communication using the Pro's status query."""
+        response = await self._get_basic_info("570f4201")
+        if not response or response[0] != 1:
             return None
-        if len(_data1) <= 2:
-            return None
-        return {"firmware": _data1[2] / 10.0}
+        # Runtime state comes from advertisements; this reply is not firmware data.
+        return {}
 
     @update_after_operation
     async def set_percentage(self, percentage: int) -> bool:

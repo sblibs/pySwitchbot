@@ -586,16 +586,18 @@ async def test_circulator_fan_pro_get_basic_info():
         "ffffffffffffffffffffffffffffffff",
         model=SwitchbotModel.CIRCULATOR_FAN_PRO,
     )
-    fan_device._send_command = AsyncMock(return_value=b"\x01\x02\x37\x04")
+    fan_device._send_command = AsyncMock(return_value=b"\x01")
     info = await fan_device.get_basic_info()
-    assert info == {"firmware": 5.5}
-    fan_device._send_command.assert_called_once()
+    assert info == {}
+    fan_device._send_command.assert_awaited_once_with(
+        key="570f4201", retry=fan_device._retry_count
+    )
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "response",
-    [b"\x00", b"\x07", b"\x01\x02"],
+    [None, b"", b"\x00", b"\x07", b"\x05"],
 )
 async def test_circulator_fan_pro_get_basic_info_returns_none(response):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
@@ -958,3 +960,25 @@ def test_process_standing_fan_charging(battery_byte, charging, battery):
 def test_process_standing_fan_charging_short_payload():
     assert process_standing_fan(None, None) == {}
     assert process_standing_fan(None, b"\x00") == {}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("response", "expected"),
+    [(b"\x01", True), (b"\x05", False), (None, False)],
+)
+async def test_circulator_fan_pro_verify_encryption_key(
+    monkeypatch, response, expected
+):
+    send_command = AsyncMock(return_value=response)
+    monkeypatch.setattr(SwitchbotCirculatorFanPro, "_send_command", send_command)
+    device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+
+    assert (
+        await SwitchbotCirculatorFanPro.verify_encryption_key(
+            device, "ff", "ffffffffffffffffffffffffffffffff"
+        )
+        is expected
+    )
+    send_command.assert_awaited_once()
+    assert send_command.call_args.kwargs["key"] == "570f4201"
