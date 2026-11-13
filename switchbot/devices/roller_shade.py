@@ -37,7 +37,7 @@ class SwitchbotRollerShade(SwitchbotBaseCover, SwitchbotSequenceDevice):
         # the definition of position is the same as in Home Assistant.
 
         self._reverse: bool = kwargs.pop("reverse_mode", True)
-        super().__init__(self._reverse, *args, **kwargs)
+        super().__init__(*args, reverse=self._reverse, **kwargs)
 
     def _set_parsed_data(
         self, advertisement: SwitchBotAdvertisement, data: dict[str, Any]
