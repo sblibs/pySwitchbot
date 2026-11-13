@@ -11,7 +11,7 @@ from .device import (
 )
 
 
-class SwitchbotImageFrame(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
+class SwitchbotArtFrame2(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Handle image frames with 16-bit image indexes."""
 
     response_flag: bool = True
