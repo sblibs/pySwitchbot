@@ -140,6 +140,7 @@ class SwitchbotModel(StrEnum):
     LOCK_VISION = "Lock Vision"
     LOCK_PRO_WIFI = "Lock Pro Wifi"
     LOCK_ULTRA_MAX = "Lock Ultra Max"
+    UWB_LOCK = "UWB Lock"
     WEATHER_STATION = "Weather Station"
 
 

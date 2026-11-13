@@ -108,6 +108,7 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "W1079001": SwitchbotModel.METER_PRO_CO2,
     "W1101000": SwitchbotModel.PRESENCE_SENSOR,
     "W1091000": SwitchbotModel.LOCK_ULTRA,
+    "W1184000": SwitchbotModel.UWB_LOCK,
     "W1096000": SwitchbotModel.HUB3,
     "W1083003": SwitchbotModel.GARAGE_DOOR_OPENER,
     "W1102000": SwitchbotModel.FLOOR_LAMP,

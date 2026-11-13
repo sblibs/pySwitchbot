@@ -23,6 +23,7 @@ COMMAND_LOCK_INFO = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4f8104",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4f8107",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0f4f8107",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0f4f8107",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4f8102",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4f8102",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4f810a",
@@ -33,6 +34,7 @@ COMMAND_UNLOCK = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0f4e0101000080",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e0101000080",
@@ -43,6 +45,7 @@ COMMAND_UNLOCK_WITHOUT_UNLATCH = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0f4e01010000a0",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e01010000a0",
@@ -53,6 +56,7 @@ COMMAND_LOCK = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0f4e0101000000",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e0101000000",
@@ -74,6 +78,7 @@ COMMAND_ENABLE_NOTIFICATIONS = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0e01001e00008104",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0e01001e00008107",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0e01001e00008107",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0e01001e00008107",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0e01001e00008102",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0e01001e00008102",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0e01001e0000810a",
@@ -115,6 +120,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             SwitchbotModel.LOCK_LITE,
             SwitchbotModel.LOCK_ULTRA,
             SwitchbotModel.LOCK_ULTRA_MAX,
+            SwitchbotModel.UWB_LOCK,
             SwitchbotModel.LOCK_VISION_PRO,
             SwitchbotModel.LOCK_VISION,
             SwitchbotModel.LOCK_PRO_WIFI,
@@ -490,7 +496,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
 
 class SwitchbotLockUltra(SwitchbotLock):
-    """SwitchBot Lock Ultra and Ultra Max, which share the Lock 2 basic-info format."""
+    """SwitchBot locks that use the Lock 2 basic-info format."""
 
     _model = SwitchbotModel.LOCK_ULTRA
 
