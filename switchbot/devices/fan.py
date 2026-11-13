@@ -360,12 +360,11 @@ class SwitchbotCirculatorFanPro(SwitchbotEncryptedDevice, SwitchbotFan):
     _command_stop_vertical_oscillation: ClassVar[str] = "570f410229ff02"
 
     async def get_basic_info(self) -> dict[str, Any] | None:
-        """Verify communication using the Pro's status query."""
-        response = await self._get_basic_info("570f4201")
-        if not response or response[0] != 1:
+        """Read firmware using the Pro's basic-info query."""
+        response = await self._get_basic_info("57000300")
+        if not response or len(response) < 3 or response[0] != 1:
             return None
-        # Runtime state comes from advertisements; this reply is not firmware data.
-        return {}
+        return {"firmware": response[2] / 10.0}
 
     @update_after_operation
     async def set_percentage(self, percentage: int) -> bool:
