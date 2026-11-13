@@ -842,13 +842,13 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
     },
     b"\x00\x11\xf1\xc0": {
         "modelName": SwitchbotModel.ART_FRAME_LUMA,
-        "modelFriendlyName": "Art Frame Luma",
+        "modelFriendlyName": "Art Frame 2",
         "func": process_image_frame,
         "manufacturer_id": 2409,
     },
     b"\x01\x11\xf1\xc0": {
         "modelName": SwitchbotModel.ART_FRAME_LUMA,
-        "modelFriendlyName": "Art Frame Luma",
+        "modelFriendlyName": "Art Frame 2",
         "func": process_image_frame,
         "manufacturer_id": 2409,
     },
