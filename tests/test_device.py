@@ -155,6 +155,28 @@ def mock_auth_response() -> dict[str, Any]:
     }
 
 
+@pytest.mark.asyncio
+async def test_cloud_maps_lock_nano(mock_user_info: dict[str, Any]) -> None:
+    """Recognize the Lock Nano product ID in the account device list."""
+    response = {
+        "Items": [
+            {"device_mac": "aabbccddeeff", "device_detail": {"device_type": "W1189000"}}
+        ]
+    }
+    with (
+        patch.dict(_MODEL_TO_MAC_CACHE, {}, clear=True),
+        patch.object(
+            SwitchbotBaseDevice, "_async_get_user_info", return_value=mock_user_info
+        ),
+        patch.object(SwitchbotBaseDevice, "api_request", return_value=response),
+    ):
+        devices = await fetch_cloud_devices_by_token(
+            MagicMock(spec=aiohttp.ClientSession), "test-token"
+        )
+        assert devices == {"AA:BB:CC:DD:EE:FF": SwitchbotModel.LOCK_NANO}
+        assert _MODEL_TO_MAC_CACHE["AA:BB:CC:DD:EE:FF"] is SwitchbotModel.LOCK_NANO
+
+
 @pytest.fixture
 def mock_user_info() -> dict[str, Any]:
     """Mock user info response."""
