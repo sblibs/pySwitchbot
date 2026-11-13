@@ -2,6 +2,23 @@
 
 <!-- version list -->
 
+## v3.4.0 (2026-11-13)
+
+### Bug Fixes
+
+- Recognize Plug Mini IT cloud product ID ([#602](https://github.com/sblibs/pySwitchbot/pull/602),
+  [`fea4492`](https://github.com/sblibs/pySwitchbot/commit/fea44922e182461449997d11a8d0f6afb8f9a6d1))
+
+- Recognize Plug Mini IT pairing advertisements
+  ([#602](https://github.com/sblibs/pySwitchbot/pull/602),
+  [`fea4492`](https://github.com/sblibs/pySwitchbot/commit/fea44922e182461449997d11a8d0f6afb8f9a6d1))
+
+### Features
+
+- Add support for Plug Mini IT ([#602](https://github.com/sblibs/pySwitchbot/pull/602),
+  [`fea4492`](https://github.com/sblibs/pySwitchbot/commit/fea44922e182461449997d11a8d0f6afb8f9a6d1))
+
+
 ## v3.3.2 (2026-11-13)
 
 ### Bug Fixes
