@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v3.6.0 (2026-11-13)
+
+### Features
+
+- Expose aggregate ceiling light power state
+  ([#609](https://github.com/sblibs/pySwitchbot/pull/609),
+  [`c966534`](https://github.com/sblibs/pySwitchbot/commit/c966534263e0bff4018314f456fe72a5455e4fa3))
+
+
 ## v3.5.0 (2026-11-13)
 
 ### Bug Fixes
