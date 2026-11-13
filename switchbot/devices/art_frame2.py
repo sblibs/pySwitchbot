@@ -1,4 +1,4 @@
-"""Device handlers for Art Frame Luma and AI Memory Frame."""
+"""Device handlers for Art Frame 2 and AI Memory Frame."""
 
 import secrets
 from typing import Any
