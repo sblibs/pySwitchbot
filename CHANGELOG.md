@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v3.8.0 (2026-11-13)
+
+### Bug Fixes
+
+- Keep numeric Outdoor Plug EU cloud model only
+  ([#604](https://github.com/sblibs/pySwitchbot/pull/604),
+  [`8dcd71c`](https://github.com/sblibs/pySwitchbot/commit/8dcd71cee7b0e1f0ae02fb70c12027526bdc4f2d))
+
+### Features
+
+- Add support for Outdoor Plug EU ([#604](https://github.com/sblibs/pySwitchbot/pull/604),
+  [`8dcd71c`](https://github.com/sblibs/pySwitchbot/commit/8dcd71cee7b0e1f0ae02fb70c12027526bdc4f2d))
+
+
 ## v3.7.0 (2026-11-13)
 
 ### Bug Fixes
