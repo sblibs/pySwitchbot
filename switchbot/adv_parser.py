@@ -47,6 +47,7 @@ from .adv_parsers.lock import (
     process_wolock_pro,
 )
 from .adv_parsers.meter import process_wosensorth, process_wosensorth_c
+from .adv_parsers.modern_ceiling_fan import process_modern_ceiling_fan
 from .adv_parsers.motion import process_wopresence
 from .adv_parsers.plug import process_woplugmini
 from .adv_parsers.presence_sensor import process_presence_sensor
@@ -729,6 +730,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.RGBICWW_CEILING_LIGHT,
         "modelFriendlyName": "RGBICWW Ceiling Light",
         "func": process_rgbicww_ceiling_light,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x10\x57\x98": {
+        "modelName": SwitchbotModel.MODERN_CEILING_FAN,
+        "modelFriendlyName": "Modern Ceiling Fan",
+        "func": process_modern_ceiling_fan,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x10\x57\x98": {
+        "modelName": SwitchbotModel.MODERN_CEILING_FAN,
+        "modelFriendlyName": "Modern Ceiling Fan",
+        "func": process_modern_ceiling_fan,
         "manufacturer_id": 2409,
     },
     b"\x00\x11\xb3@": {
