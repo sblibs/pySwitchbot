@@ -2,6 +2,23 @@
 
 <!-- version list -->
 
+## v3.3.2 (2026-11-13)
+
+### Bug Fixes
+
+- Read Fan Pro firmware with supported basic-info command
+  ([#611](https://github.com/sblibs/pySwitchbot/pull/611),
+  [`edb8139`](https://github.com/sblibs/pySwitchbot/commit/edb8139c925885b6002b085a5820547560a49d99))
+
+- Use supported firmware query for Circulator Fan Pro
+  ([#611](https://github.com/sblibs/pySwitchbot/pull/611),
+  [`edb8139`](https://github.com/sblibs/pySwitchbot/commit/edb8139c925885b6002b085a5820547560a49d99))
+
+- Use supported status query for Circulator Fan Pro
+  ([#611](https://github.com/sblibs/pySwitchbot/pull/611),
+  [`edb8139`](https://github.com/sblibs/pySwitchbot/commit/edb8139c925885b6002b085a5820547560a49d99))
+
+
 ## v3.3.1 (2026-11-12)
 
 ### Bug Fixes
