@@ -121,6 +121,7 @@ class SwitchbotModel(StrEnum):
     CANDLE_WARMER_LAMP = "Candle Warmer Lamp"
     PLUG_MINI_EU = "Plug Mini (EU)"
     PLUG_MINI_IT = "Plug Mini (IT)"
+    OUTDOOR_PLUG_EU = "Outdoor Plug (EU)"
     RGBICWW_STRIP_LIGHT = "RGBICWW Strip Light"
     RGBICWW_FLOOR_LAMP = "RGBICWW Floor Lamp"
     RGBICWW_LIGHT_BARS = "RGBICWW Light Bars"

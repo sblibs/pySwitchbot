@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from bleak.backends.device import BLEDevice
 
-from switchbot import SwitchBotAdvertisement, SwitchbotModel
+from switchbot import SwitchBotAdvertisement, SwitchbotModel, SwitchbotOutdoorPlug
 from switchbot.devices import relay_switch
 from switchbot.devices.device import _merge_data as merge_data
 
@@ -15,6 +15,7 @@ common_params = [
     (b">\x00\x00\x00", SwitchbotModel.GARAGE_DOOR_OPENER),
     (b"?\x00\x00\x00", SwitchbotModel.PLUG_MINI_EU),
     (b"\x00\x00\x00\x00\x12\x43\xc8\x15", SwitchbotModel.PLUG_MINI_IT),
+    (b"\x00\x00\x00\x00\x12\x18\xd0\x15", SwitchbotModel.OUTDOOR_PLUG_EU),
 ]
 
 
@@ -36,6 +37,8 @@ def create_device_for_command_testing(
         device_class = relay_switch.SwitchbotGarageDoorOpener
     elif model == SwitchbotModel.RELAY_SWITCH_2PM:
         device_class = relay_switch.SwitchbotRelaySwitch2PM
+    elif model == SwitchbotModel.OUTDOOR_PLUG_EU:
+        device_class = SwitchbotOutdoorPlug
     else:
         device_class = relay_switch.SwitchbotRelaySwitch
     device = device_class(
