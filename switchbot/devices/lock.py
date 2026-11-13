@@ -392,10 +392,9 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         _LOGGER.debug(
             "basic_data: %s, address: %s", basic_data.hex(), self._device.address
         )
-        lock_state = self._parse_lock_data(lock_raw_data[1:], self._model)
-        if not lock_state:
-            return None
-        return lock_state | self._parse_basic_data(basic_data)
+        return self._parse_lock_data(
+            lock_raw_data[1:], self._model
+        ) | self._parse_basic_data(basic_data)
 
     def is_calibrated(self) -> Any:
         """Return True if lock is calibrated."""
@@ -476,8 +475,6 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     @staticmethod
     def _parse_lock_data(data: bytes, model: SwitchbotModel) -> dict[str, Any]:
-        if len(data) < 2:
-            return {}
         if model in {SwitchbotModel.LOCK, SwitchbotModel.LOCK_VISION_PRO}:
             return {
                 "calibration": bool(data[0] & 0b10000000),
@@ -492,22 +489,20 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                 "status": LockStatus((data[0] & 0b01110000) >> 4),
                 "unlocked_alarm": bool(data[1] & 0b00010000),
             }
-        if len(data) < 6:
-            return {}
-        try:
-            status = LockStatus((data[0] & 0b01111000) >> 3)
-        except ValueError:
-            return {}
+        if model is SwitchbotModel.LOCK_NANO:
+            return {
+                "calibration": bool(data[0] & 0b10000000),
+                "status": LockStatus((data[0] & 0b01111000) >> 3),
+                "auto_lock_paused": bool(data[1] & 0b00001000),
+                "unlocked_alarm": bool(data[5] & 0b01000000),
+            }
         result = {
             "calibration": bool(data[0] & 0b10000000),
-            "status": status,
+            "status": LockStatus((data[0] & 0b01111000) >> 3),
+            "door_open": bool(data[1] & 0b00010000),
+            "unclosed_alarm": bool(data[5] & 0b10000000),
             "unlocked_alarm": bool(data[5] & 0b01000000),
         }
-        if model is SwitchbotModel.LOCK_NANO:
-            result["auto_lock_paused"] = bool(data[1] & 0b00001000)
-        else:
-            result["door_open"] = bool(data[1] & 0b00010000)
-            result["unclosed_alarm"] = bool(data[5] & 0b10000000)
         if model is SwitchbotModel.LOCK_ULTRA:
             result["half_lock_calibration"] = bool(data[1] & 0b00000001)
         return result

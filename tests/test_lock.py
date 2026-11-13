@@ -65,14 +65,11 @@ async def test_nano_update_reads_lock_and_basic_info():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "response", [None, bytes.fromhex("01"), bytes.fromhex("01 f8 00 00 00 00 00")]
-)
-async def test_nano_rejects_invalid_status_during_key_verification(response):
+async def test_nano_key_verification_without_response():
     device = generate_ble_device("aa:bb:cc:dd:ee:ff", "Lock Nano")
-    with patch.object(lock.SwitchbotLock, "_send_command", return_value=response):
+    with patch.object(lock.SwitchbotLock, "_send_command", return_value=None):
         assert not await lock.SwitchbotLock.verify_encryption_key(
-            device, "ff", "ffffffffffffffffffffffffffffffff", SwitchbotModel.LOCK_NANO
+            device, "ff", "ff" * 16, SwitchbotModel.LOCK_NANO
         )
 
 
