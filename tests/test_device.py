@@ -56,6 +56,28 @@ def test_api_model_mapping(api_model: str, expected_model: SwitchbotModel) -> No
     assert API_MODEL_TO_ENUM[api_model] is expected_model
 
 
+@pytest.mark.asyncio
+async def test_cloud_maps_uwb_lock(mock_user_info: dict[str, Any]) -> None:
+    """Recognize the UWB Lock product ID in the account device list."""
+    response = {
+        "Items": [
+            {"device_mac": "aabbccddeeff", "device_detail": {"device_type": "W1184000"}}
+        ]
+    }
+    with (
+        patch.dict(_MODEL_TO_MAC_CACHE, {}, clear=True),
+        patch.object(
+            SwitchbotBaseDevice, "_async_get_user_info", return_value=mock_user_info
+        ),
+        patch.object(SwitchbotBaseDevice, "api_request", return_value=response),
+    ):
+        devices = await fetch_cloud_devices_by_token(
+            MagicMock(spec=aiohttp.ClientSession), "test-token"
+        )
+        assert devices == {"AA:BB:CC:DD:EE:FF": SwitchbotModel.UWB_LOCK}
+        assert _MODEL_TO_MAC_CACHE["AA:BB:CC:DD:EE:FF"] is SwitchbotModel.UWB_LOCK
+
+
 def test_legacy_plug_is_not_mapped_to_plug_mini() -> None:
     """Test the legacy Plug is not identified as a Plug Mini."""
     assert "WoPlug" not in API_MODEL_TO_ENUM
