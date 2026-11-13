@@ -1028,3 +1028,28 @@ async def test_hub4_cloud_model_cache(mock_user_info: dict[str, Any]) -> None:
         )
         assert devices == {"E6:A1:CD:1F:5B:65": SwitchbotModel.HUB4}
         assert _MODEL_TO_MAC_CACHE["E6:A1:CD:1F:5B:65"] is SwitchbotModel.HUB4
+
+
+@pytest.mark.asyncio
+async def test_plug_mini_it_cloud_model_cache(mock_user_info: dict[str, Any]) -> None:
+    """Map the backend product ID and populate the Bluetooth model cache."""
+    response = {
+        "Items": [
+            {
+                "device_mac": "e6a1cd1f5b65",
+                "device_detail": {"device_type": "W1197000"},
+            }
+        ]
+    }
+    with (
+        patch.dict(_MODEL_TO_MAC_CACHE, {}, clear=True),
+        patch.object(
+            SwitchbotBaseDevice, "_async_get_user_info", return_value=mock_user_info
+        ),
+        patch.object(SwitchbotBaseDevice, "api_request", return_value=response),
+    ):
+        devices = await fetch_cloud_devices_by_token(
+            MagicMock(spec=aiohttp.ClientSession), "test-token"
+        )
+        assert devices == {"E6:A1:CD:1F:5B:65": SwitchbotModel.PLUG_MINI_IT}
+        assert _MODEL_TO_MAC_CACHE["E6:A1:CD:1F:5B:65"] is SwitchbotModel.PLUG_MINI_IT
