@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v3.8.1 (2026-11-13)
+
+### Bug Fixes
+
+- Disconnect temporary device after encryption key verification
+  ([#613](https://github.com/sblibs/pySwitchbot/pull/613),
+  [`606e69f`](https://github.com/sblibs/pySwitchbot/commit/606e69f371c0fced27a89d96a42c7dff8336e3a9))
+
+
 ## v3.8.0 (2026-11-13)
 
 ### Bug Fixes
