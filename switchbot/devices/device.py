@@ -1275,6 +1275,8 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
             info = await switchbot_device.get_basic_info()
         except SwitchbotOperationError:
             return False
+        finally:
+            await switchbot_device._execute_forced_disconnect()
 
         return info is not None
 
