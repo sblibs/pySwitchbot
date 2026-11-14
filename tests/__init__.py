@@ -229,3 +229,16 @@ KEYPAD_VISION_PRO_INFO = AdvTestCase(
     "Keypad Vision Pro",
     SwitchbotModel.KEYPAD_VISION_PRO,
 )
+
+
+KEYPAD_INFO = AdvTestCase(
+    b"\xeb\x13\x02\xe6#\x0f\x8fd\x00\x00\x00\x00",
+    b"y\x00d",
+    {
+        "battery": 100,
+        "attempt_state": 143,
+    },
+    "y",
+    "Keypad",
+    SwitchbotModel.KEYPAD,
+)
