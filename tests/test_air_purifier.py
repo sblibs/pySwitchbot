@@ -381,6 +381,73 @@ async def test_get_basic_info(device_case, info_case):
     assert info["light_sensitive"] == result[10]
 
 
+GOOD_POLL_REPLIES = [
+    bytes.fromhex("012fd20e0a008000200000000010001e"),
+    bytes.fromhex("010000000064"),
+    bytes.fromhex("0100"),
+]
+# A duplicated notification (here the encryption init reply) answered the basic
+# info command, shifting each real reply one command later (US, firmware 3.0).
+SHIFTED_POLL_REPLIES = [
+    bytes.fromhex("01459d6b2268da72aa245d92cf562f0be8"),
+    bytes.fromhex("0130d20e0a00800020000000000f001e"),
+    bytes.fromhex("010000000064"),
+]
+
+
+@pytest.mark.asyncio
+async def test_get_basic_info_firmware_3_0():
+    device = create_device_for_command_testing(*common_params[1])
+    device._send_command = AsyncMock(side_effect=GOOD_POLL_REPLIES)
+    del device._check_command_result
+
+    info = await device.get_basic_info()
+
+    assert info["mode"] == "auto"
+    assert info["isAqiValid"] is True
+    assert info["child_lock"] is True
+    assert info["speed"] == 0
+    assert info["pm25"] == 16
+    assert info["firmware"] == 3.0
+    assert info["brightness"] == 100
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "replies",
+    [
+        pytest.param(SHIFTED_POLL_REPLIES, id="shifted_replies"),
+        pytest.param(
+            [
+                bytes.fromhex("0102"),
+                bytes.fromhex("01a4d20a09008000210000000007001e"),
+                bytes.fromhex("01a6d20a09008000210000000007001e"),
+            ],
+            id="duplicated_command_reply",
+        ),
+        pytest.param(
+            [GOOD_POLL_REPLIES[0], b"\x01\x00", GOOD_POLL_REPLIES[2]],
+            id="short_led_settings",
+        ),
+        pytest.param(
+            [GOOD_POLL_REPLIES[0], GOOD_POLL_REPLIES[1], b"\x01"],
+            id="short_led_status",
+        ),
+    ],
+)
+async def test_update_ignores_mismatched_replies(replies):
+    device = create_device_for_command_testing(*common_params[1], {"pm25": 16})
+    device._send_command = AsyncMock(side_effect=replies)
+    del device._check_command_result
+    del device.update
+
+    await device.update()
+
+    assert device.get_current_pm25() == 16
+    assert device.get_current_percentage() == 100
+    assert "r" not in device._state
+
+
 def test_default_model_classvar():
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     device = air_purifier.SwitchbotAirPurifier(

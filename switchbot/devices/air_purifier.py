@@ -57,6 +57,8 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         READ_LED_STATUS_COMMAND,
     ]
 
+    _BASIC_INFO_REPLY_LENGTHS: ClassVar[tuple[int, ...]] = (16, 6, 2)
+
     _PM25_MODELS: ClassVar[frozenset[SwitchbotModel]] = frozenset(
         {
             SwitchbotModel.AIR_PURIFIER_US,
@@ -112,6 +114,15 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         _LOGGER.debug(
             "%s %s led_status %s", self._model, self._device.address, led_status.hex()
         )
+        # A duplicated notification can answer the next command, shifting every
+        # later reply one slot.
+        if tuple(map(len, res)) != self._BASIC_INFO_REPLY_LENGTHS:
+            _LOGGER.debug(
+                "%s %s ignoring mismatched basic info replies",
+                self._model,
+                self._device.address,
+            )
+            return None
         isOn = bool(_data[2] & 0b10000000)
         wireless_charging = bool(_data[2] & 0b01000000)
         version_info = (_data[2] & 0b00110000) >> 4
