@@ -35,8 +35,11 @@ on:
     types: [completed]
 
 permissions:
+  actions: read
+  checks: read
   contents: write
   pull-requests: write
+  statuses: read
 
 jobs:
   dependabot:
