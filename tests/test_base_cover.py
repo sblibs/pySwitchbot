@@ -88,7 +88,7 @@ async def test_get_extended_info_adv_returns_none_when_bad_data(data_value):
 async def test_get_extended_info_adv_returns_single_device():
     base_cover_device = create_device_for_command_testing()
     base_cover_device._send_command = AsyncMock(
-        return_value=bytes([0, 50, 20, 0, 0, 0, 0])
+        return_value=bytes([1, 50, 20, 0, 0, 0, 0])
     )
     ext_result = await base_cover_device.get_extended_info_adv()
     assert ext_result["device0"]["battery"] == 50
@@ -99,8 +99,9 @@ async def test_get_extended_info_adv_returns_single_device():
 @pytest.mark.asyncio
 async def test_get_extended_info_adv_returns_both_devices():
     base_cover_device = create_device_for_command_testing()
+    base_cover_device.parsed_data["deviceChain"] = 2
     base_cover_device._send_command = AsyncMock(
-        return_value=bytes([0, 50, 20, 0, 10, 30, 0])
+        return_value=bytes([1, 50, 20, 0, 10, 30, 0])
     )
     ext_result = await base_cover_device.get_extended_info_adv()
     assert ext_result["device0"]["battery"] == 50
@@ -117,14 +118,15 @@ async def test_get_extended_info_adv_returns_both_devices():
         (1, "charging_by_adapter"),
         (2, "charging_by_solar"),
         (3, "fully_charged"),
-        (4, "solar_not_charging"),
-        (5, "charging_error"),
+        (4, "fully_charged"),
+        (5, "solar_not_charging"),
+        (6, "charging_error"),
     ],
 )
 async def test_get_extended_info_adv_returns_device0_charge_states(data_value, result):
     base_cover_device = create_device_for_command_testing()
     base_cover_device._send_command = AsyncMock(
-        return_value=bytes([0, 50, 20, data_value, 10, 30, 0])
+        return_value=bytes([1, 50, 20, data_value, 10, 30, 0])
     )
     ext_result = await base_cover_device.get_extended_info_adv()
     assert ext_result["device0"]["stateOfCharge"] == result
@@ -138,14 +140,16 @@ async def test_get_extended_info_adv_returns_device0_charge_states(data_value, r
         (1, "charging_by_adapter"),
         (2, "charging_by_solar"),
         (3, "fully_charged"),
-        (4, "solar_not_charging"),
-        (5, "charging_error"),
+        (4, "fully_charged"),
+        (5, "solar_not_charging"),
+        (6, "charging_error"),
     ],
 )
 async def test_get_extended_info_adv_returns_device1_charge_states(data_value, result):
     base_cover_device = create_device_for_command_testing()
+    base_cover_device.parsed_data["deviceChain"] = 2
     base_cover_device._send_command = AsyncMock(
-        return_value=bytes([0, 50, 20, 0, 10, 30, data_value])
+        return_value=bytes([1, 50, 20, 0, 10, 30, data_value])
     )
     ext_result = await base_cover_device.get_extended_info_adv()
     assert ext_result["device1"]["stateOfCharge"] == result
