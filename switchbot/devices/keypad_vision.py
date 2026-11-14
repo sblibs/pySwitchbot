@@ -46,6 +46,8 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         """Get device basic settings."""
         if not (_data := await self._get_basic_info()):
             return None
+        if len(_data) < 15:
+            return None
         _LOGGER.debug("Raw model %s basic info data: %s", self._model, _data.hex())
 
         battery = _data[1] & 0x7F
@@ -136,6 +138,9 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     async def get_password_count(self) -> dict[str, int] | None:
         """Get the number of passwords stored in the Keypad Vision (Pro)."""
         if not (_data := await self._send_command(COMMAND_GET_PASSWORD_COUNT)):
+            return None
+        min_len = 8 if self._model == SwitchbotModel.KEYPAD_VISION_PRO else 6
+        if len(_data) < min_len:
             return None
         _LOGGER.debug("Raw model %s password count data: %s", self._model, _data.hex())
 

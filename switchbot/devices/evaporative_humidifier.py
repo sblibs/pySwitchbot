@@ -54,6 +54,8 @@ class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncrypted
         """Get device basic settings."""
         if not (_data := await self._get_basic_info(DEVICE_GET_BASIC_SETTINGS_KEY)):
             return None
+        if len(_data) < 11:
+            return None
 
         _LOGGER.debug("basic info data: %s", _data.hex())
         isOn = bool(_data[1] & 0b10000000)
