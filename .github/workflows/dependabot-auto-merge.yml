@@ -16,7 +16,12 @@ name: Dependabot auto-merge
 #
 # The default-branch ruleset requires one approving review, so the job
 # approves before merging. That needs "Allow GitHub Actions to create and
-# approve pull requests" enabled in the repository's Actions settings.
+# approve pull requests" enabled in the repository's Actions settings. The
+# approval is pinned to the tested commit so it never covers a newer push.
+#
+# Other required checks (pre-commit.ci) may still be pending when CI
+# completes and their success doesn't re-trigger this workflow, so the job
+# waits for them before merging.
 #
 # GITHUB_TOKEN on purpose: Dependabot secrets reach every workflow a
 # Dependabot PR triggers, including CI that installs the bumped package, so
@@ -36,6 +41,7 @@ permissions:
 jobs:
   dependabot:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     if: >-
       github.event.workflow_run.conclusion == 'success'
       && github.event.workflow_run.event == 'pull_request'
@@ -72,5 +78,19 @@ jobs:
             exit 0
           fi
 
-          gh pr review "$pr" --approve --body "CI passed on $HEAD_SHA; non-major Dependabot update."
+          if ! gh pr checks "$pr" --required --watch --fail-fast --interval 30; then
+            echo "PR #$pr required checks did not pass; leaving it for review"
+            exit 0
+          fi
+
+          current_head="$(gh pr view "$pr" --json headRefOid --jq .headRefOid)"
+          if [ "$current_head" != "$HEAD_SHA" ]; then
+            echo "PR #$pr head moved to $current_head; not approving $HEAD_SHA"
+            exit 0
+          fi
+
+          gh api "repos/$GH_REPO/pulls/$pr/reviews" \
+            -f commit_id="$HEAD_SHA" \
+            -f event=APPROVE \
+            -f body="CI passed on $HEAD_SHA; non-major Dependabot update."
           gh pr merge "$pr" --squash --match-head-commit "$HEAD_SHA"
