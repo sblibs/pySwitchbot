@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 from typing import Any
 
 import pytest
@@ -3611,7 +3611,7 @@ def test_blind_tilt_with_empty_data() -> None:
                 "temperature": 25.1,
                 "temp": {"c": 25.1, "f": 77.18},
                 "water_level": "medium",
-                "filter_run_time": datetime.timedelta(days=1, seconds=10800),
+                "filter_run_time": dt.timedelta(days=1, seconds=10800),
                 "filter_alert": False,
                 "target_humidity": 93,
             },
@@ -3636,7 +3636,7 @@ def test_blind_tilt_with_empty_data() -> None:
                 "temperature": None,
                 "temp": {"c": None, "f": None},
                 "water_level": "medium",
-                "filter_run_time": datetime.timedelta(days=1, seconds=18000),
+                "filter_run_time": dt.timedelta(days=1, seconds=18000),
                 "filter_alert": False,
                 "target_humidity": 52,
             },
@@ -3661,7 +3661,7 @@ def test_blind_tilt_with_empty_data() -> None:
                 "temperature": None,
                 "temp": {"c": None, "f": None},
                 "water_level": "medium",
-                "filter_run_time": datetime.timedelta(days=1, seconds=18000),
+                "filter_run_time": dt.timedelta(days=1, seconds=18000),
                 "filter_alert": False,
                 "target_humidity": 52,
             },
@@ -3728,7 +3728,7 @@ def test_humidifer_active(test_case: AdvTestCase) -> None:
                 "temperature": 25.1,
                 "temp": {"c": 25.1, "f": 77.18},
                 "water_level": "medium",
-                "filter_run_time": datetime.timedelta(days=1, seconds=10800),
+                "filter_run_time": dt.timedelta(days=1, seconds=10800),
                 "filter_alert": False,
                 "target_humidity": 93,
             },
