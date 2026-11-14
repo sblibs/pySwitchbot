@@ -240,18 +240,18 @@ files = [
 
 [[package]]
 name = "bleak"
-version = "3.0.2"
+version = "3.1.0"
 description = "Bluetooth Low Energy platform Agnostic Klient"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "bleak-3.0.2-py3-none-any.whl", hash = "sha256:39092feb9e83f1df5ad2f88e837723c7211c982ce9e9cda6235104bc2ebe0d0d"},
-    {file = "bleak-3.0.2.tar.gz", hash = "sha256:c2229cb8238d5876b4bd05c74bf7a1aea1f88da39d2e51ac9dfd5cc319d5265f"},
+    {file = "bleak-3.1.0-py3-none-any.whl", hash = "sha256:3cb08e03039f6e477c276252540416b287d4e3de63a86732780ff93a2f6e73ef"},
+    {file = "bleak-3.1.0.tar.gz", hash = "sha256:e37fd30c4691c908d31c8b92ca55b92a22ab924a77c35579822c859042992145"},
 ]
 
 [package.dependencies]
-dbus-fast = {version = ">=1.83.0", markers = "sys_platform == \"linux\""}
+dbus-fast = {version = ">=4.0.0", markers = "sys_platform == \"linux\""}
 pyobjc-core = {version = ">=10.3", markers = "sys_platform == \"darwin\""}
 pyobjc-framework-corebluetooth = {version = ">=10.3", markers = "sys_platform == \"darwin\""}
 pyobjc-framework-libdispatch = {version = ">=10.3", markers = "sys_platform == \"darwin\""}
