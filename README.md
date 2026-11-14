@@ -2,6 +2,10 @@
 
 Library to control Switchbot IoT devices https://www.switch-bot.com/
 
+Want a device or feature that isn't supported yet? See
+[Adding support for a new device](docs/adding-device-support.md) — most requests
+only need a Bluetooth capture, no code.
+
 ## Setting up the environment
 
 ```shell
