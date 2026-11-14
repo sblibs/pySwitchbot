@@ -3,7 +3,16 @@ from typing import Any
 from ..helpers import parse_uint24_be
 from .device import SwitchbotDevice, SwitchbotOperationError
 
-COMMAND_SET_TIME_OFFSET = "570f680506"
+SETTINGS_HEADER = "570f68"
+
+# Co2
+COMMAND_FORCE_NEW_CO2_MEASUREMENT = f"{SETTINGS_HEADER}0b04"
+COMMAND_CALIBRATE_CO2_SENSOR = f"{SETTINGS_HEADER}0b02"
+COMMAND_CO2_THRESHOLDS = f"{SETTINGS_HEADER}020302"
+COMMAND_CO2_UPDATE_INTERVAL = f"{SETTINGS_HEADER}0b06"
+
+# Time
+COMMAND_SET_TIME_OFFSET = f"{SETTINGS_HEADER}0506"
 COMMAND_GET_TIME_OFFSET = "570f690506"
 MAX_TIME_OFFSET = (1 << 24) - 1
 
@@ -174,3 +183,57 @@ class SwitchbotMeterPro(SwitchbotDevice):
 
 class SwitchbotMeterProCO2(SwitchbotMeterPro):
     """API to control Switchbot Meter Pro CO2."""
+
+    async def force_new_co2_measurement(self) -> None:
+        """Requests a new CO2 measurement, regardless of update interval"""
+        result = await self._send_command(COMMAND_FORCE_NEW_CO2_MEASUREMENT)
+        self._validate_result("force_new_co2_measurement", result)
+
+    async def calibrate_co2_sensor(self) -> None:
+        """
+        Calibrate CO2-Sensor.
+        Place your device in a well-ventilated area for 1 minute before calling this.
+        After calling this the calibration runs for about 5 minutes.
+        Keep the device still during this process.
+        """
+        result = await self._send_command(COMMAND_CALIBRATE_CO2_SENSOR)
+        self._validate_result("calibrate_co2_sensor", result)
+
+    async def set_co2_update_interval(self, seconds: int) -> None:
+        """
+        Sets the interval in which co2 levels are measured in battery powered mode.
+        Original App assumes seconds in {5*60, 10*60, 30*60}
+        """
+        result = await self._send_command(
+            COMMAND_CO2_UPDATE_INTERVAL + f"{seconds:04x}"
+        )
+        self._validate_result("set_co2_update_interval", result)
+
+    async def set_co2_thresholds(self, lower: int, upper: int) -> None:
+        """
+        Sets the thresholds to define Air Quality for depiction on display as follows:
+        co2 < lower => Good (Green)
+        lower < co2 < upper => Moderate (Orange)
+        upper < co2 => Poor (Red)
+
+        Original App assumes:
+        500 <= lower < upper <= 1900
+        lower and upper are multiples of 100
+        """
+        if lower < 500:
+            raise SwitchbotOperationError(
+                "Original App assumes that lower threshold is at least 500"
+            )
+        if upper > 1900:
+            raise SwitchbotOperationError(
+                "Original App assumes that upper threshold is at most 1900"
+            )
+        if lower >= upper:
+            raise SwitchbotOperationError(
+                "Lower threshold should be smaller than upper threshold"
+            )
+
+        result = await self._send_command(
+            COMMAND_CO2_THRESHOLDS + f"{lower:04x}" + f"{upper:04x}"
+        )
+        self._validate_result("set_co2_thresholds", result)
