@@ -2,6 +2,190 @@
 
 <!-- version list -->
 
+## v3.8.1 (2026-11-13)
+
+### Bug Fixes
+
+- Disconnect temporary device after encryption key verification
+  ([#613](https://github.com/sblibs/pySwitchbot/pull/613),
+  [`606e69f`](https://github.com/sblibs/pySwitchbot/commit/606e69f371c0fced27a89d96a42c7dff8336e3a9))
+
+
+## v3.8.0 (2026-11-13)
+
+### Bug Fixes
+
+- Keep numeric Outdoor Plug EU cloud model only
+  ([#604](https://github.com/sblibs/pySwitchbot/pull/604),
+  [`8dcd71c`](https://github.com/sblibs/pySwitchbot/commit/8dcd71cee7b0e1f0ae02fb70c12027526bdc4f2d))
+
+### Features
+
+- Add support for Outdoor Plug EU ([#604](https://github.com/sblibs/pySwitchbot/pull/604),
+  [`8dcd71c`](https://github.com/sblibs/pySwitchbot/commit/8dcd71cee7b0e1f0ae02fb70c12027526bdc4f2d))
+
+
+## v3.7.0 (2026-11-13)
+
+### Bug Fixes
+
+- Limit lock status parsing changes to Lock Nano
+  ([#600](https://github.com/sblibs/pySwitchbot/pull/600),
+  [`5301540`](https://github.com/sblibs/pySwitchbot/commit/530154090a50349d95176f83123b8cf5acb0725c))
+
+- Recognize the Lock Nano cloud product ID ([#600](https://github.com/sblibs/pySwitchbot/pull/600),
+  [`5301540`](https://github.com/sblibs/pySwitchbot/commit/530154090a50349d95176f83123b8cf5acb0725c))
+
+### Features
+
+- Add Lock Nano support ([#600](https://github.com/sblibs/pySwitchbot/pull/600),
+  [`5301540`](https://github.com/sblibs/pySwitchbot/commit/530154090a50349d95176f83123b8cf5acb0725c))
+
+
+## v3.6.0 (2026-11-13)
+
+### Features
+
+- Expose aggregate ceiling light power state
+  ([#609](https://github.com/sblibs/pySwitchbot/pull/609),
+  [`c966534`](https://github.com/sblibs/pySwitchbot/commit/c966534263e0bff4018314f456fe72a5455e4fa3))
+
+
+## v3.5.0 (2026-11-13)
+
+### Bug Fixes
+
+- Map the UWB Lock cloud product ID ([#599](https://github.com/sblibs/pySwitchbot/pull/599),
+  [`980f726`](https://github.com/sblibs/pySwitchbot/commit/980f72658db4d73857ccaab28fb5594c126a84c1))
+
+- Use the Ultra basic-info path for UWB Lock
+  ([#599](https://github.com/sblibs/pySwitchbot/pull/599),
+  [`980f726`](https://github.com/sblibs/pySwitchbot/commit/980f72658db4d73857ccaab28fb5594c126a84c1))
+
+### Features
+
+- Add UWB Lock support ([#599](https://github.com/sblibs/pySwitchbot/pull/599),
+  [`980f726`](https://github.com/sblibs/pySwitchbot/commit/980f72658db4d73857ccaab28fb5594c126a84c1))
+
+
+## v3.4.0 (2026-11-13)
+
+### Bug Fixes
+
+- Recognize Plug Mini IT cloud product ID ([#602](https://github.com/sblibs/pySwitchbot/pull/602),
+  [`fea4492`](https://github.com/sblibs/pySwitchbot/commit/fea44922e182461449997d11a8d0f6afb8f9a6d1))
+
+- Recognize Plug Mini IT pairing advertisements
+  ([#602](https://github.com/sblibs/pySwitchbot/pull/602),
+  [`fea4492`](https://github.com/sblibs/pySwitchbot/commit/fea44922e182461449997d11a8d0f6afb8f9a6d1))
+
+### Features
+
+- Add support for Plug Mini IT ([#602](https://github.com/sblibs/pySwitchbot/pull/602),
+  [`fea4492`](https://github.com/sblibs/pySwitchbot/commit/fea44922e182461449997d11a8d0f6afb8f9a6d1))
+
+
+## v3.3.2 (2026-11-13)
+
+### Bug Fixes
+
+- Read Fan Pro firmware with supported basic-info command
+  ([#611](https://github.com/sblibs/pySwitchbot/pull/611),
+  [`edb8139`](https://github.com/sblibs/pySwitchbot/commit/edb8139c925885b6002b085a5820547560a49d99))
+
+- Use supported firmware query for Circulator Fan Pro
+  ([#611](https://github.com/sblibs/pySwitchbot/pull/611),
+  [`edb8139`](https://github.com/sblibs/pySwitchbot/commit/edb8139c925885b6002b085a5820547560a49d99))
+
+- Use supported status query for Circulator Fan Pro
+  ([#611](https://github.com/sblibs/pySwitchbot/pull/611),
+  [`edb8139`](https://github.com/sblibs/pySwitchbot/commit/edb8139c925885b6002b085a5820547560a49d99))
+
+
+## v3.3.1 (2026-11-12)
+
+### Bug Fixes
+
+- Recognize Hub 4 cloud product ID ([#606](https://github.com/sblibs/pySwitchbot/pull/606),
+  [`6520f03`](https://github.com/sblibs/pySwitchbot/commit/6520f030cce8f725242161c1698befc38003d86a))
+
+
+## v3.3.0 (2026-11-12)
+
+### Bug Fixes
+
+- **lock**: Document Quick Key transport errors and test false/zero writes
+  ([#515](https://github.com/sblibs/pySwitchbot/pull/515),
+  [`91354a1`](https://github.com/sblibs/pySwitchbot/commit/91354a189a2c8b0b8a84e3b27c6499450a7dd79a))
+
+- **lock**: Guard Quick Key parse + export QuickKeyFunction
+  ([#515](https://github.com/sblibs/pySwitchbot/pull/515),
+  [`91354a1`](https://github.com/sblibs/pySwitchbot/commit/91354a189a2c8b0b8a84e3b27c6499450a7dd79a))
+
+- **lock**: Return the raw Quick Key byte, parse partially, log write failures
+  ([#515](https://github.com/sblibs/pySwitchbot/pull/515),
+  [`91354a1`](https://github.com/sblibs/pySwitchbot/commit/91354a189a2c8b0b8a84e3b27c6499450a7dd79a))
+
+### Documentation
+
+- **lock**: Document Quick Key behaviour when the lock does not answer
+  ([#515](https://github.com/sblibs/pySwitchbot/pull/515),
+  [`91354a1`](https://github.com/sblibs/pySwitchbot/commit/91354a189a2c8b0b8a84e3b27c6499450a7dd79a))
+
+### Features
+
+- Add support for Hub4 ([#605](https://github.com/sblibs/pySwitchbot/pull/605),
+  [`9cc0324`](https://github.com/sblibs/pySwitchbot/commit/9cc03244c7b4e710c172735d1402e9f2b92e367a))
+
+- **lock**: Add Quick Key support for Lock Ultra
+  ([#515](https://github.com/sblibs/pySwitchbot/pull/515),
+  [`91354a1`](https://github.com/sblibs/pySwitchbot/commit/91354a189a2c8b0b8a84e3b27c6499450a7dd79a))
+
+- **lock**: Extend Quick Key settings with protocol-aligned writes
+  ([#515](https://github.com/sblibs/pySwitchbot/pull/515),
+  [`91354a1`](https://github.com/sblibs/pySwitchbot/commit/91354a189a2c8b0b8a84e3b27c6499450a7dd79a))
+
+
+## v3.2.1 (2026-11-11)
+
+### Bug Fixes
+
+- Correct battery and firmware readings for Lock Ultra and Ultra Max
+  ([#601](https://github.com/sblibs/pySwitchbot/pull/601),
+  [`13b132e`](https://github.com/sblibs/pySwitchbot/commit/13b132e8c6ea7fc86f1546cefe1202ab1fd38ad9))
+
+- Decode Ultra basic info in SwitchbotLockUltra
+  ([#601](https://github.com/sblibs/pySwitchbot/pull/601),
+  [`13b132e`](https://github.com/sblibs/pySwitchbot/commit/13b132e8c6ea7fc86f1546cefe1202ab1fd38ad9))
+
+- Parse Lock 2 battery and firmware for Ultra Max
+  ([#601](https://github.com/sblibs/pySwitchbot/pull/601),
+  [`13b132e`](https://github.com/sblibs/pySwitchbot/commit/13b132e8c6ea7fc86f1546cefe1202ab1fd38ad9))
+
+- Return the reported lock battery value ([#601](https://github.com/sblibs/pySwitchbot/pull/601),
+  [`13b132e`](https://github.com/sblibs/pySwitchbot/commit/13b132e8c6ea7fc86f1546cefe1202ab1fd38ad9))
+
+### Refactoring
+
+- Select the Ultra lock class at the call site
+  ([#601](https://github.com/sblibs/pySwitchbot/pull/601),
+  [`13b132e`](https://github.com/sblibs/pySwitchbot/commit/13b132e8c6ea7fc86f1546cefe1202ab1fd38ad9))
+
+
+## v3.2.0 (2026-11-10)
+
+### Bug Fixes
+
+- **bot**: Preserve existing inverse mode behavior
+  ([#543](https://github.com/sblibs/pySwitchbot/pull/543),
+  [`ad37034`](https://github.com/sblibs/pySwitchbot/commit/ad370345d3bf0de8ffa8220dbf74008d0d62e0ff))
+
+### Features
+
+- **bot**: Add inverse direction controls ([#543](https://github.com/sblibs/pySwitchbot/pull/543),
+  [`ad37034`](https://github.com/sblibs/pySwitchbot/commit/ad370345d3bf0de8ffa8220dbf74008d0d62e0ff))
+
+
 ## v3.1.0 (2026-10-16)
 
 ### Chores

@@ -108,6 +108,7 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "W1079001": SwitchbotModel.METER_PRO_CO2,
     "W1101000": SwitchbotModel.PRESENCE_SENSOR,
     "W1091000": SwitchbotModel.LOCK_ULTRA,
+    "W1184000": SwitchbotModel.UWB_LOCK,
     "W1096000": SwitchbotModel.HUB3,
     "W1083003": SwitchbotModel.GARAGE_DOOR_OPENER,
     "W1102000": SwitchbotModel.FLOOR_LAMP,
@@ -118,9 +119,13 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "W1162000": SwitchbotModel.RGBICWW_CEILING_LIGHT,
     "W1160000": SwitchbotModel.CIRCULATOR_FAN_PRO,
     "W1104000": SwitchbotModel.PLUG_MINI_EU,
+    "W1197000": SwitchbotModel.PLUG_MINI_IT,
+    "W1213000": SwitchbotModel.HUB4,
+    "W1186000": SwitchbotModel.OUTDOOR_PLUG_EU,
     "W1128000": SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
     "W1111000": SwitchbotModel.CLIMATE_PANEL,
     "W1130000": SwitchbotModel.ART_FRAME,
+    "W1189000": SwitchbotModel.LOCK_NANO,
     "W1141001": SwitchbotModel.LOCK_VISION_PRO,
     "W1141000": SwitchbotModel.LOCK_VISION,
     "W1114000": SwitchbotModel.LOCK_PRO_WIFI,
@@ -1270,6 +1275,8 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
             info = await switchbot_device.get_basic_info()
         except SwitchbotOperationError:
             return False
+        finally:
+            await switchbot_device._execute_forced_disconnect()
 
         return info is not None
 
