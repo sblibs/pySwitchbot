@@ -68,36 +68,38 @@ def parse_common_data(mfr_data: bytes | None) -> dict[str, bool | int]:
     }
 
 
+def _parse_lock_pro_common(mfr_data: bytes | None) -> dict[str, bool | int]:
+    common_data = parse_common_data(mfr_data)
+    if not common_data:
+        return {}
+
+    return common_data | {
+        "low_temperature_alarm": bool(mfr_data[11] & 0b00100000),
+        "left_battery_compartment_alarm": bool(mfr_data[11] & 0b00000100),
+        "right_battery_compartment_alarm": bool(mfr_data[11] & 0b00000010),
+    }
+
+
 def process_wolock_pro(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int]:
     """Support for lock pro process data."""
-    common_data = process_wolock_pro_wifi(data, mfr_data)
+    common_data = _parse_lock_pro_common(mfr_data)
     if not common_data:
         return {}
 
-    lock_pro_data = {
+    return common_data | {
         "battery_charging": bool(mfr_data[9] & 0b10000000),
         "power_alarm": bool(mfr_data[11] & 0b00010000),
         "door_magnet_alarm": bool(mfr_data[11] & 0b00001000),
     }
-    return common_data | lock_pro_data
 
 
 def process_wolock_pro_wifi(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int]:
     """Support for lock pro wifi process data."""
-    common_data = parse_common_data(mfr_data)
-    if not common_data:
-        return {}
-
-    lock_pro_data = {
-        "low_temperature_alarm": bool(mfr_data[11] & 0b00100000),
-        "left_battery_compartment_alarm": bool(mfr_data[11] & 0b00000100),
-        "right_battery_compartment_alarm": bool(mfr_data[11] & 0b00000010),
-    }
-    return common_data | lock_pro_data
+    return _parse_lock_pro_common(mfr_data)
 
 
 def process_lock_nano(
