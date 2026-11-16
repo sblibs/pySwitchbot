@@ -975,9 +975,27 @@ class SwitchbotBaseDevice:
             self._last_full_update = time.monotonic()
         if not self._sb_adv_data:
             self._sb_adv_data = advertisement
-        elif new_data:
-            self._update_parsed_data(new_data)
+        else:
+            self._update_model_data(advertisement)
+            if new_data:
+                self._update_parsed_data(new_data)
         self._override_adv_data = None
+
+    def _update_model_data(self, advertisement: SwitchBotAdvertisement) -> None:
+        """Replace a fallback model with the one identified from service data."""
+        old = self._sb_adv_data.data
+        new = advertisement.data
+        # Without service data the model may only be the caller's fallback.
+        if (
+            old.get("rawAdvData")
+            or not new.get("rawAdvData")
+            or "modelName" not in new
+            or new.get("model") == old.get("model")
+        ):
+            return
+        self._sb_adv_data = replace(
+            self._sb_adv_data, data=new | {"data": old.get("data") or {}}
+        )
 
     def switch_mode(self) -> bool | None:
         """Return true or false from cache."""
