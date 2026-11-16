@@ -2,6 +2,53 @@
 
 <!-- version list -->
 
+## v3.8.2 (2026-11-16)
+
+### Bug Fixes
+
+- Identify the model from a later advertisement with service data
+  ([#614](https://github.com/sblibs/pySwitchbot/pull/614),
+  [`de03670`](https://github.com/sblibs/pySwitchbot/commit/de0367089b2f7573dcc468e1d25ce89ff31b0433))
+
+### Chores
+
+- **ci**: Bump amannn/action-semantic-pull-request
+  ([#616](https://github.com/sblibs/pySwitchbot/pull/616),
+  [`b125860`](https://github.com/sblibs/pySwitchbot/commit/b12586068379ee6925c0edeac011790765345355))
+
+- **ci**: Bump amannn/action-semantic-pull-request from 6.1.1 to 6.1.2 in the github-actions group
+  ([#616](https://github.com/sblibs/pySwitchbot/pull/616),
+  [`b125860`](https://github.com/sblibs/pySwitchbot/commit/b12586068379ee6925c0edeac011790765345355))
+
+- **ci**: Bump the github-actions group with 4 updates
+  ([#592](https://github.com/sblibs/pySwitchbot/pull/592),
+  [`7240d2a`](https://github.com/sblibs/pySwitchbot/commit/7240d2a542736fbac79dad55ca076e6047fbfe2d))
+
+- **deps**: Bump aiohttp from 3.14.3 to 3.14.5
+  ([#587](https://github.com/sblibs/pySwitchbot/pull/587),
+  [`99edefa`](https://github.com/sblibs/pySwitchbot/commit/99edefa9df6babe7d862de0c400e275f07c00492))
+
+- **deps**: Bump bleak from 3.0.2 to 3.1.0 ([#617](https://github.com/sblibs/pySwitchbot/pull/617),
+  [`14c7946`](https://github.com/sblibs/pySwitchbot/commit/14c7946e02a38ab4a1099f6e2b33957fc00dd847))
+
+- **deps-dev**: Bump pytest from 9.1.1 to 9.2.0
+  ([#594](https://github.com/sblibs/pySwitchbot/pull/594),
+  [`13b31b4`](https://github.com/sblibs/pySwitchbot/commit/13b31b4193e521efafdc07ded130ca70937f63a7))
+
+- **deps-dev**: Bump pytest-asyncio from 1.4.0 to 1.4.1.post1
+  ([#597](https://github.com/sblibs/pySwitchbot/pull/597),
+  [`4f51119`](https://github.com/sblibs/pySwitchbot/commit/4f51119e1efbc69eec9b0e4b7d590010c8f69f06))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#584](https://github.com/sblibs/pySwitchbot/pull/584),
+  [`07658ad`](https://github.com/sblibs/pySwitchbot/commit/07658adaf0ccb8131fb5e130de501da3d989ca38))
+
+### Continuous Integration
+
+- Auto-merge non-major Dependabot updates after CI passes
+  ([#615](https://github.com/sblibs/pySwitchbot/pull/615),
+  [`c5b33dc`](https://github.com/sblibs/pySwitchbot/commit/c5b33dcd132adac02e6b8ab7dafb795bc523f27b))
+
+
 ## v3.8.1 (2026-11-13)
 
 ### Bug Fixes
