@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v3.8.4 (2026-11-17)
+
+### Bug Fixes
+
+- Keep unexpected background task failures visible at error level
+  ([#586](https://github.com/sblibs/pySwitchbot/pull/586),
+  [`d46452e`](https://github.com/sblibs/pySwitchbot/commit/d46452efff8233cea31403a96eff2502ffe59e94))
+
+- Log failed background tasks instead of leaving them unretrieved
+  ([#586](https://github.com/sblibs/pySwitchbot/pull/586),
+  [`d46452e`](https://github.com/sblibs/pySwitchbot/commit/d46452efff8233cea31403a96eff2502ffe59e94))
+
+### Testing
+
+- Compare background task set against a snapshot
+  ([#586](https://github.com/sblibs/pySwitchbot/pull/586),
+  [`d46452e`](https://github.com/sblibs/pySwitchbot/commit/d46452efff8233cea31403a96eff2502ffe59e94))
+
+
 ## v3.8.3 (2026-11-17)
 
 ### Bug Fixes
