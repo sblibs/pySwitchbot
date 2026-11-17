@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v3.8.3 (2026-11-17)
+
+### Bug Fixes
+
+- **lock**: Ignore unknown connected lock statuses
+  ([#596](https://github.com/sblibs/pySwitchbot/pull/596),
+  [`81352fa`](https://github.com/sblibs/pySwitchbot/commit/81352faae8681fd874d3e26f292957357b0bf603))
+
+### Chores
+
+- **deps-dev**: Bump pytest-asyncio from 1.4.1.post1 to 1.5.0
+  ([#620](https://github.com/sblibs/pySwitchbot/pull/620),
+  [`29751fe`](https://github.com/sblibs/pySwitchbot/commit/29751fed1a24e1bc1ba2d5e38465b9f529a3f263))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#619](https://github.com/sblibs/pySwitchbot/pull/619),
+  [`17fb6e5`](https://github.com/sblibs/pySwitchbot/commit/17fb6e5fd523008abd03ea018722e51ee5c9ad92))
+
+
 ## v3.8.2 (2026-11-16)
 
 ### Bug Fixes
