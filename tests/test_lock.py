@@ -341,6 +341,35 @@ async def test_get_basic_info_no_basic_data(model: str):
         assert result is None
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "model",
+    [
+        SwitchbotModel.LOCK_PRO,
+        SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_ULTRA_MAX,
+        SwitchbotModel.LOCK_PRO_WIFI,
+        SwitchbotModel.LOCK_NANO,
+        SwitchbotModel.UWB_LOCK,
+    ],
+)
+@pytest.mark.parametrize("status", range(8, 16))
+async def test_get_basic_info_unknown_lock_status(
+    model: SwitchbotModel, status: int, caplog: pytest.LogCaptureFixture
+):
+    """Ignore an unknown status in a lock info response."""
+    device = create_device_for_command_testing(model)
+    lock_data = bytes([1, 0x80 | status << 3, 0, 0, 0, 0, 0])
+    with (
+        patch.object(device, "_get_lock_info", return_value=lock_data),
+        patch.object(device, "_get_basic_info", return_value=b"\x01\x64\x28\x21\x14"),
+        caplog.at_level(logging.DEBUG),
+    ):
+        assert await device.get_basic_info() is None
+    assert f"Unknown lock status {status}" in caplog.text
+    assert lock_data[1:].hex() in caplog.text
+
+
 @pytest.mark.parametrize("battery", [100, 255])
 def test_parse_basic_data(battery):
     """Test _parse_basic_data method."""
@@ -772,6 +801,60 @@ def test_update_lock_status(model: str):
         patch.object(device, "_fire_callbacks"),
     ):
         device._update_lock_status(data)
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        SwitchbotModel.LOCK_PRO,
+        SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_ULTRA_MAX,
+        SwitchbotModel.LOCK_PRO_WIFI,
+        SwitchbotModel.LOCK_NANO,
+        SwitchbotModel.UWB_LOCK,
+    ],
+)
+@pytest.mark.parametrize("status", range(8, 16))
+def test_notification_handler_unknown_lock_status(
+    model: SwitchbotModel, status: int, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Ignore unknown statuses without updating data or firing callbacks."""
+    device = create_device_for_command_testing(model)
+    previous_data = {"status": LockStatus.UNLOCKED, "battery": 95}
+    device.update_from_advertisement(
+        SwitchBotAdvertisement(
+            device._device.address, {"data": previous_data}, device._device, -60
+        )
+    )
+    notification = bytearray(b"\x0f\x00\x00\x00\x01\x02\x03\x04\x05\x06")
+    decrypted = bytes([0x80 | status << 3, 0, 0, 0, 0, 0])
+    with (
+        patch.object(
+            device, "_decrypt", side_effect=[decrypted, b"\x80\x00\x00\x00\x00\x00"]
+        ),
+        patch.object(
+            device, "_update_parsed_data", wraps=device._update_parsed_data
+        ) as update,
+        patch.object(device, "_reset_disconnect_timer") as reset_timer,
+        patch.object(device, "_fire_callbacks") as fire_callbacks,
+        caplog.at_level(logging.DEBUG),
+    ):
+        device._notification_handler(0, notification)
+        update.assert_not_called()
+        reset_timer.assert_not_called()
+        fire_callbacks.assert_not_called()
+        assert device.parsed_data == previous_data
+        assert f"Unknown lock status {status}" in caplog.text
+        assert decrypted.hex() in caplog.text
+        assert notification.hex() in caplog.text
+
+        device._notification_handler(0, notification)
+        update.assert_called_once()
+        assert update.call_args.args[0]["status"] is LockStatus.LOCKED
+        assert device.get_lock_status() is LockStatus.LOCKED
+        assert device.get_battery_percent() == 95
+        reset_timer.assert_called_once()
+        fire_callbacks.assert_called_once()
 
 
 @pytest.mark.parametrize(
