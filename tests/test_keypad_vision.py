@@ -77,6 +77,23 @@ async def test_get_basic_info_none(adv_info: AdvTestCase) -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
+    ("adv_info"),
+    [
+        (KEYPAD_VISION_INFO),
+        (KEYPAD_VISION_PRO_INFO),
+    ],
+)
+async def test_get_basic_info_truncated(adv_info: AdvTestCase) -> None:
+    """Test getting basic info returns None when truncated data received."""
+    device = create_device_for_command_testing(adv_info)
+    device._get_basic_info = AsyncMock(return_value=b"\x01_\x18")
+
+    info = await device.get_basic_info()
+    assert info is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
     ("adv_info", "basic_info", "result"),
     [
         (
@@ -222,6 +239,26 @@ async def test_get_password_count_for_keypad_vision() -> None:
         "duress_pin": 1,
         "duress_fingerprint": 0,
     }
+
+
+@pytest.mark.asyncio
+async def test_get_password_count_truncated_vision_pro() -> None:
+    """Test getting password count for Keypad Vision Pro returns None when truncated."""
+    device = create_device_for_command_testing(KEYPAD_VISION_PRO_INFO)
+    device._send_command.return_value = bytes([0x01, 0x05, 0x02, 0x03, 0x00, 0x02])
+
+    result = await device.get_password_count()
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_password_count_invalid_status() -> None:
+    """Test getting password count returns None when status byte is not 0x01."""
+    device = create_device_for_command_testing(KEYPAD_VISION_INFO)
+    device._send_command.return_value = bytes([0x00, 0x03, 0x02, 0x01, 0x01, 0x00])
+
+    result = await device.get_password_count()
+    assert result is None
 
 
 @pytest.mark.asyncio
