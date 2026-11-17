@@ -27,6 +27,7 @@ from .adv_parsers.fan import (
 )
 from .adv_parsers.hub2 import process_wohub2
 from .adv_parsers.hub3 import process_hub3
+from .adv_parsers.hub4 import process_hub4
 from .adv_parsers.hubmini_matter import process_hubmini_matter
 from .adv_parsers.humidifier import process_evaporative_humidifier, process_wohumidifier
 from .adv_parsers.keypad import process_wokeypad
@@ -41,13 +42,14 @@ from .adv_parsers.light_strip import (
 )
 from .adv_parsers.lock import (
     process_lock2,
+    process_lock_nano,
     process_locklite,
     process_wolock,
     process_wolock_pro,
 )
 from .adv_parsers.meter import process_wosensorth, process_wosensorth_c
 from .adv_parsers.motion import process_wopresence
-from .adv_parsers.plug import process_woplugmini
+from .adv_parsers.plug import process_outdoor_plug, process_woplugmini
 from .adv_parsers.presence_sensor import process_presence_sensor
 from .adv_parsers.relay_switch import (
     process_garage_door_opener,
@@ -574,6 +576,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_hub3,
         "manufacturer_id": 2409,
     },
+    b"\x00\x12\x82\x48": {
+        "modelName": SwitchbotModel.HUB4,
+        "modelFriendlyName": "Hub4",
+        "func": process_hub4,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x12\x82\x48": {
+        "modelName": SwitchbotModel.HUB4,
+        "modelFriendlyName": "Hub4",
+        "func": process_hub4,
+        "manufacturer_id": 2409,
+    },
     "-": {
         "modelName": SwitchbotModel.LOCK_LITE,
         "modelFriendlyName": "Lock Lite",
@@ -898,6 +912,30 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_wolock_pro,
         "manufacturer_id": 2409,
     },
+    b"\x00\x12\x11\x00": {
+        "modelName": SwitchbotModel.UWB_LOCK,
+        "modelFriendlyName": "UWB Lock",
+        "func": process_lock2,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x12\x11\x00": {
+        "modelName": SwitchbotModel.UWB_LOCK,
+        "modelFriendlyName": "UWB Lock",
+        "func": process_lock2,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x12\x24\x88": {
+        "modelName": SwitchbotModel.LOCK_NANO,
+        "modelFriendlyName": "Lock Nano",
+        "func": process_lock_nano,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x12\x24\x88": {
+        "modelName": SwitchbotModel.LOCK_NANO,
+        "modelFriendlyName": "Lock Nano",
+        "func": process_lock_nano,
+        "manufacturer_id": 2409,
+    },
     b"\x00\x11\x9f\xb8": {
         "modelName": SwitchbotModel.LOCK_ULTRA_MAX,
         "modelFriendlyName": "Lock Ultra Max",
@@ -908,6 +946,24 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "modelName": SwitchbotModel.LOCK_ULTRA_MAX,
         "modelFriendlyName": "Lock Ultra Max",
         "func": process_lock2,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x12\x43\xc8": {
+        "modelName": SwitchbotModel.PLUG_MINI_IT,
+        "modelFriendlyName": "Plug Mini (IT)",
+        "func": process_relay_switch_1pm,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x12\x43\xc8": {
+        "modelName": SwitchbotModel.PLUG_MINI_IT,
+        "modelFriendlyName": "Plug Mini (IT)",
+        "func": process_relay_switch_1pm,
+        "manufacturer_id": 2409,
+    },
+    b"\x00\x12\x18\xd0": {
+        "modelName": SwitchbotModel.OUTDOOR_PLUG_EU,
+        "modelFriendlyName": "Outdoor Plug (EU)",
+        "func": process_outdoor_plug,
         "manufacturer_id": 2409,
     },
     b"\x00\x11\x07\x60": {

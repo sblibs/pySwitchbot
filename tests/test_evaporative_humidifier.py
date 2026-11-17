@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -54,7 +54,7 @@ def make_advertisement_data(ble_device: BLEDevice, init_data: dict | None = None
                 "humidity": 51,
                 "temperature": 16.8,
                 "temp": {"c": 16.8, "f": 62.24},
-                "filter_run_time": datetime.timedelta(days=3, seconds=57600),
+                "filter_run_time": dt.timedelta(days=3, seconds=57600),
                 "filter_alert": False,
                 "water_level": "medium",
             }
@@ -288,7 +288,7 @@ async def test_status_from_process_adv(init_data, result):
     assert device.is_filter_alert_on() is False
     assert device.is_tilted_alert_on() is False
     assert device.get_water_level() == "medium"
-    assert device.get_filter_run_time() == datetime.timedelta(days=3, seconds=57600)
+    assert device.get_filter_run_time() == dt.timedelta(days=3, seconds=57600)
     assert device.get_target_humidity() == 52
     assert device.get_humidity() == 51
     assert device.get_temperature() == 16.8
