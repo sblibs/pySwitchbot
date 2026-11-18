@@ -841,6 +841,18 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
         "func": process_presence_sensor,
         "manufacturer_id": 2409,
     },
+    b"\x00\x11\xf1\xc0": {
+        "modelName": SwitchbotModel.ART_FRAME_2,
+        "modelFriendlyName": "Art Frame 2",
+        "func": process_image_frame,
+        "manufacturer_id": 2409,
+    },
+    b"\x01\x11\xf1\xc0": {
+        "modelName": SwitchbotModel.ART_FRAME_2,
+        "modelFriendlyName": "Art Frame 2",
+        "func": process_image_frame,
+        "manufacturer_id": 2409,
+    },
     b"\x00\x12\x95\xd0": {
         "modelName": SwitchbotModel.E_INK_PHOTO_MAGNET,
         "modelFriendlyName": "E Ink Photo Magnet",

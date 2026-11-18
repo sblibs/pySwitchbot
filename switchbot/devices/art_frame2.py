@@ -15,6 +15,7 @@ from .device import (
 class SwitchbotArtFrame2(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Handle image frames with 16-bit image indexes."""
 
+    _model = SwitchbotModel.ART_FRAME_2
     response_flag: bool = True
 
     async def get_basic_info(self) -> dict[str, Any] | None:

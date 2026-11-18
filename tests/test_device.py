@@ -1124,3 +1124,25 @@ async def test_e_ink_photo_magnet_cloud_model_cache(
             _MODEL_TO_MAC_CACHE["E6:A1:CD:1F:5B:65"]
             is SwitchbotModel.E_INK_PHOTO_MAGNET
         )
+
+
+@pytest.mark.asyncio
+async def test_art_frame_2_cloud_model_cache(mock_user_info: dict[str, Any]) -> None:
+    """Resolve the numeric cloud product ID and populate the model cache."""
+    response = {
+        "Items": [
+            {"device_mac": "e6a1cd1f5b65", "device_detail": {"device_type": "W1176000"}}
+        ]
+    }
+    with (
+        patch.dict(_MODEL_TO_MAC_CACHE, {}, clear=True),
+        patch.object(
+            SwitchbotBaseDevice, "_async_get_user_info", return_value=mock_user_info
+        ),
+        patch.object(SwitchbotBaseDevice, "api_request", return_value=response),
+    ):
+        devices = await fetch_cloud_devices_by_token(
+            MagicMock(spec=aiohttp.ClientSession), "test-token"
+        )
+        assert devices == {"E6:A1:CD:1F:5B:65": SwitchbotModel.ART_FRAME_2}
+        assert _MODEL_TO_MAC_CACHE["E6:A1:CD:1F:5B:65"] is SwitchbotModel.ART_FRAME_2
