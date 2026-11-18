@@ -2,6 +2,37 @@
 
 <!-- version list -->
 
+## v3.13.0 (2026-11-18)
+
+### Bug Fixes
+
+- **meter-pro**: Clarify CO2 sampling and calibration commands
+  ([#559](https://github.com/sblibs/pySwitchbot/pull/559),
+  [`1e147b4`](https://github.com/sblibs/pySwitchbot/commit/1e147b480624162ea592d20ca2c66bad2c8c192c))
+
+### Chores
+
+- **pre-commit.ci**: Auto fixes ([#559](https://github.com/sblibs/pySwitchbot/pull/559),
+  [`1e147b4`](https://github.com/sblibs/pySwitchbot/commit/1e147b480624162ea592d20ca2c66bad2c8c192c))
+
+### Features
+
+- Add CO2 controls for SwitchBot Meter Pro CO2
+  ([#559](https://github.com/sblibs/pySwitchbot/pull/559),
+  [`1e147b4`](https://github.com/sblibs/pySwitchbot/commit/1e147b480624162ea592d20ca2c66bad2c8c192c))
+
+- Add CO2 Settings to SwitchbotMeterProCO2 ([#559](https://github.com/sblibs/pySwitchbot/pull/559),
+  [`1e147b4`](https://github.com/sblibs/pySwitchbot/commit/1e147b480624162ea592d20ca2c66bad2c8c192c))
+
+- **meter-pro**: Add CO2 update intervals and USB power detection
+  ([#559](https://github.com/sblibs/pySwitchbot/pull/559),
+  [`1e147b4`](https://github.com/sblibs/pySwitchbot/commit/1e147b480624162ea592d20ca2c66bad2c8c192c))
+
+- **meter-pro**: Read and validate CO2 level thresholds
+  ([#559](https://github.com/sblibs/pySwitchbot/pull/559),
+  [`1e147b4`](https://github.com/sblibs/pySwitchbot/commit/1e147b480624162ea592d20ca2c66bad2c8c192c))
+
+
 ## v3.12.0 (2026-11-18)
 
 ### Bug Fixes
