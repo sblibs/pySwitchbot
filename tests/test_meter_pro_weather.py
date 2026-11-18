@@ -9,6 +9,7 @@ from bleak.exc import BleakError
 from switchbot import (
     MeterProWeatherIcon,
     SwitchbotDevice,
+    SwitchbotMeterPro,
     SwitchbotMeterProCO2,
     SwitchbotOperationError,
 )
@@ -51,8 +52,8 @@ def test_sub_degree_temperature_sign_bytes(temperature, expected_bytes):
     assert _encode_weather_temperature(temperature).hex() == expected_bytes
 
 
-def create_device():
-    device = SwitchbotMeterProCO2(BLEDevice("aa:bb:cc:dd:ee:ff", "meter", {}))
+def create_device(device_class: type[SwitchbotMeterPro] = SwitchbotMeterProCO2):
+    device = device_class(BLEDevice("aa:bb:cc:dd:ee:ff", "meter", {}))
     device._send_command = AsyncMock(return_value=BASELINE)
     device._send_command_locked_with_retry = AsyncMock()
     return device
@@ -76,8 +77,9 @@ def sent_keys(device):
 @pytest.mark.parametrize(
     "response", [BASELINE, BASELINE[:5], BASELINE[:5] + b"\xff", BASELINE + b"\xff"]
 )
-async def test_get_weather(response):
-    device = create_device()
+@pytest.mark.parametrize("device_class", [SwitchbotMeterPro, SwitchbotMeterProCO2])
+async def test_get_weather(response: bytes, device_class: type[SwitchbotMeterPro]):
+    device = create_device(device_class)
     device._send_command.return_value = response
     state = await device.get_weather()
     assert state == {
@@ -154,8 +156,11 @@ async def test_bad_weather_response(response):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("icon", list(MeterProWeatherIcon))
-async def test_set_icon_preserves_network(icon):
-    device = create_device()
+@pytest.mark.parametrize("device_class", [SwitchbotMeterPro, SwitchbotMeterProCO2])
+async def test_set_icon_preserves_network(
+    icon: MeterProWeatherIcon, device_class: type[SwitchbotMeterPro]
+):
+    device = create_device(device_class)
     configure_write(device, icon)
     assert await device.set_weather(icon) is None
     payload = f"570f680601{icon.value:02x}3292b5"

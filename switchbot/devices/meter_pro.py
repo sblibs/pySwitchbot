@@ -52,7 +52,7 @@ def _encode_weather_icon(icon: MeterProWeatherIcon | int) -> MeterProWeatherIcon
 
 
 class SwitchbotMeterPro(SwitchbotDevice):
-    """API to control Switchbot Meter Pro (and Meter Pro CO2, which shares the same datetime protocol)."""
+    """Implement the shared protocol for SwitchBot Meter Pro and Meter Pro CO2."""
 
     async def get_time_offset(self) -> int:
         """
@@ -210,10 +210,6 @@ class SwitchbotMeterPro(SwitchbotDevice):
             )
         return result
 
-
-class SwitchbotMeterProCO2(SwitchbotMeterPro):
-    """API to control Switchbot Meter Pro CO2."""
-
     def _parse_weather(self, result: bytes | None) -> tuple[MeterProWeatherIcon, bytes]:
         result = self._validate_result("get_weather", result, min_length=5)
         # Only the first five bytes are documented; firmware may append other data.
@@ -311,3 +307,7 @@ class SwitchbotMeterProCO2(SwitchbotMeterPro):
                     f"actual_icon={updated_icon.value} actual_network={updated_network.hex()} "
                     f"rssi={self.rssi})"
                 )
+
+
+class SwitchbotMeterProCO2(SwitchbotMeterPro):
+    """Control the CO2 variant of the SwitchBot Meter Pro."""

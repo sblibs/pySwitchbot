@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class MeterProWeatherIcon(Enum):
-    """Weather icons supported by the Meter Pro CO2 display."""
+    """Weather icons supported by the Meter Pro and Meter Pro CO2 displays."""
 
     NONE = 0
     SUNNY = 1
