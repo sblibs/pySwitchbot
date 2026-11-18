@@ -9,7 +9,7 @@ from typing import Any
 from bleak.backends.device import BLEDevice
 
 from ..const import SwitchbotModel
-from ..const.lock import LockStatus
+from ..const.lock import LockStatus, QuickKeyFunction
 from .device import (
     SwitchbotEncryptedDevice,
     SwitchbotOperationError,
@@ -23,6 +23,8 @@ COMMAND_LOCK_INFO = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4f8104",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4f8107",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0f4f8107",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0f4f8107",
+    SwitchbotModel.LOCK_NANO: f"{COMMAND_HEADER}0f4f810c",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4f8102",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4f8102",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4f810a",
@@ -33,6 +35,8 @@ COMMAND_UNLOCK = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0f4e0101000080",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0f4e0101000080",
+    SwitchbotModel.LOCK_NANO: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e0101000080",
@@ -43,6 +47,8 @@ COMMAND_UNLOCK_WITHOUT_UNLATCH = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0f4e01010000a0",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0f4e01010000a0",
+    SwitchbotModel.LOCK_NANO: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e01010000a0",
@@ -53,6 +59,8 @@ COMMAND_LOCK = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0f4e0101000000",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0f4e0101000000",
+    SwitchbotModel.LOCK_NANO: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e0101000000",
@@ -61,12 +69,21 @@ COMMAND_HALF_LOCK = {
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000008",
 }
 
+COMMAND_GET_QUICK_KEY = {
+    SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4f0401",
+}
+COMMAND_SET_QUICK_KEY_PREFIX = {
+    SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e040100",
+}
+
 COMMAND_ENABLE_NOTIFICATIONS = {
     SwitchbotModel.LOCK: f"{COMMAND_HEADER}0e01001e00008101",
     SwitchbotModel.LOCK_LITE: f"{COMMAND_HEADER}0e01001e00008101",
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0e01001e00008104",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0e01001e00008107",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0e01001e00008107",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0e01001e00008107",
+    SwitchbotModel.LOCK_NANO: f"{COMMAND_HEADER}0e01001e0000810c",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0e01001e00008102",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0e01001e00008102",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0e01001e0000810a",
@@ -108,6 +125,8 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             SwitchbotModel.LOCK_LITE,
             SwitchbotModel.LOCK_ULTRA,
             SwitchbotModel.LOCK_ULTRA_MAX,
+            SwitchbotModel.UWB_LOCK,
+            SwitchbotModel.LOCK_NANO,
             SwitchbotModel.LOCK_VISION_PRO,
             SwitchbotModel.LOCK_VISION,
             SwitchbotModel.LOCK_PRO_WIFI,
@@ -147,12 +166,187 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             {LockStatus.HALF_LOCKED, LockStatus.LOCKING},
         )
 
+    async def get_quick_key(self) -> dict[str, Any] | None:
+        """
+        Read Quick Key and basic property settings from Lock Ultra.
+
+        Request: ``57 0f 4f 04 01``.
+        Response: status, config, secondary config, motor speed, secondary speed,
+        followed by model-specific data. Only the primary settings are returned.
+
+        Config byte (also returned unchanged as ``raw``):
+          bit7: ``light`` (0 disabled, 1 enabled).
+          bit6: ``sound`` (0 disabled, 1 enabled).
+          bit5: reserved, available only through ``raw``.
+          bit4: ``manual_unlock_linkage`` (0 disabled, 1 enabled).
+          bit3: ``enabled`` (0 Quick Key disabled, 1 enabled).
+          bit2: ``double_press`` (0 single press, 1 double press).
+          bits1-0: ``function`` (00 lock only, 01 unlock only, 10 toggle).
+
+        ``motor_speed`` is 0 (high), 1 (normal), or 2 (quiet); it is ``None``
+        if absent from the response. An unknown ``function`` is ``None``.
+        Rejected responses or a missing config byte return ``None``.
+        Unsupported models or absent responses raise ``SwitchbotOperationError``;
+        transport errors, including ``TimeoutError`` and ``BleakError``, propagate.
+        """
+        if self._model not in COMMAND_GET_QUICK_KEY:
+            raise SwitchbotOperationError(
+                f"Quick Key is not supported on {self._model}"
+            )
+        result = await self._send_command(
+            key=COMMAND_GET_QUICK_KEY[self._model], retry=self._retry_count
+        )
+        if not self._check_command_result(result, 0, COMMAND_RESULT_EXPECTED_VALUES):
+            _LOGGER.error("Failed to read Quick Key settings: %s", result)
+            return None
+        if len(result) < 2:
+            _LOGGER.error("Invalid Quick Key response: %s", result)
+            return None
+        settings = self._parse_quick_key(result[1])
+        settings["motor_speed"] = result[3] if len(result) > 3 else None
+        return settings
+
+    @staticmethod
+    def _parse_quick_key(config: int) -> dict[str, Any]:
+        """Decode the Quick Key fields of the config byte."""
+        function_bits = config & 0b11
+        try:
+            function = QuickKeyFunction(function_bits)
+        except ValueError:
+            _LOGGER.warning(
+                "Unknown Quick Key function value: %#04x (config byte %#04x)",
+                function_bits,
+                config,
+            )
+            function = None
+        return {
+            "raw": config,
+            "light": bool(config & (1 << 7)),
+            "sound": bool(config & (1 << 6)),
+            "manual_unlock_linkage": bool(config & (1 << 4)),
+            "enabled": bool(config & (1 << 3)),
+            "double_press": bool(config & (1 << 2)),
+            "function": function,
+        }
+
+    async def set_quick_key(  # noqa: PLR0913
+        self,
+        *,
+        light: bool | None = None,
+        sound: bool | None = None,
+        manual_unlock_linkage: bool | None = None,
+        enabled: bool | None = None,
+        double_press: bool | None = None,
+        function: QuickKeyFunction | None = None,
+        motor_speed: int = 0xFF,
+    ) -> bool:
+        """
+        Update any combination of Quick Key and basic properties on Lock Ultra.
+
+        Command: ``57 0f 4e 04 01 00 <update> <value> <speed>``.
+        Target 00 uses the default behavior and can affect both grouped locks.
+        Property arguments default to ``None`` and motor speed to ``0xFF``,
+        leaving the corresponding settings unchanged.
+
+        Update byte (1 selects the corresponding property for writing):
+          bit7: ``light``.
+          bit6: ``sound``.
+          bit5: reserved, always 0.
+          bit4: ``manual_unlock_linkage``.
+          bit3: ``enabled`` (Quick Key).
+          bit2: ``double_press`` (Quick Key trigger).
+          bit1: ``function`` (selects the complete two-bit function field).
+          bit0: unused, always 0.
+
+        The value byte follows the config layout documented in ``get_quick_key``.
+        ``False`` clears a boolean property; ``True`` sets it. Function values
+        occupy bits1-0: 00 lock only, 01 unlock only, 10 toggle.
+        Speed is 00 high, 01 normal, 02 quiet, or ff to preserve it (the default).
+
+        Return whether the status reports success (01 or low-battery 06) and the
+        config echo matches the requested properties. Failed status, missing
+        config, and each mismatching property are logged separately and return
+        ``False``. Speed is acknowledged only by status; no extra read is made.
+        No properties or invalid speed raises ``ValueError``. Communication
+        errors propagate.
+
+        Example: ``await device.set_quick_key(light=True, sound=False, enabled=True)``.
+        """
+        if self._model not in COMMAND_SET_QUICK_KEY_PREFIX:
+            raise SwitchbotOperationError(
+                f"Quick Key is not supported on {self._model}"
+            )
+        if motor_speed not in (0, 1, 2, 0xFF):
+            raise ValueError(
+                "motor_speed must be 0 (high), 1 (normal), 2 (quiet), or 0xFF (keep)"
+                f" (got {motor_speed!r})"
+            )
+        update_fields = 0
+        value = 0
+        for setting, bit in (
+            (light, 7),
+            (sound, 6),
+            (manual_unlock_linkage, 4),
+            (enabled, 3),
+            (double_press, 2),
+        ):
+            if setting is not None:
+                update_fields |= 1 << bit
+                value |= int(setting) << bit
+        if function is not None:
+            update_fields |= 1 << 1
+            value |= function.value
+        if not update_fields and motor_speed == 0xFF:
+            raise ValueError("set_quick_key requires at least one setting to change")
+        command = (
+            f"{COMMAND_SET_QUICK_KEY_PREFIX[self._model]}"
+            f"{update_fields:02x}{value:02x}{motor_speed:02x}"
+        )
+        result = await self._send_command(key=command, retry=self._retry_count)
+        if not self._check_command_result(result, 0, COMMAND_RESULT_EXPECTED_VALUES):
+            _LOGGER.error(
+                "%s: Quick Key command failed (status=%#04x, response=%s)",
+                self.name,
+                result[0],
+                result.hex(),
+            )
+            return False
+        if len(result) < 2:
+            _LOGGER.error(
+                "%s: Quick Key write response is missing config (status=%#04x, response=%s)",
+                self.name,
+                result[0],
+                result.hex(),
+            )
+            return False
+        confirmed = self._parse_quick_key(result[1])
+        requested = {
+            "light": light,
+            "sound": sound,
+            "manual_unlock_linkage": manual_unlock_linkage,
+            "enabled": enabled,
+            "double_press": double_press,
+            "function": function,
+        }
+        mismatches = [
+            (setting, expected, confirmed[setting])
+            for setting, expected in requested.items()
+            if expected is not None and confirmed[setting] != expected
+        ]
+        for setting, expected, reported in mismatches:
+            _LOGGER.error(
+                "%s: Quick Key %s was not applied (requested=%s, reported=%s, config=%#04x)",
+                self.name,
+                setting,
+                expected,
+                reported,
+                result[1],
+            )
+        return not mismatches
+
     def _parse_basic_data(self, basic_data: bytes) -> dict[str, Any]:
         """Parse basic data from lock."""
-        if self._model is SwitchbotModel.LOCK_ULTRA_MAX:
-            # Lock Ultra Max's basic-info response format is not documented.
-            # Its advertisement already carries the reliable battery and state
-            # data, so never overwrite that data with an unverified response.
+        if len(basic_data) < 3:
             return {}
         return {
             "battery": basic_data[1],
@@ -198,9 +392,10 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         _LOGGER.debug(
             "basic_data: %s, address: %s", basic_data.hex(), self._device.address
         )
-        return self._parse_lock_data(
-            lock_raw_data[1:], self._model
-        ) | self._parse_basic_data(basic_data)
+        lock_data = self._parse_lock_data(lock_raw_data[1:], self._model)
+        if lock_data is None:
+            return None
+        return lock_data | self._parse_basic_data(basic_data)
 
     def is_calibrated(self) -> Any:
         """Return True if lock is calibrated."""
@@ -272,6 +467,9 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     def _update_lock_status(self, data: bytearray) -> None:
         lock_data = self._parse_lock_data(self._decrypt(data[4:]), self._model)
+        if lock_data is None:
+            _LOGGER.debug("%s: Ignoring lock notification: %s", self.name, data.hex())
+            return
         if self._update_parsed_data(lock_data):
             # We leave notifications enabled in case
             # the lock is operated manually before we
@@ -280,7 +478,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             self._fire_callbacks()
 
     @staticmethod
-    def _parse_lock_data(data: bytes, model: SwitchbotModel) -> dict[str, Any]:
+    def _parse_lock_data(data: bytes, model: SwitchbotModel) -> dict[str, Any] | None:
         if model in {SwitchbotModel.LOCK, SwitchbotModel.LOCK_VISION_PRO}:
             return {
                 "calibration": bool(data[0] & 0b10000000),
@@ -295,9 +493,23 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                 "status": LockStatus((data[0] & 0b01110000) >> 4),
                 "unlocked_alarm": bool(data[1] & 0b00010000),
             }
+        status_value = (data[0] & 0b01111000) >> 3
+        try:
+            status = LockStatus(status_value)
+        except ValueError:
+            _LOGGER.warning("Unknown lock status %s for model %s", status_value, model)
+            _LOGGER.debug("Unrecognized lock data: %s", data.hex())
+            return None
+        if model is SwitchbotModel.LOCK_NANO:
+            return {
+                "calibration": bool(data[0] & 0b10000000),
+                "status": status,
+                "auto_lock_paused": bool(data[1] & 0b00001000),
+                "unlocked_alarm": bool(data[5] & 0b01000000),
+            }
         result = {
             "calibration": bool(data[0] & 0b10000000),
-            "status": LockStatus((data[0] & 0b01111000) >> 3),
+            "status": status,
             "door_open": bool(data[1] & 0b00010000),
             "unclosed_alarm": bool(data[5] & 0b10000000),
             "unlocked_alarm": bool(data[5] & 0b01000000),
@@ -305,3 +517,20 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if model is SwitchbotModel.LOCK_ULTRA:
             result["half_lock_calibration"] = bool(data[1] & 0b00000001)
         return result
+
+
+class SwitchbotLockUltra(SwitchbotLock):
+    """SwitchBot locks that use the Lock 2 basic-info format."""
+
+    _model = SwitchbotModel.LOCK_ULTRA
+
+    def _parse_basic_data(self, basic_data: bytes) -> dict[str, Any]:
+        """Read the active battery and firmware from a Lock 2 basic-info reply."""
+        if len(basic_data) < 4:
+            return {}
+        # Bit 7 of the main battery byte selects the backup battery.
+        battery = basic_data[2] if basic_data[1] & 0x80 else basic_data[1]
+        return {
+            "battery": battery,
+            "firmware": basic_data[3] / 10.0,
+        }

@@ -114,6 +114,14 @@ password. The most common failures are account-side, not bugs in this library:
 The key only needs to be fetched once; store the `key_id` and encryption key
 and reuse them — there is no need to call the script on every connection.
 
+### Unknown lock status
+
+An unrecognized connected lock status is ignored and logged as a warning
+instead of updating the lock state. Enable DEBUG logging for
+`switchbot.devices.lock` to include the decrypted lock data and, for
+notifications, the raw notification. These logs can contain sensitive device
+information and lock activity; review them before sharing.
+
 ## Examples:
 
 #### WoLock (Lock-Pro)

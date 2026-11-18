@@ -3,11 +3,11 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 from bleak.backends.device import BLEDevice
 
-from switchbot import SwitchBotAdvertisement, SwitchbotModel
+from switchbot import SwitchBotAdvertisement, SwitchbotModel, parse_advertisement_data
 from switchbot.devices import curtain
 from switchbot.devices.base_cover import COVER_EXT_SUM_KEY
 
-from .test_adv_parser import generate_ble_device
+from .test_adv_parser import generate_advertisement_data, generate_ble_device
 
 
 def create_device_for_command_testing(calibration=True, reverse_mode=False):
@@ -423,3 +423,81 @@ def test_is_reversed(reverse_mode):
 def test_is_calibrated(calibration):
     curtain_device = create_device_for_command_testing(calibration=calibration)
     assert curtain_device.is_calibrated() == calibration
+
+
+def parse_curtain_advertisement(
+    ble_device: BLEDevice, mfr_data: bytes, service_data: bytes | None = None
+) -> SwitchBotAdvertisement:
+    """Parse an advertisement with the Curtain model as fallback."""
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: mfr_data},
+        service_data=(
+            {"0000fd3d-0000-1000-8000-00805f9b34fb": service_data}
+            if service_data
+            else {}
+        ),
+        rssi=-80,
+    )
+    return parse_advertisement_data(ble_device, adv_data, SwitchbotModel.CURTAIN)
+
+
+CURTAIN3_PASSIVE_MFR_DATA = b"\xaa\xbb\xcc\xdd\xee\xff\x07\x03S\x11\x04\x01d"
+CURTAIN3_ACTIVE_MFR_DATA = b"\xcf;Zwu\x0c\x19\x0b\x00\x11D\x006"
+CURTAIN3_SERVICE_DATA = b"{\xc06\x00\x11D"
+
+
+def test_service_data_replaces_fallback_model():
+    """Test a Curtain 3 first seen without service data is identified later."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    curtain_device = curtain.SwitchbotCurtain(ble_device)
+    curtain_device.update_from_advertisement(
+        parse_curtain_advertisement(ble_device, CURTAIN3_PASSIVE_MFR_DATA)
+    )
+    assert curtain_device.data["model"] == "c"
+    assert curtain_device.data["modelFriendlyName"] == "Curtain"
+
+    active = parse_curtain_advertisement(
+        ble_device, CURTAIN3_ACTIVE_MFR_DATA, CURTAIN3_SERVICE_DATA
+    )
+    assert curtain_device.advertisement_changed(active) is True
+    curtain_device.update_from_advertisement(active)
+
+    assert curtain_device.data == active.data
+    assert curtain_device.data["model"] == "{"
+    assert curtain_device.data["modelName"] == SwitchbotModel.CURTAIN_3
+    assert curtain_device.data["modelFriendlyName"] == "Curtain 3"
+    assert curtain_device.get_position() == 100
+    assert curtain_device.is_calibrated() is True
+
+    curtain_device.update_from_advertisement(
+        parse_curtain_advertisement(ble_device, CURTAIN3_PASSIVE_MFR_DATA)
+    )
+
+    assert curtain_device.data["model"] == "{"
+    assert curtain_device.data["modelName"] == SwitchbotModel.CURTAIN_3
+    assert curtain_device.data["modelFriendlyName"] == "Curtain 3"
+    assert curtain_device.data["rawAdvData"] == CURTAIN3_SERVICE_DATA
+    assert curtain_device.get_position() == 17
+    assert curtain_device.get_battery_percent() == 100
+    assert curtain_device.is_calibrated() is True
+
+
+def test_service_data_with_same_model_keeps_stored_advertisement():
+    """Test the stored advertisement is only merged when the model matches."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    curtain_device = curtain.SwitchbotCurtain(ble_device)
+    passive = parse_curtain_advertisement(
+        ble_device, b"\xe7\xabF\xac\x8f\x92|\x0f\x00\x11\x04"
+    )
+    curtain_device.update_from_advertisement(passive)
+    curtain_device.update_from_advertisement(
+        parse_curtain_advertisement(
+            ble_device,
+            b"\xe7\xabF\xac\x8f\x92|\x0f\x00\x11\x04",
+            b"c\xc0X\x00\x11\x04",
+        )
+    )
+
+    assert curtain_device.data == passive.data | {
+        "data": passive.data["data"] | {"calibration": True, "battery": 88}
+    }

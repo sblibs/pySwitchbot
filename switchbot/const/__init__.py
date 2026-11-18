@@ -26,7 +26,7 @@ from .light import (
 )
 
 # Preserve old LockStatus export for backwards compatibility
-from .lock import LockStatus
+from .lock import LockStatus, QuickKeyFunction
 
 DEFAULT_RETRY_COUNT = 3
 DEFAULT_RETRY_TIMEOUT = 1
@@ -111,6 +111,7 @@ class SwitchbotModel(StrEnum):
     AIR_PURIFIER_TABLE_US = "Air Purifier Table US"
     AIR_PURIFIER_TABLE_JP = "Air Purifier Table JP"
     HUB3 = "Hub3"
+    HUB4 = "Hub4"
     LOCK_ULTRA = "Lock Ultra"
     LOCK_LITE = "Lock Lite"
     GARAGE_DOOR_OPENER = "Garage Door Opener"
@@ -119,6 +120,8 @@ class SwitchbotModel(StrEnum):
     FLOOR_LAMP = "Floor Lamp"
     CANDLE_WARMER_LAMP = "Candle Warmer Lamp"
     PLUG_MINI_EU = "Plug Mini (EU)"
+    PLUG_MINI_IT = "Plug Mini (IT)"
+    OUTDOOR_PLUG_EU = "Outdoor Plug (EU)"
     RGBICWW_STRIP_LIGHT = "RGBICWW Strip Light"
     RGBICWW_FLOOR_LAMP = "RGBICWW Floor Lamp"
     RGBICWW_LIGHT_BARS = "RGBICWW Light Bars"
@@ -132,12 +135,16 @@ class SwitchbotModel(StrEnum):
     S20_VACUUM = "S20 Vacuum"
     PRESENCE_SENSOR = "Presence Sensor"
     ART_FRAME = "Art Frame"
+    ART_FRAME_2 = "Art Frame 2"
+    E_INK_PHOTO_MAGNET = "E Ink Photo Magnet"
     KEYPAD_VISION = "Keypad Vision"
     KEYPAD_VISION_PRO = "Keypad Vision Pro"
     LOCK_VISION_PRO = "Lock Vision Pro"
     LOCK_VISION = "Lock Vision"
     LOCK_PRO_WIFI = "Lock Pro Wifi"
     LOCK_ULTRA_MAX = "Lock Ultra Max"
+    UWB_LOCK = "UWB Lock"
+    LOCK_NANO = "Lock Nano"
     WEATHER_STATION = "Weather Station"
 
 
@@ -160,6 +167,7 @@ __all__ = [
     "HumidifierWaterLevel",
     "LockStatus",
     "NightLightState",
+    "QuickKeyFunction",
     "SmartThermostatRadiatorMode",
     "StandingFanMode",
     "StripLightColorMode",
