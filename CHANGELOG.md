@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v3.11.0 (2026-11-18)
+
+### Features
+
+- **lock**: Add Lock Pro battery bays and advertisement alarms
+  ([#582](https://github.com/sblibs/pySwitchbot/pull/582),
+  [`f1ee590`](https://github.com/sblibs/pySwitchbot/commit/f1ee590e44bbab7e1002ca5c54eabfde630aa5bb))
+
+### Refactoring
+
+- **lock**: Share Lock Pro adv parsing via common helper
+  ([#582](https://github.com/sblibs/pySwitchbot/pull/582),
+  [`f1ee590`](https://github.com/sblibs/pySwitchbot/commit/f1ee590e44bbab7e1002ca5c54eabfde630aa5bb))
+
+
 ## v3.10.1 (2026-11-18)
 
 ### Bug Fixes
