@@ -125,6 +125,8 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "W1128000": SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
     "W1111000": SwitchbotModel.CLIMATE_PANEL,
     "W1130000": SwitchbotModel.ART_FRAME,
+    "W1176000": SwitchbotModel.ART_FRAME_2,
+    "W1218000": SwitchbotModel.E_INK_PHOTO_MAGNET,
     "W1189000": SwitchbotModel.LOCK_NANO,
     "W1141001": SwitchbotModel.LOCK_VISION_PRO,
     "W1141000": SwitchbotModel.LOCK_VISION,
@@ -975,9 +977,27 @@ class SwitchbotBaseDevice:
             self._last_full_update = time.monotonic()
         if not self._sb_adv_data:
             self._sb_adv_data = advertisement
-        elif new_data:
-            self._update_parsed_data(new_data)
+        else:
+            self._update_model_data(advertisement)
+            if new_data:
+                self._update_parsed_data(new_data)
         self._override_adv_data = None
+
+    def _update_model_data(self, advertisement: SwitchBotAdvertisement) -> None:
+        """Replace a fallback model with the one identified from service data."""
+        old = self._sb_adv_data.data
+        new = advertisement.data
+        # Without service data the model may only be the caller's fallback.
+        if (
+            old.get("rawAdvData")
+            or not new.get("rawAdvData")
+            or "modelName" not in new
+            or new.get("model") == old.get("model")
+        ):
+            return
+        self._sb_adv_data = replace(
+            self._sb_adv_data, data=new | {"data": old.get("data") or {}}
+        )
 
     def switch_mode(self) -> bool | None:
         """Return true or false from cache."""

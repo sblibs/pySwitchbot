@@ -2,6 +2,145 @@
 
 <!-- version list -->
 
+## v3.10.0 (2026-11-18)
+
+### Bug Fixes
+
+- Display W1176 as Art Frame 2 ([#607](https://github.com/sblibs/pySwitchbot/pull/607),
+  [`d4be699`](https://github.com/sblibs/pySwitchbot/commit/d4be699ba66e4047e1016be7cfe66dba49fd8c60))
+
+### Features
+
+- Add support for Art Frame 2 ([#607](https://github.com/sblibs/pySwitchbot/pull/607),
+  [`d4be699`](https://github.com/sblibs/pySwitchbot/commit/d4be699ba66e4047e1016be7cfe66dba49fd8c60))
+
+- Add support for art-frame-luma ([#607](https://github.com/sblibs/pySwitchbot/pull/607),
+  [`d4be699`](https://github.com/sblibs/pySwitchbot/commit/d4be699ba66e4047e1016be7cfe66dba49fd8c60))
+
+### Refactoring
+
+- Rename image frame base to ArtFrame2 ([#607](https://github.com/sblibs/pySwitchbot/pull/607),
+  [`d4be699`](https://github.com/sblibs/pySwitchbot/commit/d4be699ba66e4047e1016be7cfe66dba49fd8c60))
+
+
+## v3.9.0 (2026-11-18)
+
+### Bug Fixes
+
+- Display AI Memory Frame as E Ink Photo Magnet
+  ([#608](https://github.com/sblibs/pySwitchbot/pull/608),
+  [`8611f18`](https://github.com/sblibs/pySwitchbot/commit/8611f182b80c804c69747a7164b6884fd384c29f))
+
+### Documentation
+
+- Update shared frame product name ([#608](https://github.com/sblibs/pySwitchbot/pull/608),
+  [`8611f18`](https://github.com/sblibs/pySwitchbot/commit/8611f182b80c804c69747a7164b6884fd384c29f))
+
+### Features
+
+- Add support for ai-memory-frame ([#608](https://github.com/sblibs/pySwitchbot/pull/608),
+  [`8611f18`](https://github.com/sblibs/pySwitchbot/commit/8611f182b80c804c69747a7164b6884fd384c29f))
+
+- Add support for E Ink Photo Magnet ([#608](https://github.com/sblibs/pySwitchbot/pull/608),
+  [`8611f18`](https://github.com/sblibs/pySwitchbot/commit/8611f182b80c804c69747a7164b6884fd384c29f))
+
+### Refactoring
+
+- Group E Ink Photo Magnet with Art Frame 2 ([#608](https://github.com/sblibs/pySwitchbot/pull/608),
+  [`8611f18`](https://github.com/sblibs/pySwitchbot/commit/8611f182b80c804c69747a7164b6884fd384c29f))
+
+- Rename E Ink Photo Magnet device class and model
+  ([#608](https://github.com/sblibs/pySwitchbot/pull/608),
+  [`8611f18`](https://github.com/sblibs/pySwitchbot/commit/8611f182b80c804c69747a7164b6884fd384c29f))
+
+- Rename image frame base to ArtFrame2 ([#608](https://github.com/sblibs/pySwitchbot/pull/608),
+  [`8611f18`](https://github.com/sblibs/pySwitchbot/commit/8611f182b80c804c69747a7164b6884fd384c29f))
+
+
+## v3.8.4 (2026-11-17)
+
+### Bug Fixes
+
+- Keep unexpected background task failures visible at error level
+  ([#586](https://github.com/sblibs/pySwitchbot/pull/586),
+  [`d46452e`](https://github.com/sblibs/pySwitchbot/commit/d46452efff8233cea31403a96eff2502ffe59e94))
+
+- Log failed background tasks instead of leaving them unretrieved
+  ([#586](https://github.com/sblibs/pySwitchbot/pull/586),
+  [`d46452e`](https://github.com/sblibs/pySwitchbot/commit/d46452efff8233cea31403a96eff2502ffe59e94))
+
+### Testing
+
+- Compare background task set against a snapshot
+  ([#586](https://github.com/sblibs/pySwitchbot/pull/586),
+  [`d46452e`](https://github.com/sblibs/pySwitchbot/commit/d46452efff8233cea31403a96eff2502ffe59e94))
+
+
+## v3.8.3 (2026-11-17)
+
+### Bug Fixes
+
+- **lock**: Ignore unknown connected lock statuses
+  ([#596](https://github.com/sblibs/pySwitchbot/pull/596),
+  [`81352fa`](https://github.com/sblibs/pySwitchbot/commit/81352faae8681fd874d3e26f292957357b0bf603))
+
+### Chores
+
+- **deps-dev**: Bump pytest-asyncio from 1.4.1.post1 to 1.5.0
+  ([#620](https://github.com/sblibs/pySwitchbot/pull/620),
+  [`29751fe`](https://github.com/sblibs/pySwitchbot/commit/29751fed1a24e1bc1ba2d5e38465b9f529a3f263))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#619](https://github.com/sblibs/pySwitchbot/pull/619),
+  [`17fb6e5`](https://github.com/sblibs/pySwitchbot/commit/17fb6e5fd523008abd03ea018722e51ee5c9ad92))
+
+
+## v3.8.2 (2026-11-16)
+
+### Bug Fixes
+
+- Identify the model from a later advertisement with service data
+  ([#614](https://github.com/sblibs/pySwitchbot/pull/614),
+  [`de03670`](https://github.com/sblibs/pySwitchbot/commit/de0367089b2f7573dcc468e1d25ce89ff31b0433))
+
+### Chores
+
+- **ci**: Bump amannn/action-semantic-pull-request
+  ([#616](https://github.com/sblibs/pySwitchbot/pull/616),
+  [`b125860`](https://github.com/sblibs/pySwitchbot/commit/b12586068379ee6925c0edeac011790765345355))
+
+- **ci**: Bump amannn/action-semantic-pull-request from 6.1.1 to 6.1.2 in the github-actions group
+  ([#616](https://github.com/sblibs/pySwitchbot/pull/616),
+  [`b125860`](https://github.com/sblibs/pySwitchbot/commit/b12586068379ee6925c0edeac011790765345355))
+
+- **ci**: Bump the github-actions group with 4 updates
+  ([#592](https://github.com/sblibs/pySwitchbot/pull/592),
+  [`7240d2a`](https://github.com/sblibs/pySwitchbot/commit/7240d2a542736fbac79dad55ca076e6047fbfe2d))
+
+- **deps**: Bump aiohttp from 3.14.3 to 3.14.5
+  ([#587](https://github.com/sblibs/pySwitchbot/pull/587),
+  [`99edefa`](https://github.com/sblibs/pySwitchbot/commit/99edefa9df6babe7d862de0c400e275f07c00492))
+
+- **deps**: Bump bleak from 3.0.2 to 3.1.0 ([#617](https://github.com/sblibs/pySwitchbot/pull/617),
+  [`14c7946`](https://github.com/sblibs/pySwitchbot/commit/14c7946e02a38ab4a1099f6e2b33957fc00dd847))
+
+- **deps-dev**: Bump pytest from 9.1.1 to 9.2.0
+  ([#594](https://github.com/sblibs/pySwitchbot/pull/594),
+  [`13b31b4`](https://github.com/sblibs/pySwitchbot/commit/13b31b4193e521efafdc07ded130ca70937f63a7))
+
+- **deps-dev**: Bump pytest-asyncio from 1.4.0 to 1.4.1.post1
+  ([#597](https://github.com/sblibs/pySwitchbot/pull/597),
+  [`4f51119`](https://github.com/sblibs/pySwitchbot/commit/4f51119e1efbc69eec9b0e4b7d590010c8f69f06))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#584](https://github.com/sblibs/pySwitchbot/pull/584),
+  [`07658ad`](https://github.com/sblibs/pySwitchbot/commit/07658adaf0ccb8131fb5e130de501da3d989ca38))
+
+### Continuous Integration
+
+- Auto-merge non-major Dependabot updates after CI passes
+  ([#615](https://github.com/sblibs/pySwitchbot/pull/615),
+  [`c5b33dc`](https://github.com/sblibs/pySwitchbot/commit/c5b33dcd132adac02e6b8ab7dafb795bc523f27b))
+
+
 ## v3.8.1 (2026-11-13)
 
 ### Bug Fixes

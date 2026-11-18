@@ -395,9 +395,10 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         _LOGGER.debug(
             "basic_data: %s, address: %s", basic_data.hex(), self._device.address
         )
-        result = self._parse_lock_data(
-            lock_raw_data[1:], self._model
-        ) | self._parse_basic_data(basic_data)
+        lock_data = self._parse_lock_data(lock_raw_data[1:], self._model)
+        if lock_data is None:
+            return None
+        result = lock_data | self._parse_basic_data(basic_data)
         if self._model in COMMAND_BATTERY_BAYS and (
             bays_data := await self._get_battery_bays()
         ):
@@ -495,6 +496,9 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     def _update_lock_status(self, data: bytearray) -> None:
         lock_data = self._parse_lock_data(self._decrypt(data[4:]), self._model)
+        if lock_data is None:
+            _LOGGER.debug("%s: Ignoring lock notification: %s", self.name, data.hex())
+            return
         if self._update_parsed_data(lock_data):
             # We leave notifications enabled in case
             # the lock is operated manually before we
@@ -503,7 +507,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             self._fire_callbacks()
 
     @staticmethod
-    def _parse_lock_data(data: bytes, model: SwitchbotModel) -> dict[str, Any]:
+    def _parse_lock_data(data: bytes, model: SwitchbotModel) -> dict[str, Any] | None:
         if model in {SwitchbotModel.LOCK, SwitchbotModel.LOCK_VISION_PRO}:
             return {
                 "calibration": bool(data[0] & 0b10000000),
@@ -518,16 +522,23 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                 "status": LockStatus((data[0] & 0b01110000) >> 4),
                 "unlocked_alarm": bool(data[1] & 0b00010000),
             }
+        status_value = (data[0] & 0b01111000) >> 3
+        try:
+            status = LockStatus(status_value)
+        except ValueError:
+            _LOGGER.warning("Unknown lock status %s for model %s", status_value, model)
+            _LOGGER.debug("Unrecognized lock data: %s", data.hex())
+            return None
         if model is SwitchbotModel.LOCK_NANO:
             return {
                 "calibration": bool(data[0] & 0b10000000),
-                "status": LockStatus((data[0] & 0b01111000) >> 3),
+                "status": status,
                 "auto_lock_paused": bool(data[1] & 0b00001000),
                 "unlocked_alarm": bool(data[5] & 0b01000000),
             }
         result = {
             "calibration": bool(data[0] & 0b10000000),
-            "status": LockStatus((data[0] & 0b01111000) >> 3),
+            "status": status,
             "door_open": bool(data[1] & 0b00010000),
             "unclosed_alarm": bool(data[5] & 0b10000000),
             "unlocked_alarm": bool(data[5] & 0b01000000),
