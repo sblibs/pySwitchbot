@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 from typing import Any
 
 import pytest
@@ -15,6 +15,7 @@ from switchbot.adv_parser import (
     populate_model_to_mac_cache,
 )
 from switchbot.adv_parsers.fan import process_circulator_fan_pro
+from switchbot.adv_parsers.lock import process_wolock_pro, process_wolock_pro_wifi
 from switchbot.const.lock import LockStatus
 from switchbot.models import SwitchBotAdvertisement
 
@@ -3020,9 +3021,12 @@ def test_hub3_with_empty_data() -> None:
                 "door_open_from_secondary_lock": False,
                 "double_lock_mode": False,
                 "is_secondary_lock": False,
-                "left_battery_compartment_alarm": 0,
-                "right_battery_compartment_alarm": 0,
+                "battery_charging": False,
+                "left_battery_compartment_alarm": False,
+                "right_battery_compartment_alarm": False,
                 "low_temperature_alarm": False,
+                "power_alarm": False,
+                "door_magnet_alarm": False,
                 "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
                 "unlocked_alarm": False,
@@ -3113,8 +3117,8 @@ def test_hub3_with_empty_data() -> None:
                 "door_open_from_secondary_lock": False,
                 "double_lock_mode": False,
                 "is_secondary_lock": False,
-                "left_battery_compartment_alarm": 0,
-                "right_battery_compartment_alarm": 0,
+                "left_battery_compartment_alarm": False,
+                "right_battery_compartment_alarm": False,
                 "low_temperature_alarm": False,
                 "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
@@ -3152,6 +3156,53 @@ def test_hub3_with_empty_data() -> None:
             SwitchbotModel.LOCK_ULTRA_MAX,
         ),
         AdvTestCase(
+            b"\xb0\xe9\xfe\x11\x22\x33\x2a\x88\x08\x64\x70",
+            b"\x00\x80\x64\x00\x12\x24\x88",
+            {
+                "sequence_number": 42,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "auto_lock_paused": True,
+                "night_latch": False,
+                "charging_status": 0,
+                "battery_charging": False,
+                "unlocked_alarm": True,
+                "low_temperature_alarm": True,
+                "power_alarm": True,
+                "battery_status": 0,
+                "charging_fault": False,
+            },
+            b"\x00\x12\x24\x88",
+            "Lock Nano",
+            SwitchbotModel.LOCK_NANO,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x11\x22\x33\x2a\x88\x18\x64\x00\x91",
+            b"\x00\x80\x64\x00\x12\x11\x00",
+            {
+                "sequence_number": 42,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": True,
+                "door_open_from_secondary_lock": False,
+                "double_lock_mode": False,
+                "is_secondary_lock": False,
+                "manual_unlock_linkage": False,
+                "unclosed_alarm": True,
+                "unlocked_alarm": False,
+                "auto_lock_paused": True,
+                "night_latch": False,
+                "power_alarm": True,
+                "battery_status": 1,
+            },
+            b"\x00\x12\x11\x00",
+            "UWB Lock",
+            SwitchbotModel.UWB_LOCK,
+        ),
+        AdvTestCase(
             b"\xb0\xe9\xfe\x44\x55\x66\x2b\x10\x00\x50\x00\x00",
             b"\x00\x80\x50\x01\x11\x9f\xb8",
             {
@@ -3175,6 +3226,53 @@ def test_hub3_with_empty_data() -> None:
             b"\x01\x11\x9f\xb8",
             "Lock Ultra Max",
             SwitchbotModel.LOCK_ULTRA_MAX,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x11\x22\x33\x2a\x88\x08\x64\x70",
+            b"\x00\x80\x50\x01\x12\x24\x88",
+            {
+                "sequence_number": 42,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "auto_lock_paused": True,
+                "night_latch": False,
+                "charging_status": 0,
+                "battery_charging": False,
+                "unlocked_alarm": True,
+                "low_temperature_alarm": True,
+                "power_alarm": True,
+                "battery_status": 0,
+                "charging_fault": False,
+            },
+            b"\x01\x12\x24\x88",
+            "Lock Nano",
+            SwitchbotModel.LOCK_NANO,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x44\x55\x66\x2b\x10\x00\x50\x00\x00",
+            b"\x00\x80\x50\x01\x12\x11\x00",
+            {
+                "sequence_number": 43,
+                "battery": 80,
+                "calibration": False,
+                "status": LockStatus.LOCKING,
+                "update_from_secondary_lock": False,
+                "door_open": False,
+                "door_open_from_secondary_lock": False,
+                "double_lock_mode": False,
+                "is_secondary_lock": False,
+                "manual_unlock_linkage": False,
+                "unclosed_alarm": False,
+                "unlocked_alarm": False,
+                "auto_lock_paused": False,
+                "night_latch": False,
+                "power_alarm": False,
+                "battery_status": 0,
+            },
+            b"\x01\x12\x11\x00",
+            "UWB Lock",
+            SwitchbotModel.UWB_LOCK,
         ),
     ],
 )
@@ -3256,9 +3354,12 @@ def test_lock_active(test_case: AdvTestCase) -> None:
                 "door_open_from_secondary_lock": False,
                 "double_lock_mode": False,
                 "is_secondary_lock": False,
-                "left_battery_compartment_alarm": 0,
-                "right_battery_compartment_alarm": 0,
+                "battery_charging": False,
+                "left_battery_compartment_alarm": False,
+                "right_battery_compartment_alarm": False,
                 "low_temperature_alarm": False,
+                "power_alarm": False,
+                "door_magnet_alarm": False,
                 "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
                 "unlocked_alarm": False,
@@ -3349,8 +3450,8 @@ def test_lock_active(test_case: AdvTestCase) -> None:
                 "door_open_from_secondary_lock": False,
                 "double_lock_mode": False,
                 "is_secondary_lock": False,
-                "left_battery_compartment_alarm": 0,
-                "right_battery_compartment_alarm": 0,
+                "left_battery_compartment_alarm": False,
+                "right_battery_compartment_alarm": False,
                 "low_temperature_alarm": False,
                 "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
@@ -3386,6 +3487,53 @@ def test_lock_active(test_case: AdvTestCase) -> None:
             b"\x00\x11\x9f\xb8",
             "Lock Ultra Max",
             SwitchbotModel.LOCK_ULTRA_MAX,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x11\x22\x33\x2a\x88\x08\x64\x70",
+            b"\x00\x80\x64\x00\x12\x24\x88",
+            {
+                "sequence_number": 42,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "auto_lock_paused": True,
+                "night_latch": False,
+                "charging_status": 0,
+                "battery_charging": False,
+                "unlocked_alarm": True,
+                "low_temperature_alarm": True,
+                "power_alarm": True,
+                "battery_status": 0,
+                "charging_fault": False,
+            },
+            b"\x00\x12\x24\x88",
+            "Lock Nano",
+            SwitchbotModel.LOCK_NANO,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x11\x22\x33\x2a\x88\x18\x64\x00\x91",
+            b"\x00\x80\x64\x00\x12\x11\x00",
+            {
+                "sequence_number": 42,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": True,
+                "door_open_from_secondary_lock": False,
+                "double_lock_mode": False,
+                "is_secondary_lock": False,
+                "manual_unlock_linkage": False,
+                "unclosed_alarm": True,
+                "unlocked_alarm": False,
+                "auto_lock_paused": True,
+                "night_latch": False,
+                "power_alarm": True,
+                "battery_status": 1,
+            },
+            b"\x00\x12\x11\x00",
+            "UWB Lock",
+            SwitchbotModel.UWB_LOCK,
         ),
     ],
 )
@@ -3479,6 +3627,22 @@ def test_lock_passive(test_case: AdvTestCase) -> None:
             b"\x00\x11\x9f\xb8",
             "Lock Ultra Max",
             SwitchbotModel.LOCK_ULTRA_MAX,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x80\x64\x00\x12\x24\x88",
+            {},
+            b"\x00\x12\x24\x88",
+            "Lock Nano",
+            SwitchbotModel.LOCK_NANO,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x80\x64\x00\x12\x11\x00",
+            {},
+            b"\x00\x12\x11\x00",
+            "UWB Lock",
+            SwitchbotModel.UWB_LOCK,
         ),
     ],
 )
@@ -3611,7 +3775,7 @@ def test_blind_tilt_with_empty_data() -> None:
                 "temperature": 25.1,
                 "temp": {"c": 25.1, "f": 77.18},
                 "water_level": "medium",
-                "filter_run_time": datetime.timedelta(days=1, seconds=10800),
+                "filter_run_time": dt.timedelta(days=1, seconds=10800),
                 "filter_alert": False,
                 "target_humidity": 93,
             },
@@ -3636,7 +3800,7 @@ def test_blind_tilt_with_empty_data() -> None:
                 "temperature": None,
                 "temp": {"c": None, "f": None},
                 "water_level": "medium",
-                "filter_run_time": datetime.timedelta(days=1, seconds=18000),
+                "filter_run_time": dt.timedelta(days=1, seconds=18000),
                 "filter_alert": False,
                 "target_humidity": 52,
             },
@@ -3661,7 +3825,7 @@ def test_blind_tilt_with_empty_data() -> None:
                 "temperature": None,
                 "temp": {"c": None, "f": None},
                 "water_level": "medium",
-                "filter_run_time": datetime.timedelta(days=1, seconds=18000),
+                "filter_run_time": dt.timedelta(days=1, seconds=18000),
                 "filter_alert": False,
                 "target_humidity": 52,
             },
@@ -3728,7 +3892,7 @@ def test_humidifer_active(test_case: AdvTestCase) -> None:
                 "temperature": 25.1,
                 "temp": {"c": 25.1, "f": 77.18},
                 "water_level": "medium",
-                "filter_run_time": datetime.timedelta(days=1, seconds=10800),
+                "filter_run_time": dt.timedelta(days=1, seconds=10800),
                 "filter_alert": False,
                 "target_humidity": 93,
             },
@@ -5227,3 +5391,27 @@ def test_with_special_manufacturer_data_length() -> None:
     )
     result = parse_advertisement_data(ble_device, adv_data)
     assert result.data["modelName"] == SwitchbotModel.HUMIDIFIER
+
+
+def test_lock_pro_alarm_bits() -> None:
+    """Test Lock Pro charging and alarm bits."""
+    mfr_data = bytes.fromhex("fb7d6962d3de2a8a00e4003e")
+    result = process_wolock_pro(b"$\x80d", mfr_data)
+    assert result["battery"] == 100
+    assert result["battery_charging"] is True
+    assert result["low_temperature_alarm"] is True
+    assert result["power_alarm"] is True
+    assert result["door_magnet_alarm"] is True
+    assert result["left_battery_compartment_alarm"] is True
+    assert result["right_battery_compartment_alarm"] is True
+    assert result["unclosed_alarm"] is False
+    assert result["unlocked_alarm"] is False
+
+
+def test_lock_pro_wifi_omits_lock_pro_only_bits() -> None:
+    """Test Lock Pro Wifi does not report bits only decoded for the Lock Pro."""
+    result = process_wolock_pro_wifi(None, bytes.fromhex("fb7d6962d3de2a8a00e4003e"))
+    assert result["left_battery_compartment_alarm"] is True
+    assert "battery_charging" not in result
+    assert "power_alarm" not in result
+    assert "door_magnet_alarm" not in result

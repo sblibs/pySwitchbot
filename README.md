@@ -10,6 +10,19 @@ source .venv/bin/activate
 pip install .
 ```
 
+## Air purifier filter reset
+
+After replacing the filter, call `await purifier.reset_filter_usage()` on a
+configured `SwitchbotAirPurifier` instance. The method uses the device's
+encrypted BLE connection, sends the reset command without automatic retries,
+and reads back the used-hours counter. It returns `True` and refreshes the
+cached `filter element working time` only after the device reports zero.
+
+Failed commands or an unconfirmed reset raise `SwitchbotOperationError`. If a
+reply is lost, check the device before retrying: the reset may already have
+been applied. This resets the device counter and does not restore its previous
+value.
+
 ## OAuth account access
 
 pySwitchbot provides helpers for SwitchBot's authorization-code flow. The
@@ -100,6 +113,14 @@ password. The most common failures are account-side, not bugs in this library:
 
 The key only needs to be fetched once; store the `key_id` and encryption key
 and reuse them — there is no need to call the script on every connection.
+
+### Unknown lock status
+
+An unrecognized connected lock status is ignored and logged as a warning
+instead of updating the lock state. Enable DEBUG logging for
+`switchbot.devices.lock` to include the decrypted lock data and, for
+notifications, the raw notification. These logs can contain sensitive device
+information and lock activity; review them before sharing.
 
 ## Examples:
 
