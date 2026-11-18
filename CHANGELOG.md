@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v3.10.1 (2026-11-18)
+
+### Bug Fixes
+
+- Ignore truncated status replies in the light parsers
+  ([#591](https://github.com/sblibs/pySwitchbot/pull/591),
+  [`c777da0`](https://github.com/sblibs/pySwitchbot/commit/c777da003215fff45a7dd200f75e2a5ece9126e0))
+
+### Testing
+
+- **light**: Cover truncated status reply boundaries
+  ([#591](https://github.com/sblibs/pySwitchbot/pull/591),
+  [`c777da0`](https://github.com/sblibs/pySwitchbot/commit/c777da003215fff45a7dd200f75e2a5ece9126e0))
+
+
 ## v3.10.0 (2026-11-18)
 
 ### Bug Fixes
