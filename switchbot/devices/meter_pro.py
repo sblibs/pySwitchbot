@@ -22,7 +22,8 @@ COMMAND_GET_CO2_USB_UPDATE_INTERVAL = "570f690b03"
 COMMAND_SET_CO2_USB_UPDATE_INTERVAL = "570f680b01"
 COMMAND_GET_CO2_BATTERY_UPDATE_INTERVAL = "570f690b04"
 COMMAND_SET_CO2_BATTERY_UPDATE_INTERVAL = "570f680b06"
-COMMAND_CO2_THRESHOLDS = "570f68020302"
+COMMAND_GET_CO2_LEVEL_THRESHOLDS = "570f69020302"
+COMMAND_SET_CO2_LEVEL_THRESHOLDS = "570f68020302"
 
 
 def _weather_decimal(value: float | Decimal, name: str) -> Decimal:
@@ -392,31 +393,37 @@ class SwitchbotMeterProCO2(SwitchbotMeterPro):
         result = await self._send_command(command + seconds.to_bytes(2, "big").hex())
         self._validate_result(operation, result)
 
-    async def set_co2_thresholds(self, lower: int, upper: int) -> None:
-        """
-        Sets the thresholds to define Air Quality for depiction on display as follows:
-        co2 < lower => Good (Green)
-        lower < co2 < upper => Moderate (Orange)
-        upper < co2 => Poor (Red)
+    async def get_co2_level_thresholds(self) -> tuple[int, int]:
+        """Read the green-to-yellow and yellow-to-red CO2 thresholds in ppm."""
+        result = await self._send_command(COMMAND_GET_CO2_LEVEL_THRESHOLDS)
+        data = self._validate_result("get_co2_level_thresholds", result, min_length=5)
+        return int.from_bytes(data[1:3], "big"), int.from_bytes(data[3:5], "big")
 
-        Original App assumes:
-        500 <= lower < upper <= 1900
-        lower and upper are multiples of 100
-        """
-        if lower < 500:
+    async def set_co2_level_thresholds(
+        self, green_to_yellow_ppm: int, yellow_to_red_ppm: int
+    ) -> None:
+        """Set the green-to-yellow and yellow-to-red CO2 thresholds in 100 ppm steps."""
+        if any(
+            isinstance(threshold, bool)
+            or not isinstance(threshold, int)
+            or not 0 <= threshold <= 0xFFFF
+            or threshold % 100
+            for threshold in (green_to_yellow_ppm, yellow_to_red_ppm)
+        ):
             raise SwitchbotOperationError(
-                "Original App assumes that lower threshold is at least 500"
+                f"{self.name}: CO2 level thresholds must be unsigned 16-bit integers in 100 ppm steps"
             )
-        if upper > 1900:
+        if green_to_yellow_ppm >= yellow_to_red_ppm:
             raise SwitchbotOperationError(
-                "Original App assumes that upper threshold is at most 1900"
-            )
-        if lower >= upper:
-            raise SwitchbotOperationError(
-                "Lower threshold should be smaller than upper threshold"
+                f"{self.name}: The green-to-yellow CO2 threshold must be below the yellow-to-red threshold"
             )
 
-        result = await self._send_command(
-            COMMAND_CO2_THRESHOLDS + f"{lower:04x}" + f"{upper:04x}"
+        payload = (
+            COMMAND_SET_CO2_LEVEL_THRESHOLDS
+            + (
+                green_to_yellow_ppm.to_bytes(2, "big")
+                + yellow_to_red_ppm.to_bytes(2, "big")
+            ).hex()
         )
-        self._validate_result("set_co2_thresholds", result)
+        result = await self._send_command(payload)
+        self._validate_result("set_co2_level_thresholds", result)

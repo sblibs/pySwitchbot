@@ -374,35 +374,62 @@ async def test_set_co2_update_interval_rejects_invalid_input(
 
 
 @pytest.mark.asyncio
-async def test_set_co2_thresholds():
+@pytest.mark.parametrize(
+    ("response", "expected_thresholds"),
+    [("0103e80578", (1000, 1400)), ("01044c0578", (1100, 1400))],
+)
+async def test_get_co2_level_thresholds(
+    response: str, expected_thresholds: tuple[int, int]
+):
     device = create_device()
-    device._send_command.return_value = bytes.fromhex("01")
+    device._send_command.return_value = bytes.fromhex(response)
 
-    await device.set_co2_thresholds(lower=500, upper=1000)
-    device._send_command.assert_called_with("570f6802030201f403e8")
+    assert await device.get_co2_level_thresholds() == expected_thresholds
+    device._send_command.assert_awaited_once_with("570f69020302")
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("lower", "upper", "expected_error"),
-    [
-        (600, 500, "Lower threshold should be smaller than upper threshold"),
-        (300, 500, "Original App assumes that lower threshold is at least 500"),
-        (600, 5000, "Original App assumes that upper threshold is at most 1900"),
-    ],
+    ("green_to_yellow", "yellow_to_red", "expected_payload"),
+    [(500, 1000, "01f403e8"), (1100, 1400, "044c0578"), (1900, 2000, "076c07d0")],
 )
-async def test_set_co2_thresholds_throws_on_invalid_input(
-    lower: int, upper: int, expected_error: str
+async def test_set_co2_level_thresholds(
+    green_to_yellow: int, yellow_to_red: int, expected_payload: str
 ):
     device = create_device()
-    device._send_command.return_value = bytes.fromhex("01")
+    device._send_command.return_value = b"\x01"
 
-    # Error if lower >= upper
-    with pytest.raises(
-        SwitchbotOperationError,
-        match=expected_error,
-    ):
-        await device.set_co2_thresholds(lower=lower, upper=upper)
+    await device.set_co2_level_thresholds(
+        green_to_yellow_ppm=green_to_yellow, yellow_to_red_ppm=yellow_to_red
+    )
+
+    device._send_command.assert_awaited_once_with("570f68020302" + expected_payload)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("green_to_yellow", "yellow_to_red", "expected_error"),
+    [
+        (600, 500, "must be below"),
+        (500, 500, "must be below"),
+        (550, 1000, "100 ppm steps"),
+        (500, 1050, "100 ppm steps"),
+        (-100, 1000, "100 ppm steps"),
+        (500, 65600, "100 ppm steps"),
+        (True, 1000, "100 ppm steps"),
+        (500, "1000", "100 ppm steps"),
+        (500.0, 1000, "100 ppm steps"),
+    ],
+)
+async def test_set_co2_level_thresholds_rejects_invalid_input(
+    green_to_yellow: object, yellow_to_red: object, expected_error: str
+):
+    device = create_device()
+
+    with pytest.raises(SwitchbotOperationError, match=expected_error):
+        await device.set_co2_level_thresholds(green_to_yellow, yellow_to_red)
+
+    device._send_command.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -416,6 +443,8 @@ async def test_set_co2_thresholds_throws_on_invalid_input(
         ("get_co2_usb_update_interval", ()),
         ("set_co2_usb_update_interval", (120,)),
         ("set_co2_battery_update_interval", (600,)),
+        ("get_co2_level_thresholds", ()),
+        ("set_co2_level_thresholds", (1000, 1400)),
     ],
 )
 @pytest.mark.parametrize(
@@ -439,6 +468,7 @@ async def test_co2_rejects_unsuccessful_responses(
         ("is_usb_powered", "01"),
         ("get_co2_battery_update_interval", "0102"),
         ("get_co2_usb_update_interval", "0100"),
+        ("get_co2_level_thresholds", "0103e805"),
     ],
 )
 async def test_co2_getters_reject_short_responses(method: str, response: str):
