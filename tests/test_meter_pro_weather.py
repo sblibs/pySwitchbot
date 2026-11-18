@@ -60,8 +60,6 @@ def create_device(device_class: type[SwitchbotMeterPro] = SwitchbotMeterProCO2):
 
 
 def configure_write(device, icon=1, network=BASELINE[2:5]):
-    if isinstance(icon, MeterProWeatherIcon):
-        icon = icon.value
     after = bytes((1, icon)) + network + BASELINE[5:]
     device._send_command_locked_with_retry.side_effect = [BASELINE, b"\x01", after]
     return after
@@ -155,15 +153,29 @@ async def test_bad_weather_response(response):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("icon", list(MeterProWeatherIcon))
+@pytest.mark.parametrize(
+    ("icon", "protocol_value"),
+    [
+        (MeterProWeatherIcon.NONE, 0),
+        (MeterProWeatherIcon.SUNNY, 1),
+        (MeterProWeatherIcon.CLOUDY, 2),
+        (MeterProWeatherIcon.OVERCAST, 3),
+        (MeterProWeatherIcon.LIGHT_RAIN, 4),
+        (MeterProWeatherIcon.HEAVY_RAIN, 5),
+        (MeterProWeatherIcon.LIGHT_SNOW, 6),
+        (MeterProWeatherIcon.HEAVY_SNOW, 7),
+    ],
+)
 @pytest.mark.parametrize("device_class", [SwitchbotMeterPro, SwitchbotMeterProCO2])
 async def test_set_icon_preserves_network(
-    icon: MeterProWeatherIcon, device_class: type[SwitchbotMeterPro]
+    icon: MeterProWeatherIcon,
+    protocol_value: int,
+    device_class: type[SwitchbotMeterPro],
 ):
     device = create_device(device_class)
-    configure_write(device, icon)
+    configure_write(device, protocol_value)
     assert await device.set_weather(icon) is None
-    payload = f"570f680601{icon.value:02x}3292b5"
+    payload = f"570f680601{protocol_value:02x}3292b5"
     assert len(bytes.fromhex(payload)) == 9
     assert sent_keys(device) == [READ, payload, READ]
 
@@ -447,7 +459,7 @@ async def test_concurrent_updates_do_not_interleave():
     device._send_command_locked_with_retry.side_effect = command
     first, second = await asyncio.gather(
         device.set_weather(MeterProWeatherIcon.SUNNY),
-        device.set_weather(MeterProWeatherIcon.PARTLY_CLOUDY),
+        device.set_weather(MeterProWeatherIcon.CLOUDY),
     )
     assert (first, second) == (None, None)
     assert keys == [READ, "570f680601013292b5", READ, READ, "570f680601023292b5", READ]

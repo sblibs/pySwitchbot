@@ -6,9 +6,9 @@ class MeterProWeatherIcon(Enum):
 
     NONE = 0
     SUNNY = 1
-    PARTLY_CLOUDY = 2
-    CLOUDY = 3
-    RAINY = 4
-    POURING = 5
-    SNOWY = 6
+    CLOUDY = 2
+    OVERCAST = 3
+    LIGHT_RAIN = 4
+    HEAVY_RAIN = 5
+    LIGHT_SNOW = 6
     HEAVY_SNOW = 7
