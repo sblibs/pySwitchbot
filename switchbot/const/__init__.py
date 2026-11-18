@@ -120,6 +120,8 @@ class SwitchbotModel(StrEnum):
     FLOOR_LAMP = "Floor Lamp"
     CANDLE_WARMER_LAMP = "Candle Warmer Lamp"
     PLUG_MINI_EU = "Plug Mini (EU)"
+    PLUG_MINI_IT = "Plug Mini (IT)"
+    OUTDOOR_PLUG_EU = "Outdoor Plug (EU)"
     RGBICWW_STRIP_LIGHT = "RGBICWW Strip Light"
     RGBICWW_FLOOR_LAMP = "RGBICWW Floor Lamp"
     RGBICWW_LIGHT_BARS = "RGBICWW Light Bars"
@@ -140,6 +142,8 @@ class SwitchbotModel(StrEnum):
     LOCK_VISION = "Lock Vision"
     LOCK_PRO_WIFI = "Lock Pro Wifi"
     LOCK_ULTRA_MAX = "Lock Ultra Max"
+    UWB_LOCK = "UWB Lock"
+    LOCK_NANO = "Lock Nano"
     WEATHER_STATION = "Weather Station"
 
 

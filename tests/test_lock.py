@@ -1,6 +1,6 @@
 import logging
 from typing import Any
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, call, patch
 
 import pytest
 
@@ -13,9 +13,110 @@ from switchbot.models import SwitchBotAdvertisement
 from .test_adv_parser import generate_ble_device
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("replies", "valid"),
+    [
+        (
+            [bytes.fromhex("01 88 00 00 00 00 00"), bytes.fromhex("01 85 28 21 14")],
+            True,
+        ),
+        ([None], False),
+        ([bytes.fromhex("01 88 00 00 00 00 00"), None], False),
+    ],
+)
+async def test_uwb_lock_key_verification(replies, valid):
+    device = generate_ble_device("aa:bb:cc:dd:ee:ff", "UWB Lock")
+    with patch.object(SwitchbotLockUltra, "_send_command", side_effect=replies) as send:
+        assert (
+            await SwitchbotLockUltra.verify_encryption_key(
+                device, "ff", "ff" * 16, SwitchbotModel.UWB_LOCK
+            )
+            is valid
+        )
+    assert [args.kwargs["key"] for args in send.await_args_list] == [
+        "570f4f8107",
+        "5702",
+    ][: len(replies)]
+
+
+@pytest.mark.asyncio
+async def test_nano_update_reads_lock_and_basic_info():
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_NANO)
+    device.update_from_advertisement(
+        SwitchBotAdvertisement(
+            device._device.address, {"data": {"battery": 95}}, device._device, -60
+        )
+    )
+    replies = [bytes.fromhex("01 90 08 5f 00 00 40"), bytes.fromhex("01 4b 21 14")]
+    with patch.object(device, "_send_command", side_effect=replies) as send:
+        await device.update()
+
+    assert send.await_args_list == [
+        call(key="570f4f810c", retry=device._retry_count),
+        call(key="5702", retry=device._retry_count),
+    ]
+    assert device.get_lock_status() is LockStatus.LOCKING
+    assert device.is_calibrated()
+    assert device.is_auto_lock_paused()
+    assert device.is_unlocked_alarm_on()
+    assert device.get_battery_percent() == 75
+    assert device.parsed_data["firmware"] == 3.3
+
+
+@pytest.mark.asyncio
+async def test_nano_key_verification_without_response():
+    device = generate_ble_device("aa:bb:cc:dd:ee:ff", "Lock Nano")
+    with patch.object(lock.SwitchbotLock, "_send_command", return_value=None):
+        assert not await lock.SwitchbotLock.verify_encryption_key(
+            device, "ff", "ff" * 16, SwitchbotModel.LOCK_NANO
+        )
+
+
+@pytest.mark.asyncio
+async def test_nano_lock_info_command():
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_NANO)
+    with patch.object(device, "_send_command", return_value=b"\x01\x00") as send:
+        assert await device._get_lock_info() == b"\x01\x00"
+    send.assert_awaited_once_with(key="570f4f810c", retry=device._retry_count)
+
+
+@pytest.mark.asyncio
+async def test_nano_notification_command():
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_NANO)
+    with patch.object(device, "_send_command", return_value=b"\x01\x00") as send:
+        assert await device._enable_notifications()
+    send.assert_awaited_once_with("570e01001e0000810c")
+
+
 def create_device_for_command_testing(model: str, cls=lock.SwitchbotLock):
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
     return cls(ble_device, "ff", "ffffffffffffffffffffffffffffffff", model=model)
+
+
+def test_nano_status_notification_updates_device():
+    device = create_device_for_command_testing(SwitchbotModel.LOCK_NANO)
+    advertisement = SwitchBotAdvertisement(
+        device._device.address,
+        {"data": {"status": LockStatus.UNLOCKED}},
+        device._device,
+        -60,
+    )
+    device.update_from_advertisement(advertisement)
+    received = []
+    device.subscribe(lambda: received.append(device.get_lock_status()))
+
+    payload = bytes.fromhex("90 00 00 00 00 00")
+    with (
+        patch.object(device, "_decrypt", return_value=payload) as decrypt,
+        patch.object(device, "_reset_disconnect_timer"),
+    ):
+        frame = bytearray.fromhex("0f 00 00 00 12 34 56 78 9a bc")
+        device._notification_handler(0, frame)
+
+    decrypt.assert_called_once_with(frame[4:])
+    assert received == [LockStatus.LOCKING]
+    assert device.get_lock_status() is LockStatus.LOCKING
 
 
 @pytest.mark.parametrize(
@@ -26,6 +127,8 @@ def create_device_for_command_testing(model: str, cls=lock.SwitchbotLock):
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
         SwitchbotModel.LOCK_ULTRA_MAX,
+        SwitchbotModel.UWB_LOCK,
+        SwitchbotModel.LOCK_NANO,
         SwitchbotModel.LOCK_VISION,
         SwitchbotModel.LOCK_VISION_PRO,
         SwitchbotModel.LOCK_PRO_WIFI,
@@ -74,6 +177,8 @@ def test_default_model_classvar():
         (SwitchbotModel.LOCK_PRO, b"W\x0fN\x01\x01\x10\x85"),
         (SwitchbotModel.LOCK_ULTRA, b"W\x0fN\x01\x01\x10\x86"),
         (SwitchbotModel.LOCK_ULTRA_MAX, b"W\x0fN\x01\x01\x00\x00"),
+        (SwitchbotModel.UWB_LOCK, b"W\x0fN\x01\x01\x00\x00"),
+        (SwitchbotModel.LOCK_NANO, b"W\x0fN\x01\x01\x00\x00"),
         (SwitchbotModel.LOCK_VISION, b"W\x0fN\x01\x01\x00\x80"),
         (SwitchbotModel.LOCK_VISION_PRO, b"W\x0fN\x01\x01\x00\x80"),
         (SwitchbotModel.LOCK_PRO_WIFI, b"W\x0fN\x01\x01\x10\x82"),
@@ -104,6 +209,8 @@ async def test_lock(model: str, command: bytes):
         (SwitchbotModel.LOCK_PRO, b"W\x0fN\x01\x01\x10\x84"),
         (SwitchbotModel.LOCK_ULTRA, b"W\x0fN\x01\x01\x10\x83"),
         (SwitchbotModel.LOCK_ULTRA_MAX, b"W\x0fN\x01\x01\x00\x80"),
+        (SwitchbotModel.UWB_LOCK, b"W\x0fN\x01\x01\x00\x80"),
+        (SwitchbotModel.LOCK_NANO, b"W\x0fN\x01\x01\x00\x80"),
         (SwitchbotModel.LOCK_VISION, b"W\x0fN\x01\x01\x00\x80"),
         (SwitchbotModel.LOCK_VISION_PRO, b"W\x0fN\x01\x01\x00\x80"),
         (SwitchbotModel.LOCK_PRO_WIFI, b"W\x0fN\x01\x01\x10\x81"),
@@ -134,6 +241,8 @@ async def test_unlock(model: str, command: bytes):
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
         SwitchbotModel.LOCK_ULTRA_MAX,
+        SwitchbotModel.UWB_LOCK,
+        SwitchbotModel.LOCK_NANO,
         SwitchbotModel.LOCK_VISION,
         SwitchbotModel.LOCK_VISION_PRO,
         SwitchbotModel.LOCK_PRO_WIFI,
@@ -158,6 +267,7 @@ async def test_unlock_without_unlatch(model: str):
     [
         SwitchbotModel.LOCK,
         SwitchbotModel.LOCK_LITE,
+        SwitchbotModel.LOCK_NANO,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
         SwitchbotModel.LOCK_ULTRA_MAX,
@@ -189,6 +299,7 @@ async def test_get_basic_info(model: str):
     [
         SwitchbotModel.LOCK,
         SwitchbotModel.LOCK_LITE,
+        SwitchbotModel.LOCK_NANO,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
         SwitchbotModel.LOCK_VISION,
@@ -210,6 +321,7 @@ async def test_get_basic_info_no_lock_data(model: str):
     [
         SwitchbotModel.LOCK,
         SwitchbotModel.LOCK_LITE,
+        SwitchbotModel.LOCK_NANO,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA,
         SwitchbotModel.LOCK_VISION,
@@ -229,6 +341,35 @@ async def test_get_basic_info_no_basic_data(model: str):
         assert result is None
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "model",
+    [
+        SwitchbotModel.LOCK_PRO,
+        SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_ULTRA_MAX,
+        SwitchbotModel.LOCK_PRO_WIFI,
+        SwitchbotModel.LOCK_NANO,
+        SwitchbotModel.UWB_LOCK,
+    ],
+)
+@pytest.mark.parametrize("status", range(8, 16))
+async def test_get_basic_info_unknown_lock_status(
+    model: SwitchbotModel, status: int, caplog: pytest.LogCaptureFixture
+):
+    """Ignore an unknown status in a lock info response."""
+    device = create_device_for_command_testing(model)
+    lock_data = bytes([1, 0x80 | status << 3, 0, 0, 0, 0, 0])
+    with (
+        patch.object(device, "_get_lock_info", return_value=lock_data),
+        patch.object(device, "_get_basic_info", return_value=b"\x01\x64\x28\x21\x14"),
+        caplog.at_level(logging.DEBUG),
+    ):
+        assert await device.get_basic_info() is None
+    assert f"Unknown lock status {status}" in caplog.text
+    assert lock_data[1:].hex() in caplog.text
+
+
 @pytest.mark.parametrize("battery", [100, 255])
 def test_parse_basic_data(battery):
     """Test _parse_basic_data method."""
@@ -241,7 +382,8 @@ def test_parse_basic_data(battery):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "model", [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX]
+    "model",
+    [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX, SwitchbotModel.UWB_LOCK],
 )
 @pytest.mark.parametrize(
     ("basic_info", "battery", "firmware"),
@@ -278,7 +420,8 @@ async def test_lock2_basic_info(model, basic_info, battery, firmware):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "model", [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX]
+    "model",
+    [SwitchbotModel.LOCK_ULTRA, SwitchbotModel.LOCK_ULTRA_MAX, SwitchbotModel.UWB_LOCK],
 )
 async def test_lock2_battery_after_lock(model):
     device = create_device_for_command_testing(model, SwitchbotLockUltra)
@@ -661,6 +804,60 @@ def test_update_lock_status(model: str):
 
 
 @pytest.mark.parametrize(
+    "model",
+    [
+        SwitchbotModel.LOCK_PRO,
+        SwitchbotModel.LOCK_ULTRA,
+        SwitchbotModel.LOCK_ULTRA_MAX,
+        SwitchbotModel.LOCK_PRO_WIFI,
+        SwitchbotModel.LOCK_NANO,
+        SwitchbotModel.UWB_LOCK,
+    ],
+)
+@pytest.mark.parametrize("status", range(8, 16))
+def test_notification_handler_unknown_lock_status(
+    model: SwitchbotModel, status: int, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Ignore unknown statuses without updating data or firing callbacks."""
+    device = create_device_for_command_testing(model)
+    previous_data = {"status": LockStatus.UNLOCKED, "battery": 95}
+    device.update_from_advertisement(
+        SwitchBotAdvertisement(
+            device._device.address, {"data": previous_data}, device._device, -60
+        )
+    )
+    notification = bytearray(b"\x0f\x00\x00\x00\x01\x02\x03\x04\x05\x06")
+    decrypted = bytes([0x80 | status << 3, 0, 0, 0, 0, 0])
+    with (
+        patch.object(
+            device, "_decrypt", side_effect=[decrypted, b"\x80\x00\x00\x00\x00\x00"]
+        ),
+        patch.object(
+            device, "_update_parsed_data", wraps=device._update_parsed_data
+        ) as update,
+        patch.object(device, "_reset_disconnect_timer") as reset_timer,
+        patch.object(device, "_fire_callbacks") as fire_callbacks,
+        caplog.at_level(logging.DEBUG),
+    ):
+        device._notification_handler(0, notification)
+        update.assert_not_called()
+        reset_timer.assert_not_called()
+        fire_callbacks.assert_not_called()
+        assert device.parsed_data == previous_data
+        assert f"Unknown lock status {status}" in caplog.text
+        assert decrypted.hex() in caplog.text
+        assert notification.hex() in caplog.text
+
+        device._notification_handler(0, notification)
+        update.assert_called_once()
+        assert update.call_args.args[0]["status"] is LockStatus.LOCKED
+        assert device.get_lock_status() is LockStatus.LOCKED
+        assert device.get_battery_percent() == 95
+        reset_timer.assert_called_once()
+        fire_callbacks.assert_called_once()
+
+
+@pytest.mark.parametrize(
     ("model", "data", "expected"),
     [
         (
@@ -882,6 +1079,8 @@ async def test_half_lock_not_calibrated():
         SwitchbotModel.LOCK_LITE,
         SwitchbotModel.LOCK_PRO,
         SwitchbotModel.LOCK_ULTRA_MAX,
+        SwitchbotModel.UWB_LOCK,
+        SwitchbotModel.LOCK_NANO,
         SwitchbotModel.LOCK_VISION,
         SwitchbotModel.LOCK_VISION_PRO,
         SwitchbotModel.LOCK_PRO_WIFI,

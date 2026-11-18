@@ -408,6 +408,16 @@ class SwitchbotRgbicwwCeilingLight(SwitchbotEncryptedDevice, SwitchbotLightStrip
         return _RGBICWW_CEILING_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
 
     @property
+    def is_any_light_on(self) -> bool | None:
+        """Return whether either sub-light is on, or None if undetermined."""
+        states = (self.on, self.is_main_on)
+        if True in states:
+            return True
+        if None in states:
+            return None
+        return False
+
+    @property
     def is_main_on(self) -> bool | None:
         """Return whether the main (warm-white) sub-light is on."""
         return self._get_adv_value("main_isOn")

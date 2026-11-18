@@ -1,0 +1,107 @@
+name: Dependabot auto-merge
+
+# Approves and squash-merges a Dependabot pull request when CI passes on its
+# head commit. Semver-major bumps are left for a human. Based on aiohttp's
+# workflow.
+#
+# Running on CI's completion means only a successful run merges, a re-run that
+# goes green merges too, and --match-head-commit refuses a newer, untested
+# push.
+#
+# dependabot/fetch-metadata needs a pull_request payload, which workflow_run
+# does not have, so the update type is read from the `updated-dependencies`
+# block Dependabot writes into its commit message (the same data that action
+# parses). The head commit must be authored by Dependabot and signed by
+# GitHub, so a human commit pushed to the branch is never auto-merged.
+#
+# The default-branch ruleset requires one approving review, so the job
+# approves before merging. That needs "Allow GitHub Actions to create and
+# approve pull requests" enabled in the repository's Actions settings. The
+# approval is pinned to the tested commit so it never covers a newer push.
+#
+# Other required checks (pre-commit.ci) may still be pending when CI
+# completes and their success doesn't re-trigger this workflow, so the job
+# waits for them before merging.
+#
+# GITHUB_TOKEN on purpose: Dependabot secrets reach every workflow a
+# Dependabot PR triggers, including CI that installs the bumped package, so
+# the release app key is not exposed to them. The cost is that a Dependabot
+# merge doesn't trigger `push` workflows; CI already ran on the PR. No PR code
+# is checked out or run here.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  actions: read
+  checks: read
+  contents: write
+  pull-requests: write
+  statuses: read
+
+jobs:
+  dependabot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: >-
+      github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'pull_request'
+      && github.event.workflow_run.head_repository.full_name == github.repository
+      && startsWith(github.event.workflow_run.head_branch, 'dependabot/')
+    steps:
+      - name: Approve and merge if this is a non-major Dependabot bump
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          pr="$(gh api "repos/$GH_REPO/commits/$HEAD_SHA/pulls" \
+            --jq '[.[] | select(.state == "open")][0].number // empty')"
+          if [ -z "$pr" ]; then
+            echo "No open PR for $HEAD_SHA"
+            exit 0
+          fi
+
+          pr_author="$(gh pr view "$pr" --json author --jq .author.login)"
+          commit="$(gh api "repos/$GH_REPO/commits/$HEAD_SHA")"
+          commit_author="$(jq -r '.author.login // empty' <<< "$commit")"
+          if [ "$pr_author" != "app/dependabot" ] || [ "$commit_author" != "dependabot[bot]" ]; then
+            echo "PR #$pr ($pr_author) or head commit ($commit_author) is not from Dependabot"
+            exit 0
+          fi
+          # author.login comes from the commit email, which anyone can set;
+          # Dependabot's own commits are signed by GitHub (web-flow).
+          signed="$(jq -r '"\(.committer.login // "")/\(.commit.verification.verified)"' <<< "$commit")"
+          if [ "$signed" != "web-flow/true" ]; then
+            echo "PR #$pr head commit is not GitHub-signed ($signed)"
+            exit 0
+          fi
+
+          message="$(jq -r .commit.message <<< "$commit")"
+          if grep -q 'update-type: version-update:semver-major' <<< "$message"; then
+            echo "PR #$pr includes a semver-major update; leaving it for review"
+            exit 0
+          fi
+          if ! grep -qE 'update-type: version-update:semver-(minor|patch)' <<< "$message"; then
+            echo "PR #$pr head commit has no Dependabot update metadata"
+            exit 0
+          fi
+
+          if ! gh pr checks "$pr" --required --watch --fail-fast --interval 30; then
+            echo "PR #$pr required checks did not pass; leaving it for review"
+            exit 0
+          fi
+
+          current_head="$(gh pr view "$pr" --json headRefOid --jq .headRefOid)"
+          if [ "$current_head" != "$HEAD_SHA" ]; then
+            echo "PR #$pr head moved to $current_head; not approving $HEAD_SHA"
+            exit 0
+          fi
+
+          gh api "repos/$GH_REPO/pulls/$pr/reviews" \
+            -f commit_id="$HEAD_SHA" \
+            -f event=APPROVE \
+            -f body="CI passed on $HEAD_SHA; non-major Dependabot update."
+          gh pr merge "$pr" --squash --match-head-commit "$HEAD_SHA"

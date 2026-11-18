@@ -2,6 +2,198 @@
 
 <!-- version list -->
 
+## v3.8.4 (2026-11-17)
+
+### Bug Fixes
+
+- Keep unexpected background task failures visible at error level
+  ([#586](https://github.com/sblibs/pySwitchbot/pull/586),
+  [`d46452e`](https://github.com/sblibs/pySwitchbot/commit/d46452efff8233cea31403a96eff2502ffe59e94))
+
+- Log failed background tasks instead of leaving them unretrieved
+  ([#586](https://github.com/sblibs/pySwitchbot/pull/586),
+  [`d46452e`](https://github.com/sblibs/pySwitchbot/commit/d46452efff8233cea31403a96eff2502ffe59e94))
+
+### Testing
+
+- Compare background task set against a snapshot
+  ([#586](https://github.com/sblibs/pySwitchbot/pull/586),
+  [`d46452e`](https://github.com/sblibs/pySwitchbot/commit/d46452efff8233cea31403a96eff2502ffe59e94))
+
+
+## v3.8.3 (2026-11-17)
+
+### Bug Fixes
+
+- **lock**: Ignore unknown connected lock statuses
+  ([#596](https://github.com/sblibs/pySwitchbot/pull/596),
+  [`81352fa`](https://github.com/sblibs/pySwitchbot/commit/81352faae8681fd874d3e26f292957357b0bf603))
+
+### Chores
+
+- **deps-dev**: Bump pytest-asyncio from 1.4.1.post1 to 1.5.0
+  ([#620](https://github.com/sblibs/pySwitchbot/pull/620),
+  [`29751fe`](https://github.com/sblibs/pySwitchbot/commit/29751fed1a24e1bc1ba2d5e38465b9f529a3f263))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#619](https://github.com/sblibs/pySwitchbot/pull/619),
+  [`17fb6e5`](https://github.com/sblibs/pySwitchbot/commit/17fb6e5fd523008abd03ea018722e51ee5c9ad92))
+
+
+## v3.8.2 (2026-11-16)
+
+### Bug Fixes
+
+- Identify the model from a later advertisement with service data
+  ([#614](https://github.com/sblibs/pySwitchbot/pull/614),
+  [`de03670`](https://github.com/sblibs/pySwitchbot/commit/de0367089b2f7573dcc468e1d25ce89ff31b0433))
+
+### Chores
+
+- **ci**: Bump amannn/action-semantic-pull-request
+  ([#616](https://github.com/sblibs/pySwitchbot/pull/616),
+  [`b125860`](https://github.com/sblibs/pySwitchbot/commit/b12586068379ee6925c0edeac011790765345355))
+
+- **ci**: Bump amannn/action-semantic-pull-request from 6.1.1 to 6.1.2 in the github-actions group
+  ([#616](https://github.com/sblibs/pySwitchbot/pull/616),
+  [`b125860`](https://github.com/sblibs/pySwitchbot/commit/b12586068379ee6925c0edeac011790765345355))
+
+- **ci**: Bump the github-actions group with 4 updates
+  ([#592](https://github.com/sblibs/pySwitchbot/pull/592),
+  [`7240d2a`](https://github.com/sblibs/pySwitchbot/commit/7240d2a542736fbac79dad55ca076e6047fbfe2d))
+
+- **deps**: Bump aiohttp from 3.14.3 to 3.14.5
+  ([#587](https://github.com/sblibs/pySwitchbot/pull/587),
+  [`99edefa`](https://github.com/sblibs/pySwitchbot/commit/99edefa9df6babe7d862de0c400e275f07c00492))
+
+- **deps**: Bump bleak from 3.0.2 to 3.1.0 ([#617](https://github.com/sblibs/pySwitchbot/pull/617),
+  [`14c7946`](https://github.com/sblibs/pySwitchbot/commit/14c7946e02a38ab4a1099f6e2b33957fc00dd847))
+
+- **deps-dev**: Bump pytest from 9.1.1 to 9.2.0
+  ([#594](https://github.com/sblibs/pySwitchbot/pull/594),
+  [`13b31b4`](https://github.com/sblibs/pySwitchbot/commit/13b31b4193e521efafdc07ded130ca70937f63a7))
+
+- **deps-dev**: Bump pytest-asyncio from 1.4.0 to 1.4.1.post1
+  ([#597](https://github.com/sblibs/pySwitchbot/pull/597),
+  [`4f51119`](https://github.com/sblibs/pySwitchbot/commit/4f51119e1efbc69eec9b0e4b7d590010c8f69f06))
+
+- **pre-commit.ci**: Pre-commit autoupdate ([#584](https://github.com/sblibs/pySwitchbot/pull/584),
+  [`07658ad`](https://github.com/sblibs/pySwitchbot/commit/07658adaf0ccb8131fb5e130de501da3d989ca38))
+
+### Continuous Integration
+
+- Auto-merge non-major Dependabot updates after CI passes
+  ([#615](https://github.com/sblibs/pySwitchbot/pull/615),
+  [`c5b33dc`](https://github.com/sblibs/pySwitchbot/commit/c5b33dcd132adac02e6b8ab7dafb795bc523f27b))
+
+
+## v3.8.1 (2026-11-13)
+
+### Bug Fixes
+
+- Disconnect temporary device after encryption key verification
+  ([#613](https://github.com/sblibs/pySwitchbot/pull/613),
+  [`606e69f`](https://github.com/sblibs/pySwitchbot/commit/606e69f371c0fced27a89d96a42c7dff8336e3a9))
+
+
+## v3.8.0 (2026-11-13)
+
+### Bug Fixes
+
+- Keep numeric Outdoor Plug EU cloud model only
+  ([#604](https://github.com/sblibs/pySwitchbot/pull/604),
+  [`8dcd71c`](https://github.com/sblibs/pySwitchbot/commit/8dcd71cee7b0e1f0ae02fb70c12027526bdc4f2d))
+
+### Features
+
+- Add support for Outdoor Plug EU ([#604](https://github.com/sblibs/pySwitchbot/pull/604),
+  [`8dcd71c`](https://github.com/sblibs/pySwitchbot/commit/8dcd71cee7b0e1f0ae02fb70c12027526bdc4f2d))
+
+
+## v3.7.0 (2026-11-13)
+
+### Bug Fixes
+
+- Limit lock status parsing changes to Lock Nano
+  ([#600](https://github.com/sblibs/pySwitchbot/pull/600),
+  [`5301540`](https://github.com/sblibs/pySwitchbot/commit/530154090a50349d95176f83123b8cf5acb0725c))
+
+- Recognize the Lock Nano cloud product ID ([#600](https://github.com/sblibs/pySwitchbot/pull/600),
+  [`5301540`](https://github.com/sblibs/pySwitchbot/commit/530154090a50349d95176f83123b8cf5acb0725c))
+
+### Features
+
+- Add Lock Nano support ([#600](https://github.com/sblibs/pySwitchbot/pull/600),
+  [`5301540`](https://github.com/sblibs/pySwitchbot/commit/530154090a50349d95176f83123b8cf5acb0725c))
+
+
+## v3.6.0 (2026-11-13)
+
+### Features
+
+- Expose aggregate ceiling light power state
+  ([#609](https://github.com/sblibs/pySwitchbot/pull/609),
+  [`c966534`](https://github.com/sblibs/pySwitchbot/commit/c966534263e0bff4018314f456fe72a5455e4fa3))
+
+
+## v3.5.0 (2026-11-13)
+
+### Bug Fixes
+
+- Map the UWB Lock cloud product ID ([#599](https://github.com/sblibs/pySwitchbot/pull/599),
+  [`980f726`](https://github.com/sblibs/pySwitchbot/commit/980f72658db4d73857ccaab28fb5594c126a84c1))
+
+- Use the Ultra basic-info path for UWB Lock
+  ([#599](https://github.com/sblibs/pySwitchbot/pull/599),
+  [`980f726`](https://github.com/sblibs/pySwitchbot/commit/980f72658db4d73857ccaab28fb5594c126a84c1))
+
+### Features
+
+- Add UWB Lock support ([#599](https://github.com/sblibs/pySwitchbot/pull/599),
+  [`980f726`](https://github.com/sblibs/pySwitchbot/commit/980f72658db4d73857ccaab28fb5594c126a84c1))
+
+
+## v3.4.0 (2026-11-13)
+
+### Bug Fixes
+
+- Recognize Plug Mini IT cloud product ID ([#602](https://github.com/sblibs/pySwitchbot/pull/602),
+  [`fea4492`](https://github.com/sblibs/pySwitchbot/commit/fea44922e182461449997d11a8d0f6afb8f9a6d1))
+
+- Recognize Plug Mini IT pairing advertisements
+  ([#602](https://github.com/sblibs/pySwitchbot/pull/602),
+  [`fea4492`](https://github.com/sblibs/pySwitchbot/commit/fea44922e182461449997d11a8d0f6afb8f9a6d1))
+
+### Features
+
+- Add support for Plug Mini IT ([#602](https://github.com/sblibs/pySwitchbot/pull/602),
+  [`fea4492`](https://github.com/sblibs/pySwitchbot/commit/fea44922e182461449997d11a8d0f6afb8f9a6d1))
+
+
+## v3.3.2 (2026-11-13)
+
+### Bug Fixes
+
+- Read Fan Pro firmware with supported basic-info command
+  ([#611](https://github.com/sblibs/pySwitchbot/pull/611),
+  [`edb8139`](https://github.com/sblibs/pySwitchbot/commit/edb8139c925885b6002b085a5820547560a49d99))
+
+- Use supported firmware query for Circulator Fan Pro
+  ([#611](https://github.com/sblibs/pySwitchbot/pull/611),
+  [`edb8139`](https://github.com/sblibs/pySwitchbot/commit/edb8139c925885b6002b085a5820547560a49d99))
+
+- Use supported status query for Circulator Fan Pro
+  ([#611](https://github.com/sblibs/pySwitchbot/pull/611),
+  [`edb8139`](https://github.com/sblibs/pySwitchbot/commit/edb8139c925885b6002b085a5820547560a49d99))
+
+
+## v3.3.1 (2026-11-12)
+
+### Bug Fixes
+
+- Recognize Hub 4 cloud product ID ([#606](https://github.com/sblibs/pySwitchbot/pull/606),
+  [`6520f03`](https://github.com/sblibs/pySwitchbot/commit/6520f030cce8f725242161c1698befc38003d86a))
+
+
 ## v3.3.0 (2026-11-12)
 
 ### Bug Fixes
