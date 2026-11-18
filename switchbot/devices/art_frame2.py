@@ -1,8 +1,9 @@
-"""Device handlers for Art Frame 2 and AI Memory Frame."""
+"""Device handlers for Art Frame 2 and E Ink Photo Magnet."""
 
 import secrets
 from typing import Any
 
+from ..const import SwitchbotModel
 from .device import (
     SwitchbotEncryptedDevice,
     SwitchbotOperationError,
@@ -14,6 +15,7 @@ from .device import (
 class SwitchbotArtFrame2(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Handle image frames with 16-bit image indexes."""
 
+    _model = SwitchbotModel.ART_FRAME_2
     response_flag: bool = True
 
     async def get_basic_info(self) -> dict[str, Any] | None:
@@ -100,3 +102,9 @@ class SwitchbotArtFrame2(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if index < 0 or index >= len(indexes):
             raise ValueError(f"Image index {index} is out of range.")
         return await self._set_image_id(indexes[index])
+
+
+class SwitchbotEInkPhotoMagnet(SwitchbotArtFrame2):
+    """Represent an E Ink Photo Magnet."""
+
+    _model = SwitchbotModel.E_INK_PHOTO_MAGNET

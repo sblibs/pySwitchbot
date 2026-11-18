@@ -84,6 +84,31 @@ def process_wolock_pro(
     return common_data | lock_pro_data
 
 
+def process_lock_nano(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int]:
+    """Parse Lock Nano advertisements."""
+    if mfr_data is None or len(mfr_data) < 11:
+        return {}
+
+    charging_status = ((mfr_data[8] & 1) << 1) | (mfr_data[9] >> 7)
+    return {
+        "sequence_number": mfr_data[6],
+        "calibration": bool(mfr_data[7] & 0x80),
+        "status": LockStatus((mfr_data[7] & 0x78) >> 3),
+        "auto_lock_paused": bool(mfr_data[8] & 0x08),
+        "night_latch": bool(mfr_data[8] & 0x02),
+        "battery": mfr_data[9] & 0x7F,
+        "charging_status": charging_status,
+        "battery_charging": charging_status == 1,
+        "unlocked_alarm": bool(mfr_data[10] & 0x40),
+        "low_temperature_alarm": bool(mfr_data[10] & 0x20),
+        "power_alarm": bool(mfr_data[10] & 0x10),
+        "battery_status": (mfr_data[10] >> 1) & 0x03,
+        "charging_fault": bool(mfr_data[10] & 0x01),
+    }
+
+
 def process_lock2(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | int]:
     """Support for lock2 process data."""
     common_data = parse_common_data(mfr_data)

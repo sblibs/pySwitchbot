@@ -23,6 +23,8 @@ COMMAND_LOCK_INFO = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4f8104",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4f8107",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0f4f8107",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0f4f8107",
+    SwitchbotModel.LOCK_NANO: f"{COMMAND_HEADER}0f4f810c",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4f8102",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4f8102",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4f810a",
@@ -33,6 +35,8 @@ COMMAND_UNLOCK = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0f4e0101000080",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0f4e0101000080",
+    SwitchbotModel.LOCK_NANO: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e0101000080",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e0101000080",
@@ -43,6 +47,8 @@ COMMAND_UNLOCK_WITHOUT_UNLATCH = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0f4e01010000a0",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0f4e01010000a0",
+    SwitchbotModel.LOCK_NANO: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e01010000a0",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e01010000a0",
@@ -53,6 +59,8 @@ COMMAND_LOCK = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0f4e0101000000",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0f4e0101000000",
+    SwitchbotModel.LOCK_NANO: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0f4e0101000000",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0f4e0101000000",
@@ -74,6 +82,8 @@ COMMAND_ENABLE_NOTIFICATIONS = {
     SwitchbotModel.LOCK_PRO: f"{COMMAND_HEADER}0e01001e00008104",
     SwitchbotModel.LOCK_ULTRA: f"{COMMAND_HEADER}0e01001e00008107",
     SwitchbotModel.LOCK_ULTRA_MAX: f"{COMMAND_HEADER}0e01001e00008107",
+    SwitchbotModel.UWB_LOCK: f"{COMMAND_HEADER}0e01001e00008107",
+    SwitchbotModel.LOCK_NANO: f"{COMMAND_HEADER}0e01001e0000810c",
     SwitchbotModel.LOCK_VISION_PRO: f"{COMMAND_HEADER}0e01001e00008102",
     SwitchbotModel.LOCK_VISION: f"{COMMAND_HEADER}0e01001e00008102",
     SwitchbotModel.LOCK_PRO_WIFI: f"{COMMAND_HEADER}0e01001e0000810a",
@@ -115,6 +125,8 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             SwitchbotModel.LOCK_LITE,
             SwitchbotModel.LOCK_ULTRA,
             SwitchbotModel.LOCK_ULTRA_MAX,
+            SwitchbotModel.UWB_LOCK,
+            SwitchbotModel.LOCK_NANO,
             SwitchbotModel.LOCK_VISION_PRO,
             SwitchbotModel.LOCK_VISION,
             SwitchbotModel.LOCK_PRO_WIFI,
@@ -380,9 +392,10 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         _LOGGER.debug(
             "basic_data: %s, address: %s", basic_data.hex(), self._device.address
         )
-        return self._parse_lock_data(
-            lock_raw_data[1:], self._model
-        ) | self._parse_basic_data(basic_data)
+        lock_data = self._parse_lock_data(lock_raw_data[1:], self._model)
+        if lock_data is None:
+            return None
+        return lock_data | self._parse_basic_data(basic_data)
 
     def is_calibrated(self) -> Any:
         """Return True if lock is calibrated."""
@@ -454,6 +467,9 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
     def _update_lock_status(self, data: bytearray) -> None:
         lock_data = self._parse_lock_data(self._decrypt(data[4:]), self._model)
+        if lock_data is None:
+            _LOGGER.debug("%s: Ignoring lock notification: %s", self.name, data.hex())
+            return
         if self._update_parsed_data(lock_data):
             # We leave notifications enabled in case
             # the lock is operated manually before we
@@ -462,7 +478,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             self._fire_callbacks()
 
     @staticmethod
-    def _parse_lock_data(data: bytes, model: SwitchbotModel) -> dict[str, Any]:
+    def _parse_lock_data(data: bytes, model: SwitchbotModel) -> dict[str, Any] | None:
         if model in {SwitchbotModel.LOCK, SwitchbotModel.LOCK_VISION_PRO}:
             return {
                 "calibration": bool(data[0] & 0b10000000),
@@ -477,9 +493,23 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                 "status": LockStatus((data[0] & 0b01110000) >> 4),
                 "unlocked_alarm": bool(data[1] & 0b00010000),
             }
+        status_value = (data[0] & 0b01111000) >> 3
+        try:
+            status = LockStatus(status_value)
+        except ValueError:
+            _LOGGER.warning("Unknown lock status %s for model %s", status_value, model)
+            _LOGGER.debug("Unrecognized lock data: %s", data.hex())
+            return None
+        if model is SwitchbotModel.LOCK_NANO:
+            return {
+                "calibration": bool(data[0] & 0b10000000),
+                "status": status,
+                "auto_lock_paused": bool(data[1] & 0b00001000),
+                "unlocked_alarm": bool(data[5] & 0b01000000),
+            }
         result = {
             "calibration": bool(data[0] & 0b10000000),
-            "status": LockStatus((data[0] & 0b01111000) >> 3),
+            "status": status,
             "door_open": bool(data[1] & 0b00010000),
             "unclosed_alarm": bool(data[5] & 0b10000000),
             "unlocked_alarm": bool(data[5] & 0b01000000),
@@ -490,7 +520,7 @@ class SwitchbotLock(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
 
 class SwitchbotLockUltra(SwitchbotLock):
-    """SwitchBot Lock Ultra and Ultra Max, which share the Lock 2 basic-info format."""
+    """SwitchBot locks that use the Lock 2 basic-info format."""
 
     _model = SwitchbotModel.LOCK_ULTRA
 

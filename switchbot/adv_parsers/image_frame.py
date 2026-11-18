@@ -1,4 +1,4 @@
-"""Advertisement parser for Art Frame 2 and AI Memory Frame."""
+"""Advertisement parser for Art Frame 2 and E Ink Photo Magnet."""
 
 
 def process_image_frame(

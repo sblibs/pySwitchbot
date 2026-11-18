@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from switchbot import SwitchbotArtFrameLuma, SwitchbotModel
+from switchbot import SwitchbotEInkPhotoMagnet, SwitchbotModel
 from switchbot.adv_parser import parse_advertisement_data
 from switchbot.adv_parsers.image_frame import process_image_frame
 from switchbot.devices.device import SwitchbotOperationError
@@ -10,7 +10,7 @@ from switchbot.devices.device import SwitchbotOperationError
 from .test_adv_parser import generate_advertisement_data, generate_ble_device
 
 
-@pytest.fixture(params=[SwitchbotArtFrameLuma])
+@pytest.fixture(params=[SwitchbotEInkPhotoMagnet])
 def device(request):
     frame = request.param(
         generate_ble_device("AA:BB:CC:DD:EE:FF", "Frame"), "ff", "ff" * 16
@@ -23,7 +23,7 @@ def device(request):
 @pytest.mark.parametrize(
     ("model", "suffix"),
     [
-        (SwitchbotModel.ART_FRAME_LUMA, "11f1c0"),
+        (SwitchbotModel.E_INK_PHOTO_MAGNET, "1295d0"),
     ],
 )
 @pytest.mark.parametrize("pairing", [0, 1])

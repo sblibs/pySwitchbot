@@ -108,6 +108,7 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "W1079001": SwitchbotModel.METER_PRO_CO2,
     "W1101000": SwitchbotModel.PRESENCE_SENSOR,
     "W1091000": SwitchbotModel.LOCK_ULTRA,
+    "W1184000": SwitchbotModel.UWB_LOCK,
     "W1096000": SwitchbotModel.HUB3,
     "W1083003": SwitchbotModel.GARAGE_DOOR_OPENER,
     "W1102000": SwitchbotModel.FLOOR_LAMP,
@@ -118,10 +119,15 @@ API_MODEL_TO_ENUM: dict[str, SwitchbotModel] = {
     "W1162000": SwitchbotModel.RGBICWW_CEILING_LIGHT,
     "W1160000": SwitchbotModel.CIRCULATOR_FAN_PRO,
     "W1104000": SwitchbotModel.PLUG_MINI_EU,
+    "W1197000": SwitchbotModel.PLUG_MINI_IT,
+    "W1213000": SwitchbotModel.HUB4,
+    "W1186000": SwitchbotModel.OUTDOOR_PLUG_EU,
     "W1128000": SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
     "W1111000": SwitchbotModel.CLIMATE_PANEL,
     "W1130000": SwitchbotModel.ART_FRAME,
-    "W1176000": SwitchbotModel.ART_FRAME_LUMA,
+    "W1176000": SwitchbotModel.ART_FRAME_2,
+    "W1218000": SwitchbotModel.E_INK_PHOTO_MAGNET,
+    "W1189000": SwitchbotModel.LOCK_NANO,
     "W1141001": SwitchbotModel.LOCK_VISION_PRO,
     "W1141000": SwitchbotModel.LOCK_VISION,
     "W1114000": SwitchbotModel.LOCK_PRO_WIFI,
@@ -971,9 +977,27 @@ class SwitchbotBaseDevice:
             self._last_full_update = time.monotonic()
         if not self._sb_adv_data:
             self._sb_adv_data = advertisement
-        elif new_data:
-            self._update_parsed_data(new_data)
+        else:
+            self._update_model_data(advertisement)
+            if new_data:
+                self._update_parsed_data(new_data)
         self._override_adv_data = None
+
+    def _update_model_data(self, advertisement: SwitchBotAdvertisement) -> None:
+        """Replace a fallback model with the one identified from service data."""
+        old = self._sb_adv_data.data
+        new = advertisement.data
+        # Without service data the model may only be the caller's fallback.
+        if (
+            old.get("rawAdvData")
+            or not new.get("rawAdvData")
+            or "modelName" not in new
+            or new.get("model") == old.get("model")
+        ):
+            return
+        self._sb_adv_data = replace(
+            self._sb_adv_data, data=new | {"data": old.get("data") or {}}
+        )
 
     def switch_mode(self) -> bool | None:
         """Return true or false from cache."""
@@ -1271,6 +1295,8 @@ class SwitchbotEncryptedDevice(SwitchbotDevice):
             info = await switchbot_device.get_basic_info()
         except SwitchbotOperationError:
             return False
+        finally:
+            await switchbot_device._execute_forced_disconnect()
 
         return info is not None
 
