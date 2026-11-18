@@ -35,7 +35,6 @@ from .const import (
     SwitchbotModel,
     VerticalOscillationAngle,
 )
-from .devices.ai_memory_frame import SwitchbotAIMemoryFrame
 from .devices.air_purifier import SwitchbotAirPurifier
 from .devices.art_frame import SwitchbotArtFrame
 from .devices.art_frame2 import SwitchbotArtFrame2
@@ -52,6 +51,7 @@ from .devices.device import (
     fetch_cloud_devices,
     fetch_cloud_devices_by_token,
 )
+from .devices.e_ink_photo_magnet import SwitchbotEInkPhotoMagnet
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
 from .devices.fan import (
     SwitchbotCirculatorFanPro,
@@ -118,7 +118,6 @@ __all__ = [
     "StripLightColorMode",
     "SwitchBotAdvertisement",
     "Switchbot",
-    "SwitchbotAIMemoryFrame",
     "SwitchbotAccountConnectionError",
     "SwitchbotAirPurifier",
     "SwitchbotApiError",
@@ -133,6 +132,7 @@ __all__ = [
     "SwitchbotCirculatorFanPro",
     "SwitchbotCurtain",
     "SwitchbotDevice",
+    "SwitchbotEInkPhotoMagnet",
     "SwitchbotEncryptedDevice",
     "SwitchbotEvaporativeHumidifier",
     "SwitchbotFan",

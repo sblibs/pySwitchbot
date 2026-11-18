@@ -1100,7 +1100,7 @@ async def test_plug_mini_it_cloud_model_cache(mock_user_info: dict[str, Any]) ->
 
 
 @pytest.mark.asyncio
-async def test_ai_memory_frame_cloud_model_cache(
+async def test_e_ink_photo_magnet_cloud_model_cache(
     mock_user_info: dict[str, Any],
 ) -> None:
     """Resolve the numeric cloud product ID and populate the model cache."""
@@ -1119,7 +1119,8 @@ async def test_ai_memory_frame_cloud_model_cache(
         devices = await fetch_cloud_devices_by_token(
             MagicMock(spec=aiohttp.ClientSession), "test-token"
         )
-        assert devices == {"E6:A1:CD:1F:5B:65": SwitchbotModel.AI_MEMORY_FRAME}
+        assert devices == {"E6:A1:CD:1F:5B:65": SwitchbotModel.E_INK_PHOTO_MAGNET}
         assert (
-            _MODEL_TO_MAC_CACHE["E6:A1:CD:1F:5B:65"] is SwitchbotModel.AI_MEMORY_FRAME
+            _MODEL_TO_MAC_CACHE["E6:A1:CD:1F:5B:65"]
+            is SwitchbotModel.E_INK_PHOTO_MAGNET
         )
