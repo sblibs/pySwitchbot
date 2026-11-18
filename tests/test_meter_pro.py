@@ -292,20 +292,85 @@ async def test_start_co2_calibration():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(("response", "powered"), [("0100", False), ("0101", True)])
+async def test_is_usb_powered(response: str, powered: bool):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex(response)
+
+    assert await device.is_usb_powered() is powered
+    device._send_command.assert_awaited_once_with("570f690b02")
+
+
+@pytest.mark.asyncio
+async def test_is_usb_powered_rejects_unknown_state():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex("0102")
+
+    with pytest.raises(SwitchbotOperationError, match="Unexpected USB power state 02"):
+        await device.is_usb_powered()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("minutes", "expected_payload"),
+    ("mode", "command", "response", "expected_seconds"),
     [
-        (5, "012c"),
-        (10, "0258"),
-        (30, "0708"),
+        ("battery", "570f690b04", "010258", 600),
+        ("battery", "570f690b04", "010708", 1800),
+        ("usb", "570f690b03", "01003c", 60),
+        ("usb", "570f690b03", "010078", 120),
     ],
 )
-async def test_set_co2_update_interval(minutes: int, expected_payload: str):
+async def test_get_co2_update_interval(
+    mode: str, command: str, response: str, expected_seconds: int
+):
     device = create_device()
-    device._send_command.return_value = bytes.fromhex("01")
+    device._send_command.return_value = bytes.fromhex(response)
 
-    await device.set_co2_update_interval(minutes * 60)
-    device._send_command.assert_called_with("570f680b06" + expected_payload)
+    assert (
+        await getattr(device, f"get_co2_{mode}_update_interval")() == expected_seconds
+    )
+    device._send_command.assert_awaited_once_with(command)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mode", "command"),
+    [("battery", "570f680b06"), ("usb", "570f680b01")],
+)
+@pytest.mark.parametrize(
+    ("seconds", "expected_payload"),
+    [
+        (1, "0001"),
+        (60, "003c"),
+        (120, "0078"),
+        (600, "0258"),
+        (1800, "0708"),
+        (65535, "ffff"),
+    ],
+)
+async def test_set_co2_update_interval(
+    mode: str, command: str, seconds: int, expected_payload: str
+):
+    device = create_device()
+    device._send_command.return_value = b"\x01"
+
+    await getattr(device, f"set_co2_{mode}_update_interval")(seconds)
+
+    device._send_command.assert_awaited_once_with(command + expected_payload)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["battery", "usb"])
+@pytest.mark.parametrize("seconds", [True, "600", 600.0, -1, 0, 65536, 0x100000])
+async def test_set_co2_update_interval_rejects_invalid_input(
+    mode: str, seconds: object
+):
+    device = create_device()
+
+    with pytest.raises(SwitchbotOperationError, match="1 to 65535 seconds"):
+        await getattr(device, f"set_co2_{mode}_update_interval")(seconds)
+
+    device._send_command.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -346,6 +411,11 @@ async def test_set_co2_thresholds_throws_on_invalid_input(
     [
         ("trigger_co2_sampling", ()),
         ("start_co2_calibration", ()),
+        ("is_usb_powered", ()),
+        ("get_co2_battery_update_interval", ()),
+        ("get_co2_usb_update_interval", ()),
+        ("set_co2_usb_update_interval", (120,)),
+        ("set_co2_battery_update_interval", (600,)),
     ],
 )
 @pytest.mark.parametrize(
@@ -360,3 +430,22 @@ async def test_co2_rejects_unsuccessful_responses(
 
     with pytest.raises(SwitchbotOperationError, match=f"result={response_hex}"):
         await getattr(device, method)(*args)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "response"),
+    [
+        ("is_usb_powered", "01"),
+        ("get_co2_battery_update_interval", "0102"),
+        ("get_co2_usb_update_interval", "0100"),
+    ],
+)
+async def test_co2_getters_reject_short_responses(method: str, response: str):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex(response)
+
+    with pytest.raises(
+        SwitchbotOperationError, match=f"Unexpected response len for {method}"
+    ):
+        await getattr(device, method)()

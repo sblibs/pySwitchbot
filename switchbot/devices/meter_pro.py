@@ -17,7 +17,11 @@ COMMAND_SET_WEATHER = "570f680601"
 
 COMMAND_TRIGGER_CO2_SAMPLING = "570f680b04"
 COMMAND_START_CO2_CALIBRATION = "570f680b02"
-COMMAND_CO2_UPDATE_INTERVAL = "570f680b06"
+COMMAND_GET_USB_POWER_STATE = "570f690b02"
+COMMAND_GET_CO2_USB_UPDATE_INTERVAL = "570f690b03"
+COMMAND_SET_CO2_USB_UPDATE_INTERVAL = "570f680b01"
+COMMAND_GET_CO2_BATTERY_UPDATE_INTERVAL = "570f690b04"
+COMMAND_SET_CO2_BATTERY_UPDATE_INTERVAL = "570f680b06"
 COMMAND_CO2_THRESHOLDS = "570f68020302"
 
 
@@ -332,15 +336,61 @@ class SwitchbotMeterProCO2(SwitchbotMeterPro):
         result = await self._send_command(COMMAND_START_CO2_CALIBRATION, retry=0)
         self._validate_result("start_co2_calibration", result)
 
-    async def set_co2_update_interval(self, seconds: int) -> None:
-        """
-        Sets the interval in which co2 levels are measured in battery powered mode.
-        Original App assumes seconds in {5*60, 10*60, 30*60}
-        """
-        result = await self._send_command(
-            COMMAND_CO2_UPDATE_INTERVAL + f"{seconds:04x}"
+    async def is_usb_powered(self) -> bool:
+        """Read whether USB-C power is connected."""
+        result = await self._send_command(COMMAND_GET_USB_POWER_STATE)
+        data = self._validate_result("is_usb_powered", result, min_length=2)
+        if data[1] not in (0, 1):
+            raise SwitchbotOperationError(
+                f"{self.name}: Unexpected USB power state {data[1]:02x}"
+            )
+        return data[1] == 1
+
+    async def get_co2_battery_update_interval(self) -> int:
+        """Read the battery-powered CO2 update interval in seconds."""
+        return await self._get_co2_update_interval(
+            COMMAND_GET_CO2_BATTERY_UPDATE_INTERVAL, "get_co2_battery_update_interval"
         )
-        self._validate_result("set_co2_update_interval", result)
+
+    async def set_co2_battery_update_interval(self, seconds: int) -> None:
+        """Set the battery-powered CO2 update interval in seconds."""
+        await self._set_co2_update_interval(
+            COMMAND_SET_CO2_BATTERY_UPDATE_INTERVAL,
+            "set_co2_battery_update_interval",
+            seconds,
+        )
+
+    async def get_co2_usb_update_interval(self) -> int:
+        """Read the USB-powered CO2 update interval in seconds."""
+        return await self._get_co2_update_interval(
+            COMMAND_GET_CO2_USB_UPDATE_INTERVAL, "get_co2_usb_update_interval"
+        )
+
+    async def set_co2_usb_update_interval(self, seconds: int) -> None:
+        """Set the USB-powered CO2 update interval in seconds."""
+        await self._set_co2_update_interval(
+            COMMAND_SET_CO2_USB_UPDATE_INTERVAL, "set_co2_usb_update_interval", seconds
+        )
+
+    async def _get_co2_update_interval(self, command: str, operation: str) -> int:
+        result = await self._send_command(command)
+        data = self._validate_result(operation, result, min_length=3)
+        return int.from_bytes(data[1:3], "big")
+
+    async def _set_co2_update_interval(
+        self, command: str, operation: str, seconds: int
+    ) -> None:
+        if (
+            isinstance(seconds, bool)
+            or not isinstance(seconds, int)
+            or not 1 <= seconds <= 0xFFFF
+        ):
+            raise SwitchbotOperationError(
+                f"{self.name}: CO2 update interval must be an integer from 1 to 65535 seconds"
+            )
+
+        result = await self._send_command(command + seconds.to_bytes(2, "big").hex())
+        self._validate_result(operation, result)
 
     async def set_co2_thresholds(self, lower: int, upper: int) -> None:
         """
