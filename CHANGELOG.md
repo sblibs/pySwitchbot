@@ -2,6 +2,27 @@
 
 <!-- version list -->
 
+## v3.10.0 (2026-11-18)
+
+### Bug Fixes
+
+- Display W1176 as Art Frame 2 ([#607](https://github.com/sblibs/pySwitchbot/pull/607),
+  [`d4be699`](https://github.com/sblibs/pySwitchbot/commit/d4be699ba66e4047e1016be7cfe66dba49fd8c60))
+
+### Features
+
+- Add support for Art Frame 2 ([#607](https://github.com/sblibs/pySwitchbot/pull/607),
+  [`d4be699`](https://github.com/sblibs/pySwitchbot/commit/d4be699ba66e4047e1016be7cfe66dba49fd8c60))
+
+- Add support for art-frame-luma ([#607](https://github.com/sblibs/pySwitchbot/pull/607),
+  [`d4be699`](https://github.com/sblibs/pySwitchbot/commit/d4be699ba66e4047e1016be7cfe66dba49fd8c60))
+
+### Refactoring
+
+- Rename image frame base to ArtFrame2 ([#607](https://github.com/sblibs/pySwitchbot/pull/607),
+  [`d4be699`](https://github.com/sblibs/pySwitchbot/commit/d4be699ba66e4047e1016be7cfe66dba49fd8c60))
+
+
 ## v3.9.0 (2026-11-18)
 
 ### Bug Fixes
