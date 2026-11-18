@@ -2,6 +2,40 @@
 
 <!-- version list -->
 
+## v3.9.0 (2026-11-18)
+
+### Bug Fixes
+
+- Display AI Memory Frame as E Ink Photo Magnet
+  ([#608](https://github.com/sblibs/pySwitchbot/pull/608),
+  [`8611f18`](https://github.com/sblibs/pySwitchbot/commit/8611f182b80c804c69747a7164b6884fd384c29f))
+
+### Documentation
+
+- Update shared frame product name ([#608](https://github.com/sblibs/pySwitchbot/pull/608),
+  [`8611f18`](https://github.com/sblibs/pySwitchbot/commit/8611f182b80c804c69747a7164b6884fd384c29f))
+
+### Features
+
+- Add support for ai-memory-frame ([#608](https://github.com/sblibs/pySwitchbot/pull/608),
+  [`8611f18`](https://github.com/sblibs/pySwitchbot/commit/8611f182b80c804c69747a7164b6884fd384c29f))
+
+- Add support for E Ink Photo Magnet ([#608](https://github.com/sblibs/pySwitchbot/pull/608),
+  [`8611f18`](https://github.com/sblibs/pySwitchbot/commit/8611f182b80c804c69747a7164b6884fd384c29f))
+
+### Refactoring
+
+- Group E Ink Photo Magnet with Art Frame 2 ([#608](https://github.com/sblibs/pySwitchbot/pull/608),
+  [`8611f18`](https://github.com/sblibs/pySwitchbot/commit/8611f182b80c804c69747a7164b6884fd384c29f))
+
+- Rename E Ink Photo Magnet device class and model
+  ([#608](https://github.com/sblibs/pySwitchbot/pull/608),
+  [`8611f18`](https://github.com/sblibs/pySwitchbot/commit/8611f182b80c804c69747a7164b6884fd384c29f))
+
+- Rename image frame base to ArtFrame2 ([#608](https://github.com/sblibs/pySwitchbot/pull/608),
+  [`8611f18`](https://github.com/sblibs/pySwitchbot/commit/8611f182b80c804c69747a7164b6884fd384c29f))
+
+
 ## v3.8.4 (2026-11-17)
 
 ### Bug Fixes
