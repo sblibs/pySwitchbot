@@ -1,6 +1,7 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
+import pytest_asyncio
 from bleak.backends.device import BLEDevice
 
 from switchbot import (
@@ -19,6 +20,133 @@ common_params = [
     (b"+\x00\x00\x15\x04\x00", "+", SwitchbotModel.AIR_PURIFIER_JP),
     (b"8\x00\x00\x95-\x00", "8", SwitchbotModel.AIR_PURIFIER_TABLE_JP),
 ]
+
+
+@pytest_asyncio.fixture(params=common_params, ids=["table_us", "us", "jp", "table_jp"])
+async def filter_reset_device(
+    request: pytest.FixtureRequest,
+) -> air_purifier.SwitchbotAirPurifier:
+    raw_adv, model, model_name = request.param
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    device = air_purifier.SwitchbotAirPurifier(
+        ble_device, "ff", "ffffffffffffffffffffffffffffffff", model=model_name
+    )
+    device.update = AsyncMock()
+    device.update_from_advertisement(
+        make_advertisement_data(ble_device, raw_adv, model, model_name)
+    )
+    return device
+
+
+@pytest.mark.asyncio
+async def test_reset_filter_usage(
+    filter_reset_device: air_purifier.SwitchbotAirPurifier,
+) -> None:
+    device = filter_reset_device
+    initial_data = device.parsed_data.copy()
+    listener = MagicMock()
+    unsubscribe = device.subscribe(listener)
+    with patch.object(
+        device, "_send_command", AsyncMock(side_effect=[b"\x01", b"\x01\x00\x00"])
+    ) as send_command:
+        assert await device.reset_filter_usage() is True
+        assert send_command.await_args_list == [
+            call("570f4c09", retry=0),
+            call("570f4d09"),
+        ]
+    assert device.parsed_data == initial_data | {"filter element working time": 0}
+    listener.assert_called_once_with()
+    unsubscribe()
+
+    advertisement = device._sb_adv_data
+    assert advertisement is not None
+    device.update_from_advertisement(
+        make_advertisement_data(
+            advertisement.device,
+            advertisement.data["rawAdvData"],
+            advertisement.data["model"],
+            advertisement.data["modelName"],
+            {"filter element working time": 1},
+        )
+    )
+    assert device.parsed_data["filter element working time"] == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("reset_response", "read_response", "message", "expected_calls"),
+    [
+        pytest.param(None, None, "Sending command failed", 1, id="no_reset_reply"),
+        pytest.param(b"", None, "Sending command failed", 1, id="empty_reset_reply"),
+        pytest.param(b"\x02", None, "reset was rejected", 1, id="reset_rejected"),
+        pytest.param(b"\x01", None, "could not be verified", 2, id="no_read_reply"),
+        pytest.param(b"\x01", b"", "could not be verified", 2, id="empty_read_reply"),
+        pytest.param(
+            b"\x01", b"\x01", "could not be verified", 2, id="short_read_reply"
+        ),
+        pytest.param(
+            b"\x01", b"\x01\x00", "could not be verified", 2, id="partial_counter"
+        ),
+        pytest.param(
+            b"\x01", b"\x02\x00\x00", "read was rejected", 2, id="read_rejected"
+        ),
+        pytest.param(
+            b"\x01", b"\x01\x07\x68", "1896 used hours", 2, id="counter_not_reset"
+        ),
+    ],
+)
+async def test_reset_filter_usage_failure(
+    filter_reset_device: air_purifier.SwitchbotAirPurifier,
+    reset_response: bytes | None,
+    read_response: bytes | None,
+    message: str,
+    expected_calls: int,
+) -> None:
+    device = filter_reset_device
+    initial_data = device.parsed_data.copy()
+    listener = MagicMock()
+    device.subscribe(listener)
+    with patch.object(
+        device, "_send_command", AsyncMock(side_effect=[reset_response, read_response])
+    ) as send_command:
+        with pytest.raises(SwitchbotOperationError, match=message):
+            await device.reset_filter_usage()
+        assert send_command.await_count == expected_calls
+    assert device.parsed_data == initial_data
+    listener.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("responses", "expected_calls"),
+    [
+        pytest.param(
+            [SwitchbotOperationError("Connection failed")], 1, id="reset_connection"
+        ),
+        pytest.param(
+            [b"\x01", SwitchbotOperationError("Connection failed")],
+            2,
+            id="read_connection",
+        ),
+    ],
+)
+async def test_reset_filter_usage_transport_failure(
+    filter_reset_device: air_purifier.SwitchbotAirPurifier,
+    responses: list[bytes | SwitchbotOperationError],
+    expected_calls: int,
+) -> None:
+    device = filter_reset_device
+    initial_data = device.parsed_data.copy()
+    listener = MagicMock()
+    device.subscribe(listener)
+    with patch.object(
+        device, "_send_command", AsyncMock(side_effect=responses)
+    ) as send_command:
+        with pytest.raises(SwitchbotOperationError, match="Connection failed"):
+            await device.reset_filter_usage()
+        assert send_command.await_count == expected_calls
+    assert device.parsed_data == initial_data
+    listener.assert_not_called()
 
 
 def create_device_for_command_testing(

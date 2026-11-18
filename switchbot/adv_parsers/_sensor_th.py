@@ -24,7 +24,7 @@ def decode_temp_humidity(temp_data: bytes, battery: int | None) -> dict[str, Any
     _temp_f = (_temp_f * 10) / 10
     humidity = temp_data[2] & 0b01111111
 
-    if _temp_c == 0 and humidity == 0 and battery == 0:
+    if _temp_c == 0 and humidity == 0:
         return {}
 
     return {

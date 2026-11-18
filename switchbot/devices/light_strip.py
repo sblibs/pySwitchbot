@@ -263,7 +263,9 @@ class SwitchbotLightStrip(SwitchbotSequenceBaseLight):
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
         if not (
-            res := await self._get_multi_commands_results(self._get_basic_info_command)
+            res := await self._get_multi_commands_results(
+                self._get_basic_info_command, min_data_length=11
+            )
         ):
             return None
 
@@ -317,7 +319,9 @@ class SwitchbotCandleWarmerLamp(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
         if not (
-            res := await self._get_multi_commands_results(self._get_basic_info_command)
+            res := await self._get_multi_commands_results(
+                self._get_basic_info_command, min_data_length=3
+            )
         ):
             return None
         _version_info, _data = res
@@ -408,6 +412,16 @@ class SwitchbotRgbicwwCeilingLight(SwitchbotEncryptedDevice, SwitchbotLightStrip
         return _RGBICWW_CEILING_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
 
     @property
+    def is_any_light_on(self) -> bool | None:
+        """Return whether either sub-light is on, or None if undetermined."""
+        states = (self.on, self.is_main_on)
+        if True in states:
+            return True
+        if None in states:
+            return None
+        return False
+
+    @property
     def is_main_on(self) -> bool | None:
         """Return whether the main (warm-white) sub-light is on."""
         return self._get_adv_value("main_isOn")
@@ -472,7 +486,9 @@ class SwitchbotRgbicwwCeilingLight(SwitchbotEncryptedDevice, SwitchbotLightStrip
         here, otherwise update() would clobber the correct advertised values.
         """
         if not (
-            res := await self._get_multi_commands_results(self._get_basic_info_command)
+            res := await self._get_multi_commands_results(
+                self._get_basic_info_command, min_data_length=9
+            )
         ):
             return None
 

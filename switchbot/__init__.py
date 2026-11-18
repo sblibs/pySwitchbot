@@ -24,7 +24,9 @@ from .const import (
     HumidifierMode,
     HumidifierWaterLevel,
     LockStatus,
+    MeterProWeatherIcon,
     NightLightState,
+    QuickKeyFunction,
     SmartThermostatRadiatorMode,
     StandingFanMode,
     StripLightColorMode,
@@ -36,6 +38,7 @@ from .const import (
 )
 from .devices.air_purifier import SwitchbotAirPurifier
 from .devices.art_frame import SwitchbotArtFrame
+from .devices.art_frame2 import SwitchbotArtFrame2, SwitchbotEInkPhotoMagnet
 from .devices.base_light import SwitchbotBaseLight
 from .devices.blind_tilt import SwitchbotBlindTilt
 from .devices.bot import Switchbot
@@ -47,6 +50,7 @@ from .devices.device import (
     SwitchbotEncryptedDevice,
     SwitchbotOperationError,
     fetch_cloud_devices,
+    fetch_cloud_devices_by_token,
 )
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
 from .devices.fan import (
@@ -65,8 +69,9 @@ from .devices.light_strip import (
     SwitchbotRgbicwwCeilingLight,
     SwitchbotStripLight3,
 )
-from .devices.lock import SwitchbotLock
+from .devices.lock import SwitchbotLock, SwitchbotLockUltra
 from .devices.meter_pro import SwitchbotMeterPro, SwitchbotMeterProCO2
+from .devices.outdoor_plug import SwitchbotOutdoorPlug
 from .devices.plug import SwitchbotPlugMini
 from .devices.relay_switch import (
     SwitchbotGarageDoorOpener,
@@ -79,8 +84,18 @@ from .devices.universal_remote import SwitchbotUniversalRemote
 from .devices.vacuum import SwitchbotVacuum
 from .discovery import GetSwitchbotDevices
 from .models import SwitchBotAdvertisement
+from .oauth import (
+    OAUTH_AUTHORIZE_URL,
+    OAUTH_SCOPE,
+    OAUTH_TOKEN_URL,
+    build_oauth_authorize_url,
+    exchange_oauth_code,
+)
 
 __all__ = [
+    "OAUTH_AUTHORIZE_URL",
+    "OAUTH_SCOPE",
+    "OAUTH_TOKEN_URL",
     "AirPurifierMode",
     "AirQualityLevel",
     "BulbColorMode",
@@ -96,7 +111,9 @@ __all__ = [
     "HumidifierMode",
     "HumidifierWaterLevel",
     "LockStatus",
+    "MeterProWeatherIcon",
     "NightLightState",
+    "QuickKeyFunction",
     "SmartThermostatRadiatorMode",
     "StandingFanMode",
     "StripLightColorMode",
@@ -106,6 +123,7 @@ __all__ = [
     "SwitchbotAirPurifier",
     "SwitchbotApiError",
     "SwitchbotArtFrame",
+    "SwitchbotArtFrame2",
     "SwitchbotAuthenticationError",
     "SwitchbotBaseLight",
     "SwitchbotBlindTilt",
@@ -115,6 +133,7 @@ __all__ = [
     "SwitchbotCirculatorFanPro",
     "SwitchbotCurtain",
     "SwitchbotDevice",
+    "SwitchbotEInkPhotoMagnet",
     "SwitchbotEncryptedDevice",
     "SwitchbotEvaporativeHumidifier",
     "SwitchbotFan",
@@ -123,10 +142,12 @@ __all__ = [
     "SwitchbotKeypadVision",
     "SwitchbotLightStrip",
     "SwitchbotLock",
+    "SwitchbotLockUltra",
     "SwitchbotMeterPro",
     "SwitchbotMeterProCO2",
     "SwitchbotModel",
     "SwitchbotOperationError",
+    "SwitchbotOutdoorPlug",
     "SwitchbotPermanentOutdoorLight",
     "SwitchbotPlugMini",
     "SwitchbotRelaySwitch",
@@ -142,9 +163,12 @@ __all__ = [
     "SwitchbotUniversalRemote",
     "SwitchbotVacuum",
     "VerticalOscillationAngle",
+    "build_oauth_authorize_url",
     "close_stale_connections",
     "close_stale_connections_by_address",
+    "exchange_oauth_code",
     "fetch_cloud_devices",
+    "fetch_cloud_devices_by_token",
     "get_device",
     "parse_advertisement_data",
 ]

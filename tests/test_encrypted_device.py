@@ -10,7 +10,11 @@ import pytest
 from bleak.exc import BleakDBusError
 
 from switchbot import SwitchbotModel
-from switchbot.devices.device import AESMode, SwitchbotEncryptedDevice
+from switchbot.devices.device import (
+    AESMode,
+    SwitchbotEncryptedDevice,
+    SwitchbotOperationError,
+)
 
 from .test_adv_parser import generate_ble_device
 
@@ -591,3 +595,125 @@ async def test_decrypt_with_none_iv_during_disconnect() -> None:
     device._expected_disconnect = False
     with pytest.raises(RuntimeError, match="Cannot decrypt: IV is None"):
         device._decrypt(bytearray(b"encrypted_data"))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("info", "error", "expected"),
+    [
+        ({"ok": True}, None, True),
+        (None, None, False),
+        (None, SwitchbotOperationError("Verification failed"), False),
+        (None, RuntimeError("Unexpected failure"), None),
+    ],
+)
+async def test_verify_encryption_key_disconnects(
+    info: dict | None, error: Exception | None, expected: bool | None
+) -> None:
+    """Verification releases its temporary client and disconnect timer."""
+    instances: list[MockEncryptedDevice] = []
+    client = AsyncMock()
+    timer = None
+
+    async def get_basic_info(device: MockEncryptedDevice) -> dict | None:
+        nonlocal timer
+        instances.append(device)
+        device._client = client
+        device._reset_disconnect_timer()
+        timer = device._disconnect_timer
+        if error is not None:
+            raise error
+        return info
+
+    with (
+        patch.object(
+            MockEncryptedDevice,
+            "get_basic_info",
+            autospec=True,
+            side_effect=get_basic_info,
+        ),
+    ):
+        verification = MockEncryptedDevice.verify_encryption_key(
+            generate_ble_device("aa:bb:cc:dd:ee:ff", "Test Device"),
+            "01",
+            "0123456789abcdef0123456789abcdef",
+            model=SwitchbotModel.LOCK,
+        )
+        if isinstance(error, RuntimeError):
+            with pytest.raises(RuntimeError, match="Unexpected failure"):
+                await verification
+        else:
+            assert await verification is expected
+
+    (device,) = instances
+    client.disconnect.assert_awaited_once_with()
+    assert device._client is None
+    assert device._disconnect_timer is None
+    assert timer is not None
+    assert timer.cancelled()
+
+
+@pytest.mark.asyncio
+async def test_verify_encryption_key_cancellation_disconnects() -> None:
+    """Cancelling verification waits for its temporary client to disconnect."""
+    instances: list[MockEncryptedDevice] = []
+    client = AsyncMock()
+    query_started = asyncio.Event()
+    disconnect_started = asyncio.Event()
+    allow_disconnect = asyncio.Event()
+
+    async def get_basic_info(device: MockEncryptedDevice) -> None:
+        instances.append(device)
+        device._client = client
+        device._reset_disconnect_timer()
+        query_started.set()
+        await asyncio.Future()
+
+    async def disconnect() -> None:
+        disconnect_started.set()
+        await allow_disconnect.wait()
+
+    client.disconnect.side_effect = disconnect
+    with (
+        patch.object(
+            MockEncryptedDevice,
+            "get_basic_info",
+            autospec=True,
+            side_effect=get_basic_info,
+        ),
+    ):
+        task = asyncio.create_task(
+            MockEncryptedDevice.verify_encryption_key(
+                generate_ble_device("aa:bb:cc:dd:ee:ff", "Test Device"),
+                "01",
+                "0123456789abcdef0123456789abcdef",
+                model=SwitchbotModel.LOCK,
+            )
+        )
+        await asyncio.wait_for(query_started.wait(), timeout=1)
+        task.cancel()
+        await asyncio.wait_for(disconnect_started.wait(), timeout=1)
+        assert not task.done()
+        allow_disconnect.set()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    (device,) = instances
+    client.disconnect.assert_awaited_once_with()
+    assert device._client is None
+    assert device._disconnect_timer is None
+
+
+@pytest.mark.asyncio
+async def test_verify_encryption_key_invalid_credentials_do_not_disconnect() -> None:
+    """Invalid constructor arguments do not attempt connection cleanup."""
+    with patch.object(
+        MockEncryptedDevice, "_execute_forced_disconnect", new_callable=AsyncMock
+    ) as disconnect:
+        assert not await MockEncryptedDevice.verify_encryption_key(
+            generate_ble_device("aa:bb:cc:dd:ee:ff", "Test Device"),
+            "",
+            "0123456789abcdef0123456789abcdef",
+            model=SwitchbotModel.LOCK,
+        )
+    disconnect.assert_not_awaited()

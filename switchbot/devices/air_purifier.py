@@ -33,6 +33,8 @@ DEVICE_GET_BASIC_SETTINGS_KEY = "570f4d81"
 COMMAND_SET_PERCENTAGE = f"{COMMAND_HEAD}02{{percentage:02x}}"
 READ_LED_SETTINGS_COMMAND = "570f4d05"
 READ_LED_STATUS_COMMAND = "570f4d07"
+RESET_FILTER_USAGE_COMMAND = f"{COMMAND_HEAD}09"
+READ_FILTER_USAGE_COMMAND = "570f4d09"
 
 
 class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice):
@@ -146,6 +148,31 @@ class SwitchbotAirPurifier(SwitchbotSequenceBaseLight, SwitchbotEncryptedDevice)
         if self._model in self._PM25_MODELS:
             return data | {"pm25": pm25}
         return data
+
+    async def reset_filter_usage(self) -> bool:
+        """Reset filter usage, returning True only after a verified zero readback."""
+        result = await self._send_command(RESET_FILTER_USAGE_COMMAND, retry=0)
+        if not self._check_command_result(result, 0, {1}):
+            raise SwitchbotOperationError("Filter usage reset was rejected")
+
+        result = await self._send_command(READ_FILTER_USAGE_COMMAND)
+        if not result or len(result) < 3:
+            raise SwitchbotOperationError(
+                "Reset was sent, but filter usage could not be verified. "
+                "Check the device before retrying"
+            )
+        if not self._check_command_result(result, 0, {1}):
+            raise SwitchbotOperationError("Filter usage read was rejected")
+        used_hours = _UNPACK_UINT16_BE(result, 1)[0]
+        if used_hours != 0:
+            raise SwitchbotOperationError(
+                f"Reset was sent, but the device still reports {used_hours} used hours. "
+                "Check the device before retrying"
+            )
+
+        self._update_parsed_data({"filter element working time": used_hours})
+        self._fire_callbacks()
+        return True
 
     @update_after_operation
     async def set_preset_mode(self, preset_mode: str) -> bool:

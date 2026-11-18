@@ -68,20 +68,63 @@ def parse_common_data(mfr_data: bytes | None) -> dict[str, bool | int]:
     }
 
 
-def process_wolock_pro(
-    data: bytes | None, mfr_data: bytes | None
-) -> dict[str, bool | int]:
-    """Support for lock pro process data."""
+def _parse_lock_pro_common(mfr_data: bytes | None) -> dict[str, bool | int]:
     common_data = parse_common_data(mfr_data)
     if not common_data:
         return {}
 
-    lock_pro_data = {
+    return common_data | {
         "low_temperature_alarm": bool(mfr_data[11] & 0b00100000),
-        "left_battery_compartment_alarm": mfr_data[11] & 0b000000100,
-        "right_battery_compartment_alarm": mfr_data[11] & 0b000000010,
+        "left_battery_compartment_alarm": bool(mfr_data[11] & 0b00000100),
+        "right_battery_compartment_alarm": bool(mfr_data[11] & 0b00000010),
     }
-    return common_data | lock_pro_data
+
+
+def process_wolock_pro(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int]:
+    """Support for lock pro process data."""
+    common_data = _parse_lock_pro_common(mfr_data)
+    if not common_data:
+        return {}
+
+    return common_data | {
+        "battery_charging": bool(mfr_data[9] & 0b10000000),
+        "power_alarm": bool(mfr_data[11] & 0b00010000),
+        "door_magnet_alarm": bool(mfr_data[11] & 0b00001000),
+    }
+
+
+def process_wolock_pro_wifi(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int]:
+    """Support for lock pro wifi process data."""
+    return _parse_lock_pro_common(mfr_data)
+
+
+def process_lock_nano(
+    data: bytes | None, mfr_data: bytes | None
+) -> dict[str, bool | int]:
+    """Parse Lock Nano advertisements."""
+    if mfr_data is None or len(mfr_data) < 11:
+        return {}
+
+    charging_status = ((mfr_data[8] & 1) << 1) | (mfr_data[9] >> 7)
+    return {
+        "sequence_number": mfr_data[6],
+        "calibration": bool(mfr_data[7] & 0x80),
+        "status": LockStatus((mfr_data[7] & 0x78) >> 3),
+        "auto_lock_paused": bool(mfr_data[8] & 0x08),
+        "night_latch": bool(mfr_data[8] & 0x02),
+        "battery": mfr_data[9] & 0x7F,
+        "charging_status": charging_status,
+        "battery_charging": charging_status == 1,
+        "unlocked_alarm": bool(mfr_data[10] & 0x40),
+        "low_temperature_alarm": bool(mfr_data[10] & 0x20),
+        "power_alarm": bool(mfr_data[10] & 0x10),
+        "battery_status": (mfr_data[10] >> 1) & 0x03,
+        "charging_fault": bool(mfr_data[10] & 0x01),
+    }
 
 
 def process_lock2(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool | int]:

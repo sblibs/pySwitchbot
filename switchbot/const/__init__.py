@@ -26,7 +26,8 @@ from .light import (
 )
 
 # Preserve old LockStatus export for backwards compatibility
-from .lock import LockStatus
+from .lock import LockStatus, QuickKeyFunction
+from .meter_pro import MeterProWeatherIcon
 
 DEFAULT_RETRY_COUNT = 3
 DEFAULT_RETRY_TIMEOUT = 1
@@ -63,17 +64,27 @@ class SwitchbotAccountConnectionError(RuntimeError):
 class SwitchbotModel(StrEnum):
     BOT = "WoHand"
     CURTAIN = "WoCurtain"
+    CURTAIN_3 = "WoCurtain3"
     HUMIDIFIER = "WoHumi"
+    # Deprecated import-only symbol; use PLUG_MINI_US or PLUG_MINI_JP to parse.
     PLUG_MINI = "WoPlug"
+    PLUG_MINI_US = "WoPlugUS"
+    PLUG_MINI_JP = "WoPlugJP"
     CONTACT_SENSOR = "WoContact"
     LIGHT_STRIP = "WoStrip"
     METER = "WoSensorTH"
+    METER_PLUS = "WoMeterPlus"
     METER_PRO = "WoTHP"
+    METER_PRO_CO2 = "WoTHPc"
+    # Deprecated alias; use METER_PRO_CO2.
     METER_PRO_C = "WoTHPc"
+    INDOOR_OUTDOOR_THERMO_HYGROMETER = "WoIOSensorTH"
+    # Deprecated alias; use INDOOR_OUTDOOR_THERMO_HYGROMETER.
     IO_METER = "WoIOSensorTH"
     MOTION_SENSOR = "WoPresence"
     COLOR_BULB = "WoBulb"
     CEILING_LIGHT = "WoCeiling"
+    CEILING_LIGHT_PRO = "WoCeilingPro"
     LOCK = "WoLock"
     LOCK_PRO = "WoLockPro"
     BLIND_TILT = "WoBlindTilt"
@@ -86,6 +97,7 @@ class SwitchbotModel(StrEnum):
     UNIVERSAL_REMOTE = "WoUniversalRemote"
     EVAPORATIVE_HUMIDIFIER = "Evaporative Humidifier"
     ROLLER_SHADE = "Roller Shade"
+    HUB_MINI = "WoLinkMini"
     HUBMINI_MATTER = "HubMini Matter"
     CIRCULATOR_FAN = "Circulator Fan"
     CIRCULATOR_FAN_PRO = "Circulator Fan Pro"
@@ -100,6 +112,7 @@ class SwitchbotModel(StrEnum):
     AIR_PURIFIER_TABLE_US = "Air Purifier Table US"
     AIR_PURIFIER_TABLE_JP = "Air Purifier Table JP"
     HUB3 = "Hub3"
+    HUB4 = "Hub4"
     LOCK_ULTRA = "Lock Ultra"
     LOCK_LITE = "Lock Lite"
     GARAGE_DOOR_OPENER = "Garage Door Opener"
@@ -108,6 +121,8 @@ class SwitchbotModel(StrEnum):
     FLOOR_LAMP = "Floor Lamp"
     CANDLE_WARMER_LAMP = "Candle Warmer Lamp"
     PLUG_MINI_EU = "Plug Mini (EU)"
+    PLUG_MINI_IT = "Plug Mini (IT)"
+    OUTDOOR_PLUG_EU = "Outdoor Plug (EU)"
     RGBICWW_STRIP_LIGHT = "RGBICWW Strip Light"
     RGBICWW_FLOOR_LAMP = "RGBICWW Floor Lamp"
     RGBICWW_LIGHT_BARS = "RGBICWW Light Bars"
@@ -121,11 +136,16 @@ class SwitchbotModel(StrEnum):
     S20_VACUUM = "S20 Vacuum"
     PRESENCE_SENSOR = "Presence Sensor"
     ART_FRAME = "Art Frame"
+    ART_FRAME_2 = "Art Frame 2"
+    E_INK_PHOTO_MAGNET = "E Ink Photo Magnet"
     KEYPAD_VISION = "Keypad Vision"
     KEYPAD_VISION_PRO = "Keypad Vision Pro"
     LOCK_VISION_PRO = "Lock Vision Pro"
     LOCK_VISION = "Lock Vision"
     LOCK_PRO_WIFI = "Lock Pro Wifi"
+    LOCK_ULTRA_MAX = "Lock Ultra Max"
+    UWB_LOCK = "UWB Lock"
+    LOCK_NANO = "Lock Nano"
     WEATHER_STATION = "Weather Station"
 
 
@@ -147,7 +167,9 @@ __all__ = [
     "HumidifierMode",
     "HumidifierWaterLevel",
     "LockStatus",
+    "MeterProWeatherIcon",
     "NightLightState",
+    "QuickKeyFunction",
     "SmartThermostatRadiatorMode",
     "StandingFanMode",
     "StripLightColorMode",
