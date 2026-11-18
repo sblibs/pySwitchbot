@@ -843,13 +843,13 @@ SUPPORTED_TYPES: dict[str | bytes, SwitchbotSupportedType] = {
     },
     b"\x00\x12\x95\xd0": {
         "modelName": SwitchbotModel.AI_MEMORY_FRAME,
-        "modelFriendlyName": "AI Memory Frame",
+        "modelFriendlyName": "E Ink Photo Magnet",
         "func": process_image_frame,
         "manufacturer_id": 2409,
     },
     b"\x01\x12\x95\xd0": {
         "modelName": SwitchbotModel.AI_MEMORY_FRAME,
-        "modelFriendlyName": "AI Memory Frame",
+        "modelFriendlyName": "E Ink Photo Magnet",
         "func": process_image_frame,
         "manufacturer_id": 2409,
     },

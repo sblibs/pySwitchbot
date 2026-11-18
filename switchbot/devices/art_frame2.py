@@ -1,4 +1,4 @@
-"""Device handlers for Art Frame 2 and AI Memory Frame."""
+"""Device handlers for Art Frame 2 and E Ink Photo Magnet."""
 
 import secrets
 from typing import Any
