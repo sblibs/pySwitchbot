@@ -37,7 +37,7 @@ from .const import (
 )
 from .devices.air_purifier import SwitchbotAirPurifier
 from .devices.art_frame import SwitchbotArtFrame
-from .devices.art_frame2 import SwitchbotArtFrame2
+from .devices.art_frame2 import SwitchbotArtFrame2, SwitchbotEInkPhotoMagnet
 from .devices.base_light import SwitchbotBaseLight
 from .devices.blind_tilt import SwitchbotBlindTilt
 from .devices.bot import Switchbot
@@ -51,7 +51,6 @@ from .devices.device import (
     fetch_cloud_devices,
     fetch_cloud_devices_by_token,
 )
-from .devices.e_ink_photo_magnet import SwitchbotEInkPhotoMagnet
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
 from .devices.fan import (
     SwitchbotCirculatorFanPro,

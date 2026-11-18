@@ -3,6 +3,7 @@
 import secrets
 from typing import Any
 
+from ..const import SwitchbotModel
 from .device import (
     SwitchbotEncryptedDevice,
     SwitchbotOperationError,
@@ -100,3 +101,9 @@ class SwitchbotArtFrame2(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if index < 0 or index >= len(indexes):
             raise ValueError(f"Image index {index} is out of range.")
         return await self._set_image_id(indexes[index])
+
+
+class SwitchbotEInkPhotoMagnet(SwitchbotArtFrame2):
+    """Represent an E Ink Photo Magnet."""
+
+    _model = SwitchbotModel.E_INK_PHOTO_MAGNET
