@@ -1,7 +1,13 @@
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
-from ..const.meter_pro import MeterProWeatherIcon
+from ..const.meter_pro import (
+    MeterProDateFormat,
+    MeterProDisplaySource,
+    MeterProDisplayZone,
+    MeterProWeatherIcon,
+    MeterProZoneIcon,
+)
 from ..helpers import parse_uint24_be
 from .device import SwitchbotDevice, SwitchbotOperationError
 
@@ -12,6 +18,27 @@ MAX_TIME_OFFSET = (1 << 24) - 1
 COMMAND_GET_DEVICE_DATETIME = "570f6901"
 COMMAND_SET_DEVICE_DATETIME = "57000503"
 COMMAND_SET_DISPLAY_FORMAT = "570f680505"
+
+COMMAND_GET_CALIBRATION = "570f6903"
+COMMAND_SET_CALIBRATION = "570f6803"
+COMMAND_GET_DISPLAY_SETTINGS = "570f690701"
+COMMAND_SET_DISPLAY_ZONE = "570f680701"
+COMMAND_SET_ZONE_ICONS = "570f68070103"
+COMMAND_SET_DATA_UPDATE_INTERVAL = "570f68070105"
+COMMAND_GET_BUTTON_FUNCTIONS = "570f690704"
+COMMAND_SET_BUTTON_FUNCTIONS = "570f68070106"
+COMMAND_SET_DATE_FORMAT = "570f68070107"
+COMMAND_SET_BATTERY_ICON = "570f68070108"
+COMMAND_SET_TEMPERATURE_UNIT = "570f68070109"
+
+MAX_HUMIDITY_CALIBRATION = 99
+MAX_DATA_UPDATE_INTERVAL = 0xFFFF
+NO_MAC = "000000000000"
+# "Keep current value" differs between the single-zone and two-icon commands.
+KEEP_ZONE_ICON = 0xFF
+KEEP_ICON = 0x0F
+KEEP_BUTTON_FUNCTION = 0xFF
+SOURCES_WITHOUT_MAC = {MeterProDisplaySource.NONE, MeterProDisplaySource.NETWORK}
 COMMAND_GET_WEATHER = "570f6906"
 COMMAND_SET_WEATHER = "570f680601"
 
@@ -59,6 +86,23 @@ def _encode_weather_icon(icon: MeterProWeatherIcon | int) -> MeterProWeatherIcon
     if isinstance(icon, bool) or not isinstance(icon, int):
         raise TypeError("Weather icon must be a MeterProWeatherIcon or integer")
     return MeterProWeatherIcon(icon)
+
+
+def _mac_hex(mac: str | None) -> str:
+    """Return a MAC address as 12 hex digits, all zeros when empty."""
+    if not mac:
+        return NO_MAC
+    cleaned = mac.replace(":", "").replace("-", "").lower()
+    if len(cleaned) != 12 or any(c not in "0123456789abcdef" for c in cleaned):
+        raise ValueError(f"Invalid MAC address {mac!r}")
+    return cleaned
+
+
+def _format_mac(raw: bytes) -> str | None:
+    """Return "AA:BB:CC:DD:EE:FF", or None for an empty MAC."""
+    if not any(raw):
+        return None
+    return ":".join(f"{b:02X}" for b in raw)
 
 
 class SwitchbotMeterPro(SwitchbotDevice):
@@ -205,6 +249,179 @@ class SwitchbotMeterPro(SwitchbotDevice):
         payload = f"{COMMAND_SET_DISPLAY_FORMAT}{mode_byte}"
         result = await self._send_command(payload)
         self._validate_result("set_time_display_format", result)
+
+    async def get_calibration(self) -> dict[str, Any]:
+        """Get the temperature (C) and humidity (%RH) corrections."""
+        # [status][temp sign|int][hum sign|value][temp tenths]; sign bit = positive
+        result = await self._send_command(COMMAND_GET_CALIBRATION)
+        result = self._validate_result("get_calibration", result, min_length=4)
+        temperature = round((result[1] & 0x7F) + (result[3] & 0x0F) / 10, 1)
+        humidity = result[2] & 0x7F
+        # A zero correction comes back with the sign bit cleared.
+        return {
+            "temperature": temperature if result[1] & 0x80 else -temperature or 0.0,
+            "humidity": humidity if result[2] & 0x80 else -humidity,
+        }
+
+    async def set_calibration(
+        self, temperature: float | Decimal, humidity: int
+    ) -> None:
+        """Set the temperature (C, rounded half-up to tenths) and humidity corrections."""
+        try:
+            decimal, temperature_byte = _encode_weather_temperature(temperature)
+        except (TypeError, ValueError) as exc:
+            raise SwitchbotOperationError(f"{self.name}: {exc}") from exc
+        if abs(humidity) > MAX_HUMIDITY_CALIBRATION:
+            raise SwitchbotOperationError(
+                f"{self.name}: Humidity calibration must be within "
+                f"±{MAX_HUMIDITY_CALIBRATION}, got {humidity}"
+            )
+        humidity_byte = abs(humidity) | (0x80 if humidity >= 0 else 0)
+        payload = (
+            f"{COMMAND_SET_CALIBRATION}{temperature_byte:02x}"
+            f"{humidity_byte:02x}{decimal:02x}"
+        )
+        result = await self._send_command(payload)
+        self._validate_result("set_calibration", result)
+
+    async def get_display_settings(self) -> dict[str, Any]:
+        """
+        Get the zones, data update interval, date format and battery icon.
+
+        Fields that older firmware does not report are None. Each zone has
+        "icon", "source" (the raw int if unknown) and "source_mac" (None when
+        the zone shows this device or network data).
+        """
+        # [status][icons mid|bot][sources mid|bot][mac mid x6][mac bot x6]
+        # [data update interval u16][date format][reserved][battery icon]
+        result = await self._send_command(COMMAND_GET_DISPLAY_SETTINGS)
+        result = self._validate_result("get_display_settings", result, min_length=15)
+
+        def zone(icon: int, source: int, mac: bytes) -> dict[str, Any]:
+            return {
+                "icon": next((i for i in MeterProZoneIcon if i.value == icon), None),
+                "source": next(
+                    (s for s in MeterProDisplaySource if s.value == source), source
+                ),
+                "source_mac": _format_mac(mac),
+            }
+
+        return {
+            "middle": zone(result[1] >> 4, result[2] >> 4, result[3:9]),
+            "bottom": zone(result[1] & 0x0F, result[2] & 0x0F, result[9:15]),
+            "data_update_interval": (
+                int.from_bytes(result[15:17], "big") if len(result) >= 17 else None
+            ),
+            "date_format": (
+                MeterProDateFormat(result[17] & 0x01) if len(result) >= 18 else None
+            ),
+            "battery_icon_always": (
+                bool(result[19] & 0x01) if len(result) >= 20 else None
+            ),
+        }
+
+    async def set_display_zone(
+        self,
+        zone: MeterProDisplayZone,
+        source: MeterProDisplaySource,
+        source_mac: str | None = None,
+        icon: MeterProZoneIcon | None = None,
+    ) -> None:
+        """
+        Choose what a screen zone shows; icon None keeps the current icon.
+
+        The device reads the source thermometer over BLE itself. NETWORK shows
+        the values written by set_weather. METER_PRO without a MAC is this
+        device. The screen applies it at the next data update.
+        """
+        try:
+            mac = _mac_hex(source_mac)
+        except ValueError as err:
+            raise SwitchbotOperationError(f"{self.name}: {err}") from err
+        if mac != NO_MAC and source in SOURCES_WITHOUT_MAC:
+            raise SwitchbotOperationError(
+                f"{self.name}: {source.name} display source takes no MAC address"
+            )
+        if mac == NO_MAC and source not in (
+            *SOURCES_WITHOUT_MAC,
+            MeterProDisplaySource.METER_PRO,
+        ):
+            raise SwitchbotOperationError(
+                f"{self.name}: {source.name} display source needs a MAC address"
+            )
+        icon_byte = KEEP_ZONE_ICON if icon is None else icon.value
+        payload = (
+            f"{COMMAND_SET_DISPLAY_ZONE}{zone.value:02x}{icon_byte:02x}"
+            f"{source.value:02x}{mac}"
+        )
+        result = await self._send_command(payload)
+        self._validate_result("set_display_zone", result)
+
+    async def set_zone_icons(
+        self,
+        middle: MeterProZoneIcon | None = None,
+        bottom: MeterProZoneIcon | None = None,
+    ) -> None:
+        """Set the indoor/outdoor icons of both zones; None keeps an icon."""
+        middle_byte = KEEP_ICON if middle is None else middle.value
+        bottom_byte = KEEP_ICON if bottom is None else bottom.value
+        payload = f"{COMMAND_SET_ZONE_ICONS}{middle_byte:02x}{bottom_byte:02x}"
+        result = await self._send_command(payload)
+        self._validate_result("set_zone_icons", result)
+
+    async def set_data_update_interval(self, seconds: int) -> None:
+        """Set the temperature and humidity update interval; the app offers 300, 600 and 1800 s."""
+        if not 1 <= seconds <= MAX_DATA_UPDATE_INTERVAL:
+            raise SwitchbotOperationError(
+                f"{self.name}: Data update interval must be 1..{MAX_DATA_UPDATE_INTERVAL} s, "
+                f"got {seconds}"
+            )
+        payload = f"{COMMAND_SET_DATA_UPDATE_INTERVAL}{seconds:04x}"
+        result = await self._send_command(payload)
+        self._validate_result("set_data_update_interval", result)
+
+    async def set_date_format(self, date_format: MeterProDateFormat) -> None:
+        """Set the date format; the app offers it from firmware 1.5."""
+        payload = f"{COMMAND_SET_DATE_FORMAT}{date_format.value:02x}"
+        result = await self._send_command(payload)
+        self._validate_result("set_date_format", result)
+
+    async def set_battery_icon(self, always: bool) -> None:
+        """Show the battery icon always, or only when the battery is low."""
+        payload = f"{COMMAND_SET_BATTERY_ICON}{'01' if always else '00'}"
+        result = await self._send_command(payload)
+        self._validate_result("set_battery_icon", result)
+
+    async def set_temperature_unit(self, fahrenheit: bool) -> None:
+        """Set the default temperature unit shown on the screen (F or C)."""
+        payload = f"{COMMAND_SET_TEMPERATURE_UNIT}{'01' if fahrenheit else '00'}"
+        result = await self._send_command(payload)
+        self._validate_result("set_temperature_unit", result)
+
+    async def get_button_functions(self) -> dict[str, bool]:
+        """Get whether the button may switch the unit and cycle the source."""
+        # [status][unit: 00 enabled][source: 01 enabled]
+        result = await self._send_command(COMMAND_GET_BUTTON_FUNCTIONS)
+        result = self._validate_result("get_button_functions", result, min_length=3)
+        return {"unit_switch": result[1] == 0x00, "source_switch": result[2] == 0x01}
+
+    async def set_button_functions(
+        self, unit_switch: bool | None = None, source_switch: bool | None = None
+    ) -> None:
+        """Allow or forbid the button actions; None keeps one as is."""
+        unit_byte = (
+            KEEP_BUTTON_FUNCTION
+            if unit_switch is None
+            else (0x00 if unit_switch else 0x01)
+        )
+        source_byte = (
+            KEEP_BUTTON_FUNCTION
+            if source_switch is None
+            else (0x01 if source_switch else 0x00)
+        )
+        payload = f"{COMMAND_SET_BUTTON_FUNCTIONS}{unit_byte:02x}{source_byte:02x}"
+        result = await self._send_command(payload)
+        self._validate_result("set_button_functions", result)
 
     def _validate_result(
         self, op_name: str, result: bytes | None, min_length: int | None = None
