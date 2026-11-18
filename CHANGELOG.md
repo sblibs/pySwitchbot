@@ -2,6 +2,36 @@
 
 <!-- version list -->
 
+## v3.12.0 (2026-11-18)
+
+### Bug Fixes
+
+- Clarify Meter Pro CO2 weather readings and diagnostics
+  ([#581](https://github.com/sblibs/pySwitchbot/pull/581),
+  [`21ae755`](https://github.com/sblibs/pySwitchbot/commit/21ae755f5364384a8bb1179526487c930ad36b68))
+
+- Refine Meter Pro CO2 weather update handling
+  ([#581](https://github.com/sblibs/pySwitchbot/pull/581),
+  [`21ae755`](https://github.com/sblibs/pySwitchbot/commit/21ae755f5364384a8bb1179526487c930ad36b68))
+
+- **meter-pro**: Align weather icon names with the protocol
+  ([#581](https://github.com/sblibs/pySwitchbot/pull/581),
+  [`21ae755`](https://github.com/sblibs/pySwitchbot/commit/21ae755f5364384a8bb1179526487c930ad36b68))
+
+### Features
+
+- Add Meter Pro CO2 weather display support ([#581](https://github.com/sblibs/pySwitchbot/pull/581),
+  [`21ae755`](https://github.com/sblibs/pySwitchbot/commit/21ae755f5364384a8bb1179526487c930ad36b68))
+
+- Add weather display support for Meter Pro and Meter Pro CO2
+  ([#581](https://github.com/sblibs/pySwitchbot/pull/581),
+  [`21ae755`](https://github.com/sblibs/pySwitchbot/commit/21ae755f5364384a8bb1179526487c930ad36b68))
+
+- **meter-pro**: Share weather controls across Meter Pro models
+  ([#581](https://github.com/sblibs/pySwitchbot/pull/581),
+  [`21ae755`](https://github.com/sblibs/pySwitchbot/commit/21ae755f5364384a8bb1179526487c930ad36b68))
+
+
 ## v3.11.0 (2026-11-18)
 
 ### Features
