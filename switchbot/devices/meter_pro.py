@@ -5,16 +5,7 @@ from ..const.meter_pro import MeterProWeatherIcon
 from ..helpers import parse_uint24_be
 from .device import SwitchbotDevice, SwitchbotOperationError
 
-SETTINGS_HEADER = "570f68"
-
-# Co2
-COMMAND_FORCE_NEW_CO2_MEASUREMENT = f"{SETTINGS_HEADER}0b04"
-COMMAND_CALIBRATE_CO2_SENSOR = f"{SETTINGS_HEADER}0b02"
-COMMAND_CO2_THRESHOLDS = f"{SETTINGS_HEADER}020302"
-COMMAND_CO2_UPDATE_INTERVAL = f"{SETTINGS_HEADER}0b06"
-
-# Time
-COMMAND_SET_TIME_OFFSET = f"{SETTINGS_HEADER}0506"
+COMMAND_SET_TIME_OFFSET = "570f680506"
 COMMAND_GET_TIME_OFFSET = "570f690506"
 MAX_TIME_OFFSET = (1 << 24) - 1
 
@@ -23,6 +14,11 @@ COMMAND_SET_DEVICE_DATETIME = "57000503"
 COMMAND_SET_DISPLAY_FORMAT = "570f680505"
 COMMAND_GET_WEATHER = "570f6906"
 COMMAND_SET_WEATHER = "570f680601"
+
+COMMAND_TRIGGER_CO2_SAMPLING = "570f680b04"
+COMMAND_START_CO2_CALIBRATION = "570f680b02"
+COMMAND_CO2_UPDATE_INTERVAL = "570f680b06"
+COMMAND_CO2_THRESHOLDS = "570f68020302"
 
 
 def _weather_decimal(value: float | Decimal, name: str) -> Decimal:
@@ -321,20 +317,20 @@ class SwitchbotMeterPro(SwitchbotDevice):
 class SwitchbotMeterProCO2(SwitchbotMeterPro):
     """Control the CO2 variant of the SwitchBot Meter Pro."""
 
-    async def force_new_co2_measurement(self) -> None:
-        """Requests a new CO2 measurement, regardless of update interval"""
-        result = await self._send_command(COMMAND_FORCE_NEW_CO2_MEASUREMENT)
-        self._validate_result("force_new_co2_measurement", result)
+    async def trigger_co2_sampling(self) -> None:
+        """Request a CO2 sample and wait for the device to acknowledge the request."""
+        result = await self._send_command(COMMAND_TRIGGER_CO2_SAMPLING, retry=0)
+        self._validate_result("trigger_co2_sampling", result)
 
-    async def calibrate_co2_sensor(self) -> None:
+    async def start_co2_calibration(self) -> None:
         """
-        Calibrate CO2-Sensor.
-        Place your device in a well-ventilated area for 1 minute before calling this.
-        After calling this the calibration runs for about 5 minutes.
-        Keep the device still during this process.
+        Start manual calibration and wait for acknowledgement.
+
+        Place the meter outdoors in a well-ventilated area for one minute first.
+        Keep it still during the five-minute calibration.
         """
-        result = await self._send_command(COMMAND_CALIBRATE_CO2_SENSOR)
-        self._validate_result("calibrate_co2_sensor", result)
+        result = await self._send_command(COMMAND_START_CO2_CALIBRATION, retry=0)
+        self._validate_result("start_co2_calibration", result)
 
     async def set_co2_update_interval(self, seconds: int) -> None:
         """

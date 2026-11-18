@@ -272,21 +272,23 @@ async def test_meter_pro_shares_datetime_protocol_with_co2_variant():
 
 
 @pytest.mark.asyncio
-async def test_force_new_co2_measurement():
+async def test_trigger_co2_sampling():
     device = create_device()
-    device._send_command.return_value = bytes.fromhex("01")
+    device._send_command.return_value = b"\x01"
 
-    await device.force_new_co2_measurement()
-    device._send_command.assert_called_with("570f680b04")
+    await device.trigger_co2_sampling()
+
+    device._send_command.assert_awaited_once_with("570f680b04", retry=0)
 
 
 @pytest.mark.asyncio
-async def test_calibrate_co2_sensor():
+async def test_start_co2_calibration():
     device = create_device()
-    device._send_command.return_value = bytes.fromhex("01")
+    device._send_command.return_value = b"\x01"
 
-    await device.calibrate_co2_sensor()
-    device._send_command.assert_called_with("570f680b02")
+    await device.start_co2_calibration()
+
+    device._send_command.assert_awaited_once_with("570f680b02", retry=0)
 
 
 @pytest.mark.asyncio
@@ -336,3 +338,25 @@ async def test_set_co2_thresholds_throws_on_invalid_input(
         match=expected_error,
     ):
         await device.set_co2_thresholds(lower=lower, upper=upper)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "args"),
+    [
+        ("trigger_co2_sampling", ()),
+        ("start_co2_calibration", ()),
+    ],
+)
+@pytest.mark.parametrize(
+    ("response", "response_hex"),
+    [(None, "None"), (b"\x02", "02"), (b"\x03", "03"), (b"\x05", "05")],
+)
+async def test_co2_rejects_unsuccessful_responses(
+    method: str, args: tuple[int, ...], response: bytes | None, response_hex: str
+):
+    device = create_device()
+    device._send_command.return_value = response
+
+    with pytest.raises(SwitchbotOperationError, match=f"result={response_hex}"):
+        await getattr(device, method)(*args)
