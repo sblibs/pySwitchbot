@@ -2,6 +2,7 @@
 
 import logging
 import re
+import time
 from typing import Any
 
 from bleak.backends.device import BLEDevice
@@ -11,6 +12,14 @@ from .device import SwitchbotEncryptedDevice, SwitchbotSequenceDevice
 
 PASSWORD_RE = re.compile(r"^\d{6,12}$")
 COMMAND_GET_PASSWORD_COUNT = "570F530100"
+BASIC_INFO_MIN_LENGTH = 15
+PASSWORD_COUNT_MIN_LENGTH = {
+    SwitchbotModel.KEYPAD_VISION: 6,
+    SwitchbotModel.KEYPAD_VISION_PRO: 8,
+}
+# A failed update makes the keypad advertise a new sequence number, which
+# triggers the next update, so retries are spaced out.
+UPDATE_RETRY_INTERVAL = 300.0
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,6 +37,7 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     ) -> None:
         """Initialize Keypad Vision (Pro) device."""
         super().__init__(device, key_id, encryption_key, model=model, **kwargs)
+        self._update_retry_at = 0.0
 
     @classmethod
     async def verify_encryption_key(
@@ -42,11 +52,32 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             device, key_id, encryption_key, model, **kwargs
         )
 
+    async def update(self, interface: int | None = None) -> None:
+        """Update the device, waiting before retrying after a failed update."""
+        if time.monotonic() < self._update_retry_at:
+            _LOGGER.debug("%s: skipping update, last attempt failed", self.name)
+            return
+        last_full_update = self._last_full_update
+        try:
+            await super().update(interface)
+        except Exception:
+            self._update_retry_at = time.monotonic() + UPDATE_RETRY_INTERVAL
+            raise
+        if self._last_full_update == last_full_update:
+            self._update_retry_at = time.monotonic() + UPDATE_RETRY_INTERVAL
+
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
         if not (_data := await self._get_basic_info()):
             return None
         _LOGGER.debug("Raw model %s basic info data: %s", self._model, _data.hex())
+        if len(_data) < BASIC_INFO_MIN_LENGTH:
+            _LOGGER.warning(
+                "%s: basic info reply is too short (%s), ignoring it",
+                self.name,
+                _data.hex(),
+            )
+            return None
 
         battery = _data[1] & 0x7F
         firmware = _data[2] / 10.0
@@ -138,6 +169,13 @@ class SwitchbotKeypadVision(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
         if not (_data := await self._send_command(COMMAND_GET_PASSWORD_COUNT)):
             return None
         _LOGGER.debug("Raw model %s password count data: %s", self._model, _data.hex())
+        if len(_data) < PASSWORD_COUNT_MIN_LENGTH.get(self._model, 6):
+            _LOGGER.warning(
+                "%s: password count reply is too short (%s), ignoring it",
+                self.name,
+                _data.hex(),
+            )
+            return None
 
         pin = _data[1]
         nfc = _data[2]
