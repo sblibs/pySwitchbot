@@ -75,6 +75,34 @@ async def test_get_display_settings_factory_state():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("date_code", "battery_code", "date_format", "battery_icon_always"),
+    [
+        (0x02, 0x00, None, False),
+        (0x00, 0xFE, MeterProDateFormat.MONTH_DAY, None),
+        (0xFF, 0xFF, None, None),
+    ],
+)
+async def test_get_display_settings_unknown_values(
+    date_code: int,
+    battery_code: int,
+    date_format: MeterProDateFormat | None,
+    battery_icon_always: bool | None,
+):
+    device = create_device()
+    response = bytearray.fromhex(DISPLAY_SETTINGS)
+    response[17] = date_code
+    response[19] = battery_code
+    device._send_command.return_value = bytes(response)
+
+    settings = await device.get_display_settings()
+
+    assert settings["date_format"] is date_format
+    assert settings["battery_icon_always"] is battery_icon_always
+    assert settings["data_update_interval"] == 600
+
+
+@pytest.mark.asyncio
 async def test_get_display_settings_short_response():
     """Older firmware may stop after the MAC addresses."""
     device = create_device()
@@ -292,9 +320,13 @@ async def test_set_temperature_unit(fahrenheit: bool, expected_payload: str):
     [
         ("010101", {"unit_switch": False, "source_switch": True}),
         ("010000", {"unit_switch": True, "source_switch": False}),
+        ("01ff01", {"unit_switch": None, "source_switch": True}),
+        ("0100ff", {"unit_switch": True, "source_switch": None}),
+        ("01ffff", {"unit_switch": None, "source_switch": None}),
+        ("010202", {"unit_switch": None, "source_switch": None}),
     ],
 )
-async def test_get_button_functions(response: str, expected: dict[str, bool]):
+async def test_get_button_functions(response: str, expected: dict[str, bool | None]):
     device = create_device()
     device._send_command.return_value = bytes.fromhex(response)
 

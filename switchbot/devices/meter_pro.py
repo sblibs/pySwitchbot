@@ -288,9 +288,9 @@ class SwitchbotMeterPro(SwitchbotDevice):
         """
         Get the zones, data update interval, date format and battery icon.
 
-        Fields that older firmware does not report are None. Each zone has
-        "icon", "source" (the raw int if unknown) and "source_mac" (None when
-        the zone shows this device or network data).
+        Missing fields and unknown date or battery icon values are None.
+        Each zone has "icon", "source" (the raw int if unknown) and "source_mac"
+        (None when the zone shows this device or network data).
         """
         # [status][icons mid|bot][sources mid|bot][mac mid x6][mac bot x6]
         # [data update interval u16][date format][reserved][battery icon]
@@ -313,10 +313,14 @@ class SwitchbotMeterPro(SwitchbotDevice):
                 int.from_bytes(result[15:17], "big") if len(result) >= 17 else None
             ),
             "date_format": (
-                MeterProDateFormat(result[17] & 0x01) if len(result) >= 18 else None
+                MeterProDateFormat(result[17])
+                if len(result) >= 18 and result[17] in (0x00, 0x01)
+                else None
             ),
             "battery_icon_always": (
-                bool(result[19] & 0x01) if len(result) >= 20 else None
+                bool(result[19])
+                if len(result) >= 20 and result[19] in (0x00, 0x01)
+                else None
             ),
         }
 
@@ -398,12 +402,14 @@ class SwitchbotMeterPro(SwitchbotDevice):
         result = await self._send_command(payload)
         self._validate_result("set_temperature_unit", result)
 
-    async def get_button_functions(self) -> dict[str, bool]:
-        """Get whether the button may switch the unit and cycle the source."""
-        # [status][unit: 00 enabled][source: 01 enabled]
+    async def get_button_functions(self) -> dict[str, bool | None]:
+        """Read button functions, with None for reserved or unknown values."""
         result = await self._send_command(COMMAND_GET_BUTTON_FUNCTIONS)
         result = self._validate_result("get_button_functions", result, min_length=3)
-        return {"unit_switch": result[1] == 0x00, "source_switch": result[2] == 0x01}
+        return {
+            "unit_switch": result[1] == 0x00 if result[1] in (0x00, 0x01) else None,
+            "source_switch": result[2] == 0x01 if result[2] in (0x00, 0x01) else None,
+        }
 
     async def set_button_functions(
         self, unit_switch: bool | None = None, source_switch: bool | None = None
