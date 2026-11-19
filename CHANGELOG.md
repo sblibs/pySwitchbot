@@ -2,6 +2,31 @@
 
 <!-- version list -->
 
+## v3.14.0 (2026-11-19)
+
+### Bug Fixes
+
+- **meter-pro**: Handle unknown display and button settings
+  ([#621](https://github.com/sblibs/pySwitchbot/pull/621),
+  [`b6371bc`](https://github.com/sblibs/pySwitchbot/commit/b6371bcd406fb0edd69f0bf557d0644279b91d13))
+
+- **meter-pro**: Validate display interval and calibration values
+  ([#621](https://github.com/sblibs/pySwitchbot/pull/621),
+  [`b6371bc`](https://github.com/sblibs/pySwitchbot/commit/b6371bcd406fb0edd69f0bf557d0644279b91d13))
+
+### Documentation
+
+- **meter-pro**: Clarify button flags and factory settings test
+  ([#621](https://github.com/sblibs/pySwitchbot/pull/621),
+  [`b6371bc`](https://github.com/sblibs/pySwitchbot/commit/b6371bcd406fb0edd69f0bf557d0644279b91d13))
+
+### Features
+
+- Add Meter Pro display and calibration settings
+  ([#621](https://github.com/sblibs/pySwitchbot/pull/621),
+  [`b6371bc`](https://github.com/sblibs/pySwitchbot/commit/b6371bcd406fb0edd69f0bf557d0644279b91d13))
+
+
 ## v3.13.0 (2026-11-18)
 
 ### Bug Fixes
