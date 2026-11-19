@@ -377,14 +377,17 @@ class SwitchbotMeterPro(SwitchbotDevice):
         )
         try:
             low, high, dry, humid = _decode_temperature_humidity_limits(data[2:7])
-            # Firmware 1.9 reports temperature and humidity in separate nibbles.
-            status = data[7]
-            temperature_status = MeterProTemperatureHumidityAlarmStatus(status >> 4)
-            humidity_status = MeterProTemperatureHumidityAlarmStatus(status & 0x0F)
         except ValueError as exc:
             raise SwitchbotOperationError(
                 f"{self.name}: Invalid temperature and humidity alarm response (result={data.hex()})"
             ) from exc
+        # The latest confirmed protocol uses bits 5:4 for the temperature alarm
+        # state and bits 1:0 for the humidity alarm state.
+        status = data[7]
+        temperature_status = MeterProTemperatureHumidityAlarmStatus(
+            (status >> 4) & 0x03
+        )
+        humidity_status = MeterProTemperatureHumidityAlarmStatus(status & 0x03)
         return {
             "mode": MeterProTemperatureHumidityAlarmMode(data[1]),
             "temperature_low_c": low,

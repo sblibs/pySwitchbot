@@ -852,6 +852,21 @@ async def test_get_temperature_humidity_alarm(
             MeterProTemperatureHumidityAlarmStatus.HIGH,
             MeterProTemperatureHumidityAlarmStatus.HIGH,
         ),
+        (
+            "0122963695000aec",
+            MeterProTemperatureHumidityAlarmStatus.HIGH,
+            MeterProTemperatureHumidityAlarmStatus.NONE,
+        ),
+        (
+            "0122a32795000ace",
+            MeterProTemperatureHumidityAlarmStatus.NONE,
+            MeterProTemperatureHumidityAlarmStatus.HIGH,
+        ),
+        (
+            "014297a7450094ff",
+            MeterProTemperatureHumidityAlarmStatus.IN_RANGE,
+            MeterProTemperatureHumidityAlarmStatus.IN_RANGE,
+        ),
     ],
 )
 async def test_get_temperature_humidity_alarm_status(
@@ -960,7 +975,6 @@ async def test_set_temperature_humidity_alarm_rejects_invalid_inputs(
         "01000000000000",
         "01009c460a921e00",
         "01009c6400921e00",
-        "01000000000000ff",
     ],
 )
 async def test_get_temperature_humidity_alarm_rejects_invalid_response(response: str):
