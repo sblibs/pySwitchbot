@@ -2,6 +2,40 @@
 
 <!-- version list -->
 
+## v3.15.0 (2026-11-19)
+
+### Bug Fixes
+
+- **meter-pro**: Mask temperature and humidity alarm states
+  ([#430](https://github.com/sblibs/pySwitchbot/pull/430),
+  [`6e862ca`](https://github.com/sblibs/pySwitchbot/commit/6e862cad0fb2db297c02d2abec1cd10a06848001))
+
+### Chores
+
+- **pre-commit.ci**: Auto fixes ([#430](https://github.com/sblibs/pySwitchbot/pull/430),
+  [`6e862ca`](https://github.com/sblibs/pySwitchbot/commit/6e862cad0fb2db297c02d2abec1cd10a06848001))
+
+### Features
+
+- Add Meter Pro comfort and alarm settings ([#430](https://github.com/sblibs/pySwitchbot/pull/430),
+  [`6e862ca`](https://github.com/sblibs/pySwitchbot/commit/6e862cad0fb2db297c02d2abec1cd10a06848001))
+
+- **meter-pro**: Add audible and visual alarm settings
+  ([#430](https://github.com/sblibs/pySwitchbot/pull/430),
+  [`6e862ca`](https://github.com/sblibs/pySwitchbot/commit/6e862cad0fb2db297c02d2abec1cd10a06848001))
+
+- **meter-pro**: Add CO2 concentration alarm settings
+  ([#430](https://github.com/sblibs/pySwitchbot/pull/430),
+  [`6e862ca`](https://github.com/sblibs/pySwitchbot/commit/6e862cad0fb2db297c02d2abec1cd10a06848001))
+
+- **meter-pro**: Add comfort level settings ([#430](https://github.com/sblibs/pySwitchbot/pull/430),
+  [`6e862ca`](https://github.com/sblibs/pySwitchbot/commit/6e862cad0fb2db297c02d2abec1cd10a06848001))
+
+- **meter-pro**: Add temperature and humidity threshold alarms
+  ([#430](https://github.com/sblibs/pySwitchbot/pull/430),
+  [`6e862ca`](https://github.com/sblibs/pySwitchbot/commit/6e862cad0fb2db297c02d2abec1cd10a06848001))
+
+
 ## v3.14.0 (2026-11-19)
 
 ### Bug Fixes
