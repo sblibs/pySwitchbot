@@ -57,10 +57,10 @@ async def test_get_display_settings():
 
 @pytest.mark.asyncio
 async def test_get_display_settings_factory_state():
-    """Factory layout: bottom zone unused, MM/DD; unknown values stay raw."""
+    """Factory layout: unused bottom zone, MM/DD, battery icon only when low."""
     device = create_device()
     device._send_command.return_value = bytes.fromhex(
-        "011050000000000000000000000000025800010" + "0"
+        "0110500000000000000000000000000258000100"
     )
 
     settings = await device.get_display_settings()

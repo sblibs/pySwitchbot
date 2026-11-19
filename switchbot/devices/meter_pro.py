@@ -420,6 +420,7 @@ class SwitchbotMeterPro(SwitchbotDevice):
         """Read button functions, with None for reserved or unknown values."""
         result = await self._send_command(COMMAND_GET_BUTTON_FUNCTIONS)
         result = self._validate_result("get_button_functions", result, min_length=3)
+        # The protocol enables unit switching with 0x00 and source switching with 0x01.
         return {
             "unit_switch": result[1] == 0x00 if result[1] in (0x00, 0x01) else None,
             "source_switch": result[2] == 0x01 if result[2] in (0x00, 0x01) else None,
