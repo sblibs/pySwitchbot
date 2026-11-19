@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from typing import Any, TypeVar
@@ -143,6 +145,12 @@ def _coerce_enum(enum_cls: type[_E], value: _E | int, name: str) -> _E:
     if isinstance(value, bool) or not isinstance(value, int):
         raise TypeError(f"{name} must be a {enum_cls.__name__} or integer")
     return enum_cls(value)
+
+
+def _require_bool(value: object, name: str) -> bool:
+    if not isinstance(value, bool):
+        raise TypeError(f"{name} must be a boolean, got {value!r}")
+    return value
 
 
 def _mac_hex(mac: str | None) -> str:
@@ -343,14 +351,11 @@ class SwitchbotMeterPro(SwitchbotDevice):
         custom: bool = True,
     ) -> None:
         """Set comfort limits in °C (half-up to tenths) and %RH, or select default mode."""
-        try:
+        with self._invalid_input():
             limits = _encode_temperature_humidity_limits(
                 temperature_low_c, temperature_high_c, humidity_low, humidity_high
             )
-        except (TypeError, ValueError) as exc:
-            raise SwitchbotOperationError(f"{self.name}: {exc}") from exc
-        if not isinstance(custom, bool):
-            raise SwitchbotOperationError(f"{self.name}: custom must be a boolean")
+            _require_bool(custom, "custom")
         if custom:
             low, high, dry, humid = _decode_temperature_humidity_limits(limits)
             if low >= high or dry >= humid:
@@ -418,12 +423,10 @@ class SwitchbotMeterPro(SwitchbotDevice):
             raise SwitchbotOperationError(
                 f"{self.name}: Invalid temperature and humidity alarm mode {mode!r}"
             )
-        try:
+        with self._invalid_input():
             limits = _encode_temperature_humidity_limits(
                 temperature_low_c, temperature_high_c, humidity_low, humidity_high
             )
-        except (TypeError, ValueError) as exc:
-            raise SwitchbotOperationError(f"{self.name}: {exc}") from exc
         low, high, dry, humid = _decode_temperature_humidity_limits(limits)
         if (
             mode & MeterProTemperatureHumidityAlarmMode.TEMPERATURE_IN_RANGE
@@ -498,10 +501,8 @@ class SwitchbotMeterPro(SwitchbotDevice):
         self, temperature: float | Decimal, humidity: int
     ) -> None:
         """Set the temperature (C, rounded half-up to tenths) and humidity corrections."""
-        try:
+        with self._invalid_input():
             decimal, temperature_byte = _encode_weather_temperature(temperature)
-        except (TypeError, ValueError) as exc:
-            raise SwitchbotOperationError(f"{self.name}: {exc}") from exc
         if (
             isinstance(humidity, bool)
             or not isinstance(humidity, int)
@@ -578,14 +579,12 @@ class SwitchbotMeterPro(SwitchbotDevice):
         the values written by set_weather. METER_PRO without a MAC is this
         device. The screen applies it at the next data update.
         """
-        try:
+        with self._invalid_input():
             zone = _coerce_enum(MeterProDisplayZone, zone, "Display zone")
             source = _coerce_enum(MeterProDisplaySource, source, "Display source")
             if icon is not None:
                 icon = _coerce_enum(MeterProZoneIcon, icon, "Zone icon")
             mac = _mac_hex(source_mac)
-        except (TypeError, ValueError) as err:
-            raise SwitchbotOperationError(f"{self.name}: {err}") from err
         if mac != NO_MAC and source in SOURCES_WITHOUT_MAC:
             raise SwitchbotOperationError(
                 f"{self.name}: {source.name} display source takes no MAC address"
@@ -611,13 +610,11 @@ class SwitchbotMeterPro(SwitchbotDevice):
         bottom: MeterProZoneIcon | int | None = None,
     ) -> None:
         """Set the indoor/outdoor icons of both zones; None keeps an icon."""
-        try:
+        with self._invalid_input():
             if middle is not None:
                 middle = _coerce_enum(MeterProZoneIcon, middle, "Middle icon")
             if bottom is not None:
                 bottom = _coerce_enum(MeterProZoneIcon, bottom, "Bottom icon")
-        except (TypeError, ValueError) as err:
-            raise SwitchbotOperationError(f"{self.name}: {err}") from err
         middle_byte = KEEP_ICON if middle is None else middle.value
         bottom_byte = KEEP_ICON if bottom is None else bottom.value
         payload = f"{COMMAND_SET_ZONE_ICONS}{middle_byte:02x}{bottom_byte:02x}"
@@ -641,24 +638,24 @@ class SwitchbotMeterPro(SwitchbotDevice):
 
     async def set_date_format(self, date_format: MeterProDateFormat | int) -> None:
         """Set the date format; the app offers it from firmware 1.5."""
-        try:
+        with self._invalid_input():
             date_format = _coerce_enum(MeterProDateFormat, date_format, "Date format")
-        except (TypeError, ValueError) as err:
-            raise SwitchbotOperationError(f"{self.name}: {err}") from err
         payload = f"{COMMAND_SET_DATE_FORMAT}{date_format.value:02x}"
         result = await self._send_command(payload)
         self._validate_result("set_date_format", result)
 
     async def set_battery_icon(self, always: bool) -> None:
         """Show the battery icon always, or only when the battery is low."""
-        self._check_bool(always, "always")
+        with self._invalid_input():
+            _require_bool(always, "always")
         payload = f"{COMMAND_SET_BATTERY_ICON}{'01' if always else '00'}"
         result = await self._send_command(payload)
         self._validate_result("set_battery_icon", result)
 
     async def set_temperature_unit(self, fahrenheit: bool) -> None:
         """Set the default temperature unit shown on the screen (F or C)."""
-        self._check_bool(fahrenheit, "fahrenheit")
+        with self._invalid_input():
+            _require_bool(fahrenheit, "fahrenheit")
         payload = f"{COMMAND_SET_TEMPERATURE_UNIT}{'01' if fahrenheit else '00'}"
         result = await self._send_command(payload)
         self._validate_result("set_temperature_unit", result)
@@ -677,12 +674,11 @@ class SwitchbotMeterPro(SwitchbotDevice):
         self, unit_switch: bool | None = None, source_switch: bool | None = None
     ) -> None:
         """Allow or forbid the button actions; None keeps one as is."""
-        for flag, name in (
-            (unit_switch, "unit_switch"),
-            (source_switch, "source_switch"),
-        ):
-            if flag is not None:
-                self._check_bool(flag, name)
+        with self._invalid_input():
+            if unit_switch is not None:
+                _require_bool(unit_switch, "unit_switch")
+            if source_switch is not None:
+                _require_bool(source_switch, "source_switch")
         unit_byte = (
             KEEP_BUTTON_FUNCTION
             if unit_switch is None
@@ -697,11 +693,13 @@ class SwitchbotMeterPro(SwitchbotDevice):
         result = await self._send_command(payload)
         self._validate_result("set_button_functions", result)
 
-    def _check_bool(self, value: object, name: str) -> None:
-        if not isinstance(value, bool):
-            raise SwitchbotOperationError(
-                f"{self.name}: {name} must be a boolean, got {value!r}"
-            )
+    @contextmanager
+    def _invalid_input(self) -> Iterator[None]:
+        """Report invalid caller input as SwitchbotOperationError."""
+        try:
+            yield
+        except (TypeError, ValueError) as err:
+            raise SwitchbotOperationError(f"{self.name}: {err}") from err
 
     def _validate_result(
         self, op_name: str, result: bytes | None, min_length: int | None = None
@@ -771,7 +769,7 @@ class SwitchbotMeterPro(SwitchbotDevice):
             raise SwitchbotOperationError(
                 f"{self.name}: Supply at least one weather field"
             )
-        try:
+        with self._invalid_input():
             if icon is not None:
                 icon = _coerce_enum(MeterProWeatherIcon, icon, "Weather icon")
             temperature = (
@@ -782,8 +780,6 @@ class SwitchbotMeterPro(SwitchbotDevice):
             relative_humidity = (
                 _encode_weather_humidity(humidity) if humidity is not None else None
             )
-        except (ValueError, TypeError) as exc:
-            raise SwitchbotOperationError(f"{self.name}: {exc}") from exc
         async with self._operation_lock:
             current_icon, network_data = self._parse_weather(
                 await self._weather_command_locked(
