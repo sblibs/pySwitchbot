@@ -263,8 +263,8 @@ async def test_set_data_update_interval(seconds: int, expected_payload: str):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("seconds", [0, -1, 0x10000])
-async def test_set_data_update_interval_invalid(seconds: int):
+@pytest.mark.parametrize("seconds", [0, -1, 0x10000, True, 300.0, "300"])
+async def test_set_data_update_interval_invalid(seconds: object):
     device = create_device()
 
     with pytest.raises(SwitchbotOperationError):
@@ -377,6 +377,16 @@ async def test_get_calibration(response: str, temperature: float, humidity: int)
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("response", ["0180800a", "0180e400", "01806400"])
+async def test_get_calibration_rejects_invalid_values(response: str):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex(response)
+
+    with pytest.raises(SwitchbotOperationError, match="Invalid calibration response"):
+        await device.get_calibration()
+
+
+@pytest.mark.asyncio
 async def test_get_calibration_short_response():
     device = create_device()
     device._send_command.return_value = bytes.fromhex("0101")
@@ -410,9 +420,9 @@ async def test_set_calibration(
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("temperature", "humidity"),
-    [(128, 0), (-128, 0), (0, 100), (0, -100)],
+    [(128, 0), (-128, 0), (0, 100), (0, -100), (0, True), (0, 0.5), (0, "1")],
 )
-async def test_set_calibration_out_of_range(temperature: float, humidity: int):
+async def test_set_calibration_invalid(temperature: float, humidity: object):
     device = create_device()
 
     with pytest.raises(SwitchbotOperationError):

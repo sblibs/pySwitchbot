@@ -255,8 +255,14 @@ class SwitchbotMeterPro(SwitchbotDevice):
         # [status][temp sign|int][hum sign|value][temp tenths]; sign bit = positive
         result = await self._send_command(COMMAND_GET_CALIBRATION)
         result = self._validate_result("get_calibration", result, min_length=4)
-        temperature = round((result[1] & 0x7F) + (result[3] & 0x0F) / 10, 1)
+        tenths = result[3] & 0x0F
         humidity = result[2] & 0x7F
+        if tenths > 9 or humidity > MAX_HUMIDITY_CALIBRATION:
+            raise SwitchbotOperationError(
+                f"{self.name}: Invalid calibration response "
+                f"(result={result.hex()} rssi={self.rssi})"
+            )
+        temperature = round((result[1] & 0x7F) + tenths / 10, 1)
         # A zero correction comes back with the sign bit cleared.
         return {
             "temperature": temperature if result[1] & 0x80 else -temperature or 0.0,
@@ -271,10 +277,14 @@ class SwitchbotMeterPro(SwitchbotDevice):
             decimal, temperature_byte = _encode_weather_temperature(temperature)
         except (TypeError, ValueError) as exc:
             raise SwitchbotOperationError(f"{self.name}: {exc}") from exc
-        if abs(humidity) > MAX_HUMIDITY_CALIBRATION:
+        if (
+            isinstance(humidity, bool)
+            or not isinstance(humidity, int)
+            or abs(humidity) > MAX_HUMIDITY_CALIBRATION
+        ):
             raise SwitchbotOperationError(
-                f"{self.name}: Humidity calibration must be within "
-                f"±{MAX_HUMIDITY_CALIBRATION}, got {humidity}"
+                f"{self.name}: Humidity calibration must be an integer within "
+                f"±{MAX_HUMIDITY_CALIBRATION}, got {humidity!r}"
             )
         humidity_byte = abs(humidity) | (0x80 if humidity >= 0 else 0)
         payload = (
@@ -375,12 +385,16 @@ class SwitchbotMeterPro(SwitchbotDevice):
 
     async def set_data_update_interval(self, seconds: int) -> None:
         """Set the temperature and humidity update interval; the app offers 300, 600 and 1800 s."""
-        if not 1 <= seconds <= MAX_DATA_UPDATE_INTERVAL:
+        if (
+            isinstance(seconds, bool)
+            or not isinstance(seconds, int)
+            or not 1 <= seconds <= MAX_DATA_UPDATE_INTERVAL
+        ):
             raise SwitchbotOperationError(
-                f"{self.name}: Data update interval must be 1..{MAX_DATA_UPDATE_INTERVAL} s, "
-                f"got {seconds}"
+                f"{self.name}: Data update interval must be an integer from "
+                f"1 to {MAX_DATA_UPDATE_INTERVAL} seconds, got {seconds!r}"
             )
-        payload = f"{COMMAND_SET_DATA_UPDATE_INTERVAL}{seconds:04x}"
+        payload = COMMAND_SET_DATA_UPDATE_INTERVAL + seconds.to_bytes(2, "big").hex()
         result = await self._send_command(payload)
         self._validate_result("set_data_update_interval", result)
 
