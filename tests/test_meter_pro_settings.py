@@ -129,6 +129,19 @@ async def test_get_display_settings_unknown_source_kept_raw():
 
 
 @pytest.mark.asyncio
+async def test_get_display_settings_unknown_icon_kept_raw():
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex(
+        "013053000000000000aabbccddeeff0258010101"
+    )
+
+    settings = await device.get_display_settings()
+
+    assert settings["middle"]["icon"] == 3
+    assert settings["bottom"]["icon"] is None
+
+
+@pytest.mark.asyncio
 async def test_get_display_settings_weather_station_and_hub3():
     device = create_device()
     device._send_command.return_value = bytes.fromhex(
@@ -377,7 +390,7 @@ async def test_get_calibration(response: str, temperature: float, humidity: int)
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("response", ["0180800a", "0180e400", "01806400"])
+@pytest.mark.parametrize("response", ["0180800a", "0180e400", "01806400", "01808015"])
 async def test_get_calibration_rejects_invalid_values(response: str):
     device = create_device()
     device._send_command.return_value = bytes.fromhex(response)
@@ -478,3 +491,47 @@ async def test_co2_variant_shares_display_settings(
     await getattr(device, method)(*args)
 
     device._send_command.assert_called_with(expected_payload)
+
+
+@pytest.mark.asyncio
+async def test_enum_setters_accept_raw_ints():
+    device = create_device()
+
+    await device.set_display_zone(2, 3, "D4:E5:F6:A1:B2:C3", icon=2)
+    device._send_command.assert_called_with("570f6807010202" + "03d4e5f6a1b2c3")
+    await device.set_zone_icons(middle=1, bottom=2)
+    device._send_command.assert_called_with("570f680701030102")
+    await device.set_date_format(1)
+    device._send_command.assert_called_with("570f6807010701")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "args", "kwargs"),
+    [
+        ("set_display_zone", (3, MeterProDisplaySource.NONE), {}),
+        ("set_display_zone", ("bottom", MeterProDisplaySource.NONE), {}),
+        ("set_display_zone", (MeterProDisplayZone.BOTTOM, 15), {}),
+        ("set_display_zone", (MeterProDisplayZone.BOTTOM, True), {}),
+        (
+            "set_display_zone",
+            (MeterProDisplayZone.BOTTOM, MeterProDisplaySource.NONE),
+            {"icon": 9},
+        ),
+        ("set_zone_icons", (), {"middle": 3}),
+        ("set_zone_icons", (), {"bottom": "outdoor"}),
+        ("set_date_format", (2,), {}),
+        ("set_date_format", ("DD/MM",), {}),
+        ("set_battery_icon", ("false",), {}),
+        ("set_battery_icon", (1,), {}),
+        ("set_temperature_unit", (0.0,), {}),
+        ("set_button_functions", (), {"unit_switch": "off"}),
+        ("set_button_functions", (), {"source_switch": 1}),
+    ],
+)
+async def test_setters_reject_wrong_types(method: str, args: tuple, kwargs: dict):
+    device = create_device()
+
+    with pytest.raises(SwitchbotOperationError):
+        await getattr(device, method)(*args, **kwargs)
+    device._send_command.assert_not_called()
