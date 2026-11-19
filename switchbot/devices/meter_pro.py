@@ -3,9 +3,16 @@ from enum import Enum
 from typing import Any, TypeVar
 
 from ..const.meter_pro import (
+    MeterProAlarmMode,
+    MeterProAlarmVolume,
+    MeterProCO2AlarmMode,
+    MeterProCO2AlarmStatus,
+    MeterProComfortStatus,
     MeterProDateFormat,
     MeterProDisplaySource,
     MeterProDisplayZone,
+    MeterProTemperatureHumidityAlarmMode,
+    MeterProTemperatureHumidityAlarmStatus,
     MeterProWeatherIcon,
     MeterProZoneIcon,
 )
@@ -24,6 +31,11 @@ COMMAND_SET_DISPLAY_FORMAT = "570f680505"
 COMMAND_GET_WEATHER = "570f6906"
 COMMAND_SET_WEATHER = "570f680601"
 
+COMMAND_GET_COMFORT_LEVEL = "570f69020101"
+COMMAND_GET_TEMPERATURE_HUMIDITY_ALARM = "570f69020100"
+COMMAND_SET_TEMPERATURE_HUMIDITY_LIMITS = "570f680201"
+COMMAND_GET_ALARM_SETTINGS = "570f690204"
+COMMAND_SET_ALARM_SETTINGS = "570f680204"
 COMMAND_GET_CALIBRATION = "570f6903"
 COMMAND_SET_CALIBRATION = "570f6803"
 COMMAND_GET_DISPLAY_SETTINGS = "570f690701"
@@ -43,6 +55,8 @@ NO_MAC = "000000000000"
 KEEP_ZONE_ICON = 0xFF
 KEEP_ICON = 0x0F
 KEEP_BUTTON_FUNCTION = 0xFF
+KEEP_ALARM_VOLUME = 0xFF
+TEMPERATURE_HUMIDITY_ALARM_MASK = 0x77
 SOURCES_WITHOUT_MAC = {MeterProDisplaySource.NONE, MeterProDisplaySource.NETWORK}
 COMMAND_TRIGGER_CO2_SAMPLING = "570f680b04"
 COMMAND_START_CO2_CALIBRATION = "570f680b02"
@@ -51,6 +65,8 @@ COMMAND_GET_CO2_USB_UPDATE_INTERVAL = "570f690b03"
 COMMAND_SET_CO2_USB_UPDATE_INTERVAL = "570f680b01"
 COMMAND_GET_CO2_BATTERY_UPDATE_INTERVAL = "570f690b04"
 COMMAND_SET_CO2_BATTERY_UPDATE_INTERVAL = "570f680b06"
+COMMAND_GET_CO2_ALARM = "570f69020301"
+COMMAND_SET_CO2_ALARM = "570f68020301"
 COMMAND_GET_CO2_LEVEL_THRESHOLDS = "570f69020302"
 COMMAND_SET_CO2_LEVEL_THRESHOLDS = "570f68020302"
 
@@ -73,6 +89,44 @@ def _encode_weather_temperature(temperature_c: float | Decimal) -> bytes:
     temperature = temperature.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
     integer, decimal = divmod(int(abs(temperature) * 10), 10)
     return bytes((decimal, integer | (0x80 if temperature >= 0 else 0)))
+
+
+def _decode_threshold_temperature(signed_degrees: int, tenths: int) -> float:
+    magnitude = (signed_degrees & 0x7F) * 10 + tenths
+    return (magnitude if signed_degrees & 0x80 else -magnitude) / 10
+
+
+def _decode_temperature_humidity_limits(data: bytes) -> tuple[float, float, int, int]:
+    high, humid, decimals, low, dry = data
+    high_tenths, low_tenths = decimals >> 4, decimals & 0x0F
+    humid &= 0x7F
+    dry &= 0x7F
+    if max(high_tenths, low_tenths) > 9 or max(humid, dry) > 99:
+        raise ValueError("Invalid temperature or humidity limits")
+    return (
+        _decode_threshold_temperature(low, low_tenths),
+        _decode_threshold_temperature(high, high_tenths),
+        dry,
+        humid,
+    )
+
+
+def _encode_temperature_humidity_limits(
+    temperature_low_c: float | Decimal,
+    temperature_high_c: float | Decimal,
+    humidity_low: int,
+    humidity_high: int,
+) -> bytes:
+    low_tenths, low = _encode_weather_temperature(temperature_low_c)
+    high_tenths, high = _encode_weather_temperature(temperature_high_c)
+    if any(
+        isinstance(limit, bool) or not isinstance(limit, int) or not 0 <= limit <= 99
+        for limit in (humidity_low, humidity_high)
+    ):
+        raise ValueError("Humidity limits must be integers from 0 to 99")
+    return bytes(
+        (high, humidity_high, (high_tenths << 4) | low_tenths, low, humidity_low)
+    )
 
 
 def _encode_weather_humidity(humidity: float | Decimal) -> int:
@@ -260,6 +314,174 @@ class SwitchbotMeterPro(SwitchbotDevice):
         payload = f"{COMMAND_SET_DISPLAY_FORMAT}{mode_byte}"
         result = await self._send_command(payload)
         self._validate_result("set_time_display_format", result)
+
+    async def get_comfort_level(
+        self,
+    ) -> dict[str, float | int | bool | MeterProComfortStatus]:
+        """Read the comfort mode, Celsius and %RH limits, and current status."""
+        result = await self._send_command(COMMAND_GET_COMFORT_LEVEL)
+        data = self._validate_result("get_comfort_level", result, min_length=8)
+        mode = data[1]
+        if mode not in (0, 1):
+            raise SwitchbotOperationError(
+                f"{self.name}: Invalid comfort level response (result={data.hex()})"
+            )
+        try:
+            low, high, dry, humid = _decode_temperature_humidity_limits(data[2:7])
+        except ValueError as exc:
+            raise SwitchbotOperationError(
+                f"{self.name}: Invalid comfort level response (result={data.hex()})"
+            ) from exc
+        return {
+            "custom": mode == 1,
+            "temperature_low_c": low,
+            "temperature_high_c": high,
+            "humidity_low": dry,
+            "humidity_high": humid,
+            "status": MeterProComfortStatus(data[7] & 0x03),
+        }
+
+    async def set_comfort_level(
+        self,
+        temperature_low_c: float | Decimal,
+        temperature_high_c: float | Decimal,
+        humidity_low: int,
+        humidity_high: int,
+        *,
+        custom: bool = True,
+    ) -> None:
+        """Set comfort limits in °C (half-up to tenths) and %RH, or select default mode."""
+        try:
+            limits = _encode_temperature_humidity_limits(
+                temperature_low_c, temperature_high_c, humidity_low, humidity_high
+            )
+        except (TypeError, ValueError) as exc:
+            raise SwitchbotOperationError(f"{self.name}: {exc}") from exc
+        if not isinstance(custom, bool):
+            raise SwitchbotOperationError(f"{self.name}: custom must be a boolean")
+        if custom:
+            low, high, dry, humid = _decode_temperature_humidity_limits(limits)
+            if low >= high or dry >= humid:
+                raise SwitchbotOperationError(
+                    f"{self.name}: Lower comfort limits must be below upper limits"
+                )
+
+        flags = 0x88 if custom else 0x80
+        result = await self._send_command(
+            f"{COMMAND_SET_TEMPERATURE_HUMIDITY_LIMITS}{flags:02x}{limits.hex()}"
+        )
+        self._validate_result("set_comfort_level", result)
+
+    async def get_temperature_humidity_alarm(
+        self,
+    ) -> dict[
+        str,
+        float
+        | int
+        | MeterProTemperatureHumidityAlarmMode
+        | MeterProTemperatureHumidityAlarmStatus,
+    ]:
+        """Read local alarm conditions, thresholds in °C and %RH, and both states."""
+        result = await self._send_command(COMMAND_GET_TEMPERATURE_HUMIDITY_ALARM)
+        data = self._validate_result(
+            "get_temperature_humidity_alarm", result, min_length=8
+        )
+        try:
+            low, high, dry, humid = _decode_temperature_humidity_limits(data[2:7])
+        except ValueError as exc:
+            raise SwitchbotOperationError(
+                f"{self.name}: Invalid temperature and humidity alarm response (result={data.hex()})"
+            ) from exc
+        # The latest confirmed protocol uses bits 5:4 for the temperature alarm
+        # state and bits 1:0 for the humidity alarm state.
+        status = data[7]
+        temperature_status = MeterProTemperatureHumidityAlarmStatus(
+            (status >> 4) & 0x03
+        )
+        humidity_status = MeterProTemperatureHumidityAlarmStatus(status & 0x03)
+        return {
+            "mode": MeterProTemperatureHumidityAlarmMode(data[1]),
+            "temperature_low_c": low,
+            "temperature_high_c": high,
+            "humidity_low": dry,
+            "humidity_high": humid,
+            "temperature_status": temperature_status,
+            "humidity_status": humidity_status,
+        }
+
+    async def set_temperature_humidity_alarm(
+        self,
+        mode: MeterProTemperatureHumidityAlarmMode,
+        temperature_low_c: float | Decimal,
+        temperature_high_c: float | Decimal,
+        humidity_low: int,
+        humidity_high: int,
+    ) -> None:
+        """Set both sets of local alarm limits and the enabled conditions together."""
+        # Bit 7 selects comfort settings on the shared write command.
+        if (
+            not isinstance(mode, MeterProTemperatureHumidityAlarmMode)
+            or mode.value & ~TEMPERATURE_HUMIDITY_ALARM_MASK
+        ):
+            raise SwitchbotOperationError(
+                f"{self.name}: Invalid temperature and humidity alarm mode {mode!r}"
+            )
+        try:
+            limits = _encode_temperature_humidity_limits(
+                temperature_low_c, temperature_high_c, humidity_low, humidity_high
+            )
+        except (TypeError, ValueError) as exc:
+            raise SwitchbotOperationError(f"{self.name}: {exc}") from exc
+        low, high, dry, humid = _decode_temperature_humidity_limits(limits)
+        if (
+            mode & MeterProTemperatureHumidityAlarmMode.TEMPERATURE_IN_RANGE
+            and low > high
+        ) or (
+            mode & MeterProTemperatureHumidityAlarmMode.HUMIDITY_IN_RANGE
+            and dry > humid
+        ):
+            raise SwitchbotOperationError(
+                f"{self.name}: Lower in-range alarm limits must not exceed upper limits"
+            )
+        result = await self._send_command(
+            f"{COMMAND_SET_TEMPERATURE_HUMIDITY_LIMITS}{mode.value:02x}{limits.hex()}"
+        )
+        self._validate_result("set_temperature_humidity_alarm", result)
+
+    async def get_alarm_settings(
+        self,
+    ) -> dict[str, MeterProAlarmMode | MeterProAlarmVolume | None]:
+        """Read the local alarm mode and volume, with None for an unrecognized volume."""
+        result = await self._send_command(COMMAND_GET_ALARM_SETTINGS)
+        data = self._validate_result("get_alarm_settings", result, min_length=3)
+        try:
+            mode = MeterProAlarmMode(data[2])
+        except ValueError as exc:
+            raise SwitchbotOperationError(
+                f"{self.name}: Unknown alarm mode {data[2]:02x}"
+            ) from exc
+        volume = next(
+            (level for level in MeterProAlarmVolume if level.value == data[1]), None
+        )
+        return {"mode": mode, "volume": volume}
+
+    async def set_alarm_settings(
+        self, mode: MeterProAlarmMode, volume: MeterProAlarmVolume | None = None
+    ) -> None:
+        """Set the local alarm mode and optionally change the buzzer volume."""
+        if not isinstance(mode, MeterProAlarmMode):
+            raise SwitchbotOperationError(
+                f"{self.name}: mode must be a MeterProAlarmMode"
+            )
+        if volume is not None and not isinstance(volume, MeterProAlarmVolume):
+            raise SwitchbotOperationError(
+                f"{self.name}: volume must be a MeterProAlarmVolume or None"
+            )
+        volume_byte = KEEP_ALARM_VOLUME if volume is None else volume.value
+        result = await self._send_command(
+            f"{COMMAND_SET_ALARM_SETTINGS}{volume_byte:02x}{mode.value:02x}"
+        )
+        self._validate_result("set_alarm_settings", result)
 
     async def get_calibration(self) -> dict[str, Any]:
         """Get the temperature (C) and humidity (%RH) corrections."""
@@ -675,6 +897,52 @@ class SwitchbotMeterProCO2(SwitchbotMeterPro):
 
         result = await self._send_command(command + seconds.to_bytes(2, "big").hex())
         self._validate_result(operation, result)
+
+    async def get_co2_alarm(
+        self,
+    ) -> dict[str, MeterProCO2AlarmMode | MeterProCO2AlarmStatus | int]:
+        """Read CO2 alarm conditions, limits in ppm, and current alarm status."""
+        result = await self._send_command(COMMAND_GET_CO2_ALARM)
+        data = self._validate_result("get_co2_alarm", result, min_length=7)
+        return {
+            "mode": MeterProCO2AlarmMode(data[1]),
+            "high_ppm": int.from_bytes(data[2:4], "big"),
+            "low_ppm": int.from_bytes(data[4:6], "big"),
+            "status": MeterProCO2AlarmStatus(data[6] & 0x03),
+        }
+
+    async def set_co2_alarm(
+        self, mode: MeterProCO2AlarmMode, low_ppm: int, high_ppm: int
+    ) -> None:
+        """
+        Set CO2 alarm conditions and limits in ppm.
+
+        Pass the existing limits when disabling an alarm to keep them configured.
+        """
+        if not isinstance(mode, MeterProCO2AlarmMode) or mode.value & ~0x0F:
+            raise SwitchbotOperationError(
+                f"{self.name}: Invalid CO2 alarm mode {mode!r}"
+            )
+        if any(
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not 0 <= limit <= 0xFFFF
+            for limit in (low_ppm, high_ppm)
+        ):
+            raise SwitchbotOperationError(
+                f"{self.name}: CO2 alarm limits must be unsigned 16-bit integers"
+            )
+        if low_ppm > high_ppm:
+            raise SwitchbotOperationError(
+                f"{self.name}: Lower CO2 alarm limit must not exceed the upper limit"
+            )
+        payload = (
+            bytes((mode.value,))
+            + high_ppm.to_bytes(2, "big")
+            + low_ppm.to_bytes(2, "big")
+        )
+        result = await self._send_command(COMMAND_SET_CO2_ALARM + payload.hex())
+        self._validate_result("set_co2_alarm", result)
 
     async def get_co2_level_thresholds(self) -> tuple[int, int]:
         """Read the green-to-yellow and yellow-to-red CO2 thresholds in ppm."""

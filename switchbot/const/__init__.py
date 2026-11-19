@@ -28,9 +28,16 @@ from .light import (
 # Preserve old LockStatus export for backwards compatibility
 from .lock import LockStatus, QuickKeyFunction
 from .meter_pro import (
+    MeterProAlarmMode,
+    MeterProAlarmVolume,
+    MeterProCO2AlarmMode,
+    MeterProCO2AlarmStatus,
+    MeterProComfortStatus,
     MeterProDateFormat,
     MeterProDisplaySource,
     MeterProDisplayZone,
+    MeterProTemperatureHumidityAlarmMode,
+    MeterProTemperatureHumidityAlarmStatus,
     MeterProWeatherIcon,
     MeterProZoneIcon,
 )
@@ -173,9 +180,16 @@ __all__ = [
     "HumidifierMode",
     "HumidifierWaterLevel",
     "LockStatus",
+    "MeterProAlarmMode",
+    "MeterProAlarmVolume",
+    "MeterProCO2AlarmMode",
+    "MeterProCO2AlarmStatus",
+    "MeterProComfortStatus",
     "MeterProDateFormat",
     "MeterProDisplaySource",
     "MeterProDisplayZone",
+    "MeterProTemperatureHumidityAlarmMode",
+    "MeterProTemperatureHumidityAlarmStatus",
     "MeterProWeatherIcon",
     "MeterProZoneIcon",
     "NightLightState",
