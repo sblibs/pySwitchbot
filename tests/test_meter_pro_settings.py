@@ -1071,6 +1071,7 @@ async def test_enum_setters_accept_raw_ints():
 async def test_setters_reject_wrong_types(method: str, args: tuple, kwargs: dict):
     device = create_device()
 
-    with pytest.raises(SwitchbotOperationError):
+    with pytest.raises(SwitchbotOperationError) as exc_info:
         await getattr(device, method)(*args, **kwargs)
+    assert isinstance(exc_info.value.__cause__, (TypeError, ValueError))
     device._send_command.assert_not_called()
