@@ -136,14 +136,6 @@ def _encode_weather_humidity(humidity: float | Decimal) -> int:
     return int(relative_humidity.quantize(Decimal(1), rounding=ROUND_HALF_UP))
 
 
-def _encode_weather_icon(icon: MeterProWeatherIcon | int) -> MeterProWeatherIcon:
-    if isinstance(icon, MeterProWeatherIcon):
-        return icon
-    if isinstance(icon, bool) or not isinstance(icon, int):
-        raise TypeError("Weather icon must be a MeterProWeatherIcon or integer")
-    return MeterProWeatherIcon(icon)
-
-
 def _coerce_enum(enum_cls: type[_E], value: _E | int, name: str) -> _E:
     """Return value as enum_cls; accept the enum or its integer value."""
     if isinstance(value, enum_cls):
@@ -780,7 +772,8 @@ class SwitchbotMeterPro(SwitchbotDevice):
                 f"{self.name}: Supply at least one weather field"
             )
         try:
-            icon = _encode_weather_icon(icon) if icon is not None else None
+            if icon is not None:
+                icon = _coerce_enum(MeterProWeatherIcon, icon, "Weather icon")
             temperature = (
                 _encode_weather_temperature(temperature_c)
                 if temperature_c is not None
