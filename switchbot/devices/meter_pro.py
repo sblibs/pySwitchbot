@@ -488,7 +488,7 @@ class SwitchbotMeterPro(SwitchbotDevice):
         # [status][temp sign|int][hum sign|value][temp tenths]; sign bit = positive
         result = await self._send_command(COMMAND_GET_CALIBRATION)
         result = self._validate_result("get_calibration", result, min_length=4)
-        tenths = result[3]
+        tenths = result[3] & 0x0F
         humidity = result[2] & 0x7F
         if tenths > 9 or humidity > MAX_HUMIDITY_CALIBRATION:
             raise SwitchbotOperationError(
@@ -532,9 +532,9 @@ class SwitchbotMeterPro(SwitchbotDevice):
         Get the zones, data update interval, date format and battery icon.
 
         Missing fields and unknown date or battery icon values are None.
-        Each zone has "icon" (None when unset), "source", both kept as the raw
-        int if unknown, and "source_mac" (None when the zone shows this device
-        or network data).
+        Each zone has "icon" (None when unset or held), "source", and "source_mac"
+        (None when the zone shows this device or network data). Other unknown icon
+        and source codes are returned as raw ints for inspection.
         """
         # [status][icons mid|bot][sources mid|bot][mac mid x6][mac bot x6]
         # [data update interval u16][date format][reserved][battery icon]
@@ -545,7 +545,7 @@ class SwitchbotMeterPro(SwitchbotDevice):
             return {
                 "icon": (
                     next((i for i in MeterProZoneIcon if i.value == icon), icon)
-                    if icon
+                    if icon not in (0, KEEP_ICON)
                     else None
                 ),
                 "source": next(

@@ -149,6 +149,28 @@ async def test_get_display_settings_unknown_icon_kept_raw():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("icon_byte", "middle", "bottom"),
+    [
+        ("f1", None, MeterProZoneIcon.INDOOR),
+        ("2f", MeterProZoneIcon.OUTDOOR, None),
+    ],
+)
+async def test_get_display_settings_hold_icon(
+    icon_byte: str, middle: MeterProZoneIcon | None, bottom: MeterProZoneIcon | None
+):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex(
+        DISPLAY_SETTINGS[:2] + icon_byte + DISPLAY_SETTINGS[4:]
+    )
+
+    settings = await device.get_display_settings()
+
+    assert settings["middle"]["icon"] is middle
+    assert settings["bottom"]["icon"] is bottom
+
+
+@pytest.mark.asyncio
 async def test_get_display_settings_weather_station_and_hub3():
     device = create_device()
     device._send_command.return_value = bytes.fromhex(
@@ -383,6 +405,7 @@ async def test_set_button_functions(
         ("01018305", -1.5, 3),
         ("01820a03", 2.3, -10),
         ("01800005", 0.5, 0),
+        ("01808015", 0.5, 0),
     ],
 )
 async def test_get_calibration(response: str, temperature: float, humidity: int):
@@ -397,7 +420,7 @@ async def test_get_calibration(response: str, temperature: float, humidity: int)
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("response", ["0180800a", "0180e400", "01806400", "01808015"])
+@pytest.mark.parametrize("response", ["0180800a", "0180e400", "01806400", "018080fa"])
 async def test_get_calibration_rejects_invalid_values(response: str):
     device = create_device()
     device._send_command.return_value = bytes.fromhex(response)
