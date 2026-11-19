@@ -30,6 +30,8 @@ from .lock import LockStatus, QuickKeyFunction
 from .meter_pro import (
     MeterProAlarmMode,
     MeterProAlarmVolume,
+    MeterProCO2AlarmMode,
+    MeterProCO2AlarmStatus,
     MeterProComfortStatus,
     MeterProDateFormat,
     MeterProDisplaySource,
@@ -178,6 +180,8 @@ __all__ = [
     "LockStatus",
     "MeterProAlarmMode",
     "MeterProAlarmVolume",
+    "MeterProCO2AlarmMode",
+    "MeterProCO2AlarmStatus",
     "MeterProComfortStatus",
     "MeterProDateFormat",
     "MeterProDisplaySource",

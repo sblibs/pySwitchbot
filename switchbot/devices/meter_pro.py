@@ -4,6 +4,8 @@ from typing import Any
 from ..const.meter_pro import (
     MeterProAlarmMode,
     MeterProAlarmVolume,
+    MeterProCO2AlarmMode,
+    MeterProCO2AlarmStatus,
     MeterProComfortStatus,
     MeterProDateFormat,
     MeterProDisplaySource,
@@ -57,6 +59,8 @@ COMMAND_GET_CO2_USB_UPDATE_INTERVAL = "570f690b03"
 COMMAND_SET_CO2_USB_UPDATE_INTERVAL = "570f680b01"
 COMMAND_GET_CO2_BATTERY_UPDATE_INTERVAL = "570f690b04"
 COMMAND_SET_CO2_BATTERY_UPDATE_INTERVAL = "570f680b06"
+COMMAND_GET_CO2_ALARM = "570f69020301"
+COMMAND_SET_CO2_ALARM = "570f68020301"
 COMMAND_GET_CO2_LEVEL_THRESHOLDS = "570f69020302"
 COMMAND_SET_CO2_LEVEL_THRESHOLDS = "570f68020302"
 
@@ -749,6 +753,52 @@ class SwitchbotMeterProCO2(SwitchbotMeterPro):
 
         result = await self._send_command(command + seconds.to_bytes(2, "big").hex())
         self._validate_result(operation, result)
+
+    async def get_co2_alarm(
+        self,
+    ) -> dict[str, MeterProCO2AlarmMode | MeterProCO2AlarmStatus | int]:
+        """Read CO2 alarm conditions, limits in ppm, and current alarm status."""
+        result = await self._send_command(COMMAND_GET_CO2_ALARM)
+        data = self._validate_result("get_co2_alarm", result, min_length=7)
+        return {
+            "mode": MeterProCO2AlarmMode(data[1]),
+            "high_ppm": int.from_bytes(data[2:4], "big"),
+            "low_ppm": int.from_bytes(data[4:6], "big"),
+            "status": MeterProCO2AlarmStatus(data[6] & 0x03),
+        }
+
+    async def set_co2_alarm(
+        self, mode: MeterProCO2AlarmMode, low_ppm: int, high_ppm: int
+    ) -> None:
+        """
+        Set CO2 alarm conditions and limits in ppm.
+
+        Pass the existing limits when disabling an alarm to keep them configured.
+        """
+        if not isinstance(mode, MeterProCO2AlarmMode) or mode.value & ~0x0F:
+            raise SwitchbotOperationError(
+                f"{self.name}: Invalid CO2 alarm mode {mode!r}"
+            )
+        if any(
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not 0 <= limit <= 0xFFFF
+            for limit in (low_ppm, high_ppm)
+        ):
+            raise SwitchbotOperationError(
+                f"{self.name}: CO2 alarm limits must be unsigned 16-bit integers"
+            )
+        if low_ppm > high_ppm:
+            raise SwitchbotOperationError(
+                f"{self.name}: Lower CO2 alarm limit must not exceed the upper limit"
+            )
+        payload = (
+            bytes((mode.value,))
+            + high_ppm.to_bytes(2, "big")
+            + low_ppm.to_bytes(2, "big")
+        )
+        result = await self._send_command(COMMAND_SET_CO2_ALARM + payload.hex())
+        self._validate_result("set_co2_alarm", result)
 
     async def get_co2_level_thresholds(self) -> tuple[int, int]:
         """Read the green-to-yellow and yellow-to-red CO2 thresholds in ppm."""

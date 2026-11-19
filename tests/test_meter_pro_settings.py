@@ -8,6 +8,8 @@ from bleak.backends.device import BLEDevice
 from switchbot import (
     MeterProAlarmMode,
     MeterProAlarmVolume,
+    MeterProCO2AlarmMode,
+    MeterProCO2AlarmStatus,
     MeterProComfortStatus,
     MeterProDateFormat,
     MeterProDisplaySource,
@@ -666,3 +668,119 @@ async def test_set_alarm_settings_rejects_device_error():
 
     with pytest.raises(SwitchbotOperationError, match="set_alarm_settings"):
         await device.set_alarm_settings(MeterProAlarmMode.DISABLED)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("response", "mode", "status"),
+    [
+        ("01000578019000", MeterProCO2AlarmMode.DISABLED, MeterProCO2AlarmStatus.NONE),
+        (
+            "010b05780190fe",
+            MeterProCO2AlarmMode.CUSTOM
+            | MeterProCO2AlarmMode.LOW
+            | MeterProCO2AlarmMode.HIGH,
+            MeterProCO2AlarmStatus.HIGH,
+        ),
+        (
+            "01840578019003",
+            MeterProCO2AlarmMode(0x84),
+            MeterProCO2AlarmStatus.IN_RANGE,
+        ),
+    ],
+)
+async def test_get_co2_alarm(
+    response: str, mode: MeterProCO2AlarmMode, status: MeterProCO2AlarmStatus
+):
+    device = create_device(SwitchbotMeterProCO2)
+    device._send_command.return_value = bytes.fromhex(response)
+
+    assert await device.get_co2_alarm() == {
+        "mode": mode,
+        "low_ppm": 400,
+        "high_ppm": 1400,
+        "status": status,
+    }
+    device._send_command.assert_awaited_once_with("570f69020301")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mode", "low", "high", "payload"),
+    [
+        (MeterProCO2AlarmMode.DISABLED, 400, 1400, "0005780190"),
+        (MeterProCO2AlarmMode.LOW, 401, 1101, "01044d0191"),
+        (MeterProCO2AlarmMode.HIGH, 0, 0xFFFF, "02ffff0000"),
+        (
+            MeterProCO2AlarmMode.LOW | MeterProCO2AlarmMode.HIGH,
+            425,
+            2000,
+            "0307d001a9",
+        ),
+        (MeterProCO2AlarmMode.IN_RANGE, 1200, 1200, "0404b004b0"),
+        (
+            MeterProCO2AlarmMode.HIGH | MeterProCO2AlarmMode.CUSTOM,
+            425,
+            2000,
+            "0a07d001a9",
+        ),
+    ],
+)
+async def test_set_co2_alarm(
+    mode: MeterProCO2AlarmMode, low: int, high: int, payload: str
+):
+    device = create_device(SwitchbotMeterProCO2)
+
+    await device.set_co2_alarm(mode, low, high)
+
+    device._send_command.assert_awaited_once_with("570f68020301" + payload)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("response", ["02", "010005780190"])
+async def test_get_co2_alarm_rejects_invalid_response(response: str):
+    device = create_device(SwitchbotMeterProCO2)
+    device._send_command.return_value = bytes.fromhex(response)
+
+    with pytest.raises(SwitchbotOperationError, match="get_co2_alarm"):
+        await device.get_co2_alarm()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mode", "low", "high", "message"),
+    [
+        (True, 400, 1400, "Invalid CO2 alarm mode"),
+        (MeterProCO2AlarmMode(0x10), 400, 1400, "Invalid CO2 alarm mode"),
+        (MeterProCO2AlarmMode.LOW, True, 1400, "unsigned 16-bit integers"),
+        (MeterProCO2AlarmMode.LOW, -1, 1400, "unsigned 16-bit integers"),
+        (MeterProCO2AlarmMode.LOW, 400, 0x10000, "unsigned 16-bit integers"),
+        (MeterProCO2AlarmMode.LOW, 400, 1400.0, "unsigned 16-bit integers"),
+        (MeterProCO2AlarmMode.IN_RANGE, 1400, 400, "Lower CO2 alarm limit"),
+    ],
+)
+async def test_set_co2_alarm_rejects_invalid_input(
+    mode: object, low: object, high: object, message: str
+):
+    device = create_device(SwitchbotMeterProCO2)
+
+    with pytest.raises(SwitchbotOperationError, match=message):
+        await device.set_co2_alarm(mode, low, high)
+
+    device._send_command.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_set_co2_alarm_rejects_device_error():
+    device = create_device(SwitchbotMeterProCO2)
+    device._send_command.return_value = b"\x02"
+
+    with pytest.raises(SwitchbotOperationError, match="set_co2_alarm"):
+        await device.set_co2_alarm(MeterProCO2AlarmMode.DISABLED, 400, 1400)
+
+
+def test_co2_alarm_is_only_available_on_the_co2_model():
+    device = create_device()
+
+    assert not hasattr(device, "get_co2_alarm")
+    assert not hasattr(device, "set_co2_alarm")

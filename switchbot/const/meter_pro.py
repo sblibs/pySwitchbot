@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntFlag
 
 
 class MeterProWeatherIcon(Enum):
@@ -73,3 +73,22 @@ class MeterProAlarmVolume(Enum):
     LOW = 2
     MEDIUM = 3
     HIGH = 4
+
+
+class MeterProCO2AlarmMode(IntFlag):
+    """CO2 alarm conditions and the protocol's custom-setting bit."""
+
+    DISABLED = 0
+    LOW = 1
+    HIGH = 2
+    IN_RANGE = 4
+    CUSTOM = 8
+
+
+class MeterProCO2AlarmStatus(Enum):
+    """Current CO2 alarm reported by the meter."""
+
+    NONE = 0
+    LOW = 1
+    HIGH = 2
+    IN_RANGE = 3
