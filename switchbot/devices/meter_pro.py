@@ -1,5 +1,6 @@
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any
+from enum import Enum
+from typing import Any, TypeVar
 
 from ..const.meter_pro import (
     MeterProAlarmMode,
@@ -18,6 +19,8 @@ from ..const.meter_pro import (
 from ..helpers import parse_uint24_be
 from .device import SwitchbotDevice, SwitchbotOperationError
 
+_E = TypeVar("_E", bound=Enum)
+
 COMMAND_SET_TIME_OFFSET = "570f680506"
 COMMAND_GET_TIME_OFFSET = "570f690506"
 MAX_TIME_OFFSET = (1 << 24) - 1
@@ -25,6 +28,8 @@ MAX_TIME_OFFSET = (1 << 24) - 1
 COMMAND_GET_DEVICE_DATETIME = "570f6901"
 COMMAND_SET_DEVICE_DATETIME = "57000503"
 COMMAND_SET_DISPLAY_FORMAT = "570f680505"
+COMMAND_GET_WEATHER = "570f6906"
+COMMAND_SET_WEATHER = "570f680601"
 
 COMMAND_GET_COMFORT_LEVEL = "570f69020101"
 COMMAND_GET_TEMPERATURE_HUMIDITY_ALARM = "570f69020100"
@@ -53,9 +58,6 @@ KEEP_BUTTON_FUNCTION = 0xFF
 KEEP_ALARM_VOLUME = 0xFF
 TEMPERATURE_HUMIDITY_ALARM_MASK = 0x77
 SOURCES_WITHOUT_MAC = {MeterProDisplaySource.NONE, MeterProDisplaySource.NETWORK}
-COMMAND_GET_WEATHER = "570f6906"
-COMMAND_SET_WEATHER = "570f680601"
-
 COMMAND_TRIGGER_CO2_SAMPLING = "570f680b04"
 COMMAND_START_CO2_CALIBRATION = "570f680b02"
 COMMAND_GET_USB_POWER_STATE = "570f690b02"
@@ -134,12 +136,13 @@ def _encode_weather_humidity(humidity: float | Decimal) -> int:
     return int(relative_humidity.quantize(Decimal(1), rounding=ROUND_HALF_UP))
 
 
-def _encode_weather_icon(icon: MeterProWeatherIcon | int) -> MeterProWeatherIcon:
-    if isinstance(icon, MeterProWeatherIcon):
-        return icon
-    if isinstance(icon, bool) or not isinstance(icon, int):
-        raise TypeError("Weather icon must be a MeterProWeatherIcon or integer")
-    return MeterProWeatherIcon(icon)
+def _coerce_enum(enum_cls: type[_E], value: _E | int, name: str) -> _E:
+    """Return value as enum_cls; accept the enum or its integer value."""
+    if isinstance(value, enum_cls):
+        return value
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError(f"{name} must be a {enum_cls.__name__} or integer")
+    return enum_cls(value)
 
 
 def _mac_hex(mac: str | None) -> str:
@@ -521,8 +524,9 @@ class SwitchbotMeterPro(SwitchbotDevice):
         Get the zones, data update interval, date format and battery icon.
 
         Missing fields and unknown date or battery icon values are None.
-        Each zone has "icon", "source" (the raw int if unknown) and "source_mac"
-        (None when the zone shows this device or network data).
+        Each zone has "icon" (None when unset or held), "source", and "source_mac"
+        (None when the zone shows this device or network data). Other unknown icon
+        and source codes are returned as raw ints for inspection.
         """
         # [status][icons mid|bot][sources mid|bot][mac mid x6][mac bot x6]
         # [data update interval u16][date format][reserved][battery icon]
@@ -531,7 +535,11 @@ class SwitchbotMeterPro(SwitchbotDevice):
 
         def zone(icon: int, source: int, mac: bytes) -> dict[str, Any]:
             return {
-                "icon": next((i for i in MeterProZoneIcon if i.value == icon), None),
+                "icon": (
+                    next((i for i in MeterProZoneIcon if i.value == icon), icon)
+                    if icon not in (0, KEEP_ICON)
+                    else None
+                ),
                 "source": next(
                     (s for s in MeterProDisplaySource if s.value == source), source
                 ),
@@ -558,10 +566,10 @@ class SwitchbotMeterPro(SwitchbotDevice):
 
     async def set_display_zone(
         self,
-        zone: MeterProDisplayZone,
-        source: MeterProDisplaySource,
+        zone: MeterProDisplayZone | int,
+        source: MeterProDisplaySource | int,
         source_mac: str | None = None,
-        icon: MeterProZoneIcon | None = None,
+        icon: MeterProZoneIcon | int | None = None,
     ) -> None:
         """
         Choose what a screen zone shows; icon None keeps the current icon.
@@ -571,8 +579,12 @@ class SwitchbotMeterPro(SwitchbotDevice):
         device. The screen applies it at the next data update.
         """
         try:
+            zone = _coerce_enum(MeterProDisplayZone, zone, "Display zone")
+            source = _coerce_enum(MeterProDisplaySource, source, "Display source")
+            if icon is not None:
+                icon = _coerce_enum(MeterProZoneIcon, icon, "Zone icon")
             mac = _mac_hex(source_mac)
-        except ValueError as err:
+        except (TypeError, ValueError) as err:
             raise SwitchbotOperationError(f"{self.name}: {err}") from err
         if mac != NO_MAC and source in SOURCES_WITHOUT_MAC:
             raise SwitchbotOperationError(
@@ -595,10 +607,17 @@ class SwitchbotMeterPro(SwitchbotDevice):
 
     async def set_zone_icons(
         self,
-        middle: MeterProZoneIcon | None = None,
-        bottom: MeterProZoneIcon | None = None,
+        middle: MeterProZoneIcon | int | None = None,
+        bottom: MeterProZoneIcon | int | None = None,
     ) -> None:
         """Set the indoor/outdoor icons of both zones; None keeps an icon."""
+        try:
+            if middle is not None:
+                middle = _coerce_enum(MeterProZoneIcon, middle, "Middle icon")
+            if bottom is not None:
+                bottom = _coerce_enum(MeterProZoneIcon, bottom, "Bottom icon")
+        except (TypeError, ValueError) as err:
+            raise SwitchbotOperationError(f"{self.name}: {err}") from err
         middle_byte = KEEP_ICON if middle is None else middle.value
         bottom_byte = KEEP_ICON if bottom is None else bottom.value
         payload = f"{COMMAND_SET_ZONE_ICONS}{middle_byte:02x}{bottom_byte:02x}"
@@ -620,20 +639,26 @@ class SwitchbotMeterPro(SwitchbotDevice):
         result = await self._send_command(payload)
         self._validate_result("set_data_update_interval", result)
 
-    async def set_date_format(self, date_format: MeterProDateFormat) -> None:
+    async def set_date_format(self, date_format: MeterProDateFormat | int) -> None:
         """Set the date format; the app offers it from firmware 1.5."""
+        try:
+            date_format = _coerce_enum(MeterProDateFormat, date_format, "Date format")
+        except (TypeError, ValueError) as err:
+            raise SwitchbotOperationError(f"{self.name}: {err}") from err
         payload = f"{COMMAND_SET_DATE_FORMAT}{date_format.value:02x}"
         result = await self._send_command(payload)
         self._validate_result("set_date_format", result)
 
     async def set_battery_icon(self, always: bool) -> None:
         """Show the battery icon always, or only when the battery is low."""
+        self._check_bool(always, "always")
         payload = f"{COMMAND_SET_BATTERY_ICON}{'01' if always else '00'}"
         result = await self._send_command(payload)
         self._validate_result("set_battery_icon", result)
 
     async def set_temperature_unit(self, fahrenheit: bool) -> None:
         """Set the default temperature unit shown on the screen (F or C)."""
+        self._check_bool(fahrenheit, "fahrenheit")
         payload = f"{COMMAND_SET_TEMPERATURE_UNIT}{'01' if fahrenheit else '00'}"
         result = await self._send_command(payload)
         self._validate_result("set_temperature_unit", result)
@@ -652,6 +677,12 @@ class SwitchbotMeterPro(SwitchbotDevice):
         self, unit_switch: bool | None = None, source_switch: bool | None = None
     ) -> None:
         """Allow or forbid the button actions; None keeps one as is."""
+        for flag, name in (
+            (unit_switch, "unit_switch"),
+            (source_switch, "source_switch"),
+        ):
+            if flag is not None:
+                self._check_bool(flag, name)
         unit_byte = (
             KEEP_BUTTON_FUNCTION
             if unit_switch is None
@@ -665,6 +696,12 @@ class SwitchbotMeterPro(SwitchbotDevice):
         payload = f"{COMMAND_SET_BUTTON_FUNCTIONS}{unit_byte:02x}{source_byte:02x}"
         result = await self._send_command(payload)
         self._validate_result("set_button_functions", result)
+
+    def _check_bool(self, value: object, name: str) -> None:
+        if not isinstance(value, bool):
+            raise SwitchbotOperationError(
+                f"{self.name}: {name} must be a boolean, got {value!r}"
+            )
 
     def _validate_result(
         self, op_name: str, result: bytes | None, min_length: int | None = None
@@ -735,7 +772,8 @@ class SwitchbotMeterPro(SwitchbotDevice):
                 f"{self.name}: Supply at least one weather field"
             )
         try:
-            icon = _encode_weather_icon(icon) if icon is not None else None
+            if icon is not None:
+                icon = _coerce_enum(MeterProWeatherIcon, icon, "Weather icon")
             temperature = (
                 _encode_weather_temperature(temperature_c)
                 if temperature_c is not None
