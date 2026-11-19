@@ -12,7 +12,7 @@ def process_wokeypad(
     mfr_data: bytes | None,
 ) -> dict[str, bool | int | None]:
     """Process woKeypad services data."""
-    if data is None or mfr_data is None:
+    if data is None or mfr_data is None or len(data) < 3 or len(mfr_data) < 7:
         return {"battery": None, "attempt_state": None}
 
     _LOGGER.debug("mfr_data: %s", mfr_data.hex())

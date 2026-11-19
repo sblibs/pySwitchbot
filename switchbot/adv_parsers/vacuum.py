@@ -12,7 +12,7 @@ def process_vacuum(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int | str]:
     """Support for s10, k10+ pro combo, k20 process service data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 14:
         return {}
 
     _seq_num = mfr_data[6]
@@ -48,7 +48,7 @@ def process_vacuum_k(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int | str]:
     """Support for k10+, k10+ pro process service data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 9:
         return {}
 
     _seq_num = mfr_data[6]

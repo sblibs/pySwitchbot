@@ -8,7 +8,7 @@ def process_wohand(data: bytes | None, mfr_data: bytes | None) -> dict[str, bool
     if data is None and mfr_data is None:
         return {}
 
-    if data is None:
+    if data is None or len(data) < 3:
         return {
             "switchMode": None,
             "isOn": None,

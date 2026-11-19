@@ -2,8 +2,6 @@ import logging
 import time
 from typing import Any
 
-from bleak.backends.device import BLEDevice
-
 from ..const import SwitchbotModel
 from ..helpers import parse_power_data, parse_uint24_be
 from ..models import SwitchBotAdvertisement
@@ -59,32 +57,9 @@ MULTI_CHANNEL_COMMANDS_GET_VOLTAGE_AND_CURRENT = {
 class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot relay switch 1pm."""
 
+    _model = SwitchbotModel.RELAY_SWITCH_1PM
     _turn_on_command = f"{COMMAND_CONTROL}010100"
     _turn_off_command = f"{COMMAND_CONTROL}010000"
-
-    def __init__(
-        self,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.RELAY_SWITCH_1PM,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-
-    @classmethod
-    async def verify_encryption_key(
-        cls,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.RELAY_SWITCH_1PM,
-        **kwargs: Any,
-    ) -> bool:
-        return await super().verify_encryption_key(
-            device, key_id, encryption_key, model, **kwargs
-        )
 
     def _reset_power_data(self, data: dict[str, Any]) -> None:
         """Reset power-related data to 0."""
@@ -129,6 +104,7 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
             SwitchbotModel.RELAY_SWITCH_1PM,
             SwitchbotModel.RELAY_SWITCH_2PM,
             SwitchbotModel.PLUG_MINI_EU,
+            SwitchbotModel.PLUG_MINI_IT,
         ):
             if channel is None:
                 adv_data["voltage"] = self._get_adv_value("voltage") or 0
@@ -161,6 +137,14 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 
         if not (_data := await self._get_basic_info(COMMAND_GET_BASIC_INFO)):
             return None
+        if len(_data) < 17:
+            _LOGGER.warning(
+                "%s: Short basic-info response (%d bytes): %s",
+                self.name,
+                len(_data),
+                _data.hex(),
+            )
+            return None
         if not (
             _channel1_data := await self._get_basic_info(
                 COMMAND_GET_CHANNEL1_INFO.format(
@@ -168,6 +152,14 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
                 )
             )
         ):
+            return None
+        if len(_channel1_data) < 15:
+            _LOGGER.warning(
+                "%s: Short channel1 response (%d bytes): %s",
+                self.name,
+                len(_channel1_data),
+                _channel1_data.hex(),
+            )
             return None
 
         _LOGGER.debug(
@@ -213,36 +205,17 @@ class SwitchbotRelaySwitch(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
 class SwitchbotGarageDoorOpener(SwitchbotRelaySwitch):
     """Representation of a Switchbot garage door opener."""
 
+    _model = SwitchbotModel.GARAGE_DOOR_OPENER
     _open_command = f"{COMMAND_CONTROL}110129"
     _close_command = f"{COMMAND_CONTROL}110229"
     _press_command = f"{COMMAND_CONTROL}110329"  # for garage door opener toggle
-
-    def __init__(
-        self,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.GARAGE_DOOR_OPENER,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(device, key_id, encryption_key, interface, model, **kwargs)
 
 
 class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch):
     """Representation of a Switchbot relay switch 2pm."""
 
-    def __init__(
-        self,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.RELAY_SWITCH_2PM,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(device, key_id, encryption_key, interface, model, **kwargs)
-        self._channel = 2
+    _model = SwitchbotModel.RELAY_SWITCH_2PM
+    _channel: int = 2
 
     @property
     def channel(self) -> int:
@@ -266,6 +239,14 @@ class SwitchbotRelaySwitch2PM(SwitchbotRelaySwitch):
                 )
             )
         ):
+            return None
+        if len(_channel2_data) < 15:
+            _LOGGER.warning(
+                "%s: Short channel2 response (%d bytes): %s",
+                self.name,
+                len(_channel2_data),
+                _channel2_data.hex(),
+            )
             return None
 
         _LOGGER.debug("channel2_hex_data: %s", _channel2_data.hex())

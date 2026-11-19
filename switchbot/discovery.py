@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 
 import bleak
 from bleak.backends.device import BLEDevice
@@ -20,10 +21,15 @@ CONNECT_LOCK = asyncio.Lock()
 class GetSwitchbotDevices:
     """Scan for all Switchbot devices and return by type."""
 
-    def __init__(self, interface: int = 0) -> None:
+    def __init__(
+        self,
+        interface: int = 0,
+        callback: Callable[[SwitchBotAdvertisement], None] | None = None,
+    ) -> None:
         """Get switchbot devices class constructor."""
         self._interface = f"hci{interface}"
         self._adv_data: dict[str, SwitchBotAdvertisement] = {}
+        self._callback = callback
 
     def detection_callback(
         self,
@@ -34,6 +40,11 @@ class GetSwitchbotDevices:
         discovery = parse_advertisement_data(device, advertisement_data)
         if discovery:
             self._adv_data[discovery.address] = discovery
+            if self._callback is not None:
+                try:
+                    self._callback(discovery)
+                except Exception:
+                    _LOGGER.exception("Error in discovery callback")
 
     async def discover(
         self, retry: int = DEFAULT_RETRY_COUNT, scan_timeout: int = DEFAULT_SCAN_TIMEOUT
@@ -42,7 +53,7 @@ class GetSwitchbotDevices:
         devices = None
         devices = bleak.BleakScanner(
             detection_callback=self.detection_callback,
-            # TODO: Find new UUIDs to filter on. For example, see
+            # Could filter on service UUIDs once new ones are identified; see
             # https://github.com/OpenWonderLabs/SwitchBotAPI-BLE/blob/4ad138bb09f0fbbfa41b152ca327a78c1d0b6ba9/devicetypes/meter.md
             adapter=self._interface,
         )
@@ -54,9 +65,7 @@ class GetSwitchbotDevices:
 
         if devices is None:
             if retry < 1:
-                _LOGGER.error(
-                    "Scanning for Switchbot devices failed. Stop trying", exc_info=True
-                )
+                _LOGGER.error("Scanning for Switchbot devices failed. Stop trying")
                 return self._adv_data
 
             _LOGGER.warning(

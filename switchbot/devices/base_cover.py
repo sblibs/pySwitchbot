@@ -43,19 +43,6 @@ class SwitchbotBaseCover(SwitchbotDevice):
         self._is_opening: bool = False
         self._is_closing: bool = False
 
-    async def _send_multiple_commands(self, keys: list[str]) -> bool:
-        """
-        Send multiple commands to device.
-
-        Since we current have no way to tell which command the device
-        needs we send both.
-        """
-        final_result = False
-        for key in keys:
-            result = await self._send_command(key)
-            final_result |= self._check_command_result(result, 0, {1})
-        return final_result
-
     @update_after_operation
     async def stop(self) -> bool:
         """Send stop command to device."""

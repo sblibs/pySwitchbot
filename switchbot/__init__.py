@@ -11,24 +11,45 @@ from bleak_retry_connector import (
 from .adv_parser import SwitchbotSupportedType, parse_advertisement_data
 from .const import (
     AirPurifierMode,
+    AirQualityLevel,
     BulbColorMode,
     CeilingLightColorMode,
+    CirculatorFanProMode,
     ClimateAction,
     ClimateMode,
     ColorMode,
     FanMode,
+    HorizontalOscillationAngle,
     HumidifierAction,
     HumidifierMode,
     HumidifierWaterLevel,
     LockStatus,
+    MeterProAlarmMode,
+    MeterProAlarmVolume,
+    MeterProCO2AlarmMode,
+    MeterProCO2AlarmStatus,
+    MeterProComfortStatus,
+    MeterProDateFormat,
+    MeterProDisplaySource,
+    MeterProDisplayZone,
+    MeterProTemperatureHumidityAlarmMode,
+    MeterProTemperatureHumidityAlarmStatus,
+    MeterProWeatherIcon,
+    MeterProZoneIcon,
+    NightLightState,
+    QuickKeyFunction,
     SmartThermostatRadiatorMode,
+    StandingFanMode,
     StripLightColorMode,
     SwitchbotAccountConnectionError,
     SwitchbotApiError,
     SwitchbotAuthenticationError,
     SwitchbotModel,
+    VerticalOscillationAngle,
 )
 from .devices.air_purifier import SwitchbotAirPurifier
+from .devices.art_frame import SwitchbotArtFrame
+from .devices.art_frame2 import SwitchbotArtFrame2, SwitchbotEInkPhotoMagnet
 from .devices.base_light import SwitchbotBaseLight
 from .devices.blind_tilt import SwitchbotBlindTilt
 from .devices.bot import Switchbot
@@ -40,16 +61,28 @@ from .devices.device import (
     SwitchbotEncryptedDevice,
     SwitchbotOperationError,
     fetch_cloud_devices,
+    fetch_cloud_devices_by_token,
 )
 from .devices.evaporative_humidifier import SwitchbotEvaporativeHumidifier
-from .devices.fan import SwitchbotFan
+from .devices.fan import (
+    SwitchbotCirculatorFanPro,
+    SwitchbotFan,
+    SwitchbotStandingFan,
+)
 from .devices.humidifier import SwitchbotHumidifier
+from .devices.keypad_vision import SwitchbotKeypadVision
 from .devices.light_strip import (
+    SwitchbotCandleWarmerLamp,
     SwitchbotLightStrip,
+    SwitchbotPermanentOutdoorLight,
     SwitchbotRgbicLight,
+    SwitchbotRgbicNeonLight,
+    SwitchbotRgbicwwCeilingLight,
     SwitchbotStripLight3,
 )
-from .devices.lock import SwitchbotLock
+from .devices.lock import SwitchbotLock, SwitchbotLockUltra
+from .devices.meter_pro import SwitchbotMeterPro, SwitchbotMeterProCO2
+from .devices.outdoor_plug import SwitchbotOutdoorPlug
 from .devices.plug import SwitchbotPlugMini
 from .devices.relay_switch import (
     SwitchbotGarageDoorOpener,
@@ -58,62 +91,106 @@ from .devices.relay_switch import (
 )
 from .devices.roller_shade import SwitchbotRollerShade
 from .devices.smart_thermostat_radiator import SwitchbotSmartThermostatRadiator
+from .devices.universal_remote import SwitchbotUniversalRemote
 from .devices.vacuum import SwitchbotVacuum
 from .discovery import GetSwitchbotDevices
 from .models import SwitchBotAdvertisement
+from .oauth import (
+    OAUTH_AUTHORIZE_URL,
+    OAUTH_SCOPE,
+    OAUTH_TOKEN_URL,
+    build_oauth_authorize_url,
+    exchange_oauth_code,
+)
 
 __all__ = [
+    "OAUTH_AUTHORIZE_URL",
+    "OAUTH_SCOPE",
+    "OAUTH_TOKEN_URL",
     "AirPurifierMode",
+    "AirQualityLevel",
     "BulbColorMode",
     "CeilingLightColorMode",
+    "CirculatorFanProMode",
     "ClimateAction",
     "ClimateMode",
     "ColorMode",
     "FanMode",
     "GetSwitchbotDevices",
+    "HorizontalOscillationAngle",
     "HumidifierAction",
     "HumidifierMode",
     "HumidifierWaterLevel",
     "LockStatus",
+    "MeterProAlarmMode",
+    "MeterProAlarmVolume",
+    "MeterProCO2AlarmMode",
+    "MeterProCO2AlarmStatus",
+    "MeterProComfortStatus",
+    "MeterProDateFormat",
+    "MeterProDisplaySource",
+    "MeterProDisplayZone",
+    "MeterProTemperatureHumidityAlarmMode",
+    "MeterProTemperatureHumidityAlarmStatus",
+    "MeterProWeatherIcon",
+    "MeterProZoneIcon",
+    "NightLightState",
+    "QuickKeyFunction",
     "SmartThermostatRadiatorMode",
+    "StandingFanMode",
     "StripLightColorMode",
     "SwitchBotAdvertisement",
-    "Switchbot",
     "Switchbot",
     "SwitchbotAccountConnectionError",
     "SwitchbotAirPurifier",
     "SwitchbotApiError",
+    "SwitchbotArtFrame",
+    "SwitchbotArtFrame2",
     "SwitchbotAuthenticationError",
     "SwitchbotBaseLight",
     "SwitchbotBlindTilt",
     "SwitchbotBulb",
+    "SwitchbotCandleWarmerLamp",
     "SwitchbotCeilingLight",
+    "SwitchbotCirculatorFanPro",
     "SwitchbotCurtain",
     "SwitchbotDevice",
+    "SwitchbotEInkPhotoMagnet",
     "SwitchbotEncryptedDevice",
     "SwitchbotEvaporativeHumidifier",
     "SwitchbotFan",
     "SwitchbotGarageDoorOpener",
     "SwitchbotHumidifier",
+    "SwitchbotKeypadVision",
     "SwitchbotLightStrip",
     "SwitchbotLock",
-    "SwitchbotModel",
+    "SwitchbotLockUltra",
+    "SwitchbotMeterPro",
+    "SwitchbotMeterProCO2",
     "SwitchbotModel",
     "SwitchbotOperationError",
-    "SwitchbotPlugMini",
+    "SwitchbotOutdoorPlug",
+    "SwitchbotPermanentOutdoorLight",
     "SwitchbotPlugMini",
     "SwitchbotRelaySwitch",
     "SwitchbotRelaySwitch2PM",
     "SwitchbotRgbicLight",
+    "SwitchbotRgbicNeonLight",
+    "SwitchbotRgbicwwCeilingLight",
     "SwitchbotRollerShade",
     "SwitchbotSmartThermostatRadiator",
+    "SwitchbotStandingFan",
     "SwitchbotStripLight3",
     "SwitchbotSupportedType",
-    "SwitchbotSupportedType",
+    "SwitchbotUniversalRemote",
     "SwitchbotVacuum",
+    "VerticalOscillationAngle",
+    "build_oauth_authorize_url",
     "close_stale_connections",
     "close_stale_connections_by_address",
+    "exchange_oauth_code",
     "fetch_cloud_devices",
+    "fetch_cloud_devices_by_token",
     "get_device",
     "parse_advertisement_data",
 ]

@@ -11,7 +11,9 @@ from bleak.exc import BleakDBusError
 
 from switchbot import SwitchbotModel
 from switchbot.devices.device import (
+    AESMode,
     SwitchbotEncryptedDevice,
+    SwitchbotOperationError,
 )
 
 from .test_adv_parser import generate_ble_device
@@ -58,22 +60,30 @@ async def test_encrypted_device_init_validation() -> None:
     # Test empty key_id
     with pytest.raises(ValueError, match="key_id is missing"):
         MockEncryptedDevice(
-            ble_device, "", "0123456789abcdef0123456789abcdef", SwitchbotModel.LOCK
+            ble_device,
+            "",
+            "0123456789abcdef0123456789abcdef",
+            model=SwitchbotModel.LOCK,
         )
 
     # Test invalid key_id length
     with pytest.raises(ValueError, match="key_id is invalid"):
         MockEncryptedDevice(
-            ble_device, "1", "0123456789abcdef0123456789abcdef", SwitchbotModel.LOCK
+            ble_device,
+            "1",
+            "0123456789abcdef0123456789abcdef",
+            model=SwitchbotModel.LOCK,
         )
 
     # Test empty encryption_key
     with pytest.raises(ValueError, match="encryption_key is missing"):
-        MockEncryptedDevice(ble_device, "01", "", SwitchbotModel.LOCK)
+        MockEncryptedDevice(ble_device, "01", "", model=SwitchbotModel.LOCK)
 
     # Test invalid encryption_key length
     with pytest.raises(ValueError, match="encryption_key is invalid"):
-        MockEncryptedDevice(ble_device, "01", "0123456789abcdef", SwitchbotModel.LOCK)
+        MockEncryptedDevice(
+            ble_device, "01", "0123456789abcdef", model=SwitchbotModel.LOCK
+        )
 
 
 @pytest.mark.asyncio
@@ -133,7 +143,8 @@ async def test_send_command_iv_already_initialized() -> None:
         patch.object(device, "_decrypt") as mock_decrypt,
     ):
         mock_encrypt.return_value = (
-            "656e637279707465645f64617461"  # "encrypted_data" in hex
+            "656e637279707465645f64617461",  # "encrypted_data" in hex
+            "abcd",
         )
         mock_decrypt.return_value = b"decrypted_response"
         mock_send.return_value = b"\x01\x00\x00\x00encrypted_response"
@@ -171,7 +182,7 @@ async def test_iv_race_condition_during_disconnect() -> None:
         patch.object(device, "_encrypt") as mock_encrypt,
         patch.object(device, "_decrypt") as mock_decrypt,
     ):
-        mock_encrypt.return_value = "656e63727970746564"  # "encrypted" in hex
+        mock_encrypt.return_value = ("656e63727970746564", "abcd")
         mock_decrypt.return_value = b"response"
         mock_send.return_value = b"\x01\x00\x00\x00response"
 
@@ -211,6 +222,166 @@ async def test_ensure_encryption_initialized_with_lock_held() -> None:
 
 
 @pytest.mark.asyncio
+async def test_ensure_encryption_initialized_sets_gcm_mode() -> None:
+    """Test that GCM mode is detected from device response."""
+    device = create_encrypted_device()
+
+    gcm_iv = b"\x01" * 12
+    response = b"\x01\x00\x01\x00" + gcm_iv + b"\x00\x00\x00\x00"
+
+    async with device._operation_lock:
+        with patch.object(device, "_send_command_locked_with_retry") as mock_send:
+            mock_send.return_value = response
+
+            result = await device._ensure_encryption_initialized()
+
+            assert result is True
+            assert device._encryption_mode == AESMode.GCM
+            assert device._iv == gcm_iv
+
+
+@pytest.mark.asyncio
+async def test_ensure_encryption_initialized_invalid_iv_length_gcm() -> None:
+    """Test that invalid IV length for GCM mode returns False."""
+    device = create_encrypted_device()
+
+    # GCM expects 12 bytes IV, but response has wrong length (only 8 bytes after trimming)
+    response = b"\x01\x00\x01\x00" + b"\x01" * 8 + b"\x00\x00\x00\x00"
+
+    async with device._operation_lock:
+        with patch.object(device, "_send_command_locked_with_retry") as mock_send:
+            mock_send.return_value = response
+
+            result = await device._ensure_encryption_initialized()
+
+            assert result is False
+            assert device._iv is None
+
+
+@pytest.mark.asyncio
+async def test_ensure_encryption_initialized_invalid_iv_length_ctr() -> None:
+    """Test that invalid IV length for CTR mode returns False."""
+    device = create_encrypted_device()
+
+    # CTR expects 16 bytes IV, but response has only 8 bytes
+    response = b"\x01\x00\x00\x00" + b"\x01" * 8
+
+    async with device._operation_lock:
+        with patch.object(device, "_send_command_locked_with_retry") as mock_send:
+            mock_send.return_value = response
+
+            result = await device._ensure_encryption_initialized()
+
+            assert result is False
+            assert device._iv is None
+
+
+@pytest.mark.asyncio
+async def test_device_with_gcm_mode() -> None:
+    """Test that device initializes correctly in GCM mode and increments GCM IV."""
+    device = create_encrypted_device()
+    device._encryption_mode = AESMode.GCM
+    device._iv = b"\x01" * 12
+
+    with (
+        patch.object(device, "_ensure_encryption_initialized") as mock_ensure,
+        patch.object(device, "_send_command_locked_with_retry") as mock_send,
+        patch.object(device, "_decrypt") as mock_decrypt,
+        patch.object(device, "_encrypt") as mock_encrypt,
+        patch.object(device, "_increment_gcm_iv") as mock_inc_iv,
+    ):
+        mock_ensure.return_value = True
+        mock_encrypt.return_value = ("10203040", "abcd")
+        mock_send.return_value = b"\x01\x00\x00\x00\x10\x20\x30\x40"
+        mock_decrypt.return_value = b"\x10\x20\x30\x40"
+
+        await device._send_command("570200")
+
+        mock_inc_iv.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_resolve_encryption_mode_invalid() -> None:
+    """Test that invalid mode byte raises error."""
+    device = create_encrypted_device()
+
+    with pytest.raises(ValueError, match="Unsupported encryption mode"):
+        device._resolve_encryption_mode(2)
+
+
+@pytest.mark.asyncio
+async def test_resolve_encryption_mode_missing() -> None:
+    """Test that missing mode byte raises error."""
+    device = create_encrypted_device()
+
+    with pytest.raises(ValueError, match="Encryption mode byte is missing"):
+        device._resolve_encryption_mode(None)
+
+
+@pytest.mark.asyncio
+async def test_resolve_encryption_mode_conflict() -> None:
+    """Test that conflicting encryption modes raise error."""
+    device = create_encrypted_device()
+    device._encryption_mode = AESMode.CTR
+
+    with pytest.raises(
+        ValueError,
+        match="Conflicting encryption modes detected: CTR vs GCM",
+    ):
+        device._resolve_encryption_mode(1)
+
+
+@pytest.mark.asyncio
+async def test_increment_gcm_iv() -> None:
+    """Test GCM IV increment logic."""
+    device = create_encrypted_device()
+    device._encryption_mode = AESMode.GCM
+    device._iv = b"\x00" * 11 + b"\x01"
+
+    device._increment_gcm_iv()
+
+    assert device._iv == b"\x00" * 11 + b"\x02"
+    assert device._cipher is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("initial_iv", "expected_exception", "expected_message"),
+    [
+        (None, RuntimeError, "Cannot increment GCM IV: IV is None"),
+        (
+            b"\x00" * 10,
+            RuntimeError,
+            "Cannot increment GCM IV: IV length is not 12 bytes",
+        ),
+    ],
+)
+async def test_increment_gcm_iv_invalid(
+    initial_iv, expected_exception, expected_message
+) -> None:
+    """Test GCM IV increment with invalid IV states."""
+    device = create_encrypted_device()
+    device._encryption_mode = AESMode.GCM
+    device._iv = initial_iv
+
+    with pytest.raises(expected_exception, match=expected_message):
+        device._increment_gcm_iv()
+
+
+@pytest.mark.asyncio
+async def test_gcm_encrypt_decrypt_without_finalize() -> None:
+    """Test GCM encrypt/decrypt works without finalize in decrypt."""
+    device = create_encrypted_device()
+    device._encryption_mode = AESMode.GCM
+    device._iv = b"\x10" * 12
+
+    ciphertext_hex, _ = device._encrypt("48656c6c6f")
+    decrypted = device._decrypt(bytearray.fromhex(ciphertext_hex))
+
+    assert decrypted.hex() == "48656c6c6f"
+
+
+@pytest.mark.asyncio
 async def test_ensure_encryption_initialized_failure() -> None:
     """Test _ensure_encryption_initialized when IV initialization fails."""
     device = create_encrypted_device()
@@ -233,12 +404,13 @@ async def test_encrypt_decrypt_with_valid_iv() -> None:
     device._iv = b"\x00" * 16  # Use zeros for predictable test
 
     # Test encryption
-    encrypted = device._encrypt("48656c6c6f")  # "Hello" in hex
-    assert isinstance(encrypted, str)
-    assert len(encrypted) > 0
+    ciphertext_hex, header_hex = device._encrypt("48656c6c6f")  # "Hello" in hex
+    assert isinstance(ciphertext_hex, str)
+    assert isinstance(header_hex, str)
+    assert len(ciphertext_hex) > 0
 
     # Test decryption
-    decrypted = device._decrypt(bytearray.fromhex(encrypted))
+    decrypted = device._decrypt(bytearray.fromhex(ciphertext_hex))
     assert decrypted.hex() == "48656c6c6f"
 
 
@@ -278,6 +450,7 @@ async def test_execute_disconnect_clears_encryption_state() -> None:
     device = create_encrypted_device()
     device._iv = b"\x12\x34\x56\x78\x9a\xbc\xde\xf0\x12\x34\x56\x78\x9a\xbc\xde\xf0"
     device._cipher = None  # type: ignore[assignment]
+    device._encryption_mode = AESMode.CTR
 
     # Mock client
     mock_client = AsyncMock()
@@ -288,6 +461,7 @@ async def test_execute_disconnect_clears_encryption_state() -> None:
 
     assert device._iv is None
     assert device._cipher is None
+    assert device._encryption_mode is None
     mock_disconnect.assert_called_once()
 
 
@@ -304,7 +478,7 @@ async def test_concurrent_commands_with_same_device() -> None:
         patch.object(device, "_encrypt") as mock_encrypt,
         patch.object(device, "_decrypt") as mock_decrypt,
     ):
-        mock_encrypt.return_value = "656e63727970746564"  # "encrypted" in hex
+        mock_encrypt.return_value = ("656e63727970746564", "abcd")
         mock_decrypt.return_value = b"response"
         mock_send.return_value = b"\x01\x00\x00\x00data"
 
@@ -337,7 +511,7 @@ async def test_command_retry_with_encryption() -> None:
         patch.object(device, "_encrypt") as mock_encrypt,
         patch.object(device, "_decrypt") as mock_decrypt,
     ):
-        mock_encrypt.return_value = "656e63727970746564"  # "encrypted" in hex
+        mock_encrypt.return_value = ("656e63727970746564", "abcd")
         mock_decrypt.return_value = b"response"
 
         # First attempt fails, second succeeds
@@ -360,11 +534,48 @@ async def test_empty_data_encryption_decryption() -> None:
 
     # Test empty encryption
     encrypted = device._encrypt("")
-    assert encrypted == ""
+    assert encrypted == ("", "")
 
     # Test empty decryption
     decrypted = device._decrypt(bytearray())
     assert decrypted == b""
+
+
+@pytest.mark.asyncio
+async def test_verify_encryption_key_falls_back_to_classvar() -> None:
+    """verify_encryption_key resolves `model` from `cls._model` when omitted."""
+
+    class ClassvarModelDevice(MockEncryptedDevice):
+        _model = SwitchbotModel.LOCK
+
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "Test Device")
+    with patch.object(
+        ClassvarModelDevice,
+        "get_basic_info",
+        new_callable=AsyncMock,
+        return_value={"ok": True},
+    ):
+        result = await ClassvarModelDevice.verify_encryption_key(
+            ble_device, "01", "0123456789abcdef0123456789abcdef"
+        )
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_verify_encryption_key_without_model_or_classvar_raises() -> None:
+    """verify_encryption_key raises when neither `model=` nor `cls._model` is set."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "Test Device")
+    with pytest.raises(ValueError, match="model must be provided"):
+        await MockEncryptedDevice.verify_encryption_key(
+            ble_device, "01", "0123456789abcdef0123456789abcdef"
+        )
+
+
+def test_init_without_model_or_classvar_raises() -> None:
+    """__init__ raises when neither `model=` nor `cls._model` is set."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "Test Device")
+    with pytest.raises(ValueError, match="model must be provided"):
+        MockEncryptedDevice(ble_device, "01", "0123456789abcdef0123456789abcdef")
 
 
 @pytest.mark.asyncio
@@ -384,3 +595,125 @@ async def test_decrypt_with_none_iv_during_disconnect() -> None:
     device._expected_disconnect = False
     with pytest.raises(RuntimeError, match="Cannot decrypt: IV is None"):
         device._decrypt(bytearray(b"encrypted_data"))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("info", "error", "expected"),
+    [
+        ({"ok": True}, None, True),
+        (None, None, False),
+        (None, SwitchbotOperationError("Verification failed"), False),
+        (None, RuntimeError("Unexpected failure"), None),
+    ],
+)
+async def test_verify_encryption_key_disconnects(
+    info: dict | None, error: Exception | None, expected: bool | None
+) -> None:
+    """Verification releases its temporary client and disconnect timer."""
+    instances: list[MockEncryptedDevice] = []
+    client = AsyncMock()
+    timer = None
+
+    async def get_basic_info(device: MockEncryptedDevice) -> dict | None:
+        nonlocal timer
+        instances.append(device)
+        device._client = client
+        device._reset_disconnect_timer()
+        timer = device._disconnect_timer
+        if error is not None:
+            raise error
+        return info
+
+    with (
+        patch.object(
+            MockEncryptedDevice,
+            "get_basic_info",
+            autospec=True,
+            side_effect=get_basic_info,
+        ),
+    ):
+        verification = MockEncryptedDevice.verify_encryption_key(
+            generate_ble_device("aa:bb:cc:dd:ee:ff", "Test Device"),
+            "01",
+            "0123456789abcdef0123456789abcdef",
+            model=SwitchbotModel.LOCK,
+        )
+        if isinstance(error, RuntimeError):
+            with pytest.raises(RuntimeError, match="Unexpected failure"):
+                await verification
+        else:
+            assert await verification is expected
+
+    (device,) = instances
+    client.disconnect.assert_awaited_once_with()
+    assert device._client is None
+    assert device._disconnect_timer is None
+    assert timer is not None
+    assert timer.cancelled()
+
+
+@pytest.mark.asyncio
+async def test_verify_encryption_key_cancellation_disconnects() -> None:
+    """Cancelling verification waits for its temporary client to disconnect."""
+    instances: list[MockEncryptedDevice] = []
+    client = AsyncMock()
+    query_started = asyncio.Event()
+    disconnect_started = asyncio.Event()
+    allow_disconnect = asyncio.Event()
+
+    async def get_basic_info(device: MockEncryptedDevice) -> None:
+        instances.append(device)
+        device._client = client
+        device._reset_disconnect_timer()
+        query_started.set()
+        await asyncio.Future()
+
+    async def disconnect() -> None:
+        disconnect_started.set()
+        await allow_disconnect.wait()
+
+    client.disconnect.side_effect = disconnect
+    with (
+        patch.object(
+            MockEncryptedDevice,
+            "get_basic_info",
+            autospec=True,
+            side_effect=get_basic_info,
+        ),
+    ):
+        task = asyncio.create_task(
+            MockEncryptedDevice.verify_encryption_key(
+                generate_ble_device("aa:bb:cc:dd:ee:ff", "Test Device"),
+                "01",
+                "0123456789abcdef0123456789abcdef",
+                model=SwitchbotModel.LOCK,
+            )
+        )
+        await asyncio.wait_for(query_started.wait(), timeout=1)
+        task.cancel()
+        await asyncio.wait_for(disconnect_started.wait(), timeout=1)
+        assert not task.done()
+        allow_disconnect.set()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    (device,) = instances
+    client.disconnect.assert_awaited_once_with()
+    assert device._client is None
+    assert device._disconnect_timer is None
+
+
+@pytest.mark.asyncio
+async def test_verify_encryption_key_invalid_credentials_do_not_disconnect() -> None:
+    """Invalid constructor arguments do not attempt connection cleanup."""
+    with patch.object(
+        MockEncryptedDevice, "_execute_forced_disconnect", new_callable=AsyncMock
+    ) as disconnect:
+        assert not await MockEncryptedDevice.verify_encryption_key(
+            generate_ble_device("aa:bb:cc:dd:ee:ff", "Test Device"),
+            "",
+            "0123456789abcdef0123456789abcdef",
+            model=SwitchbotModel.LOCK,
+        )
+    disconnect.assert_not_awaited()

@@ -47,6 +47,21 @@ FLOOR_LAMP_INFO = AdvTestCase(
     SwitchbotModel.FLOOR_LAMP,
 )
 
+CANDLE_WARMER_LAMP_INFO = AdvTestCase(
+    b"\x90\xe5\xb1h\xda\xaa\n\xb0 \x00",
+    b"\x00\x00\x00\x00\x11\x22\xb8",
+    {
+        "brightness": 48,
+        "delay": False,
+        "isOn": True,
+        "network_state": 2,
+        "sequence_number": 10,
+    },
+    b"\x00\x11\x22\xb8",
+    "Candle Warmer Lamp",
+    SwitchbotModel.CANDLE_WARMER_LAMP,
+)
+
 RGBICWW_STRIP_LIGHT_INFO = AdvTestCase(
     b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00',
     b"\x00\x00\x00\x00\x10\xd0\xb3",
@@ -81,6 +96,59 @@ RGBICWW_FLOOR_LAMP_INFO = AdvTestCase(
     SwitchbotModel.RGBICWW_FLOOR_LAMP,
 )
 
+RGBICWW_CEILING_LIGHT_INFO = AdvTestCase(
+    b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00\xa0',
+    b"\x00\x00\x00\x00\x11\xbb\x10",
+    {
+        "sequence_number": 12,
+        "isOn": True,
+        "brightness": 30,
+        "delay": False,
+        "network_state": 2,
+        "color_mode": 2,
+        "cw": 4410,
+        "main_isOn": True,
+        "main_brightness": 32,
+    },
+    b"\x00\x11\xbb\x10",
+    "RGBICWW Ceiling Light",
+    SwitchbotModel.RGBICWW_CEILING_LIGHT,
+)
+
+RGBIC_NEON_LIGHT_INFO = AdvTestCase(
+    b'\xdc\x06u\xa6\xfb\xb2y\x9e"\x00\x11\xb8\x00',
+    b"\x00\x00\x00\x00\x10\xd0\xb6",
+    {
+        "sequence_number": 121,
+        "isOn": True,
+        "brightness": 30,
+        "delay": False,
+        "network_state": 2,
+        "color_mode": 2,
+    },
+    b"\x00\x10\xd0\xb6",
+    "Rgbic Neon Rope Light",
+    SwitchbotModel.RGBIC_NEON_ROPE_LIGHT,
+)
+
+
+PERMANENT_OUTDOOR_LIGHT_INFO = AdvTestCase(
+    b'\xc0N0\xe0U\x9a\x85\x9e"\xd0\x00\x00\x00\x00\x00\x00\x12\x91\x00',
+    b"\x00\x00\x00\x00\x10\xd0\xb7",
+    {
+        "sequence_number": 133,
+        "isOn": True,
+        "brightness": 30,
+        "delay": False,
+        "network_state": 2,
+        "color_mode": 2,
+        "cw": 0,
+    },
+    b"\x00\x10\xd0\xb7",
+    "Permanent Outdoor Light",
+    SwitchbotModel.PERMANENT_OUTDOOR_LIGHT,
+)
+
 
 SMART_THERMOSTAT_RADIATOR_INFO = AdvTestCase(
     b"\xb0\xe9\xfe\xa2T|6\xe4\x00\x9c\xa3A\x00",
@@ -101,4 +169,63 @@ SMART_THERMOSTAT_RADIATOR_INFO = AdvTestCase(
     b"\x00\x116@",
     "Smart Thermostat Radiator",
     SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
+)
+
+
+ART_FRAME_INFO = AdvTestCase(
+    b"\xb0\xe9\xfe\xe2\xfa8\x157\x03\x08",
+    b"\x00\x007\x01\x11>\x10",
+    {
+        "battery": 55,
+        "battery_charging": False,
+        "display_mode": 1,
+        "display_size": 0,
+        "image_index": 3,
+        "last_network_status": 0,
+        "sequence_number": 21,
+    },
+    b"\x01\x11>\x10",
+    "Art Frame",
+    SwitchbotModel.ART_FRAME,
+)
+
+KEYPAD_VISION_INFO = AdvTestCase(
+    b"\xb0\xe9\xfe\xe5\x04\x1e\xac\xdf\x00\x00\x00\x00\x00\x02",
+    b"\x00\x00_\x01\x11\x03x",
+    {
+        "battery": 95,
+        "battery_charging": True,
+        "doorbell": False,
+        "duress_alarm": False,
+        "high_temperature": False,
+        "lockout_alarm": False,
+        "low_temperature": False,
+        "pir_triggered_level": 2,
+        "sequence_number": 172,
+        "tamper_alarm": False,
+    },
+    b"\x01\x11\x03x",
+    "Keypad Vision",
+    SwitchbotModel.KEYPAD_VISION,
+)
+
+KEYPAD_VISION_PRO_INFO = AdvTestCase(
+    b"\xb0\xe9\xfe\xde\xb6\x8c+`\x00\x00\x00\x00\x00\x002",
+    b"\x00\x00`\x01\x11Q\x98",
+    {
+        "battery": 96,
+        "battery_charging": False,
+        "doorbell": False,
+        "duress_alarm": False,
+        "high_temperature": False,
+        "lockout_alarm": False,
+        "low_temperature": False,
+        "radar_triggered_distance": 0,
+        "radar_triggered_level": 0,
+        "sequence_number": 43,
+        "tamper_alarm": False,
+    },
+    b"\x01\x11Q\x98",
+    "Keypad Vision Pro",
+    SwitchbotModel.KEYPAD_VISION_PRO,
 )

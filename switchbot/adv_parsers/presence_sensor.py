@@ -13,7 +13,7 @@ def process_presence_sensor(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int | str]:
     """Process Presence Sensor data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 12:
         return {}
 
     seq_number = mfr_data[6]
@@ -21,15 +21,17 @@ def process_presence_sensor(
     motion_detected = bool(mfr_data[7] & 0x40)
     battery_bits = (mfr_data[7] >> 2) & 0x03
     battery_range = BATTERY_LEVEL_MAP.get(battery_bits, "Unknown")
+    duration = (mfr_data[8] << 8) + mfr_data[9]
     trigger_flag = mfr_data[10]
     led_state = bool(mfr_data[11] & 0x80)
-    light_level = mfr_data[11] & 0x0F
+    light_level = mfr_data[11] & 0x1F
 
     result = {
         "sequence_number": seq_number,
         "adaptive_state": adaptive_state,
         "motion_detected": motion_detected,
         "battery_range": battery_range,
+        "duration": duration,
         "trigger_flag": trigger_flag,
         "led_state": led_state,
         "lightLevel": light_level,

@@ -11,7 +11,7 @@ def process_smart_thermostat_radiator(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int | str]:
     """Process Smart Thermostat Radiator data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 13:
         return {}
 
     _seq_num = mfr_data[6]

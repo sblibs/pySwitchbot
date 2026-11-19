@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from bleak.backends.device import BLEDevice
-
 from ..const import SwitchbotModel
-from ..const.light import ColorMode, RGBICStripLightColorMode, StripLightColorMode
+from ..const.light import (
+    ColorMode,
+    RGBICStripLightColorMode,
+    RGBICWWCeilingLightColorMode,
+    StripLightColorMode,
+)
 from .base_light import SwitchbotSequenceBaseLight
-from .device import SwitchbotEncryptedDevice
+from .device import SwitchbotEncryptedDevice, update_after_operation
 
 # Private mapping from device-specific color modes to original ColorMode enum
 _STRIP_LIGHT_COLOR_MODE_MAP = {
@@ -25,7 +28,18 @@ _RGBICWW_STRIP_LIGHT_COLOR_MODE_MAP = {
     RGBICStripLightColorMode.MUSIC: ColorMode.EFFECT,
     RGBICStripLightColorMode.CONTROLLER: ColorMode.EFFECT,
     RGBICStripLightColorMode.COLOR_TEMP: ColorMode.COLOR_TEMP,
+    RGBICStripLightColorMode.EFFECT: ColorMode.EFFECT,
     RGBICStripLightColorMode.UNKNOWN: ColorMode.OFF,
+}
+_RGBICWW_CEILING_LIGHT_COLOR_MODE_MAP = {
+    RGBICWWCeilingLightColorMode.SEGMENTED: ColorMode.EFFECT,
+    RGBICWWCeilingLightColorMode.COLOR: ColorMode.RGB,
+    RGBICWWCeilingLightColorMode.SCENE: ColorMode.EFFECT,
+    RGBICWWCeilingLightColorMode.MUSIC: ColorMode.EFFECT,
+    RGBICWWCeilingLightColorMode.CONTROLLER: ColorMode.EFFECT,
+    RGBICWWCeilingLightColorMode.WARMWHITE: ColorMode.COLOR_TEMP,
+    RGBICWWCeilingLightColorMode.EFFECT: ColorMode.EFFECT,
+    RGBICWWCeilingLightColorMode.UNKNOWN: ColorMode.OFF,
 }
 LIGHT_STRIP_CONTROL_HEADER = "570F4901"
 COMMON_EFFECTS = {
@@ -249,7 +263,9 @@ class SwitchbotLightStrip(SwitchbotSequenceBaseLight):
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""
         if not (
-            res := await self._get_multi_commands_results(self._get_basic_info_command)
+            res := await self._get_multi_commands_results(
+                self._get_basic_info_command, min_data_length=11
+            )
         ):
             return None
 
@@ -274,29 +290,7 @@ class SwitchbotLightStrip(SwitchbotSequenceBaseLight):
 class SwitchbotStripLight3(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     """Support for switchbot strip light3 and floor lamp."""
 
-    def __init__(
-        self,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.STRIP_LIGHT_3,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-
-    @classmethod
-    async def verify_encryption_key(
-        cls,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.STRIP_LIGHT_3,
-        **kwargs: Any,
-    ) -> bool:
-        return await super().verify_encryption_key(
-            device, key_id, encryption_key, model, **kwargs
-        )
+    _model = SwitchbotModel.STRIP_LIGHT_3
 
     @property
     def color_modes(self) -> set[ColorMode]:
@@ -304,34 +298,45 @@ class SwitchbotStripLight3(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         return {ColorMode.RGB, ColorMode.COLOR_TEMP}
 
 
+class SwitchbotCandleWarmerLamp(SwitchbotEncryptedDevice, SwitchbotLightStrip):
+    """Support for Switchbot Candle Warmer Lamp."""
+
+    _model = SwitchbotModel.CANDLE_WARMER_LAMP
+    _effect_dict = {}
+    _set_rgb_command = ""
+    _set_color_temp_command = ""
+
+    @property
+    def color_modes(self) -> set[ColorMode]:
+        """Return the supported color modes."""
+        return {ColorMode.BRIGHTNESS}
+
+    @property
+    def color_mode(self) -> ColorMode:
+        """Return the current color mode."""
+        return ColorMode.BRIGHTNESS
+
+    async def get_basic_info(self) -> dict[str, Any] | None:
+        """Get device basic settings."""
+        if not (
+            res := await self._get_multi_commands_results(
+                self._get_basic_info_command, min_data_length=3
+            )
+        ):
+            return None
+        _version_info, _data = res
+        return {
+            "isOn": bool(_data[1] & 0b10000000),
+            "brightness": _data[2] & 0b01111111,
+            "firmware": _version_info[2] / 10.0,
+        }
+
+
 class SwitchbotRgbicLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
     """Support for Switchbot RGBIC lights."""
 
+    _model = SwitchbotModel.RGBICWW_STRIP_LIGHT
     _effect_dict = RGBIC_EFFECTS
-
-    def __init__(
-        self,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.RGBICWW_STRIP_LIGHT,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-
-    @classmethod
-    async def verify_encryption_key(
-        cls,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.RGBICWW_STRIP_LIGHT,
-        **kwargs: Any,
-    ) -> bool:
-        return await super().verify_encryption_key(
-            device, key_id, encryption_key, model, **kwargs
-        )
 
     @property
     def color_modes(self) -> set[ColorMode]:
@@ -343,3 +348,159 @@ class SwitchbotRgbicLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
         """Return the current color mode."""
         device_mode = RGBICStripLightColorMode(self._get_adv_value("color_mode") or 10)
         return _RGBICWW_STRIP_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
+
+
+class SwitchbotPermanentOutdoorLight(SwitchbotRgbicLight):
+    """Support for Switchbot Permanent Outdoor Light."""
+
+    _model = SwitchbotModel.PERMANENT_OUTDOOR_LIGHT
+
+
+class SwitchbotRgbicNeonLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
+    """Support for Switchbot RGBIC Neon lights."""
+
+    _model = SwitchbotModel.RGBIC_NEON_ROPE_LIGHT
+    _effect_dict = RGBIC_EFFECTS
+
+    @property
+    def color_modes(self) -> set[ColorMode]:
+        """Return the supported color modes."""
+        return {ColorMode.RGB}
+
+    @property
+    def color_mode(self) -> ColorMode:
+        """Return the current color mode."""
+        return ColorMode.RGB
+
+
+class SwitchbotRgbicwwCeilingLight(SwitchbotEncryptedDevice, SwitchbotLightStrip):
+    """Support for Switchbot RGBICWW Ceiling Light (warm-white + color sub-lights)."""
+
+    _model = SwitchbotModel.RGBICWW_CEILING_LIGHT
+    _effect_dict = RGBIC_EFFECTS
+
+    # Color sub-light commands (sub_cmd 0x12 brightness+RGB, 0x14 brightness)
+    _set_brightness_command = f"{LIGHT_STRIP_CONTROL_HEADER}14{{}}"
+    _set_rgb_command = f"{LIGHT_STRIP_CONTROL_HEADER}12{{}}"
+
+    # Main (warm-white) sub-light commands (sub_cmd 0x09, 0x10, 0x11)
+    _set_main_brightness_command = f"{LIGHT_STRIP_CONTROL_HEADER}09{{}}"
+    _set_main_color_temp_command = f"{LIGHT_STRIP_CONTROL_HEADER}10{{}}"
+    _set_color_temp_command = f"{LIGHT_STRIP_CONTROL_HEADER}11{{}}"
+
+    # Sub-light power control: 0x49 0x01 <onoff> <selector>.
+    # onoff = 0x01 (on)/0x02 (off)/0x03 (toggle); here we always send 0x01 and
+    # let the selector drive the individual sub-lights.
+    # selector: bit7=1 (specify), bits[3:2]=color state, bits[1:0]=white state;
+    # state encoding 00=keep, 01=on, 02=off, 03=toggle.
+    _turn_on_main_command = f"{LIGHT_STRIP_CONTROL_HEADER}0181"
+    _turn_off_main_command = f"{LIGHT_STRIP_CONTROL_HEADER}0182"
+    _turn_on_color_command = f"{LIGHT_STRIP_CONTROL_HEADER}0184"
+    _turn_off_color_command = f"{LIGHT_STRIP_CONTROL_HEADER}0188"
+
+    @property
+    def color_modes(self) -> set[ColorMode]:
+        """Return the supported color modes (color sub-light)."""
+        return {ColorMode.RGB, ColorMode.COLOR_TEMP}
+
+    @property
+    def color_mode(self) -> ColorMode:
+        """Return the current color mode."""
+        device_mode = RGBICWWCeilingLightColorMode(
+            self._get_adv_value("color_mode") or 10
+        )
+        return _RGBICWW_CEILING_LIGHT_COLOR_MODE_MAP.get(device_mode, ColorMode.OFF)
+
+    @property
+    def is_any_light_on(self) -> bool | None:
+        """Return whether either sub-light is on, or None if undetermined."""
+        states = (self.on, self.is_main_on)
+        if True in states:
+            return True
+        if None in states:
+            return None
+        return False
+
+    @property
+    def is_main_on(self) -> bool | None:
+        """Return whether the main (warm-white) sub-light is on."""
+        return self._get_adv_value("main_isOn")
+
+    @property
+    def main_brightness(self) -> int:
+        """Return the main (warm-white) sub-light brightness 0-100."""
+        return self._get_adv_value("main_brightness") or 0
+
+    @update_after_operation
+    async def turn_on_main(self) -> bool:
+        """Turn the main (warm-white) sub-light on."""
+        result = await self._send_command(self._turn_on_main_command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def turn_off_main(self) -> bool:
+        """Turn the main (warm-white) sub-light off."""
+        result = await self._send_command(self._turn_off_main_command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def turn_on_color(self) -> bool:
+        """Turn the color sub-light on."""
+        result = await self._send_command(self._turn_on_color_command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def turn_off_color(self) -> bool:
+        """Turn the color sub-light off."""
+        result = await self._send_command(self._turn_off_color_command)
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def set_main_brightness(self, brightness: int) -> bool:
+        """Set the main (warm-white) sub-light brightness (sub_cmd 0x09)."""
+        self._validate_brightness(brightness)
+        hex_brightness = f"{brightness:02X}"
+        result = await self._send_command(
+            self._set_main_brightness_command.format(hex_brightness)
+        )
+        return self._check_command_result(result, 0, {1})
+
+    @update_after_operation
+    async def set_main_color_temp(self, color_temp: int) -> bool:
+        """Set the main (warm-white) sub-light color temperature (sub_cmd 0x10)."""
+        self._validate_color_temp(color_temp)
+        hex_data = f"{color_temp:04X}"
+        result = await self._send_command(
+            self._set_main_color_temp_command.format(hex_data)
+        )
+        return self._check_command_result(result, 0, {1})
+
+    async def get_basic_info(self) -> dict[str, Any] | None:
+        """
+        Read the RGB color (and color temp) over GATT.
+
+        Power, brightness and color mode are taken from the advertisement
+        (which tracks them reliably). The device's 0x4A01 status response does
+        NOT carry a usable color power state - byte 1 stays 0 even when the
+        color sub-light is on - so those fields are deliberately not returned
+        here, otherwise update() would clobber the correct advertised values.
+        """
+        if not (
+            res := await self._get_multi_commands_results(
+                self._get_basic_info_command, min_data_length=9
+            )
+        ):
+            return None
+
+        _version_info, _data = res
+        self._state["r"] = _data[3]
+        self._state["g"] = _data[4]
+        self._state["b"] = _data[5]
+        self._state["cw"] = int.from_bytes(_data[7:9], "big")
+
+        return {
+            "r": self._state["r"],
+            "g": self._state["g"],
+            "b": self._state["b"],
+            "firmware": _version_info[2] / 10.0,
+        }

@@ -1,8 +1,6 @@
 import logging
 from typing import Any
 
-from bleak.backends.device import BLEDevice
-
 from ..adv_parsers.humidifier import calculate_temperature_and_humidity
 from ..const import SwitchbotModel
 from ..const.evaporative_humidifier import (
@@ -47,33 +45,10 @@ DEVICE_GET_BASIC_SETTINGS_KEY = "570f4481"
 class SwitchbotEvaporativeHumidifier(SwitchbotSequenceDevice, SwitchbotEncryptedDevice):
     """Representation of a Switchbot Evaporative Humidifier"""
 
+    _model = SwitchbotModel.EVAPORATIVE_HUMIDIFIER
     _turn_on_command = COMMAND_TURN_ON
     _turn_off_command = f"{COMMAND_HEADER}0f430100"
-
-    def __init__(
-        self,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
-        **kwargs: Any,
-    ) -> None:
-        self._force_next_update = False
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-
-    @classmethod
-    async def verify_encryption_key(
-        cls,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.EVAPORATIVE_HUMIDIFIER,
-        **kwargs: Any,
-    ) -> bool:
-        return await super().verify_encryption_key(
-            device, key_id, encryption_key, model, **kwargs
-        )
+    _force_next_update: bool = False
 
     async def get_basic_info(self) -> dict[str, Any] | None:
         """Get device basic settings."""

@@ -7,7 +7,7 @@ def process_color_bulb(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int]:
     """Process WoBulb services data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 11:
         return {}
     return {
         "sequence_number": mfr_data[6],

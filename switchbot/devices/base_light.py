@@ -75,10 +75,29 @@ class SwitchbotBaseLight(SwitchbotDevice):
         """Return the current effect."""
         return self._get_adv_value("effect")
 
+    @staticmethod
+    def _validate_brightness(brightness: int) -> None:
+        if not 0 <= brightness <= 100:
+            raise ValueError("Brightness must be between 0 and 100")
+
+    @staticmethod
+    def _validate_rgb(r: int, g: int, b: int) -> None:
+        if not 0 <= r <= 255:
+            raise ValueError("r must be between 0 and 255")
+        if not 0 <= g <= 255:
+            raise ValueError("g must be between 0 and 255")
+        if not 0 <= b <= 255:
+            raise ValueError("b must be between 0 and 255")
+
+    @staticmethod
+    def _validate_color_temp(color_temp: int) -> None:
+        if not 2700 <= color_temp <= 6500:
+            raise ValueError("Color Temp must be between 2700 and 6500")
+
     @update_after_operation
     async def set_brightness(self, brightness: int) -> bool:
         """Set brightness."""
-        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
+        self._validate_brightness(brightness)
         hex_brightness = f"{brightness:02X}"
         self._check_function_support(self._set_brightness_command)
         result = await self._send_command(
@@ -89,8 +108,8 @@ class SwitchbotBaseLight(SwitchbotDevice):
     @update_after_operation
     async def set_color_temp(self, brightness: int, color_temp: int) -> bool:
         """Set color temp."""
-        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
-        assert 2700 <= color_temp <= 6500, "Color Temp must be between 2700 and 6500"
+        self._validate_brightness(brightness)
+        self._validate_color_temp(color_temp)
         hex_data = f"{brightness:02X}{color_temp:04X}"
         self._check_function_support(self._set_color_temp_command)
         result = await self._send_command(self._set_color_temp_command.format(hex_data))
@@ -99,10 +118,8 @@ class SwitchbotBaseLight(SwitchbotDevice):
     @update_after_operation
     async def set_rgb(self, brightness: int, r: int, g: int, b: int) -> bool:
         """Set rgb."""
-        assert 0 <= brightness <= 100, "Brightness must be between 0 and 100"
-        assert 0 <= r <= 255, "r must be between 0 and 255"
-        assert 0 <= g <= 255, "g must be between 0 and 255"
-        assert 0 <= b <= 255, "b must be between 0 and 255"
+        self._validate_brightness(brightness)
+        self._validate_rgb(r, g, b)
         self._check_function_support(self._set_rgb_command)
         hex_data = f"{brightness:02X}{r:02X}{g:02X}{b:02X}"
         result = await self._send_command(self._set_rgb_command.format(hex_data))
@@ -119,23 +136,16 @@ class SwitchbotBaseLight(SwitchbotDevice):
             self._override_state({"effect": effect})
         return result
 
-    async def _send_multiple_commands(self, keys: list[str]) -> bool:
-        """
-        Send multiple commands to device.
-
-        Since we current have no way to tell which command the device
-        needs we send both.
-        """
-        final_result = False
-        for key in keys:
-            result = await self._send_command(key)
-            final_result |= self._check_command_result(result, 0, {1})
-        return final_result
-
     async def _get_multi_commands_results(
-        self, commands: list[str]
+        self, commands: list[str], min_data_length: int = 0
     ) -> tuple[bytes, bytes] | None:
-        """Check results after sending multiple commands."""
+        """
+        Check results after sending multiple commands.
+
+        A reply shorter than ``min_data_length`` is dropped: the device
+        occasionally answers a status request with a truncated frame, and
+        indexing into it raised IndexError out of the update path.
+        """
         if not (results := await self._get_basic_info_by_multi_commands(commands)):
             return None
 
@@ -146,6 +156,14 @@ class SwitchbotBaseLight(SwitchbotDevice):
             _data,
             self._device.address,
         )
+        if len(_version_info) < 3 or len(_data) < min_data_length:
+            _LOGGER.debug(
+                "Ignoring short status reply from %s: version %s, data %s",
+                self._device.address,
+                _version_info,
+                _data,
+            )
+            return None
         return _version_info, _data
 
     async def _get_basic_info_by_multi_commands(
@@ -154,7 +172,8 @@ class SwitchbotBaseLight(SwitchbotDevice):
         """Get device basic settings by sending multiple commands."""
         results = []
         for command in commands:
-            if not (result := await self._get_basic_info(command)):
+            result = await self._send_command(command)
+            if not self._check_command_result(result, 0, {1}):
                 return None
             results.append(result)
         return results

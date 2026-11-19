@@ -3,8 +3,6 @@
 import logging
 from typing import Any
 
-from bleak.backends.device import BLEDevice
-
 from ..const import SwitchbotModel
 from ..const.climate import ClimateAction, ClimateMode
 from ..const.climate import SmartThermostatRadiatorMode as STRMode
@@ -43,6 +41,7 @@ MODE_TEMP_RANGE = {
 }
 
 DEFAULT_TEMP_RANGE = (5.0, 35.0)
+HYSTERESIS_IDLE_THRESHOLD = 0.5
 
 
 class SwitchbotSmartThermostatRadiator(
@@ -50,32 +49,9 @@ class SwitchbotSmartThermostatRadiator(
 ):
     """Representation of a Switchbot Smart Thermostat Radiator."""
 
+    _model = SwitchbotModel.SMART_THERMOSTAT_RADIATOR
     _turn_off_command = "570100"
     _turn_on_command = "570101"
-
-    def __init__(
-        self,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        interface: int = 0,
-        model: SwitchbotModel = SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(device, key_id, encryption_key, model, interface, **kwargs)
-
-    @classmethod
-    async def verify_encryption_key(
-        cls,
-        device: BLEDevice,
-        key_id: str,
-        encryption_key: str,
-        model: SwitchbotModel = SwitchbotModel.SMART_THERMOSTAT_RADIATOR,
-        **kwargs: Any,
-    ) -> bool:
-        return await super().verify_encryption_key(
-            device, key_id, encryption_key, model, **kwargs
-        )
 
     @property
     def min_temperature(self) -> float:
@@ -218,4 +194,15 @@ class SwitchbotSmartThermostatRadiator(
         """Return current action from cache."""
         if not self.is_on():
             return ClimateAction.OFF
+
+        current_temp = self.get_current_temperature()
+        target_temp = self.get_target_temperature()
+
+        if (
+            current_temp is not None
+            and target_temp is not None
+            and current_temp >= (target_temp + HYSTERESIS_IDLE_THRESHOLD)
+        ):
+            return ClimateAction.IDLE
+
         return ClimateAction.HEATING

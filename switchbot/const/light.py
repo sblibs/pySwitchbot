@@ -6,6 +6,7 @@ class ColorMode(Enum):
     COLOR_TEMP = 1
     RGB = 2
     EFFECT = 3
+    BRIGHTNESS = 4
 
 
 class StripLightColorMode(Enum):
@@ -38,6 +39,17 @@ class RGBICStripLightColorMode(Enum):
     MUSIC = 4
     CONTROLLER = 5
     COLOR_TEMP = 6
+    EFFECT = 7
+    UNKNOWN = 10
+
+
+class RGBICWWCeilingLightColorMode(Enum):
+    SEGMENTED = 1
+    COLOR = 2
+    SCENE = 3
+    MUSIC = 4
+    CONTROLLER = 5
+    WARMWHITE = 6
     EFFECT = 7
     UNKNOWN = 10
 
