@@ -6,6 +6,7 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import (
+    MeterProComfortStatus,
     MeterProDateFormat,
     MeterProDisplaySource,
     MeterProDisplayZone,
@@ -478,3 +479,105 @@ async def test_co2_variant_shares_display_settings(
     await getattr(device, method)(*args)
 
     device._send_command.assert_called_with(expected_payload)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("device_class", "response", "expected"),
+    [
+        (
+            SwitchbotMeterPro,
+            "01009c4600921e00",
+            {
+                "custom": False,
+                "temperature_low_c": 18.0,
+                "temperature_high_c": 28.0,
+                "humidity_low": 30,
+                "humidity_high": 70,
+                "status": MeterProComfortStatus.COMFORTABLE,
+            },
+        ),
+        (
+            SwitchbotMeterProCO2,
+            "010180e3730080fe",
+            {
+                "custom": True,
+                "temperature_low_c": -0.3,
+                "temperature_high_c": 0.7,
+                "humidity_low": 0,
+                "humidity_high": 99,
+                "status": MeterProComfortStatus.WET,
+            },
+        ),
+    ],
+)
+async def test_get_comfort_level(
+    device_class: type[SwitchbotMeterPro],
+    response: str,
+    expected: dict[str, float | int | bool | MeterProComfortStatus],
+):
+    device = create_device(device_class)
+    device._send_command.return_value = bytes.fromhex(response)
+
+    assert await device.get_comfort_level() == expected
+    device._send_command.assert_awaited_once_with("570f69020101")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("limits", "custom", "expected"),
+    [
+        ((0.5, 22.34, 40, 82), True, "889652358028"),
+        ((-0.5, 0.66, 0, 99), True, "888063750000"),
+        ((18.0, 28.0, 30, 70), False, "809c4600921e"),
+    ],
+)
+async def test_set_comfort_level(
+    limits: tuple[float, float, int, int], custom: bool, expected: str
+):
+    device = create_device()
+
+    await device.set_comfort_level(*limits, custom=custom)
+
+    device._send_command.assert_awaited_once_with("570f680201" + expected)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("limits", "custom", "message"),
+    [
+        ((-128, 28.0, 30, 70), True, "Temperature must be"),
+        ((True, 28.0, 30, 70), True, "Temperature must be"),
+        ((18.01, 18.04, 30, 70), True, "Lower comfort limits"),
+        ((18, 28, 30, 100), True, "Comfort humidity limits"),
+        ((18, 28, True, 70), True, "Comfort humidity limits"),
+        ((18, 28, 70, 70), True, "Lower comfort limits"),
+        ((18, 28, 30, 70), 1, "custom must be a boolean"),
+    ],
+)
+async def test_set_comfort_level_rejects_invalid_input(
+    limits: tuple[float, float, int, int], custom: bool, message: str
+):
+    device = create_device()
+    with pytest.raises(SwitchbotOperationError, match=message):
+        await device.set_comfort_level(*limits, custom=custom)
+    device._send_command.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "response", ["02", "01", "01029c4600921e00", "01009c460a921e00", "01009c6400921e00"]
+)
+async def test_get_comfort_level_rejects_invalid_response(response: str):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex(response)
+    with pytest.raises(SwitchbotOperationError):
+        await device.get_comfort_level()
+
+
+@pytest.mark.asyncio
+async def test_set_comfort_level_rejects_device_error():
+    device = create_device()
+    device._send_command.return_value = b"\x02"
+    with pytest.raises(SwitchbotOperationError, match="set_comfort_level"):
+        await device.set_comfort_level(18, 28, 30, 70)

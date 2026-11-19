@@ -47,3 +47,12 @@ class MeterProDateFormat(Enum):
 
     MONTH_DAY = 0
     DAY_MONTH = 1
+
+
+class MeterProComfortStatus(Enum):
+    """The device's current temperature and humidity comfort status."""
+
+    COMFORTABLE = 0
+    DRY = 1
+    WET = 2
+    UNAVAILABLE = 3
