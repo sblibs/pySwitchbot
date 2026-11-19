@@ -6,6 +6,8 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import (
+    MeterProAlarmMode,
+    MeterProAlarmVolume,
     MeterProComfortStatus,
     MeterProDateFormat,
     MeterProDisplaySource,
@@ -581,3 +583,86 @@ async def test_set_comfort_level_rejects_device_error():
     device._send_command.return_value = b"\x02"
     with pytest.raises(SwitchbotOperationError, match="set_comfort_level"):
         await device.set_comfort_level(18, 28, 30, 70)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("device_class", "response", "mode", "volume"),
+    [
+        (SwitchbotMeterPro, "010000", MeterProAlarmMode.DISABLED, None),
+        (
+            SwitchbotMeterProCO2,
+            "010402",
+            MeterProAlarmMode.SOUND_AND_FLASH,
+            MeterProAlarmVolume.HIGH,
+        ),
+        (SwitchbotMeterPro, "01ff01", MeterProAlarmMode.FLASH_ONLY, None),
+    ],
+)
+async def test_get_alarm_settings(
+    device_class: type[SwitchbotMeterPro],
+    response: str,
+    mode: MeterProAlarmMode,
+    volume: MeterProAlarmVolume | None,
+):
+    device = create_device(device_class)
+    device._send_command.return_value = bytes.fromhex(response)
+
+    assert await device.get_alarm_settings() == {"mode": mode, "volume": volume}
+    device._send_command.assert_awaited_once_with("570f690204")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mode", "volume", "payload"),
+    [
+        (MeterProAlarmMode.DISABLED, None, "ff00"),
+        (MeterProAlarmMode.FLASH_ONLY, MeterProAlarmVolume.OFF, "0101"),
+        (MeterProAlarmMode.SOUND_AND_FLASH, MeterProAlarmVolume.LOW, "0202"),
+        (MeterProAlarmMode.SOUND_AND_FLASH, MeterProAlarmVolume.MEDIUM, "0302"),
+        (MeterProAlarmMode.SOUND_AND_FLASH, MeterProAlarmVolume.HIGH, "0402"),
+    ],
+)
+async def test_set_alarm_settings(
+    mode: MeterProAlarmMode, volume: MeterProAlarmVolume | None, payload: str
+):
+    device = create_device()
+
+    await device.set_alarm_settings(mode, volume)
+
+    device._send_command.assert_awaited_once_with("570f680204" + payload)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("response", ["02", "0100", "010403"])
+async def test_get_alarm_settings_rejects_invalid_response(response: str):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex(response)
+
+    with pytest.raises(SwitchbotOperationError):
+        await device.get_alarm_settings()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mode", "volume", "message"),
+    [(True, None, "mode must be"), (MeterProAlarmMode.DISABLED, 5, "volume must be")],
+)
+async def test_set_alarm_settings_rejects_invalid_input(
+    mode: object, volume: object, message: str
+):
+    device = create_device()
+
+    with pytest.raises(SwitchbotOperationError, match=message):
+        await device.set_alarm_settings(mode, volume)
+
+    device._send_command.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_set_alarm_settings_rejects_device_error():
+    device = create_device()
+    device._send_command.return_value = b"\x02"
+
+    with pytest.raises(SwitchbotOperationError, match="set_alarm_settings"):
+        await device.set_alarm_settings(MeterProAlarmMode.DISABLED)

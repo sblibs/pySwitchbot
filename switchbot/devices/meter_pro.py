@@ -2,6 +2,8 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from ..const.meter_pro import (
+    MeterProAlarmMode,
+    MeterProAlarmVolume,
     MeterProComfortStatus,
     MeterProDateFormat,
     MeterProDisplaySource,
@@ -22,6 +24,8 @@ COMMAND_SET_DISPLAY_FORMAT = "570f680505"
 
 COMMAND_GET_COMFORT_LEVEL = "570f69020101"
 COMMAND_SET_COMFORT_LEVEL = "570f680201"
+COMMAND_GET_ALARM_SETTINGS = "570f690204"
+COMMAND_SET_ALARM_SETTINGS = "570f680204"
 COMMAND_GET_CALIBRATION = "570f6903"
 COMMAND_SET_CALIBRATION = "570f6803"
 COMMAND_GET_DISPLAY_SETTINGS = "570f690701"
@@ -41,6 +45,7 @@ NO_MAC = "000000000000"
 KEEP_ZONE_ICON = 0xFF
 KEEP_ICON = 0x0F
 KEEP_BUTTON_FUNCTION = 0xFF
+KEEP_ALARM_VOLUME = 0xFF
 SOURCES_WITHOUT_MAC = {MeterProDisplaySource.NONE, MeterProDisplaySource.NETWORK}
 COMMAND_GET_WEATHER = "570f6906"
 COMMAND_SET_WEATHER = "570f680601"
@@ -328,6 +333,41 @@ class SwitchbotMeterPro(SwitchbotDevice):
             f"{COMMAND_SET_COMFORT_LEVEL}{flags:02x}{limits.hex()}"
         )
         self._validate_result("set_comfort_level", result)
+
+    async def get_alarm_settings(
+        self,
+    ) -> dict[str, MeterProAlarmMode | MeterProAlarmVolume | None]:
+        """Read the local alarm mode and volume, with None for an unrecognized volume."""
+        result = await self._send_command(COMMAND_GET_ALARM_SETTINGS)
+        data = self._validate_result("get_alarm_settings", result, min_length=3)
+        try:
+            mode = MeterProAlarmMode(data[2])
+        except ValueError as exc:
+            raise SwitchbotOperationError(
+                f"{self.name}: Unknown alarm mode {data[2]:02x}"
+            ) from exc
+        volume = next(
+            (level for level in MeterProAlarmVolume if level.value == data[1]), None
+        )
+        return {"mode": mode, "volume": volume}
+
+    async def set_alarm_settings(
+        self, mode: MeterProAlarmMode, volume: MeterProAlarmVolume | None = None
+    ) -> None:
+        """Set the local alarm mode and optionally change the buzzer volume."""
+        if not isinstance(mode, MeterProAlarmMode):
+            raise SwitchbotOperationError(
+                f"{self.name}: mode must be a MeterProAlarmMode"
+            )
+        if volume is not None and not isinstance(volume, MeterProAlarmVolume):
+            raise SwitchbotOperationError(
+                f"{self.name}: volume must be a MeterProAlarmVolume or None"
+            )
+        volume_byte = KEEP_ALARM_VOLUME if volume is None else volume.value
+        result = await self._send_command(
+            f"{COMMAND_SET_ALARM_SETTINGS}{volume_byte:02x}{mode.value:02x}"
+        )
+        self._validate_result("set_alarm_settings", result)
 
     async def get_calibration(self) -> dict[str, Any]:
         """Get the temperature (C) and humidity (%RH) corrections."""

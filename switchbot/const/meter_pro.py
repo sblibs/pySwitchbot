@@ -56,3 +56,20 @@ class MeterProComfortStatus(Enum):
     DRY = 1
     WET = 2
     UNAVAILABLE = 3
+
+
+class MeterProAlarmMode(Enum):
+    """How the meter signals a local threshold alarm."""
+
+    DISABLED = 0
+    FLASH_ONLY = 1
+    SOUND_AND_FLASH = 2
+
+
+class MeterProAlarmVolume(Enum):
+    """Alarm buzzer volume."""
+
+    OFF = 1
+    LOW = 2
+    MEDIUM = 3
+    HIGH = 4
