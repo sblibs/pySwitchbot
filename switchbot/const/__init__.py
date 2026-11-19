@@ -36,6 +36,8 @@ from .meter_pro import (
     MeterProDateFormat,
     MeterProDisplaySource,
     MeterProDisplayZone,
+    MeterProTemperatureHumidityAlarmMode,
+    MeterProTemperatureHumidityAlarmStatus,
     MeterProWeatherIcon,
     MeterProZoneIcon,
 )
@@ -186,6 +188,8 @@ __all__ = [
     "MeterProDateFormat",
     "MeterProDisplaySource",
     "MeterProDisplayZone",
+    "MeterProTemperatureHumidityAlarmMode",
+    "MeterProTemperatureHumidityAlarmStatus",
     "MeterProWeatherIcon",
     "MeterProZoneIcon",
     "NightLightState",

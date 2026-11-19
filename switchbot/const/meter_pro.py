@@ -92,3 +92,24 @@ class MeterProCO2AlarmStatus(Enum):
     LOW = 1
     HIGH = 2
     IN_RANGE = 3
+
+
+class MeterProTemperatureHumidityAlarmMode(IntFlag):
+    """Local alarm conditions for the temperature and humidity limits."""
+
+    DISABLED = 0
+    TEMPERATURE_LOW = 0x01
+    TEMPERATURE_HIGH = 0x02
+    TEMPERATURE_IN_RANGE = 0x04
+    HUMIDITY_LOW = 0x10
+    HUMIDITY_HIGH = 0x20
+    HUMIDITY_IN_RANGE = 0x40
+
+
+class MeterProTemperatureHumidityAlarmStatus(Enum):
+    """Current alarm state of the temperature or humidity measurement."""
+
+    NONE = 0
+    LOW = 1
+    HIGH = 2
+    IN_RANGE = 3
