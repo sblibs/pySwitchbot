@@ -137,9 +137,15 @@ class SwitchbotBaseLight(SwitchbotDevice):
         return result
 
     async def _get_multi_commands_results(
-        self, commands: list[str]
+        self, commands: list[str], min_data_length: int = 0
     ) -> tuple[bytes, bytes] | None:
-        """Check results after sending multiple commands."""
+        """
+        Check results after sending multiple commands.
+
+        A reply shorter than ``min_data_length`` is dropped: the device
+        occasionally answers a status request with a truncated frame, and
+        indexing into it raised IndexError out of the update path.
+        """
         if not (results := await self._get_basic_info_by_multi_commands(commands)):
             return None
 
@@ -150,6 +156,14 @@ class SwitchbotBaseLight(SwitchbotDevice):
             _data,
             self._device.address,
         )
+        if len(_version_info) < 3 or len(_data) < min_data_length:
+            _LOGGER.debug(
+                "Ignoring short status reply from %s: version %s, data %s",
+                self._device.address,
+                _version_info,
+                _data,
+            )
+            return None
         return _version_info, _data
 
     async def _get_basic_info_by_multi_commands(

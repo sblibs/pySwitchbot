@@ -7,7 +7,7 @@ _LOGGER = logging.getLogger(__name__)
 
 def process_common_mfr_data(mfr_data: bytes | None) -> dict[str, bool | int]:
     """Process common Keypad Vision (Pro) manufacturer data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 13:
         return {}
 
     sequence_number = mfr_data[6]
@@ -41,7 +41,7 @@ def process_keypad_vision(
     """Process Keypad Vision data."""
     result = process_common_mfr_data(mfr_data)
 
-    if not result:
+    if not result or len(mfr_data) < 14:
         return {}
 
     pir_triggered_level = mfr_data[13] & 0x03
@@ -63,7 +63,7 @@ def process_keypad_vision_pro(
     """Process Keypad Vision Pro data."""
     result = process_common_mfr_data(mfr_data)
 
-    if not result:
+    if not result or len(mfr_data) < 14:
         return {}
 
     radar_triggered_level = mfr_data[13] & 0x03

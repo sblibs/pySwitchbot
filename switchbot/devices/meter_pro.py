@@ -1,41 +1,112 @@
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
+from ..const.meter_pro import (
+    MeterProDateFormat,
+    MeterProDisplaySource,
+    MeterProDisplayZone,
+    MeterProWeatherIcon,
+    MeterProZoneIcon,
+)
 from ..helpers import parse_uint24_be
 from .device import SwitchbotDevice, SwitchbotOperationError
 
-SETTINGS_HEADER = "570f68"
-COMMAND_SHOW_BATTERY_LEVEL = f"{SETTINGS_HEADER}070108"
-COMMAND_DATE_FORMAT = f"{SETTINGS_HEADER}070107"
-
-COMMAND_TEMPERATURE_UPDATE_INTERVAL = f"{SETTINGS_HEADER}070105"
-COMMAND_CO2_UPDATE_INTERVAL = f"{SETTINGS_HEADER}0b06"
-COMMAND_FORCE_NEW_CO2_MEASUREMENT = f"{SETTINGS_HEADER}0b04"
-COMMAND_CO2_THRESHOLDS = f"{SETTINGS_HEADER}020302"
-COMMAND_COMFORTLEVEL = f"{SETTINGS_HEADER}020188"
-
-COMMAND_BUTTON_FUNCTION = f"{SETTINGS_HEADER}070106"
-COMMAND_CALIBRATE_CO2_SENSOR = f"{SETTINGS_HEADER}0b02"
-
-COMMAND_ALERT_SOUND = f"{SETTINGS_HEADER}0204"
-COMMAND_ALERT_TEMPERATURE_HUMIDITY = "570f44"
-COMMAND_ALERT_CO2 = f"{SETTINGS_HEADER}020301"
-
-COMMAND_SET_TIME_OFFSET = f"{SETTINGS_HEADER}0506"
+COMMAND_SET_TIME_OFFSET = "570f680506"
 COMMAND_GET_TIME_OFFSET = "570f690506"
 MAX_TIME_OFFSET = (1 << 24) - 1
 
 COMMAND_GET_DEVICE_DATETIME = "570f6901"
 COMMAND_SET_DEVICE_DATETIME = "57000503"
-COMMAND_SET_DISPLAY_FORMAT = f"{SETTINGS_HEADER}0505"
+COMMAND_SET_DISPLAY_FORMAT = "570f680505"
+
+COMMAND_GET_CALIBRATION = "570f6903"
+COMMAND_SET_CALIBRATION = "570f6803"
+COMMAND_GET_DISPLAY_SETTINGS = "570f690701"
+COMMAND_SET_DISPLAY_ZONE = "570f680701"
+COMMAND_SET_ZONE_ICONS = "570f68070103"
+COMMAND_SET_DATA_UPDATE_INTERVAL = "570f68070105"
+COMMAND_GET_BUTTON_FUNCTIONS = "570f690704"
+COMMAND_SET_BUTTON_FUNCTIONS = "570f68070106"
+COMMAND_SET_DATE_FORMAT = "570f68070107"
+COMMAND_SET_BATTERY_ICON = "570f68070108"
+COMMAND_SET_TEMPERATURE_UNIT = "570f68070109"
+
+MAX_HUMIDITY_CALIBRATION = 99
+MAX_DATA_UPDATE_INTERVAL = 0xFFFF
+NO_MAC = "000000000000"
+# "Keep current value" differs between the single-zone and two-icon commands.
+KEEP_ZONE_ICON = 0xFF
+KEEP_ICON = 0x0F
+KEEP_BUTTON_FUNCTION = 0xFF
+SOURCES_WITHOUT_MAC = {MeterProDisplaySource.NONE, MeterProDisplaySource.NETWORK}
+COMMAND_GET_WEATHER = "570f6906"
+COMMAND_SET_WEATHER = "570f680601"
+
+COMMAND_TRIGGER_CO2_SAMPLING = "570f680b04"
+COMMAND_START_CO2_CALIBRATION = "570f680b02"
+COMMAND_GET_USB_POWER_STATE = "570f690b02"
+COMMAND_GET_CO2_USB_UPDATE_INTERVAL = "570f690b03"
+COMMAND_SET_CO2_USB_UPDATE_INTERVAL = "570f680b01"
+COMMAND_GET_CO2_BATTERY_UPDATE_INTERVAL = "570f690b04"
+COMMAND_SET_CO2_BATTERY_UPDATE_INTERVAL = "570f680b06"
+COMMAND_GET_CO2_LEVEL_THRESHOLDS = "570f69020302"
+COMMAND_SET_CO2_LEVEL_THRESHOLDS = "570f68020302"
 
 
-class SwitchbotMeterProCO2(SwitchbotDevice):
-    """
-    API to control Switchbot Meter Pro CO2.
+def _weather_decimal(value: float | Decimal, name: str) -> Decimal:
+    if isinstance(value, bool):
+        raise TypeError(f"{name} must be a number, not a boolean")
+    if not isinstance(value, (int, float, Decimal)):
+        raise TypeError(f"{name} must be a number")
+    number = value if isinstance(value, Decimal) else Decimal(str(value))
+    if not number.is_finite():
+        raise ValueError(f"{name} must be finite")
+    return number
 
-    The assumptions that the original app has for each value are noted at the respective method.
-    Which of them are actually required by the device is unknown.
-    """
+
+def _encode_weather_temperature(temperature_c: float | Decimal) -> bytes:
+    temperature = _weather_decimal(temperature_c, "Temperature")
+    if abs(temperature) > Decimal("127.9"):
+        raise ValueError("Temperature must be -127.9..127.9 C")
+    temperature = temperature.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+    integer, decimal = divmod(int(abs(temperature) * 10), 10)
+    return bytes((decimal, integer | (0x80 if temperature >= 0 else 0)))
+
+
+def _encode_weather_humidity(humidity: float | Decimal) -> int:
+    relative_humidity = _weather_decimal(humidity, "humidity")
+    if not 1 <= relative_humidity <= 99:
+        raise ValueError("humidity must be 1..99%")
+    return int(relative_humidity.quantize(Decimal(1), rounding=ROUND_HALF_UP))
+
+
+def _encode_weather_icon(icon: MeterProWeatherIcon | int) -> MeterProWeatherIcon:
+    if isinstance(icon, MeterProWeatherIcon):
+        return icon
+    if isinstance(icon, bool) or not isinstance(icon, int):
+        raise TypeError("Weather icon must be a MeterProWeatherIcon or integer")
+    return MeterProWeatherIcon(icon)
+
+
+def _mac_hex(mac: str | None) -> str:
+    """Return a MAC address as 12 hex digits, all zeros when empty."""
+    if not mac:
+        return NO_MAC
+    cleaned = mac.replace(":", "").replace("-", "").lower()
+    if len(cleaned) != 12 or any(c not in "0123456789abcdef" for c in cleaned):
+        raise ValueError(f"Invalid MAC address {mac!r}")
+    return cleaned
+
+
+def _format_mac(raw: bytes) -> str | None:
+    """Return "AA:BB:CC:DD:EE:FF", or None for an empty MAC."""
+    if not any(raw):
+        return None
+    return ":".join(f"{b:02X}" for b in raw)
+
+
+class SwitchbotMeterPro(SwitchbotDevice):
+    """Implement the shared protocol for SwitchBot Meter Pro and Meter Pro CO2."""
 
     async def get_time_offset(self) -> int:
         """
@@ -179,124 +250,199 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
         result = await self._send_command(payload)
         self._validate_result("set_time_display_format", result)
 
-    async def show_battery_level(self, show_battery: bool) -> None:
-        """Show or hide battery level on the display."""
-        show_battery_byte = "01" if show_battery else "00"
-        await self._send_command(COMMAND_SHOW_BATTERY_LEVEL + show_battery_byte)
-
-    async def set_co2_thresholds(self, lower: int, upper: int) -> None:
-        """
-        Sets the thresholds to define Air Quality for depiction on display as follows:
-        co2 < lower => Good (Green)
-        lower < co2 < upper => Moderate (Orange)
-        upper < co2 => Poor (Red)
-
-        Original App assumes:
-        500 <= lower < upper <= 1900
-        lower and upper are multiples of 100
-        """
-        if lower >= upper:
-            raise ValueError("Lower should be smaller than upper")
-        await self._send_command(
-            COMMAND_CO2_THRESHOLDS + f"{lower:04x}" + f"{upper:04x}"
-        )
-
-    async def set_comfortlevel(self, cold: float, hot: float, dry: int, wet: int) -> None:
-        """
-        Sets the Thresholds for comfortable temperature (in C) and humidity to display comfort-level.
-        The supported values in the original App are as following:
-          Temperature is -20C to 80C in 0.5C steps
-          Humidity is 1% to 99% in 1% steps
-        """
-        if cold >= hot:
-            raise ValueError("Cold should be smaller than Hot")
-        if dry >= wet:
-            raise ValueError("Dry should be smaller than Wet")
-
-        point_five = self._get_point_five_byte(cold, hot)
-        cold_byte = self._encode_temperature(int(cold))
-        hot_byte = self._encode_temperature(int(hot))
-
-        await self._send_command(
-            COMMAND_COMFORTLEVEL
-            + hot_byte
-            + f"{wet:02x}"
-            + point_five
-            + cold_byte
-            + f"{dry:02x}"
-        )
-
-    async def set_alert_co2(self, on: bool, co2_low: int, co2_high: int, reverse: bool) -> None:
-        """
-        Sets the CO2-Alert.
-        on: Turn CO2-Alert on or off
-        lower and upper: The provided range (between 400ppm and 2000ppm in 100ppm steps)
-        reverse: If False: Alert if measured value is outside of provided range.
-                 If True: Alert if measured value is inside of provided range.
-        """
-        if co2_high < co2_low:
-            raise ValueError(
-                "Upper value should bigger than the lower value. Do you want to use reverse instead?"
+    async def get_calibration(self) -> dict[str, Any]:
+        """Get the temperature (C) and humidity (%RH) corrections."""
+        # [status][temp sign|int][hum sign|value][temp tenths]; sign bit = positive
+        result = await self._send_command(COMMAND_GET_CALIBRATION)
+        result = self._validate_result("get_calibration", result, min_length=4)
+        tenths = result[3] & 0x0F
+        humidity = result[2] & 0x7F
+        if tenths > 9 or humidity > MAX_HUMIDITY_CALIBRATION:
+            raise SwitchbotOperationError(
+                f"{self.name}: Invalid calibration response "
+                f"(result={result.hex()} rssi={self.rssi})"
             )
+        temperature = round((result[1] & 0x7F) + tenths / 10, 1)
+        # A zero correction comes back with the sign bit cleared.
+        return {
+            "temperature": temperature if result[1] & 0x80 else -temperature or 0.0,
+            "humidity": humidity if result[2] & 0x80 else -humidity,
+        }
 
-        mode = 0x00 if not on else (0x04 if reverse else 0x03)
-        await self._send_command(
-            COMMAND_ALERT_CO2 + f"{mode:02x}" + f"{co2_high:04x}" + f"{co2_low:04x}"
+    async def set_calibration(
+        self, temperature: float | Decimal, humidity: int
+    ) -> None:
+        """Set the temperature (C, rounded half-up to tenths) and humidity corrections."""
+        try:
+            decimal, temperature_byte = _encode_weather_temperature(temperature)
+        except (TypeError, ValueError) as exc:
+            raise SwitchbotOperationError(f"{self.name}: {exc}") from exc
+        if (
+            isinstance(humidity, bool)
+            or not isinstance(humidity, int)
+            or abs(humidity) > MAX_HUMIDITY_CALIBRATION
+        ):
+            raise SwitchbotOperationError(
+                f"{self.name}: Humidity calibration must be an integer within "
+                f"±{MAX_HUMIDITY_CALIBRATION}, got {humidity!r}"
+            )
+        humidity_byte = abs(humidity) | (0x80 if humidity >= 0 else 0)
+        payload = (
+            f"{COMMAND_SET_CALIBRATION}{temperature_byte:02x}"
+            f"{humidity_byte:02x}{decimal:02x}"
         )
+        result = await self._send_command(payload)
+        self._validate_result("set_calibration", result)
 
-    async def set_temperature_update_interval(self, seconds: int) -> None:
+    async def get_display_settings(self) -> dict[str, Any]:
         """
-        Sets the interval in which temperature and humidity are measured in battery powered mode.
-        Original App assumes seconds in {5*60, 10*60, 30*60}
-        """
-        await self._send_command(COMMAND_TEMPERATURE_UPDATE_INTERVAL + f"{seconds:04x}")
+        Get the zones, data update interval, date format and battery icon.
 
-    async def set_co2_update_interval(self, seconds: int) -> None:
+        Missing fields and unknown date or battery icon values are None.
+        Each zone has "icon", "source" (the raw int if unknown) and "source_mac"
+        (None when the zone shows this device or network data).
         """
-        Sets the interval in which co2 levels are measured in battery powered mode.
-        Original App assumes seconds in {5*60, 10*60, 30*60}
-        """
-        await self._send_command(COMMAND_CO2_UPDATE_INTERVAL + f"{seconds:04x}")
+        # [status][icons mid|bot][sources mid|bot][mac mid x6][mac bot x6]
+        # [data update interval u16][date format][reserved][battery icon]
+        result = await self._send_command(COMMAND_GET_DISPLAY_SETTINGS)
+        result = self._validate_result("get_display_settings", result, min_length=15)
 
-    async def set_button_function(self, change_unit: bool, change_data_source: bool) -> None:
+        def zone(icon: int, source: int, mac: bytes) -> dict[str, Any]:
+            return {
+                "icon": next((i for i in MeterProZoneIcon if i.value == icon), None),
+                "source": next(
+                    (s for s in MeterProDisplaySource if s.value == source), source
+                ),
+                "source_mac": _format_mac(mac),
+            }
+
+        return {
+            "middle": zone(result[1] >> 4, result[2] >> 4, result[3:9]),
+            "bottom": zone(result[1] & 0x0F, result[2] & 0x0F, result[9:15]),
+            "data_update_interval": (
+                int.from_bytes(result[15:17], "big") if len(result) >= 17 else None
+            ),
+            "date_format": (
+                MeterProDateFormat(result[17])
+                if len(result) >= 18 and result[17] in (0x00, 0x01)
+                else None
+            ),
+            "battery_icon_always": (
+                bool(result[19])
+                if len(result) >= 20 and result[19] in (0x00, 0x01)
+                else None
+            ),
+        }
+
+    async def set_display_zone(
+        self,
+        zone: MeterProDisplayZone,
+        source: MeterProDisplaySource,
+        source_mac: str | None = None,
+        icon: MeterProZoneIcon | None = None,
+    ) -> None:
         """
-        Sets the function of the top button:
-        Default (both options false): Only update data
-        changeUnit: switch between ℃ and ℉
-        changeDataSource: switch between display of indoor and outdoor temperature
+        Choose what a screen zone shows; icon None keeps the current icon.
+
+        The device reads the source thermometer over BLE itself. NETWORK shows
+        the values written by set_weather. METER_PRO without a MAC is this
+        device. The screen applies it at the next data update.
         """
-        change_unit_byte = (
-            "00" if change_unit else "01"
-        )  # yes, it has to be reversed like this!
-        change_data_source_byte = (
-            "01" if change_data_source else "00"
-        )  # yes, it has to be reversed like this!
-        await self._send_command(
-            COMMAND_BUTTON_FUNCTION + change_unit_byte + change_data_source_byte
+        try:
+            mac = _mac_hex(source_mac)
+        except ValueError as err:
+            raise SwitchbotOperationError(f"{self.name}: {err}") from err
+        if mac != NO_MAC and source in SOURCES_WITHOUT_MAC:
+            raise SwitchbotOperationError(
+                f"{self.name}: {source.name} display source takes no MAC address"
+            )
+        if mac == NO_MAC and source not in (
+            *SOURCES_WITHOUT_MAC,
+            MeterProDisplaySource.METER_PRO,
+        ):
+            raise SwitchbotOperationError(
+                f"{self.name}: {source.name} display source needs a MAC address"
+            )
+        icon_byte = KEEP_ZONE_ICON if icon is None else icon.value
+        payload = (
+            f"{COMMAND_SET_DISPLAY_ZONE}{zone.value:02x}{icon_byte:02x}"
+            f"{source.value:02x}{mac}"
         )
+        result = await self._send_command(payload)
+        self._validate_result("set_display_zone", result)
 
-    async def force_new_co2_measurement(self) -> None:
-        """Requests a new CO2 measurement, regardless of update interval"""
-        await self._send_command(COMMAND_FORCE_NEW_CO2_MEASUREMENT)
+    async def set_zone_icons(
+        self,
+        middle: MeterProZoneIcon | None = None,
+        bottom: MeterProZoneIcon | None = None,
+    ) -> None:
+        """Set the indoor/outdoor icons of both zones; None keeps an icon."""
+        middle_byte = KEEP_ICON if middle is None else middle.value
+        bottom_byte = KEEP_ICON if bottom is None else bottom.value
+        payload = f"{COMMAND_SET_ZONE_ICONS}{middle_byte:02x}{bottom_byte:02x}"
+        result = await self._send_command(payload)
+        self._validate_result("set_zone_icons", result)
 
-    async def calibrate_co2_sensor(self) -> None:
-        """
-        Calibrate CO2-Sensor.
-        Place your device in a well-ventilated area for 1 minute before calling this.
-        After calling this the calibration runs for about 5 minutes.
-        Keep the device still during this process.
-        """
-        await self._send_command(COMMAND_CALIBRATE_CO2_SENSOR)
+    async def set_data_update_interval(self, seconds: int) -> None:
+        """Set the temperature and humidity update interval; the app offers 300, 600 and 1800 s."""
+        if (
+            isinstance(seconds, bool)
+            or not isinstance(seconds, int)
+            or not 1 <= seconds <= MAX_DATA_UPDATE_INTERVAL
+        ):
+            raise SwitchbotOperationError(
+                f"{self.name}: Data update interval must be an integer from "
+                f"1 to {MAX_DATA_UPDATE_INTERVAL} seconds, got {seconds!r}"
+            )
+        payload = COMMAND_SET_DATA_UPDATE_INTERVAL + seconds.to_bytes(2, "big").hex()
+        result = await self._send_command(payload)
+        self._validate_result("set_data_update_interval", result)
 
-    async def set_alert_sound(self, sound_on: bool, volume: int) -> None:
-        """
-        Sets the Alert-Mode.
-        If soundOn is False the display flashes.
-        If soundOn is True the device additionally beeps.
-        The volume is expected to be in {2,3,4} (2: low, 3: medium, 4: high)
-        """
-        sound_on_byte = "02" if sound_on else "01"
-        await self._send_command(COMMAND_ALERT_SOUND + f"{volume:02x}" + sound_on_byte)
+    async def set_date_format(self, date_format: MeterProDateFormat) -> None:
+        """Set the date format; the app offers it from firmware 1.5."""
+        payload = f"{COMMAND_SET_DATE_FORMAT}{date_format.value:02x}"
+        result = await self._send_command(payload)
+        self._validate_result("set_date_format", result)
+
+    async def set_battery_icon(self, always: bool) -> None:
+        """Show the battery icon always, or only when the battery is low."""
+        payload = f"{COMMAND_SET_BATTERY_ICON}{'01' if always else '00'}"
+        result = await self._send_command(payload)
+        self._validate_result("set_battery_icon", result)
+
+    async def set_temperature_unit(self, fahrenheit: bool) -> None:
+        """Set the default temperature unit shown on the screen (F or C)."""
+        payload = f"{COMMAND_SET_TEMPERATURE_UNIT}{'01' if fahrenheit else '00'}"
+        result = await self._send_command(payload)
+        self._validate_result("set_temperature_unit", result)
+
+    async def get_button_functions(self) -> dict[str, bool | None]:
+        """Read button functions, with None for reserved or unknown values."""
+        result = await self._send_command(COMMAND_GET_BUTTON_FUNCTIONS)
+        result = self._validate_result("get_button_functions", result, min_length=3)
+        # The protocol enables unit switching with 0x00 and source switching with 0x01.
+        return {
+            "unit_switch": result[1] == 0x00 if result[1] in (0x00, 0x01) else None,
+            "source_switch": result[2] == 0x01 if result[2] in (0x00, 0x01) else None,
+        }
+
+    async def set_button_functions(
+        self, unit_switch: bool | None = None, source_switch: bool | None = None
+    ) -> None:
+        """Allow or forbid the button actions; None keeps one as is."""
+        unit_byte = (
+            KEEP_BUTTON_FUNCTION
+            if unit_switch is None
+            else (0x00 if unit_switch else 0x01)
+        )
+        source_byte = (
+            KEEP_BUTTON_FUNCTION
+            if source_switch is None
+            else (0x01 if source_switch else 0x00)
+        )
+        payload = f"{COMMAND_SET_BUTTON_FUNCTIONS}{unit_byte:02x}{source_byte:02x}"
+        result = await self._send_command(payload)
+        self._validate_result("set_button_functions", result)
 
     def _validate_result(
         self, op_name: str, result: bytes | None, min_length: int | None = None
@@ -312,20 +458,210 @@ class SwitchbotMeterProCO2(SwitchbotDevice):
             )
         return result
 
-    def _get_point_five_byte(self, cold: float, hot: float) -> str:
-        """Represents if either of the temperatures has a .5 decimalplace"""
-        point_five = 0x00
-        if int(cold * 10) % 10 == 5:
-            point_five += 0x05
-        if int(hot * 10) % 10 == 5:
-            point_five += 0x50
-        return f"{point_five:02x}"
+    def _parse_weather(self, result: bytes | None) -> tuple[MeterProWeatherIcon, bytes]:
+        result = self._validate_result("get_weather", result, min_length=5)
+        # Only the first five bytes are documented; firmware may append other data.
+        try:
+            icon = MeterProWeatherIcon(result[1])
+        except ValueError as exc:
+            raise SwitchbotOperationError(
+                f"{self.name}: Unknown weather icon {result[1]} "
+                f"(result={result.hex()} rssi={self.rssi})"
+            ) from exc
+        if result[2] & 0x0F > 9 or result[4] & 0x7F > 99:
+            raise SwitchbotOperationError(
+                f"{self.name}: Invalid weather measurements "
+                f"(result={result.hex()} rssi={self.rssi})"
+            )
+        return icon, bytes(result[2:5])
 
-    def _encode_temperature(self, temp: int) -> str:
-        # The encoding for a negative temperature is the value as hex
-        # The encoding for a positive temperature is the value + 128 as hex
-        if temp > 0:
-            temp += 128
-        else:
-            temp *= -1
-        return f"{temp:02x}"
+    async def get_weather(self) -> dict[str, Any]:
+        """Read network weather; unset humidity is None, temperature is independent."""
+        icon, network_data = self._parse_weather(
+            await self._send_command(COMMAND_GET_WEATHER)
+        )
+        magnitude = (network_data[1] & 0x7F) + (network_data[0] & 0x0F) / 10
+        temperature = magnitude if network_data[1] & 0x80 else -magnitude
+        return {
+            "icon": icon,
+            "temperature_c": temperature if magnitude else 0.0,
+            "humidity": (network_data[2] & 0x7F) or None,
+            "fahrenheit_display": bool(network_data[2] & 0x80),
+        }
+
+    async def _weather_command_locked(self, key: str, retry: int) -> bytes | None:
+        command = bytearray.fromhex(self._commandkey(key))
+        return await self._send_command_locked_with_retry(
+            key, command, retry, retry + 1
+        )
+
+    async def set_weather(
+        self,
+        icon: MeterProWeatherIcon | int | None = None,
+        *,
+        temperature_c: float | Decimal | None = None,
+        humidity: float | Decimal | None = None,
+    ) -> None:
+        """
+        Set supplied weather fields and verify them; preserve omitted fields.
+
+        This does not change display sources or paired external sensor data.
+        Updates from other clients can race with the read/write sequence.
+        """
+        if icon is None and temperature_c is None and humidity is None:
+            raise SwitchbotOperationError(
+                f"{self.name}: Supply at least one weather field"
+            )
+        try:
+            icon = _encode_weather_icon(icon) if icon is not None else None
+            temperature = (
+                _encode_weather_temperature(temperature_c)
+                if temperature_c is not None
+                else None
+            )
+            relative_humidity = (
+                _encode_weather_humidity(humidity) if humidity is not None else None
+            )
+        except (ValueError, TypeError) as exc:
+            raise SwitchbotOperationError(f"{self.name}: {exc}") from exc
+        async with self._operation_lock:
+            current_icon, network_data = self._parse_weather(
+                await self._weather_command_locked(
+                    COMMAND_GET_WEATHER, self._retry_count
+                )
+            )
+            icon = current_icon if icon is None else icon
+            network = bytearray(network_data)
+            if temperature is not None:
+                network[0] = (network[0] & 0xF0) | temperature[0]
+                network[1] = temperature[1]
+            if relative_humidity is not None:
+                network[2] = (network[2] & 0x80) | relative_humidity
+            # Six-byte writes reset network readings; omit only external blocks.
+            payload = f"{COMMAND_SET_WEATHER}{icon.value:02x}{network.hex()}"
+            # A lost ACK can follow a successful write; do not replay stale readings.
+            self._validate_result(
+                "set_weather", await self._weather_command_locked(payload, 0)
+            )
+            updated_icon, updated_network = self._parse_weather(
+                await self._weather_command_locked(
+                    COMMAND_GET_WEATHER, self._retry_count
+                )
+            )
+            if updated_icon != icon or updated_network != network:
+                raise SwitchbotOperationError(
+                    f"{self.name}: Weather readback mismatch; no rollback attempted "
+                    f"(expected_icon={icon.value} expected_network={network.hex()} "
+                    f"actual_icon={updated_icon.value} actual_network={updated_network.hex()} "
+                    f"rssi={self.rssi})"
+                )
+
+
+class SwitchbotMeterProCO2(SwitchbotMeterPro):
+    """Control the CO2 variant of the SwitchBot Meter Pro."""
+
+    async def trigger_co2_sampling(self) -> None:
+        """Request a CO2 sample and wait for the device to acknowledge the request."""
+        result = await self._send_command(COMMAND_TRIGGER_CO2_SAMPLING, retry=0)
+        self._validate_result("trigger_co2_sampling", result)
+
+    async def start_co2_calibration(self) -> None:
+        """
+        Start manual calibration and wait for acknowledgement.
+
+        Place the meter outdoors in a well-ventilated area for one minute first.
+        Keep it still during the five-minute calibration.
+        """
+        result = await self._send_command(COMMAND_START_CO2_CALIBRATION, retry=0)
+        self._validate_result("start_co2_calibration", result)
+
+    async def is_usb_powered(self) -> bool:
+        """Read whether USB-C power is connected."""
+        result = await self._send_command(COMMAND_GET_USB_POWER_STATE)
+        data = self._validate_result("is_usb_powered", result, min_length=2)
+        if data[1] not in (0, 1):
+            raise SwitchbotOperationError(
+                f"{self.name}: Unexpected USB power state {data[1]:02x}"
+            )
+        return data[1] == 1
+
+    async def get_co2_battery_update_interval(self) -> int:
+        """Read the battery-powered CO2 update interval in seconds."""
+        return await self._get_co2_update_interval(
+            COMMAND_GET_CO2_BATTERY_UPDATE_INTERVAL, "get_co2_battery_update_interval"
+        )
+
+    async def set_co2_battery_update_interval(self, seconds: int) -> None:
+        """Set the battery-powered CO2 update interval in seconds."""
+        await self._set_co2_update_interval(
+            COMMAND_SET_CO2_BATTERY_UPDATE_INTERVAL,
+            "set_co2_battery_update_interval",
+            seconds,
+        )
+
+    async def get_co2_usb_update_interval(self) -> int:
+        """Read the USB-powered CO2 update interval in seconds."""
+        return await self._get_co2_update_interval(
+            COMMAND_GET_CO2_USB_UPDATE_INTERVAL, "get_co2_usb_update_interval"
+        )
+
+    async def set_co2_usb_update_interval(self, seconds: int) -> None:
+        """Set the USB-powered CO2 update interval in seconds."""
+        await self._set_co2_update_interval(
+            COMMAND_SET_CO2_USB_UPDATE_INTERVAL, "set_co2_usb_update_interval", seconds
+        )
+
+    async def _get_co2_update_interval(self, command: str, operation: str) -> int:
+        result = await self._send_command(command)
+        data = self._validate_result(operation, result, min_length=3)
+        return int.from_bytes(data[1:3], "big")
+
+    async def _set_co2_update_interval(
+        self, command: str, operation: str, seconds: int
+    ) -> None:
+        if (
+            isinstance(seconds, bool)
+            or not isinstance(seconds, int)
+            or not 1 <= seconds <= 0xFFFF
+        ):
+            raise SwitchbotOperationError(
+                f"{self.name}: CO2 update interval must be an integer from 1 to 65535 seconds"
+            )
+
+        result = await self._send_command(command + seconds.to_bytes(2, "big").hex())
+        self._validate_result(operation, result)
+
+    async def get_co2_level_thresholds(self) -> tuple[int, int]:
+        """Read the green-to-yellow and yellow-to-red CO2 thresholds in ppm."""
+        result = await self._send_command(COMMAND_GET_CO2_LEVEL_THRESHOLDS)
+        data = self._validate_result("get_co2_level_thresholds", result, min_length=5)
+        return int.from_bytes(data[1:3], "big"), int.from_bytes(data[3:5], "big")
+
+    async def set_co2_level_thresholds(
+        self, green_to_yellow_ppm: int, yellow_to_red_ppm: int
+    ) -> None:
+        """Set the green-to-yellow and yellow-to-red CO2 thresholds in 100 ppm steps."""
+        if any(
+            isinstance(threshold, bool)
+            or not isinstance(threshold, int)
+            or not 0 <= threshold <= 0xFFFF
+            or threshold % 100
+            for threshold in (green_to_yellow_ppm, yellow_to_red_ppm)
+        ):
+            raise SwitchbotOperationError(
+                f"{self.name}: CO2 level thresholds must be unsigned 16-bit integers in 100 ppm steps"
+            )
+        if green_to_yellow_ppm >= yellow_to_red_ppm:
+            raise SwitchbotOperationError(
+                f"{self.name}: The green-to-yellow CO2 threshold must be below the yellow-to-red threshold"
+            )
+
+        payload = (
+            COMMAND_SET_CO2_LEVEL_THRESHOLDS
+            + (
+                green_to_yellow_ppm.to_bytes(2, "big")
+                + yellow_to_red_ppm.to_bytes(2, "big")
+            ).hex()
+        )
+        result = await self._send_command(payload)
+        self._validate_result("set_co2_level_thresholds", result)

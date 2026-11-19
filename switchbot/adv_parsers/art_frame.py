@@ -9,7 +9,7 @@ def process_art_frame(
     data: bytes | None, mfr_data: bytes | None
 ) -> dict[str, bool | int | str]:
     """Process Art Frame data."""
-    if mfr_data is None:
+    if mfr_data is None or len(mfr_data) < 10:
         return {}
 
     _seq_num = mfr_data[6]

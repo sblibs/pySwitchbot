@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 from typing import Any
 
 import pytest
@@ -10,9 +10,12 @@ from bleak.backends.scanner import AdvertisementData
 from switchbot import HumidifierMode, SwitchbotModel
 from switchbot.adv_parser import (
     _MODEL_TO_MAC_CACHE,
+    SUPPORTED_TYPES,
     parse_advertisement_data,
     populate_model_to_mac_cache,
 )
+from switchbot.adv_parsers.fan import process_circulator_fan_pro
+from switchbot.adv_parsers.lock import process_wolock_pro, process_wolock_pro_wifi
 from switchbot.const.lock import LockStatus
 from switchbot.models import SwitchBotAdvertisement
 
@@ -63,6 +66,93 @@ def generate_advertisement_data(**kwargs: Any) -> AdvertisementData:
     for key, value in ADVERTISEMENT_DATA_DEFAULTS.items():
         new.setdefault(key, value)
     return AdvertisementData(**new)
+
+
+@pytest.mark.parametrize(
+    ("model_char", "expected_model", "expected_name"),
+    [
+        ("c", SwitchbotModel.CURTAIN, "Curtain"),
+        ("C", SwitchbotModel.CURTAIN, "Curtain"),
+        ("{", SwitchbotModel.CURTAIN_3, "Curtain 3"),
+        ("[", SwitchbotModel.CURTAIN_3, "Curtain 3"),
+        ("T", SwitchbotModel.METER, "Meter"),
+        ("t", SwitchbotModel.METER, "Meter"),
+        ("i", SwitchbotModel.METER_PLUS, "Meter Plus"),
+        ("I", SwitchbotModel.METER_PLUS, "Meter Plus"),
+        (
+            "w",
+            SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER,
+            "Indoor/Outdoor Thermo-Hygrometer",
+        ),
+        (
+            "W",
+            SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER,
+            "Indoor/Outdoor Thermo-Hygrometer",
+        ),
+        ("4", SwitchbotModel.METER_PRO, "Meter Pro"),
+        (b"\x14", SwitchbotModel.METER_PRO, "Meter Pro"),
+        ("5", SwitchbotModel.METER_PRO_CO2, "Meter Pro CO2"),
+        (b"\x15", SwitchbotModel.METER_PRO_CO2, "Meter Pro CO2"),
+        ("g", SwitchbotModel.PLUG_MINI_US, "Plug Mini (US)"),
+        ("G", SwitchbotModel.PLUG_MINI_US, "Plug Mini (US)"),
+        ("j", SwitchbotModel.PLUG_MINI_JP, "Plug Mini (JP)"),
+        ("J", SwitchbotModel.PLUG_MINI_JP, "Plug Mini (JP)"),
+        ("q", SwitchbotModel.CEILING_LIGHT, "Ceiling Light"),
+        ("Q", SwitchbotModel.CEILING_LIGHT, "Ceiling Light"),
+        ("n", SwitchbotModel.CEILING_LIGHT_PRO, "Ceiling Light Pro"),
+        ("N", SwitchbotModel.CEILING_LIGHT_PRO, "Ceiling Light Pro"),
+        ("%", SwitchbotModel.HUBMINI_MATTER, "HubMini Matter"),
+        (b"\x05", SwitchbotModel.HUBMINI_MATTER, "HubMini Matter"),
+    ],
+)
+def test_supported_type_model_mapping(
+    model_char: str | bytes,
+    expected_model: SwitchbotModel,
+    expected_name: str,
+) -> None:
+    """Test that BLE model identifiers map to a single product."""
+    assert SUPPORTED_TYPES[model_char]["modelName"] is expected_model
+    assert SUPPORTED_TYPES[model_char]["modelFriendlyName"] == expected_name
+
+
+def test_hub_mini_is_not_parsed_as_hub_mini_matter() -> None:
+    """Test that regular Hub Mini identifiers are not treated as Matter."""
+    assert "M" not in SUPPORTED_TYPES
+    assert "m" not in SUPPORTED_TYPES
+
+
+def test_deprecated_plug_mini_is_not_a_parsing_hint() -> None:
+    """The legacy symbol does not select a regional Plug Mini parser."""
+    ble_device = generate_ble_device("AA:BB:CC:DD:EE:FF")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: bytes.fromhex("AABBCCDDEEFF0080003C000A")},
+    )
+
+    assert (
+        parse_advertisement_data(ble_device, adv_data, SwitchbotModel.PLUG_MINI) is None
+    )
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        pytest.param(SwitchbotModel.PLUG_MINI_US, id="us"),
+        pytest.param(SwitchbotModel.PLUG_MINI_JP, id="jp"),
+    ],
+)
+def test_regional_plug_mini_passive_parsing(model: SwitchbotModel) -> None:
+    """Regional model hints identify passive Plug Mini advertisements."""
+    ble_device = generate_ble_device("AA:BB:CC:DD:EE:FF")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={2409: bytes.fromhex("AABBCCDDEEFF0080003C000A")},
+    )
+
+    result = parse_advertisement_data(ble_device, adv_data, model)
+
+    assert result is not None
+    assert result.data["modelName"] is model
+    assert result.data["data"]["isOn"] is True
+    assert result.active is False
 
 
 def test_parse_advertisement_data_curtain():
@@ -119,8 +209,8 @@ def test_parse_advertisement_data_curtain_passive():
                 "deviceChain": 1,
             },
             "isEncrypted": False,
-            "model": "{",
-            "modelFriendlyName": "Curtain 3",
+            "model": "c",
+            "modelFriendlyName": "Curtain",
             "modelName": SwitchbotModel.CURTAIN,
         },
         device=ble_device,
@@ -151,8 +241,8 @@ def test_parse_advertisement_data_curtain_passive_12_bytes():
                 "deviceChain": 1,
             },
             "isEncrypted": False,
-            "model": "{",
-            "modelFriendlyName": "Curtain 3",
+            "model": "c",
+            "modelFriendlyName": "Curtain",
             "modelName": SwitchbotModel.CURTAIN,
         },
         device=ble_device,
@@ -390,7 +480,7 @@ def test_parse_advertisement_data_curtain3():
             "isEncrypted": False,
             "model": "{",
             "modelFriendlyName": "Curtain 3",
-            "modelName": SwitchbotModel.CURTAIN,
+            "modelName": SwitchbotModel.CURTAIN_3,
         },
         device=ble_device,
         rssi=-80,
@@ -408,7 +498,7 @@ def test_parse_advertisement_data_curtain3_passive():
         service_data={},
         rssi=-80,
     )
-    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.CURTAIN)
+    result = parse_advertisement_data(ble_device, adv_data, SwitchbotModel.CURTAIN_3)
     assert result == SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
@@ -424,7 +514,7 @@ def test_parse_advertisement_data_curtain3_passive():
             "isEncrypted": False,
             "model": "{",
             "modelFriendlyName": "Curtain 3",
-            "modelName": SwitchbotModel.CURTAIN,
+            "modelName": SwitchbotModel.CURTAIN_3,
         },
         device=ble_device,
         rssi=-80,
@@ -901,8 +991,8 @@ def test_wosensor_passive_only():
                 "temperature": 24.6,
             },
             "isEncrypted": False,
-            "model": "i",
-            "modelFriendlyName": "Meter Plus",
+            "model": "T",
+            "modelFriendlyName": "Meter",
             "modelName": SwitchbotModel.METER,
             "rawAdvData": None,
         },
@@ -929,6 +1019,30 @@ def test_wosensor_active_zero_data():
             "isEncrypted": False,
             "model": "T",
             "rawAdvData": b"T\x00\x00\x00\x00\x00",
+        },
+        device=ble_device,
+        rssi=-50,
+        active=True,
+    )
+
+
+def test_wosensor_active_positive_battery_and_zero_data():
+    """Test parsing wosensor with active data and positive battery but all other values are zero."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={},
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"T\x00P\x00\x00\x00"},
+        tx_power=-127,
+        rssi=-50,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "data": {},
+            "isEncrypted": False,
+            "model": "T",
+            "rawAdvData": b"T\x00P\x00\x00\x00",
         },
         device=ble_device,
         rssi=-50,
@@ -993,8 +1107,8 @@ def test_woiosensor_passive_and_active():
             },
             "isEncrypted": False,
             "model": "w",
-            "modelFriendlyName": "Indoor/Outdoor Meter",
-            "modelName": SwitchbotModel.IO_METER,
+            "modelFriendlyName": "Indoor/Outdoor Thermo-Hygrometer",
+            "modelName": SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER,
             "rawAdvData": b"w\x00\xe4",
         },
         device=ble_device,
@@ -1025,8 +1139,8 @@ def test_woiosensor_passive_only():
             },
             "isEncrypted": False,
             "model": "w",
-            "modelFriendlyName": "Indoor/Outdoor Meter",
-            "modelName": SwitchbotModel.IO_METER,
+            "modelFriendlyName": "Indoor/Outdoor Thermo-Hygrometer",
+            "modelName": SwitchbotModel.INDOOR_OUTDOOR_THERMO_HYGROMETER,
             "rawAdvData": None,
         },
         device=ble_device,
@@ -1417,6 +1531,36 @@ def test_meter_pro_c_passive() -> None:
     )
 
 
+def test_meter_pro_c_co2_out_of_range_dropped() -> None:
+    """CO2 readings above sensor spec range (9999 ppm) are dropped as spurious."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xb0\xe9\xfeT2\x15\xb7\xe4\x07\x9b\xa4\x007\x9c\x40\x00"
+        },
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"5\x00d"},
+        rssi=-67,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert "co2" not in result.data["data"]
+    assert result.data["data"]["temperature"] == 27.7
+    assert result.data["data"]["humidity"] == 36
+
+
+def test_meter_pro_c_co2_boundary_accepted() -> None:
+    """CO2 at the upper bound (9999 ppm) is accepted."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xb0\xe9\xfeT2\x15\xb7\xe4\x07\x9b\xa4\x007\x27\x0f\x00"
+        },
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"5\x00d"},
+        rssi=-67,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result.data["data"]["co2"] == 9999
+
+
 def test_parse_advertisement_data_keypad():
     """Test parse_advertisement_data for the keypad."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
@@ -1483,9 +1627,16 @@ def test_leak_passive():
     assert result == SwitchBotAdvertisement(
         address="aa:bb:cc:dd:ee:ff",
         data={
-            "data": {},
+            "data": {
+                "leak": False,
+                "tampered": False,
+                "battery": 78,
+                "low_battery": False,
+            },
             "isEncrypted": False,
             "model": "&",
+            "modelFriendlyName": "Leak Detector",
+            "modelName": SwitchbotModel.LEAK,
             "rawAdvData": None,
         },
         device=ble_device,
@@ -1672,6 +1823,53 @@ def test_remote_passive() -> None:
         rssi=-97,
         active=False,
     )
+
+
+def test_universal_remote_active() -> None:
+    """Test Universal Remote active scan parsing."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x00\x50\x00\x00\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"'\x00"},
+        service_uuids=["cba20d00-224d-11e6-9fb8-0002a5d5c51b"],
+        rssi=-66,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "data": {
+                "battery": 80,
+                "charging": False,
+            },
+            "isEncrypted": False,
+            "model": "'",
+            "modelFriendlyName": "Universal Remote",
+            "modelName": SwitchbotModel.UNIVERSAL_REMOTE,
+            "rawAdvData": b"'\x00",
+        },
+        device=ble_device,
+        rssi=-66,
+        active=True,
+    )
+
+
+def test_universal_remote_charging() -> None:
+    """Test Universal Remote reports the charging bit from byte 14."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x00\xb7\x00\x00\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={"0000fd3d-0000-1000-8000-00805f9b34fb": b"'\x00"},
+        service_uuids=["cba20d00-224d-11e6-9fb8-0002a5d5c51b"],
+        rssi=-66,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result is not None
+    assert result.data["data"] == {"battery": 55, "charging": True}
 
 
 def test_parse_advertisement_data_hubmini_matter():
@@ -1877,6 +2075,98 @@ def test_circulator_fan_passive() -> None:
         rssi=-97,
         active=False,
     )
+
+
+def test_circulator_fan_pro_active() -> None:
+    """
+    Test parsing Circulator Fan Pro (W1160) with active data.
+
+    Real W1160 capture (fan on, light off, no swing). The Pro shares the W1071
+    Modern Ceiling Fan broadcast layout (battery at offset 7, fan state at 8,
+    speed at 9, CCT light at 10, color temp at 11-12) and is routed by its own
+    4-byte service-data suffix (0x00 0x11 0xB3 0x40).
+    """
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a\xd9\x98\x0b\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00Y\x00\x11\xb3@"
+        },
+        rssi=-97,
+    )
+    result = parse_advertisement_data(
+        ble_device, adv_data, SwitchbotModel.CIRCULATOR_FAN_PRO
+    )
+    assert result == SwitchBotAdvertisement(
+        address="aa:bb:cc:dd:ee:ff",
+        data={
+            "rawAdvData": b"\x00\x00Y\x00\x11\xb3@",
+            "data": {
+                "sequence_number": 154,
+                "isOn": True,
+                "mode": "normal",
+                "night_light_is_on": False,
+                "night_light_level": 0,
+                "oscillating": False,
+                "oscillating_horizontal": False,
+                "oscillating_vertical": False,
+                "battery": 89,
+                "charging": True,
+                "speed": 11,
+            },
+            "isEncrypted": False,
+            "model": b"\x00\x11\xb3@",
+            "modelFriendlyName": "Circulator Fan Pro",
+            "modelName": SwitchbotModel.CIRCULATOR_FAN_PRO,
+        },
+        device=ble_device,
+        rssi=-97,
+        active=True,
+    )
+
+
+def test_circulator_fan_pro_routes_by_service_data_suffix() -> None:
+    """The Pro is identified by its service-data suffix without an explicit model."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a\xd9\x98\x0b\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00Y\x00\x11\xb3@"
+        },
+        rssi=-97,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result is not None
+    assert result.data["modelName"] == SwitchbotModel.CIRCULATOR_FAN_PRO
+    assert result.data["modelFriendlyName"] == "Circulator Fan Pro"
+
+
+@pytest.mark.parametrize(
+    ("mfr_data", "is_on", "level"),
+    [
+        # state byte (offset 8): 0x98 off, 0x94 on/high (L1), 0x9c on/low (L2)
+        (b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a\xd9\x98\x0b\x00\x00\x00\x00\x00\x00", False, 0),
+        (b"\xb0\xe9\xfe\xfd\xc0\xb1\x39\x64\x94\x0b\x00\x00\x00\x00\x00\x00", True, 1),
+        (b"\xb0\xe9\xfe\xfd\xc0\xb1\x3b\xe4\x9c\x0b\x00\x00\x00\x00\x00\x00", True, 2),
+    ],
+)
+def test_circulator_fan_pro_night_light(
+    mfr_data: bytes, is_on: bool, level: int
+) -> None:
+    """The Pro night light is parsed from the fan-state byte (bit2 on, bit3 level)."""
+    data = process_circulator_fan_pro(None, mfr_data)
+    assert data["night_light_is_on"] is is_on
+    assert data["night_light_level"] == level
+
+
+@pytest.mark.parametrize("mfr_data", [None, b"\xb0\xe9\xfe\xfd\xc0\xb1\x9a"])
+def test_circulator_fan_pro_short_data(mfr_data: bytes | None) -> None:
+    """Short or missing manufacturer data yields an empty parse."""
+    assert process_circulator_fan_pro(None, mfr_data) == {}
 
 
 def test_circulator_fan_with_empty_data() -> None:
@@ -2731,9 +3021,12 @@ def test_hub3_with_empty_data() -> None:
                 "door_open_from_secondary_lock": False,
                 "double_lock_mode": False,
                 "is_secondary_lock": False,
-                "left_battery_compartment_alarm": 0,
-                "right_battery_compartment_alarm": 0,
+                "battery_charging": False,
+                "left_battery_compartment_alarm": False,
+                "right_battery_compartment_alarm": False,
                 "low_temperature_alarm": False,
+                "power_alarm": False,
+                "door_magnet_alarm": False,
                 "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
                 "unlocked_alarm": False,
@@ -2824,8 +3117,8 @@ def test_hub3_with_empty_data() -> None:
                 "door_open_from_secondary_lock": False,
                 "double_lock_mode": False,
                 "is_secondary_lock": False,
-                "left_battery_compartment_alarm": 0,
-                "right_battery_compartment_alarm": 0,
+                "left_battery_compartment_alarm": False,
+                "right_battery_compartment_alarm": False,
                 "low_temperature_alarm": False,
                 "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
@@ -2836,6 +3129,150 @@ def test_hub3_with_empty_data() -> None:
             b"\x00\x10\xff\x90",
             "Lock Pro Wifi",
             SwitchbotModel.LOCK_PRO_WIFI,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x11\x22\x33\x2a\x88\x18\x64\x00\x91",
+            b"\x00\x80\x64\x00\x11\x9f\xb8",
+            {
+                "sequence_number": 42,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": True,
+                "door_open_from_secondary_lock": False,
+                "double_lock_mode": False,
+                "is_secondary_lock": False,
+                "manual_unlock_linkage": False,
+                "unclosed_alarm": True,
+                "unlocked_alarm": False,
+                "auto_lock_paused": True,
+                "night_latch": False,
+                "power_alarm": True,
+                "battery_status": 1,
+            },
+            b"\x00\x11\x9f\xb8",
+            "Lock Ultra Max",
+            SwitchbotModel.LOCK_ULTRA_MAX,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x11\x22\x33\x2a\x88\x08\x64\x70",
+            b"\x00\x80\x64\x00\x12\x24\x88",
+            {
+                "sequence_number": 42,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "auto_lock_paused": True,
+                "night_latch": False,
+                "charging_status": 0,
+                "battery_charging": False,
+                "unlocked_alarm": True,
+                "low_temperature_alarm": True,
+                "power_alarm": True,
+                "battery_status": 0,
+                "charging_fault": False,
+            },
+            b"\x00\x12\x24\x88",
+            "Lock Nano",
+            SwitchbotModel.LOCK_NANO,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x11\x22\x33\x2a\x88\x18\x64\x00\x91",
+            b"\x00\x80\x64\x00\x12\x11\x00",
+            {
+                "sequence_number": 42,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": True,
+                "door_open_from_secondary_lock": False,
+                "double_lock_mode": False,
+                "is_secondary_lock": False,
+                "manual_unlock_linkage": False,
+                "unclosed_alarm": True,
+                "unlocked_alarm": False,
+                "auto_lock_paused": True,
+                "night_latch": False,
+                "power_alarm": True,
+                "battery_status": 1,
+            },
+            b"\x00\x12\x11\x00",
+            "UWB Lock",
+            SwitchbotModel.UWB_LOCK,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x44\x55\x66\x2b\x10\x00\x50\x00\x00",
+            b"\x00\x80\x50\x01\x11\x9f\xb8",
+            {
+                "sequence_number": 43,
+                "battery": 80,
+                "calibration": False,
+                "status": LockStatus.LOCKING,
+                "update_from_secondary_lock": False,
+                "door_open": False,
+                "door_open_from_secondary_lock": False,
+                "double_lock_mode": False,
+                "is_secondary_lock": False,
+                "manual_unlock_linkage": False,
+                "unclosed_alarm": False,
+                "unlocked_alarm": False,
+                "auto_lock_paused": False,
+                "night_latch": False,
+                "power_alarm": False,
+                "battery_status": 0,
+            },
+            b"\x01\x11\x9f\xb8",
+            "Lock Ultra Max",
+            SwitchbotModel.LOCK_ULTRA_MAX,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x11\x22\x33\x2a\x88\x08\x64\x70",
+            b"\x00\x80\x50\x01\x12\x24\x88",
+            {
+                "sequence_number": 42,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "auto_lock_paused": True,
+                "night_latch": False,
+                "charging_status": 0,
+                "battery_charging": False,
+                "unlocked_alarm": True,
+                "low_temperature_alarm": True,
+                "power_alarm": True,
+                "battery_status": 0,
+                "charging_fault": False,
+            },
+            b"\x01\x12\x24\x88",
+            "Lock Nano",
+            SwitchbotModel.LOCK_NANO,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x44\x55\x66\x2b\x10\x00\x50\x00\x00",
+            b"\x00\x80\x50\x01\x12\x11\x00",
+            {
+                "sequence_number": 43,
+                "battery": 80,
+                "calibration": False,
+                "status": LockStatus.LOCKING,
+                "update_from_secondary_lock": False,
+                "door_open": False,
+                "door_open_from_secondary_lock": False,
+                "double_lock_mode": False,
+                "is_secondary_lock": False,
+                "manual_unlock_linkage": False,
+                "unclosed_alarm": False,
+                "unlocked_alarm": False,
+                "auto_lock_paused": False,
+                "night_latch": False,
+                "power_alarm": False,
+                "battery_status": 0,
+            },
+            b"\x01\x12\x11\x00",
+            "UWB Lock",
+            SwitchbotModel.UWB_LOCK,
         ),
     ],
 )
@@ -2917,9 +3354,12 @@ def test_lock_active(test_case: AdvTestCase) -> None:
                 "door_open_from_secondary_lock": False,
                 "double_lock_mode": False,
                 "is_secondary_lock": False,
-                "left_battery_compartment_alarm": 0,
-                "right_battery_compartment_alarm": 0,
+                "battery_charging": False,
+                "left_battery_compartment_alarm": False,
+                "right_battery_compartment_alarm": False,
                 "low_temperature_alarm": False,
+                "power_alarm": False,
+                "door_magnet_alarm": False,
                 "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
                 "unlocked_alarm": False,
@@ -3010,8 +3450,8 @@ def test_lock_active(test_case: AdvTestCase) -> None:
                 "door_open_from_secondary_lock": False,
                 "double_lock_mode": False,
                 "is_secondary_lock": False,
-                "left_battery_compartment_alarm": 0,
-                "right_battery_compartment_alarm": 0,
+                "left_battery_compartment_alarm": False,
+                "right_battery_compartment_alarm": False,
                 "low_temperature_alarm": False,
                 "manual_unlock_linkage": False,
                 "unclosed_alarm": False,
@@ -3022,6 +3462,78 @@ def test_lock_active(test_case: AdvTestCase) -> None:
             b"\x00\x10\xff\x90",
             "Lock Pro Wifi",
             SwitchbotModel.LOCK_PRO_WIFI,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x11\x22\x33\x2a\x88\x18\x64\x00\x91",
+            b"\x00\x80\x64\x00\x11\x9f\xb8",
+            {
+                "sequence_number": 42,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": True,
+                "door_open_from_secondary_lock": False,
+                "double_lock_mode": False,
+                "is_secondary_lock": False,
+                "manual_unlock_linkage": False,
+                "unclosed_alarm": True,
+                "unlocked_alarm": False,
+                "auto_lock_paused": True,
+                "night_latch": False,
+                "power_alarm": True,
+                "battery_status": 1,
+            },
+            b"\x00\x11\x9f\xb8",
+            "Lock Ultra Max",
+            SwitchbotModel.LOCK_ULTRA_MAX,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x11\x22\x33\x2a\x88\x08\x64\x70",
+            b"\x00\x80\x64\x00\x12\x24\x88",
+            {
+                "sequence_number": 42,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "auto_lock_paused": True,
+                "night_latch": False,
+                "charging_status": 0,
+                "battery_charging": False,
+                "unlocked_alarm": True,
+                "low_temperature_alarm": True,
+                "power_alarm": True,
+                "battery_status": 0,
+                "charging_fault": False,
+            },
+            b"\x00\x12\x24\x88",
+            "Lock Nano",
+            SwitchbotModel.LOCK_NANO,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x11\x22\x33\x2a\x88\x18\x64\x00\x91",
+            b"\x00\x80\x64\x00\x12\x11\x00",
+            {
+                "sequence_number": 42,
+                "battery": 100,
+                "calibration": True,
+                "status": LockStatus.UNLOCKED,
+                "update_from_secondary_lock": False,
+                "door_open": True,
+                "door_open_from_secondary_lock": False,
+                "double_lock_mode": False,
+                "is_secondary_lock": False,
+                "manual_unlock_linkage": False,
+                "unclosed_alarm": True,
+                "unlocked_alarm": False,
+                "auto_lock_paused": True,
+                "night_latch": False,
+                "power_alarm": True,
+                "battery_status": 1,
+            },
+            b"\x00\x12\x11\x00",
+            "UWB Lock",
+            SwitchbotModel.UWB_LOCK,
         ),
     ],
 )
@@ -3107,6 +3619,30 @@ def test_lock_passive(test_case: AdvTestCase) -> None:
             b"\x00\x10\xff\x90",
             "Lock Pro Wifi",
             SwitchbotModel.LOCK_PRO_WIFI,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x80\x64\x00\x11\x9f\xb8",
+            {},
+            b"\x00\x11\x9f\xb8",
+            "Lock Ultra Max",
+            SwitchbotModel.LOCK_ULTRA_MAX,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x80\x64\x00\x12\x24\x88",
+            {},
+            b"\x00\x12\x24\x88",
+            "Lock Nano",
+            SwitchbotModel.LOCK_NANO,
+        ),
+        AdvTestCase(
+            None,
+            b"\x00\x80\x64\x00\x12\x11\x00",
+            {},
+            b"\x00\x12\x11\x00",
+            "UWB Lock",
+            SwitchbotModel.UWB_LOCK,
         ),
     ],
 )
@@ -3239,7 +3775,7 @@ def test_blind_tilt_with_empty_data() -> None:
                 "temperature": 25.1,
                 "temp": {"c": 25.1, "f": 77.18},
                 "water_level": "medium",
-                "filter_run_time": datetime.timedelta(days=1, seconds=10800),
+                "filter_run_time": dt.timedelta(days=1, seconds=10800),
                 "filter_alert": False,
                 "target_humidity": 93,
             },
@@ -3264,7 +3800,7 @@ def test_blind_tilt_with_empty_data() -> None:
                 "temperature": None,
                 "temp": {"c": None, "f": None},
                 "water_level": "medium",
-                "filter_run_time": datetime.timedelta(days=1, seconds=18000),
+                "filter_run_time": dt.timedelta(days=1, seconds=18000),
                 "filter_alert": False,
                 "target_humidity": 52,
             },
@@ -3289,7 +3825,7 @@ def test_blind_tilt_with_empty_data() -> None:
                 "temperature": None,
                 "temp": {"c": None, "f": None},
                 "water_level": "medium",
-                "filter_run_time": datetime.timedelta(days=1, seconds=18000),
+                "filter_run_time": dt.timedelta(days=1, seconds=18000),
                 "filter_alert": False,
                 "target_humidity": 52,
             },
@@ -3356,7 +3892,7 @@ def test_humidifer_active(test_case: AdvTestCase) -> None:
                 "temperature": 25.1,
                 "temp": {"c": 25.1, "f": 77.18},
                 "water_level": "medium",
-                "filter_run_time": datetime.timedelta(days=1, seconds=10800),
+                "filter_run_time": dt.timedelta(days=1, seconds=10800),
                 "filter_alert": False,
                 "target_humidity": 93,
             },
@@ -3672,6 +4208,24 @@ def test_humidifer_with_empty_data() -> None:
             SwitchbotModel.RGBIC_NEON_WIRE_ROPE_LIGHT,
         ),
         AdvTestCase(
+            b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00\xa0',
+            b"\x00\x00\x00\x00\x11\xbb\x10",
+            {
+                "sequence_number": 12,
+                "isOn": True,
+                "brightness": 30,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 2,
+                "cw": 4410,
+                "main_isOn": True,
+                "main_brightness": 32,
+            },
+            b"\x00\x11\xbb\x10",
+            "RGBICWW Ceiling Light",
+            SwitchbotModel.RGBICWW_CEILING_LIGHT,
+        ),
+        AdvTestCase(
             b"\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15",
             b"\x00\x00M\x00\x10\xfb\xa8",
             {
@@ -3699,6 +4253,12 @@ def test_humidifer_with_empty_data() -> None:
                 "motion_detected": True,
                 "temp_alarm": 0,
                 "temperature": 25.5,
+                "on_keystate": 0,
+                "off_keystate": 0,
+                "on_keystate_mode": 0,
+                "on_keystate_counter": 0,
+                "off_keystate_mode": 0,
+                "off_keystate_counter": 0,
             },
             b"\x00\x10\xf3\xd8",
             "Climate Panel",
@@ -3717,6 +4277,36 @@ def test_humidifer_with_empty_data() -> None:
                 "motion_detected": True,
                 "temp_alarm": 0,
                 "temperature": 25.9,
+                "on_keystate": 0,
+                "off_keystate": 0,
+                "on_keystate_mode": 0,
+                "on_keystate_counter": 0,
+                "off_keystate_mode": 0,
+                "off_keystate_counter": 0,
+            },
+            b"\x00\x10\xf3\xd8",
+            "Climate Panel",
+            SwitchbotModel.CLIMATE_PANEL,
+        ),
+        AdvTestCase(
+            b"\xb0\xe9\xfe\x84\x38\x05\x06\x14\x05\x99\x2d\x00\x00\x25\x62\xd4\x00\x0c\x04\x00",
+            b"\x00 _\x00\x10\xf3\xd8@",
+            {
+                "battery": 20,
+                "humidity": 45,
+                "sequence_number": 6,
+                "humidity_alarm": 0,
+                "isOn": False,
+                "is_light": True,
+                "motion_detected": True,
+                "temp_alarm": 0,
+                "temperature": 25.5,
+                "on_keystate": 37,
+                "off_keystate": 98,
+                "on_keystate_mode": 1,
+                "on_keystate_counter": 5,
+                "off_keystate_mode": 3,
+                "off_keystate_counter": 2,
             },
             b"\x00\x10\xf3\xd8",
             "Climate Panel",
@@ -4106,6 +4696,24 @@ def test_adv_active(test_case: AdvTestCase) -> None:
             SwitchbotModel.RGBIC_NEON_WIRE_ROPE_LIGHT,
         ),
         AdvTestCase(
+            b'(7/L\x94\xb2\x0c\x9e"\x00\x11:\x00\xa0',
+            None,
+            {
+                "sequence_number": 12,
+                "isOn": True,
+                "brightness": 30,
+                "delay": False,
+                "network_state": 2,
+                "color_mode": 2,
+                "cw": 4410,
+                "main_isOn": True,
+                "main_brightness": 32,
+            },
+            b"\x00\x11\xbb\x10",
+            "RGBICWW Ceiling Light",
+            SwitchbotModel.RGBICWW_CEILING_LIGHT,
+        ),
+        AdvTestCase(
             b"\xb0\xe9\xfe\xe4\xbf\xd8\x0b\x01\x11f\x00\x16M\x15",
             None,
             {
@@ -4133,6 +4741,12 @@ def test_adv_active(test_case: AdvTestCase) -> None:
                 "motion_detected": True,
                 "temp_alarm": 0,
                 "temperature": 26.6,
+                "on_keystate": 0,
+                "off_keystate": 0,
+                "on_keystate_mode": 0,
+                "on_keystate_counter": 0,
+                "off_keystate_mode": 0,
+                "off_keystate_counter": 0,
             },
             b"\x00\x10\xf3\xd8",
             "Climate Panel",
@@ -4406,6 +5020,14 @@ def test_adv_passive(test_case: AdvTestCase) -> None:
         ),
         AdvTestCase(
             None,
+            b"\x00\x00\x00\x00\x11\xbb\x10",
+            {},
+            b"\x00\x11\xbb\x10",
+            "RGBICWW Ceiling Light",
+            SwitchbotModel.RGBICWW_CEILING_LIGHT,
+        ),
+        AdvTestCase(
+            None,
             b"\x00\x00\x00\x00\x10\xd0\xb3",
             {},
             b"\x00\x10\xd0\xb3",
@@ -4580,7 +5202,7 @@ def test_parse_advertisement_with_mac_cache_curtain() -> None:
     result_with_cache = parse_advertisement_data(ble_device, adv_data)
     assert result_with_cache is not None
     assert result_with_cache.data["modelName"] == SwitchbotModel.CURTAIN
-    assert result_with_cache.data["modelFriendlyName"] == "Curtain 3"
+    assert result_with_cache.data["modelFriendlyName"] == "Curtain"
     assert result_with_cache.active is False
 
     # Clean up
@@ -4712,6 +5334,23 @@ def test_weather_station_empty_data() -> None:
     assert result.data["data"] == {}
 
 
+def test_weather_station_positive_battery_and_empty_data() -> None:
+    """Test Weather Station with positive battery and empty/zero data returns empty dict."""
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+    adv_data = generate_advertisement_data(
+        manufacturer_data={
+            2409: b"\xaa\xbb\xcc\xdd\xee\xff\x01P\x00\x80\x00\x00\x00\x00\x00\x00"
+        },
+        service_data={
+            "0000fd3d-0000-1000-8000-00805f9b34fb": b"\x00\x00\x00\x00\x10\x53\xb0"
+        },
+        rssi=-67,
+    )
+    result = parse_advertisement_data(ble_device, adv_data)
+    assert result is not None
+    assert result.data["data"] == {}
+
+
 def test_weather_station_short_service_data() -> None:
     """Test Weather Station with too-short service data does not raise IndexError."""
     ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
@@ -4752,3 +5391,27 @@ def test_with_special_manufacturer_data_length() -> None:
     )
     result = parse_advertisement_data(ble_device, adv_data)
     assert result.data["modelName"] == SwitchbotModel.HUMIDIFIER
+
+
+def test_lock_pro_alarm_bits() -> None:
+    """Test Lock Pro charging and alarm bits."""
+    mfr_data = bytes.fromhex("fb7d6962d3de2a8a00e4003e")
+    result = process_wolock_pro(b"$\x80d", mfr_data)
+    assert result["battery"] == 100
+    assert result["battery_charging"] is True
+    assert result["low_temperature_alarm"] is True
+    assert result["power_alarm"] is True
+    assert result["door_magnet_alarm"] is True
+    assert result["left_battery_compartment_alarm"] is True
+    assert result["right_battery_compartment_alarm"] is True
+    assert result["unclosed_alarm"] is False
+    assert result["unlocked_alarm"] is False
+
+
+def test_lock_pro_wifi_omits_lock_pro_only_bits() -> None:
+    """Test Lock Pro Wifi does not report bits only decoded for the Lock Pro."""
+    result = process_wolock_pro_wifi(None, bytes.fromhex("fb7d6962d3de2a8a00e4003e"))
+    assert result["left_battery_compartment_alarm"] is True
+    assert "battery_charging" not in result
+    assert "power_alarm" not in result
+    assert "door_magnet_alarm" not in result

@@ -10,10 +10,15 @@ def process_wocontact(
     if data is None and mfr_data is None:
         return {}
 
-    battery = data[2] & 0b01111111 if data else None
-    tested = bool(data[1] & 0b10000000) if data else None
+    has_full_mfr = mfr_data is not None and len(mfr_data) >= 13
+    has_full_data = data is not None and len(data) >= 9
+    if not has_full_mfr and not has_full_data:
+        return {}
 
-    if mfr_data and len(mfr_data) >= 13:
+    battery = data[2] & 0b01111111 if data and len(data) >= 3 else None
+    tested = bool(data[1] & 0b10000000) if data and len(data) >= 2 else None
+
+    if has_full_mfr:
         motion_detected = bool(mfr_data[7] & 0b10000000)
         contact_open = bool(mfr_data[7] & 0b00010000)
         contact_timeout = bool(mfr_data[7] & 0b00100000)
