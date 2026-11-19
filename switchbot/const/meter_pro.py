@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntFlag
 
 
 class MeterProWeatherIcon(Enum):
@@ -47,3 +47,69 @@ class MeterProDateFormat(Enum):
 
     MONTH_DAY = 0
     DAY_MONTH = 1
+
+
+class MeterProComfortStatus(Enum):
+    """The device's current temperature and humidity comfort status."""
+
+    COMFORTABLE = 0
+    DRY = 1
+    WET = 2
+    UNAVAILABLE = 3
+
+
+class MeterProAlarmMode(Enum):
+    """How the meter signals a local threshold alarm."""
+
+    DISABLED = 0
+    FLASH_ONLY = 1
+    SOUND_AND_FLASH = 2
+
+
+class MeterProAlarmVolume(Enum):
+    """Alarm buzzer volume."""
+
+    OFF = 1
+    LOW = 2
+    MEDIUM = 3
+    HIGH = 4
+
+
+class MeterProCO2AlarmMode(IntFlag):
+    """CO2 alarm conditions and the protocol's custom-setting bit."""
+
+    DISABLED = 0
+    LOW = 1
+    HIGH = 2
+    IN_RANGE = 4
+    CUSTOM = 8
+
+
+class MeterProCO2AlarmStatus(Enum):
+    """Current CO2 alarm reported by the meter."""
+
+    NONE = 0
+    LOW = 1
+    HIGH = 2
+    IN_RANGE = 3
+
+
+class MeterProTemperatureHumidityAlarmMode(IntFlag):
+    """Local alarm conditions for the temperature and humidity limits."""
+
+    DISABLED = 0
+    TEMPERATURE_LOW = 0x01
+    TEMPERATURE_HIGH = 0x02
+    TEMPERATURE_IN_RANGE = 0x04
+    HUMIDITY_LOW = 0x10
+    HUMIDITY_HIGH = 0x20
+    HUMIDITY_IN_RANGE = 0x40
+
+
+class MeterProTemperatureHumidityAlarmStatus(Enum):
+    """Current alarm state of the temperature or humidity measurement."""
+
+    NONE = 0
+    LOW = 1
+    HIGH = 2
+    IN_RANGE = 3

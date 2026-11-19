@@ -6,9 +6,16 @@ import pytest
 from bleak.backends.device import BLEDevice
 
 from switchbot import (
+    MeterProAlarmMode,
+    MeterProAlarmVolume,
+    MeterProCO2AlarmMode,
+    MeterProCO2AlarmStatus,
+    MeterProComfortStatus,
     MeterProDateFormat,
     MeterProDisplaySource,
     MeterProDisplayZone,
+    MeterProTemperatureHumidityAlarmMode,
+    MeterProTemperatureHumidityAlarmStatus,
     MeterProZoneIcon,
     SwitchbotOperationError,
 )
@@ -478,3 +485,512 @@ async def test_co2_variant_shares_display_settings(
     await getattr(device, method)(*args)
 
     device._send_command.assert_called_with(expected_payload)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("device_class", "response", "expected"),
+    [
+        (
+            SwitchbotMeterPro,
+            "01009c4600921e00",
+            {
+                "custom": False,
+                "temperature_low_c": 18.0,
+                "temperature_high_c": 28.0,
+                "humidity_low": 30,
+                "humidity_high": 70,
+                "status": MeterProComfortStatus.COMFORTABLE,
+            },
+        ),
+        (
+            SwitchbotMeterProCO2,
+            "010180e3730080fe",
+            {
+                "custom": True,
+                "temperature_low_c": -0.3,
+                "temperature_high_c": 0.7,
+                "humidity_low": 0,
+                "humidity_high": 99,
+                "status": MeterProComfortStatus.WET,
+            },
+        ),
+    ],
+)
+async def test_get_comfort_level(
+    device_class: type[SwitchbotMeterPro],
+    response: str,
+    expected: dict[str, float | int | bool | MeterProComfortStatus],
+):
+    device = create_device(device_class)
+    device._send_command.return_value = bytes.fromhex(response)
+
+    assert await device.get_comfort_level() == expected
+    device._send_command.assert_awaited_once_with("570f69020101")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("limits", "custom", "expected"),
+    [
+        ((0.5, 22.34, 40, 82), True, "889652358028"),
+        ((-0.5, 0.66, 0, 99), True, "888063750000"),
+        ((18.0, 28.0, 30, 70), False, "809c4600921e"),
+    ],
+)
+async def test_set_comfort_level(
+    limits: tuple[float, float, int, int], custom: bool, expected: str
+):
+    device = create_device()
+
+    await device.set_comfort_level(*limits, custom=custom)
+
+    device._send_command.assert_awaited_once_with("570f680201" + expected)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("limits", "custom", "message"),
+    [
+        ((-128, 28.0, 30, 70), True, "Temperature must be"),
+        ((True, 28.0, 30, 70), True, "Temperature must be"),
+        ((18.01, 18.04, 30, 70), True, "Lower comfort limits"),
+        ((18, 28, 30, 100), True, "Humidity limits"),
+        ((18, 28, True, 70), True, "Humidity limits"),
+        ((18, 28, 70, 70), True, "Lower comfort limits"),
+        ((18, 28, 30, 70), 1, "custom must be a boolean"),
+    ],
+)
+async def test_set_comfort_level_rejects_invalid_input(
+    limits: tuple[float, float, int, int], custom: bool, message: str
+):
+    device = create_device()
+    with pytest.raises(SwitchbotOperationError, match=message):
+        await device.set_comfort_level(*limits, custom=custom)
+    device._send_command.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "response", ["02", "01", "01029c4600921e00", "01009c460a921e00", "01009c6400921e00"]
+)
+async def test_get_comfort_level_rejects_invalid_response(response: str):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex(response)
+    with pytest.raises(SwitchbotOperationError):
+        await device.get_comfort_level()
+
+
+@pytest.mark.asyncio
+async def test_set_comfort_level_rejects_device_error():
+    device = create_device()
+    device._send_command.return_value = b"\x02"
+    with pytest.raises(SwitchbotOperationError, match="set_comfort_level"):
+        await device.set_comfort_level(18, 28, 30, 70)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("device_class", "response", "mode", "volume"),
+    [
+        (SwitchbotMeterPro, "010000", MeterProAlarmMode.DISABLED, None),
+        (
+            SwitchbotMeterProCO2,
+            "010402",
+            MeterProAlarmMode.SOUND_AND_FLASH,
+            MeterProAlarmVolume.HIGH,
+        ),
+        (SwitchbotMeterPro, "01ff01", MeterProAlarmMode.FLASH_ONLY, None),
+    ],
+)
+async def test_get_alarm_settings(
+    device_class: type[SwitchbotMeterPro],
+    response: str,
+    mode: MeterProAlarmMode,
+    volume: MeterProAlarmVolume | None,
+):
+    device = create_device(device_class)
+    device._send_command.return_value = bytes.fromhex(response)
+
+    assert await device.get_alarm_settings() == {"mode": mode, "volume": volume}
+    device._send_command.assert_awaited_once_with("570f690204")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mode", "volume", "payload"),
+    [
+        (MeterProAlarmMode.DISABLED, None, "ff00"),
+        (MeterProAlarmMode.FLASH_ONLY, MeterProAlarmVolume.OFF, "0101"),
+        (MeterProAlarmMode.SOUND_AND_FLASH, MeterProAlarmVolume.LOW, "0202"),
+        (MeterProAlarmMode.SOUND_AND_FLASH, MeterProAlarmVolume.MEDIUM, "0302"),
+        (MeterProAlarmMode.SOUND_AND_FLASH, MeterProAlarmVolume.HIGH, "0402"),
+    ],
+)
+async def test_set_alarm_settings(
+    mode: MeterProAlarmMode, volume: MeterProAlarmVolume | None, payload: str
+):
+    device = create_device()
+
+    await device.set_alarm_settings(mode, volume)
+
+    device._send_command.assert_awaited_once_with("570f680204" + payload)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("response", ["02", "0100", "010403"])
+async def test_get_alarm_settings_rejects_invalid_response(response: str):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex(response)
+
+    with pytest.raises(SwitchbotOperationError):
+        await device.get_alarm_settings()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mode", "volume", "message"),
+    [(True, None, "mode must be"), (MeterProAlarmMode.DISABLED, 5, "volume must be")],
+)
+async def test_set_alarm_settings_rejects_invalid_input(
+    mode: object, volume: object, message: str
+):
+    device = create_device()
+
+    with pytest.raises(SwitchbotOperationError, match=message):
+        await device.set_alarm_settings(mode, volume)
+
+    device._send_command.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_set_alarm_settings_rejects_device_error():
+    device = create_device()
+    device._send_command.return_value = b"\x02"
+
+    with pytest.raises(SwitchbotOperationError, match="set_alarm_settings"):
+        await device.set_alarm_settings(MeterProAlarmMode.DISABLED)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("response", "mode", "status"),
+    [
+        ("01000578019000", MeterProCO2AlarmMode.DISABLED, MeterProCO2AlarmStatus.NONE),
+        (
+            "010b05780190fe",
+            MeterProCO2AlarmMode.CUSTOM
+            | MeterProCO2AlarmMode.LOW
+            | MeterProCO2AlarmMode.HIGH,
+            MeterProCO2AlarmStatus.HIGH,
+        ),
+        (
+            "01840578019003",
+            MeterProCO2AlarmMode(0x84),
+            MeterProCO2AlarmStatus.IN_RANGE,
+        ),
+    ],
+)
+async def test_get_co2_alarm(
+    response: str, mode: MeterProCO2AlarmMode, status: MeterProCO2AlarmStatus
+):
+    device = create_device(SwitchbotMeterProCO2)
+    device._send_command.return_value = bytes.fromhex(response)
+
+    assert await device.get_co2_alarm() == {
+        "mode": mode,
+        "low_ppm": 400,
+        "high_ppm": 1400,
+        "status": status,
+    }
+    device._send_command.assert_awaited_once_with("570f69020301")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mode", "low", "high", "payload"),
+    [
+        (MeterProCO2AlarmMode.DISABLED, 400, 1400, "0005780190"),
+        (MeterProCO2AlarmMode.LOW, 401, 1101, "01044d0191"),
+        (MeterProCO2AlarmMode.HIGH, 0, 0xFFFF, "02ffff0000"),
+        (
+            MeterProCO2AlarmMode.LOW | MeterProCO2AlarmMode.HIGH,
+            425,
+            2000,
+            "0307d001a9",
+        ),
+        (MeterProCO2AlarmMode.IN_RANGE, 1200, 1200, "0404b004b0"),
+        (
+            MeterProCO2AlarmMode.HIGH | MeterProCO2AlarmMode.CUSTOM,
+            425,
+            2000,
+            "0a07d001a9",
+        ),
+    ],
+)
+async def test_set_co2_alarm(
+    mode: MeterProCO2AlarmMode, low: int, high: int, payload: str
+):
+    device = create_device(SwitchbotMeterProCO2)
+
+    await device.set_co2_alarm(mode, low, high)
+
+    device._send_command.assert_awaited_once_with("570f68020301" + payload)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("response", ["02", "010005780190"])
+async def test_get_co2_alarm_rejects_invalid_response(response: str):
+    device = create_device(SwitchbotMeterProCO2)
+    device._send_command.return_value = bytes.fromhex(response)
+
+    with pytest.raises(SwitchbotOperationError, match="get_co2_alarm"):
+        await device.get_co2_alarm()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mode", "low", "high", "message"),
+    [
+        (True, 400, 1400, "Invalid CO2 alarm mode"),
+        (MeterProCO2AlarmMode(0x10), 400, 1400, "Invalid CO2 alarm mode"),
+        (MeterProCO2AlarmMode.LOW, True, 1400, "unsigned 16-bit integers"),
+        (MeterProCO2AlarmMode.LOW, -1, 1400, "unsigned 16-bit integers"),
+        (MeterProCO2AlarmMode.LOW, 400, 0x10000, "unsigned 16-bit integers"),
+        (MeterProCO2AlarmMode.LOW, 400, 1400.0, "unsigned 16-bit integers"),
+        (MeterProCO2AlarmMode.IN_RANGE, 1400, 400, "Lower CO2 alarm limit"),
+    ],
+)
+async def test_set_co2_alarm_rejects_invalid_input(
+    mode: object, low: object, high: object, message: str
+):
+    device = create_device(SwitchbotMeterProCO2)
+
+    with pytest.raises(SwitchbotOperationError, match=message):
+        await device.set_co2_alarm(mode, low, high)
+
+    device._send_command.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_set_co2_alarm_rejects_device_error():
+    device = create_device(SwitchbotMeterProCO2)
+    device._send_command.return_value = b"\x02"
+
+    with pytest.raises(SwitchbotOperationError, match="set_co2_alarm"):
+        await device.set_co2_alarm(MeterProCO2AlarmMode.DISABLED, 400, 1400)
+
+
+def test_co2_alarm_is_only_available_on_the_co2_model():
+    device = create_device()
+
+    assert not hasattr(device, "get_co2_alarm")
+    assert not hasattr(device, "set_co2_alarm")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("device_class", "response", "expected"),
+    [
+        (
+            SwitchbotMeterPro,
+            "0100000000000000",
+            {
+                "mode": MeterProTemperatureHumidityAlarmMode.DISABLED,
+                "temperature_low_c": 0.0,
+                "temperature_high_c": 0.0,
+                "humidity_low": 0,
+                "humidity_high": 0,
+                "temperature_status": MeterProTemperatureHumidityAlarmStatus.NONE,
+                "humidity_status": MeterProTemperatureHumidityAlarmStatus.NONE,
+            },
+        ),
+        (
+            SwitchbotMeterProCO2,
+            "014297a745009423",
+            {
+                "mode": (
+                    MeterProTemperatureHumidityAlarmMode.TEMPERATURE_HIGH
+                    | MeterProTemperatureHumidityAlarmMode.HUMIDITY_IN_RANGE
+                ),
+                "temperature_low_c": -0.5,
+                "temperature_high_c": 23.4,
+                "humidity_low": 20,
+                "humidity_high": 39,
+                "temperature_status": MeterProTemperatureHumidityAlarmStatus.HIGH,
+                "humidity_status": MeterProTemperatureHumidityAlarmStatus.IN_RANGE,
+            },
+        ),
+    ],
+)
+async def test_get_temperature_humidity_alarm(
+    device_class: type[SwitchbotMeterPro], response: str, expected: dict[str, object]
+):
+    device = create_device(device_class)
+    device._send_command.return_value = bytes.fromhex(response)
+
+    assert await device.get_temperature_humidity_alarm() == expected
+    device._send_command.assert_awaited_once_with("570f69020100")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("response", "temperature_status", "humidity_status"),
+    [
+        (
+            "0122963695000a20",
+            MeterProTemperatureHumidityAlarmStatus.HIGH,
+            MeterProTemperatureHumidityAlarmStatus.NONE,
+        ),
+        (
+            "0122a32795000a02",
+            MeterProTemperatureHumidityAlarmStatus.NONE,
+            MeterProTemperatureHumidityAlarmStatus.HIGH,
+        ),
+        (
+            "0122972735001822",
+            MeterProTemperatureHumidityAlarmStatus.HIGH,
+            MeterProTemperatureHumidityAlarmStatus.HIGH,
+        ),
+        (
+            "0122963695000aec",
+            MeterProTemperatureHumidityAlarmStatus.HIGH,
+            MeterProTemperatureHumidityAlarmStatus.NONE,
+        ),
+        (
+            "0122a32795000ace",
+            MeterProTemperatureHumidityAlarmStatus.NONE,
+            MeterProTemperatureHumidityAlarmStatus.HIGH,
+        ),
+        (
+            "014297a7450094ff",
+            MeterProTemperatureHumidityAlarmStatus.IN_RANGE,
+            MeterProTemperatureHumidityAlarmStatus.IN_RANGE,
+        ),
+    ],
+)
+async def test_get_temperature_humidity_alarm_status(
+    response: str,
+    temperature_status: MeterProTemperatureHumidityAlarmStatus,
+    humidity_status: MeterProTemperatureHumidityAlarmStatus,
+):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex(response)
+
+    result = await device.get_temperature_humidity_alarm()
+
+    assert result["temperature_status"] is temperature_status
+    assert result["humidity_status"] is humidity_status
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mode", "limits", "payload"),
+    [
+        (MeterProTemperatureHumidityAlarmMode.DISABLED, (0, 0, 0, 0), "008000008000"),
+        (
+            MeterProTemperatureHumidityAlarmMode.TEMPERATURE_HIGH
+            | MeterProTemperatureHumidityAlarmMode.HUMIDITY_HIGH,
+            (-0.5, 23.34, 20, 39),
+            "229727350014",
+        ),
+        (
+            MeterProTemperatureHumidityAlarmMode.TEMPERATURE_IN_RANGE
+            | MeterProTemperatureHumidityAlarmMode.HUMIDITY_IN_RANGE,
+            (0.5, 0.5, 0, 99),
+            "448063558000",
+        ),
+    ],
+)
+async def test_set_temperature_humidity_alarm(
+    mode: MeterProTemperatureHumidityAlarmMode,
+    limits: tuple[float, float, int, int],
+    payload: str,
+):
+    device = create_device()
+
+    await device.set_temperature_humidity_alarm(mode, *limits)
+
+    device._send_command.assert_awaited_once_with("570f680201" + payload)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mode", "limits", "message"),
+    [
+        (True, (18, 28, 30, 70), "Invalid temperature and humidity alarm mode"),
+        (
+            MeterProTemperatureHumidityAlarmMode(0x88),
+            (18, 28, 30, 70),
+            "Invalid temperature and humidity alarm mode",
+        ),
+        (
+            MeterProTemperatureHumidityAlarmMode(0x08),
+            (18, 28, 30, 70),
+            "Invalid temperature and humidity alarm mode",
+        ),
+        (
+            MeterProTemperatureHumidityAlarmMode.DISABLED,
+            (-128, 28, 30, 70),
+            "Temperature must be",
+        ),
+        (
+            MeterProTemperatureHumidityAlarmMode.DISABLED,
+            (18, 28, True, 70),
+            "Humidity limits",
+        ),
+        (
+            MeterProTemperatureHumidityAlarmMode.DISABLED,
+            (18, 28, 30, 100),
+            "Humidity limits",
+        ),
+        (
+            MeterProTemperatureHumidityAlarmMode.TEMPERATURE_IN_RANGE,
+            (28, 18, 30, 70),
+            "Lower in-range alarm limits",
+        ),
+        (
+            MeterProTemperatureHumidityAlarmMode.HUMIDITY_IN_RANGE,
+            (18, 28, 70, 30),
+            "Lower in-range alarm limits",
+        ),
+    ],
+)
+async def test_set_temperature_humidity_alarm_rejects_invalid_inputs(
+    mode: object, limits: tuple[float, float, int, int], message: str
+):
+    device = create_device()
+
+    with pytest.raises(SwitchbotOperationError, match=message):
+        await device.set_temperature_humidity_alarm(mode, *limits)
+
+    device._send_command.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "response",
+    [
+        "02",
+        "01000000000000",
+        "01009c460a921e00",
+        "01009c6400921e00",
+    ],
+)
+async def test_get_temperature_humidity_alarm_rejects_invalid_response(response: str):
+    device = create_device()
+    device._send_command.return_value = bytes.fromhex(response)
+
+    with pytest.raises(SwitchbotOperationError):
+        await device.get_temperature_humidity_alarm()
+
+
+@pytest.mark.asyncio
+async def test_set_temperature_humidity_alarm_rejects_device_error():
+    device = create_device()
+    device._send_command.return_value = b"\x02"
+
+    with pytest.raises(SwitchbotOperationError, match="set_temperature_humidity_alarm"):
+        await device.set_temperature_humidity_alarm(
+            MeterProTemperatureHumidityAlarmMode.DISABLED, 0, 0, 0, 0
+        )
