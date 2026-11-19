@@ -1,5 +1,6 @@
 """Test keypad vision series device parsing and functionality."""
 
+import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -9,6 +10,7 @@ from switchbot import SwitchBotAdvertisement
 from switchbot.devices.device import SwitchbotEncryptedDevice
 from switchbot.devices.keypad_vision import (
     COMMAND_GET_PASSWORD_COUNT,
+    UPDATE_RETRY_INTERVAL,
     SwitchbotKeypadVision,
 )
 
@@ -56,6 +58,14 @@ def make_advertisement_data(
         rssi=-80,
         active=True,
     )
+
+
+def create_device_for_update_testing(adv_info: AdvTestCase) -> SwitchbotKeypadVision:
+    """Create a device whose update() is the real one."""
+    device = create_device_for_command_testing(adv_info)
+    del device.update
+    device._get_basic_info = AsyncMock()
+    return device
 
 
 @pytest.mark.asyncio
@@ -257,3 +267,114 @@ async def test_verify_encryption_key(
     )
 
     assert result is True
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("adv_info", [KEYPAD_VISION_INFO, KEYPAD_VISION_PRO_INFO])
+@pytest.mark.parametrize("reply_length", [1, 2, 14])
+async def test_get_basic_info_short_reply(
+    adv_info: AdvTestCase, reply_length: int
+) -> None:
+    """A reply shorter than the basic info layout returns None, not IndexError."""
+    device = create_device_for_command_testing(adv_info)
+    device._get_basic_info = AsyncMock(return_value=b"\x04" * reply_length)
+
+    assert await device.get_basic_info() is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("adv_info", "reply"),
+    [
+        (KEYPAD_VISION_INFO, b"\x04"),
+        (KEYPAD_VISION_INFO, bytes([0x01, 0x03, 0x02, 0x01, 0x01])),
+        (KEYPAD_VISION_PRO_INFO, b"\x04"),
+        (KEYPAD_VISION_PRO_INFO, bytes([0x01, 0x05, 0x02, 0x03, 0x00, 0x02, 0x01])),
+    ],
+)
+async def test_get_password_count_short_reply(
+    adv_info: AdvTestCase, reply: bytes
+) -> None:
+    """A reply shorter than the password count layout returns None."""
+    device = create_device_for_command_testing(adv_info)
+    device._send_command.return_value = reply
+
+    assert await device.get_password_count() is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("adv_info", [KEYPAD_VISION_INFO, KEYPAD_VISION_PRO_INFO])
+async def test_update_backs_off_after_short_reply(adv_info: AdvTestCase) -> None:
+    """A failed update is not retried until the retry interval has passed."""
+    device = create_device_for_update_testing(adv_info)
+    device._get_basic_info.return_value = b"\x04"
+
+    with patch("switchbot.devices.keypad_vision.time.monotonic") as monotonic:
+        monotonic.return_value = 1000.0
+        await device.update()
+        await device.update()
+        assert device._get_basic_info.await_count == 1
+
+        monotonic.return_value = 1000.0 + UPDATE_RETRY_INTERVAL - 1
+        await device.update()
+        assert device._get_basic_info.await_count == 1
+
+        monotonic.return_value = 1000.0 + UPDATE_RETRY_INTERVAL
+        await device.update()
+        assert device._get_basic_info.await_count == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("adv_info", [KEYPAD_VISION_INFO, KEYPAD_VISION_PRO_INFO])
+async def test_update_backs_off_after_exception(adv_info: AdvTestCase) -> None:
+    """An update that raises is also not retried straight away."""
+    device = create_device_for_update_testing(adv_info)
+    device._get_basic_info.side_effect = TimeoutError
+
+    with patch("switchbot.devices.keypad_vision.time.monotonic") as monotonic:
+        monotonic.return_value = 1000.0
+        with pytest.raises(TimeoutError):
+            await device.update()
+        await device.update()
+        assert device._get_basic_info.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_update_without_failure_does_not_back_off() -> None:
+    """Successful updates are never skipped."""
+    device = create_device_for_update_testing(KEYPAD_VISION_INFO)
+    device._get_basic_info.return_value = (
+        b"\x01_\x18\x16\x01\x02\x00\n\x01\x02\x03\x05\x02\x00\x01\x00"
+    )
+
+    with patch("switchbot.devices.keypad_vision.time.monotonic") as monotonic:
+        monotonic.return_value = 1000.0
+        await device.update()
+        await device.update()
+        assert device._get_basic_info.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_sequence_change_does_not_loop_on_short_reply() -> None:
+    """New sequence numbers after a failed update do not each trigger a connection."""
+    device = create_device_for_update_testing(KEYPAD_VISION_PRO_INFO)
+    device._get_basic_info.return_value = b"\x04"
+    ble_device = generate_ble_device("aa:bb:cc:dd:ee:ff", "any")
+
+    tasks = []
+    with patch(
+        "switchbot.devices.device.create_background_task",
+        side_effect=lambda coro: tasks.append(asyncio.ensure_future(coro)),
+    ):
+        for sequence_number in range(1, 5):
+            device.update_from_advertisement(
+                make_advertisement_data(
+                    ble_device,
+                    KEYPAD_VISION_PRO_INFO,
+                    {"sequence_number": sequence_number},
+                )
+            )
+            await asyncio.gather(*tasks)
+
+    assert len(tasks) == 4
+    assert device._get_basic_info.await_count == 1
