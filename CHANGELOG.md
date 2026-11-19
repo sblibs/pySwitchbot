@@ -2,6 +2,35 @@
 
 <!-- version list -->
 
+## v3.15.1 (2026-11-19)
+
+### Bug Fixes
+
+- **meter-pro**: Honor readback field boundaries
+  ([#622](https://github.com/sblibs/pySwitchbot/pull/622),
+  [`a0e68a6`](https://github.com/sblibs/pySwitchbot/commit/a0e68a6a9d4017bba8365ef08e9ed3d9ec9b08ce))
+
+- **meter-pro**: Validate display setting input types
+  ([#622](https://github.com/sblibs/pySwitchbot/pull/622),
+  [`a0e68a6`](https://github.com/sblibs/pySwitchbot/commit/a0e68a6a9d4017bba8365ef08e9ed3d9ec9b08ce))
+
+### Chores
+
+- **pre-commit.ci**: Auto fixes ([#421](https://github.com/sblibs/pySwitchbot/pull/421),
+  [`bd0c370`](https://github.com/sblibs/pySwitchbot/commit/bd0c37092180e1e12deaa31544020a36498f7f63))
+
+### Documentation
+
+- Use ENCRYPTION_KEY in lock examples ([#421](https://github.com/sblibs/pySwitchbot/pull/421),
+  [`bd0c370`](https://github.com/sblibs/pySwitchbot/commit/bd0c37092180e1e12deaa31544020a36498f7f63))
+
+### Refactoring
+
+- **meter-pro**: Reuse enum validation for weather icons
+  ([#622](https://github.com/sblibs/pySwitchbot/pull/622),
+  [`a0e68a6`](https://github.com/sblibs/pySwitchbot/commit/a0e68a6a9d4017bba8365ef08e9ed3d9ec9b08ce))
+
+
 ## v3.15.0 (2026-11-19)
 
 ### Bug Fixes
