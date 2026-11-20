@@ -33,6 +33,8 @@ class SwitchbotVacuum(SwitchbotSequenceDevice):
         """Only support get the ble version through the command."""
         if not (_data := await self._get_basic_info()):
             return None
+        if len(_data) < 3:
+            return None
         return {
             "firmware": _data[2],
         }

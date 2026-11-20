@@ -104,6 +104,8 @@ class SwitchbotCurtain(SwitchbotBaseCover):
         """Get device basic settings."""
         if not (_data := await self._get_basic_info()):
             return None
+        if len(_data) < 8:
+            return None
 
         _position = max(min(_data[6], 100), 0)
         _direction_adjusted_position = (100 - _position) if self._reverse else _position
@@ -153,7 +155,7 @@ class SwitchbotCurtain(SwitchbotBaseCover):
             _LOGGER.error("%s: Unsuccessful, no result from device", self.name)
             return None
 
-        if _data in (b"\x07", b"\x00"):
+        if len(_data) < 3:
             _LOGGER.error("%s: Unsuccessful, please try again", self.name)
             return None
 
