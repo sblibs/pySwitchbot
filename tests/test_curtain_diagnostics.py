@@ -4,6 +4,7 @@ import pytest
 from bleak.exc import BleakError
 
 from switchbot import CurtainChargingState
+from switchbot.const.curtain import CURTAIN_CHARGING_STATES
 from switchbot.devices.base_cover import COVER_EXT_ADV_KEY, COVER_EXT_SUM_KEY
 from switchbot.devices.curtain import CURTAIN_EXT_CHAIN_INFO_KEY, SwitchbotCurtain
 from switchbot.devices.device import (
@@ -47,10 +48,10 @@ async def test_charging_codes(code):
     device, replies = diagnostic_device()
     replies[COVER_EXT_ADV_KEY] = bytes([1, 80, 10, code, 0, 10, code])
     assert await device.refresh_diagnostics()
+    assert set(CURTAIN_CHARGING_STATES.values()) == set(CurtainChargingState)
     for slot in ("device0", "device1"):
         assert (
-            device.ext_info_adv[slot]["chargingState"]
-            is list(CurtainChargingState)[code]
+            device.ext_info_adv[slot]["chargingState"] is CURTAIN_CHARGING_STATES[code]
         )
         assert device.ext_info_adv[slot]["chargingStateRaw"] == code
 
@@ -140,7 +141,7 @@ async def test_refresh_cadence_independent_of_advertisements():
         assert device.poll_needed(None)
         assert not device.poll_needed(0)
         await device.update()
-    assert device._send_command.await_count == 5
+    assert device._send_command.await_count == 4
     device._send_command.reset_mock()
     with patch("switchbot.devices.curtain.time.monotonic", return_value=1899):
         device.update_from_advertisement(device._sb_adv_data)
@@ -151,7 +152,7 @@ async def test_refresh_cadence_independent_of_advertisements():
         device.update_from_advertisement(device._sb_adv_data)
         assert device.poll_needed(900)
         await device.update()
-    assert device._send_command.await_count == 6
+    assert device._send_command.await_count == 5
     device.set_diagnostics_interval(None)
     device._send_command.reset_mock()
     await device.update()
@@ -167,7 +168,7 @@ async def test_movement_defers_diagnostics():
     assert device._send_command.await_count == 1
     replies[DEVICE_GET_BASIC_SETTINGS_KEY] = BASIC
     await device.update()
-    assert device._send_command.await_count == 6
+    assert device._send_command.await_count == 5
 
 
 @pytest.mark.asyncio
@@ -249,3 +250,22 @@ async def test_invalid_chain_percentages_remain_unknown():
         assert info[slot]["position"] is None
         assert info[slot]["battery"] is None
     assert "chain" in device.diagnostic_timestamps
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("model", ["Curtain", "Curtain 2"])
+async def test_older_curtain_keeps_accepting_any_basic_info_status(model):
+    device, replies = diagnostic_device(model=model)
+    replies[DEVICE_GET_BASIC_SETTINGS_KEY] = bytes([0]) + BASIC[1:]
+    info = await device.get_basic_info()
+    assert info is not None
+    assert info["battery"] == 80
+
+
+@pytest.mark.asyncio
+async def test_extended_pages_use_advertised_chain_before_any_read():
+    device, _ = diagnostic_device()
+    device._sb_adv_data.data["data"]["deviceChain"] = 2
+    device.update_from_advertisement(device._sb_adv_data)
+    summary = await device.get_extended_info_summary()
+    assert set(summary) == {"device0", "device1"}

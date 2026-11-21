@@ -172,7 +172,7 @@ class SwitchbotCurtain(SwitchbotBaseCover):
             return None
 
         snapshot = {}
-        for slot in range(2 if self._get_chain_length() == 2 else 1):
+        for slot in range(self._get_slot_count(_data[2])):
             flags = _data[1 + slot]
             snapshot[f"device{slot}"] = {
                 "openDirectionDefault": not bool(flags & 0b10000000),
@@ -195,7 +195,18 @@ class SwitchbotCurtain(SwitchbotBaseCover):
             and basic_length != chain_length
         ):
             return None
-        return chain_length if chain_length is not None else basic_length
+        if chain_length is not None:
+            return chain_length
+        if basic_length is not None:
+            return basic_length
+        # Nothing read yet, so use the advertised device chain.
+        return super()._get_chain_length()
+
+    def _requires_success_status(self) -> bool:
+        return self._is_curtain_3()
+
+    def _is_curtain_3(self) -> bool:
+        return self.data.get("modelFriendlyName") == "Curtain 3"
 
     def _invalidate_secondary(self) -> None:
         if self._get_chain_length() != 2:
@@ -235,7 +246,7 @@ class SwitchbotCurtain(SwitchbotBaseCover):
     def _diagnostics_due(self) -> bool:
         return (
             self._diagnostics_interval is not None
-            and self.data.get("modelFriendlyName") == "Curtain 3"
+            and self._is_curtain_3()
             and (
                 self._last_diagnostics_attempt is None
                 or time.monotonic() - self._last_diagnostics_attempt
@@ -254,7 +265,7 @@ class SwitchbotCurtain(SwitchbotBaseCover):
 
     async def refresh_diagnostics(self) -> bool:
         """Refresh diagnostics; transport errors propagate to the caller."""
-        if self.data.get("modelFriendlyName") != "Curtain 3":
+        if not self._is_curtain_3():
             return False
         async with self._diagnostics_lock:
             self._last_diagnostics_attempt = time.monotonic()
@@ -262,13 +273,26 @@ class SwitchbotCurtain(SwitchbotBaseCover):
                 info = await self.get_basic_info()
                 if info is not None:
                     self._update_parsed_data(info)
-                chain = await self.get_extended_chain_info()
-                summary = await self.get_extended_info_summary()
-                advanced = await self.get_extended_info_adv()
-                return (
-                    all(page is not None for page in (info, chain, summary, advanced))
-                    and self._get_chain_length() is not None
-                )
+                return info is not None and await self._refresh_extended_pages()
+            finally:
+                self._fire_callbacks()
+
+    async def _refresh_extended_pages(self) -> bool:
+        """Read the chain, summary and advanced pages."""
+        chain = await self.get_extended_chain_info()
+        summary = await self.get_extended_info_summary()
+        advanced = await self.get_extended_info_adv()
+        return (
+            all(page is not None for page in (chain, summary, advanced))
+            and self._get_chain_length() is not None
+        )
+
+    async def _refresh_diagnostics_after_update(self) -> bool:
+        """Refresh diagnostics reusing the basic info update() just read."""
+        async with self._diagnostics_lock:
+            self._last_diagnostics_attempt = time.monotonic()
+            try:
+                return await self._refresh_extended_pages()
             finally:
                 self._fire_callbacks()
 
@@ -277,7 +301,7 @@ class SwitchbotCurtain(SwitchbotBaseCover):
         if not self._diagnostics_due() or self._get_adv_value("inMotion") is not False:
             return
         try:
-            await self.refresh_diagnostics()
+            await self._refresh_diagnostics_after_update()
         except (
             *BLEAK_RETRY_EXCEPTIONS,
             CharacteristicMissingError,

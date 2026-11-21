@@ -15,4 +15,20 @@ class CurtainChargingState(StrEnum):
     HARDWARE_ERROR = "hardware_error"
 
 
-CURTAIN_CHARGING_STATES = dict(enumerate(CurtainChargingState))
+# Wire codes are listed explicitly so reordering the enum can't change decoding.
+CURTAIN_CHARGING_STATES = {
+    0: CurtainChargingState.NOT_CHARGING,
+    1: CurtainChargingState.CHARGING_BY_ADAPTER,
+    2: CurtainChargingState.CHARGING_BY_SOLAR,
+    3: CurtainChargingState.ADAPTER_FULL,
+    4: CurtainChargingState.SOLAR_FULL,
+    5: CurtainChargingState.SOLAR_NOT_CHARGING,
+    6: CurtainChargingState.HARDWARE_ERROR,
+}
+
+# The stateOfCharge strings reported before chargingState was added.
+LEGACY_STATE_OF_CHARGE = {
+    CurtainChargingState.ADAPTER_FULL: "fully_charged",
+    CurtainChargingState.SOLAR_FULL: "fully_charged",
+    CurtainChargingState.HARDWARE_ERROR: "charging_error",
+}

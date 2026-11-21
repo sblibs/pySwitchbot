@@ -7,7 +7,7 @@ import time
 from abc import abstractmethod
 from typing import Any
 
-from ..const.curtain import CURTAIN_CHARGING_STATES, CurtainChargingState
+from ..const.curtain import CURTAIN_CHARGING_STATES, LEGACY_STATE_OF_CHARGE
 from .device import REQ_HEADER, SwitchbotDevice, update_after_operation
 
 # Cover keys
@@ -81,15 +81,11 @@ class SwitchbotBaseCover(SwitchbotDevice):
             return None
 
         snapshot = {}
-        for slot in range(2 if self._get_chain_length() == 2 else 1):
+        for slot in range(self._get_slot_count(_data[4])):
             offset = 1 + slot * 3
             raw_state = _data[offset + 2]
             charging_state = CURTAIN_CHARGING_STATES.get(raw_state)
-            legacy_state = {
-                CurtainChargingState.ADAPTER_FULL: "fully_charged",
-                CurtainChargingState.SOLAR_FULL: "fully_charged",
-                CurtainChargingState.HARDWARE_ERROR: "charging_error",
-            }.get(charging_state, charging_state)
+            legacy_state = LEGACY_STATE_OF_CHARGE.get(charging_state, charging_state)
             snapshot[f"device{slot}"] = {
                 "battery": _data[offset] if _data[offset] <= 100 else None,
                 "firmware": _data[offset + 1] / 10.0,
@@ -106,13 +102,34 @@ class SwitchbotBaseCover(SwitchbotDevice):
     def _get_chain_length(self) -> int | None:
         return self.parsed_data.get("chainLength", self.parsed_data.get("deviceChain"))
 
-    @staticmethod
-    def _valid_diagnostic_response(data: bytes | None, minimum_length: int) -> bool:
-        return (
-            isinstance(data, (bytes, bytearray))
-            and len(data) >= minimum_length
-            and data[0] == 1
-        )
+    def _get_slot_count(self, second_slot_marker: int) -> int:
+        """Return how many chained devices a page should report."""
+        if not self._requires_success_status():
+            # Original behaviour: a non-zero second slot means a paired device.
+            return 2 if second_slot_marker else 1
+        return 2 if self._get_chain_length() == 2 else 1
+
+    def _requires_success_status(self) -> bool:
+        """
+        Return whether replies must start with the success status (0x01).
+
+        Only Curtain 3 has been validated against the spec, so other models
+        keep the original, more permissive handling.
+        """
+        return False
+
+    def _valid_diagnostic_response(
+        self, data: bytes | None, minimum_length: int
+    ) -> bool:
+        if not isinstance(data, (bytes, bytearray)) or len(data) < minimum_length:
+            _LOGGER.error("%s: Unsuccessful, no result from device", self.name)
+            return False
+        if self._requires_success_status():
+            return data[0] == 1
+        if data in (b"\x07", b"\x00"):
+            _LOGGER.error("%s: Unsuccessful, please try again", self.name)
+            return False
+        return True
 
     def get_light_level(self) -> Any:
         """Return cached light level."""

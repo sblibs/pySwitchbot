@@ -141,7 +141,7 @@ async def test_device_active_not_in_motion(reverse_mode):
         make_advertisement_data(ble_device, False, 0)
     )
 
-    basic_info = bytes([1, 0, 0, 0, 0, 0, 100, 0])
+    basic_info = bytes([0, 0, 0, 0, 0, 0, 100, 0])
 
     async def custom_implementation():
         return basic_info
@@ -164,7 +164,7 @@ async def test_device_active_opening(reverse_mode):
         make_advertisement_data(ble_device, True, 0)
     )
 
-    basic_info = bytes([1, 0, 0, 0, 0, 67, 10, 0])
+    basic_info = bytes([0, 0, 0, 0, 0, 67, 10, 0])
 
     async def custom_implementation():
         return basic_info
@@ -187,7 +187,7 @@ async def test_device_active_closing(reverse_mode):
         make_advertisement_data(ble_device, True, 100)
     )
 
-    basic_info = bytes([1, 0, 0, 0, 0, 67, 90, 0])
+    basic_info = bytes([0, 0, 0, 0, 0, 67, 90, 0])
 
     async def custom_implementation():
         return basic_info
@@ -210,7 +210,7 @@ async def test_device_active_opening_then_stop(reverse_mode):
         make_advertisement_data(ble_device, True, 0)
     )
 
-    basic_info = bytes([1, 0, 0, 0, 0, 67, 10, 0])
+    basic_info = bytes([0, 0, 0, 0, 0, 67, 10, 0])
 
     async def custom_implementation():
         return basic_info
@@ -219,7 +219,7 @@ async def test_device_active_opening_then_stop(reverse_mode):
 
     await curtain_device.get_basic_info()
 
-    basic_info = bytes([1, 0, 0, 0, 0, 0, 10, 0])
+    basic_info = bytes([0, 0, 0, 0, 0, 0, 10, 0])
 
     await curtain_device.get_basic_info()
 
@@ -237,7 +237,7 @@ async def test_device_active_closing_then_stop(reverse_mode):
         make_advertisement_data(ble_device, True, 100)
     )
 
-    basic_info = bytes([1, 0, 0, 0, 0, 67, 90, 0])
+    basic_info = bytes([0, 0, 0, 0, 0, 67, 90, 0])
 
     async def custom_implementation():
         return basic_info
@@ -246,7 +246,7 @@ async def test_device_active_closing_then_stop(reverse_mode):
 
     await curtain_device.get_basic_info()
 
-    basic_info = bytes([1, 0, 0, 0, 0, 0, 90, 0])
+    basic_info = bytes([0, 0, 0, 0, 0, 0, 90, 0])
 
     await curtain_device.get_basic_info()
 
