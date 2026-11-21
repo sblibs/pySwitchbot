@@ -117,8 +117,9 @@ async def test_get_extended_info_adv_returns_both_devices():
         (1, "charging_by_adapter"),
         (2, "charging_by_solar"),
         (3, "fully_charged"),
-        (4, "solar_not_charging"),
-        (5, "charging_error"),
+        (4, "fully_charged"),
+        (5, "solar_not_charging"),
+        (6, "charging_error"),
     ],
 )
 async def test_get_extended_info_adv_returns_device0_charge_states(data_value, result):
@@ -138,8 +139,9 @@ async def test_get_extended_info_adv_returns_device0_charge_states(data_value, r
         (1, "charging_by_adapter"),
         (2, "charging_by_solar"),
         (3, "fully_charged"),
-        (4, "solar_not_charging"),
-        (5, "charging_error"),
+        (4, "fully_charged"),
+        (5, "solar_not_charging"),
+        (6, "charging_error"),
     ],
 )
 async def test_get_extended_info_adv_returns_device1_charge_states(data_value, result):
